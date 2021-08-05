@@ -10,29 +10,13 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 CONTAINER_NAME = "pg_graphql_dev"
-IMAGE_NAME = "olirice/pg_graphql"
+IMAGE_NAME = "pg_graphql"
 DB_NAME = "gqldb"
 PORT = 5402
 
 
 @pytest.fixture(scope="session")
-def build_docker_image() -> None:
-    # Delete existing image
-    
-    # Build image
-    subprocess.call(
-        [
-            "docker",
-            "build",
-            CONTAINER_NAME,
-            "-t",
-            IMAGE_NAME,
-        ]
-    )
-
-
-@pytest.fixture(scope="session")
-def dockerize_database(build_docker_image: None):
+def dockerize_database():
 
     # Skip if we're using github actions CI
     if not "GITHUB_SHA" in os.environ:
