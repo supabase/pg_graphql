@@ -23,47 +23,48 @@ The extension keeps schema generation, parsing, statement resolution, and config
 
 ## Properties
 
-Moving This results in some interesting properties:
-
 ### Webserver Simplicity/Throughput
 
-Moving all GraphQL related work to the database reduces webserver complexity to the point where an API gateway (kong, nginx, etc) can likely function as the GraphQL API server, proxying requests to the `select gql.execute(...)` function using config only, or a small plugin (no extra services/containers required to host).
+Moving all GraphQL related work to the database reduces webserver complexity to the point where an API gateway (kong, nginx, etc) can likely function as the GraphQL API server by proxying request post bodies to `select gql.execute(...)`. Kong already supports a postgres connection for its own configuration so it may be possible to leverage that connection to execute arbitrary statements on the db (further research needed). In other words, no additional services/containers would be required to expose a GraphQL API.
 
 ### No resolver network latency
 
-GraphQL is notorious for the resolver N+1 problem. Some GraphQL <-> PostgreSQL tools like graphile and hasura handle this by building up complex queries to return all results as JSON using a single SQL query.
+GraphQL is notorious for the resolver N+1 problem. Some GraphQL <-> PostgreSQL tools like graphile and hasura handle this by building up complex queries to return all results as JSON from a single SQL query.
 
 When the resolver is located on the the PostgreSQL server, there is no network latency, so the negative impact of making multiple SQL queries is (mostly) mitigated. That improves our ability to write clear, modular, maintainable code & reduces time-to-v1.
 
 
 ## Try it Out
 
+As a proof-of-concept, try out the commands below to spin up a database with the extension installed & query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns. Note: only single row returns are supported. Queries resulting in multi-rows yields undefined behavior.
+
+
 Set up an interactive psql prompt with the extension installed using docker
 ```bash
 # Build image
-docker build -t pg_graphql -f Dockerfile .;
+docker build -t pg_graphql -f Dockerfile .
 
 # Run container 
-docker run --rm --name pg_gql -p 5085:5432 -d -e POSTGRES_DB=gqldb -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -d pg_graphql;
+docker run --rm --name pg_gql -p 5085:5432 -d -e POSTGRES_DB=gqldb -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -d pg_graphql
 
 # Attach to container
-docker exec -it pg_gql psql -U postgres gqldb;
+docker exec -it pg_gql psql -U postgres gqldb
 ```
 
 Now we'll create the extension, and create a test table with some data to query 
 
 ```sql
-gqldb=# create extension pg_graphql;
+gqldb= create extension pg_graphql;
 CREATE EXTENSION
 
-gqldb=# create table book(id int primary key, title text);
+gqldb= create table book(id int primary key, title text);
 CREATE TABLE
 
-gqldb=# insert into book(id, title) values (1, 'book 1'); 
+gqldb= insert into book(id, title) values (1, 'book 1'); 
 INSERT 0 1
 ```
 
-Execute some graphql queries
+Finally, execute some graphql queries against the table.
 ```sql
 gqldb=# select gql.execute($$
 query {
