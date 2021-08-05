@@ -1,5 +1,6 @@
 import json
-from sqlalchemy import text, func, select
+
+from sqlalchemy import func, select, text
 
 
 def test_parse(sess):
