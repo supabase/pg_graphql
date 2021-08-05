@@ -16,7 +16,7 @@ def test_select_sql_to_ast(sess):
 
     (ast,) = sess.execute(text(
         """
-        select net.sql_to_ast('select 1') 
+        select gql.sql_to_ast('select 1') 
     """
     )).fetchone()
 
@@ -33,7 +33,7 @@ def test_parse(sess):
     }
     """
 
-    (ast,) = sess.execute(select([func.net.parse(query)])).fetchone()
+    (ast,) = sess.execute(select([func.gql.parse(query)])).fetchone()
 
     print(ast)
     assert False
