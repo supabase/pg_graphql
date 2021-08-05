@@ -1,0 +1,7 @@
+results/
+.python-version
+venv/
+site/
+regression.*
+__pycache__/
+*.egg-info/
