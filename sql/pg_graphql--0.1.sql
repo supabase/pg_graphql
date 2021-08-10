@@ -102,6 +102,55 @@ as $$
 $$;
 
 
+create function gql.get_name(selection jsonb)
+returns text
+language sql
+immutable
+as $$
+/*
+{
+  "kind": "Field",
+  "name": {
+    "kind": "Name",
+    "value": "name"
+  },
+  "alias": null,
+  "arguments": null,
+  "directives": null,
+  "selectionSet": null
+}
+*/
+    select selection -> 'name' ->> 'value';
+$$;
+
+create function gql.get_alias(selection jsonb)
+returns text
+language sql
+immutable
+as $$
+/*
+{
+  "kind": "Field",
+  "name": {
+    "kind": "Name",
+    "value": "name"
+  },
+  "alias": null,
+  "arguments": null,
+  "directives": null,
+  "selectionSet": null
+}
+*/
+    select
+        coalesce(
+            selection -> 'alias' ->> 'value',
+            selection -> 'name' ->> 'value'
+        );
+$$;
+
+
+
+
 create function gql.execute(query text)
 returns jsonb
 language plpgsql
@@ -186,8 +235,8 @@ begin
         
         */
 
-        result_alias = selection -> 'alias' ->> 'value';
-        table_name = selection -> 'name' ->> 'value';
+        result_alias = gql.get_alias(selection);
+        table_name = gql.get_name(selection);
 
         ------------
         -- SELECT --
