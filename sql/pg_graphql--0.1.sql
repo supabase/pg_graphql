@@ -320,20 +320,8 @@ $$;
 
 
 
+create type gql.cardinality as enum ('ONE', 'MANY');
 
-grant all on schema gql to postgres;
-grant all on all tables in schema gql to postgres;
-
-
-
-
-
-
-
-
-
-
-/*
 
 create function gql.to_regclass(schema_ text, name_ text)
 	returns regclass
@@ -351,6 +339,25 @@ as
 $$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
 
 
+create function gql.to_pkey_column_names(regclass)
+	returns text[]
+	language sql
+	stable
+as
+$$
+	select
+		coalesce(array_agg(pga.attname), '{}')
+	from
+		pg_index i
+		join pg_attribute pga
+			on pga.attrelid = i.indrelid
+			and pga.attnum = any(i.indkey)
+	where
+		i.indrelid = $1::regclass
+		and i.indisprimary;
+$$;
+
+
 create function gql.to_pascal_case(text)
 	returns text
 	language sql
@@ -364,25 +371,87 @@ from
 $$;
 
 
--- Tables
+create function gql.to_camel_case(text)
+	returns text
+	language sql
+	immutable
+as
+$$
+select 
+	string_agg(
+		case
+			when part_ix = 1 then part
+			else initcap(part)
+		end, '')
+from
+	unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
+$$;
+
+
 create table gql.entity (
 	--id integer generated always as identity primary key,
 	entity regclass primary key,
 	is_disabled boolean default false
 );
 
--- Populate gql.entity
-insert into gql.entity(entity, is_disabled)
-select
-	gql.to_regclass(schemaname, tablename) entity,
-	false is_disabled
-from
-	pg_tables pgt
-where
-	schemaname not in ('information_schema', 'pg_catalog', 'gql');
-	
 
-create type gql.type_type as enum('Scalar', 'Node', 'Edge', 'Connection', 'PageInfo', 'Object');
+create or replace view gql.relationship as
+    with constraint_cols as (
+        select
+            gql.to_regclass(table_schema::text, table_name::text) entity,
+            constraint_name::text,
+			table_schema::text as table_schema,
+            array_agg(column_name::text) column_names
+        from
+			gql.entity ge
+			join information_schema.constraint_column_usage ccu
+				on ge.entity = gql.to_regclass(table_schema::text, table_name::text)
+        group by table_schema,
+            table_name,
+            constraint_name
+    ),
+	directional as (
+        select 
+            tc.constraint_name::text,
+			gql.to_regclass(tc.table_schema::text, tc.table_name::text) local_entity,
+            array_agg(kcu.column_name) local_columns,
+            'MANY'::gql.cardinality as local_cardinality,
+			ccu.entity foreign_entity,
+            ccu.column_names::text[] as foreign_columns,
+            'ONE'::gql.cardinality as foreign_cardinality
+        from
+            information_schema.table_constraints tc
+        join information_schema.key_column_usage kcu
+            on tc.constraint_name = kcu.constraint_name
+            and tc.table_schema = kcu.table_schema
+        join constraint_cols as ccu
+            on ccu.constraint_name = tc.constraint_name
+            and ccu.table_schema = tc.table_schema
+        where
+            tc.constraint_type = 'FOREIGN KEY'
+        group by
+            tc.constraint_name,
+            tc.table_schema,
+            tc.table_name,
+            ccu.entity,
+            ccu.column_names
+    )
+    select *
+    from
+        directional
+    union all
+    select
+        constraint_name,
+	    foreign_entity as local_entity,
+	    foreign_columns as local_columns,
+        foreign_cardinality as local_cardinality,
+	    local_entity as foreign_entity,
+	    local_columns as foreign_columns,
+        local_cardinality as foreign_cardinality
+    from
+        directional;
+
+create type gql.type_type as enum('Scalar', 'Node', 'Edge', 'Connection', 'PageInfo', 'Object', 'Enum');
 
 create table gql.type (
 	id integer generated always as identity primary key,
@@ -390,39 +459,15 @@ create table gql.type (
 	type_type gql.type_type not null,
 	entity regclass references gql.entity(entity),
 	is_disabled boolean not null default false,
-	-- Does the type need to be in the schema?
 	is_builtin boolean not null default false,
+	enum_variants text[],
+    check (
+        type_type != 'Enum' and enum_variants is null
+        or type_type = 'Enum' and enum_variants is not null
+    ),
 	unique (type_type, entity)
 );
 
--- Constants
-insert into gql.type (name, type_type, is_builtin)
-values
-	('ID', 'Scalar', true),
-	('Int', 'Scalar', true),
-	('Float', 'Scalar', true),
-	('String', 'Scalar', true),
-	('Boolean', 'Scalar', true),
-	('DateTime', 'Scalar', false),
-	('BigInt', 'Scalar', false),
-	('UUID', 'Scalar', false),
-	('JSON', 'Scalar', false),
-	('Query', 'Object', false),
-	('Mutation', 'Object', false),
-	('PageInfo', 'PageInfo', false);
--- Node Types
--- TODO snake case to camel case to handle underscores
-insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
-select gql.to_pascal_case(gql.to_table_name(entity)), 'Node',	entity,	false, false
-from gql.entity;
--- Edge Types
-insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
-select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'Edge',	entity,	false, false
-from gql.entity;
--- Connection Types
-insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
-select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'Connection',	entity,	false, false
-from gql.entity;
 
 create function gql.type_id_by_name(text)
 	returns int
@@ -438,66 +483,28 @@ create table gql.field (
 	is_not_null boolean,
 	is_array boolean default false,
 	is_array_not_null boolean,
+	is_disabled boolean default false,
 	-- TODO trigger check column name only non-null when type is scalar
 	column_name text,
+	-- Relationships
+	local_columns text[],
+	foreign_columns text[],
 	-- Names must be unique on each type
-	unique(type_id, name),
+	unique(parent_type_id, name),
+	-- Upsert key
+	unique(parent_type_id, column_name),
 	-- is_array_not_null only set if is_array is true
 	check (
 		(not is_array and is_array_not_null is null)
 		or (is_array and is_array_not_null is not null)
+	),
+	-- Only column fields and total can be disabled
+	check (
+		not is_disabled
+		or column_name is not null
+		or name = 'totalCount'
 	)
 );
--- PageInfo
-insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
-values
-	(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('Boolean'), 'hasPreviousPage', true, false, null, null),
-	(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('Boolean'), 'hasNextPage', true, false, null, null),
-	(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('String'), 'startCursor', true, false, null, null),
-	(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('String'), 'endCursor', true, false, null, null);
-
--- Edges
-insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
-	-- Edge.node: 
-	select
-		edge.id, node.id, 'node', false, false, null::boolean, null::text
-	from
-		gql.type edge
-		join gql.type node
-			on edge.entity = node.entity
-	where
-		edge.type_type = 'Edge'
-		and node.type_type = 'Node'
-	union all
-	-- Edge.cursor
-	select
-		edge.id, gql.type_id_by_name('String'), 'cursor', true, false, null, null
-	from
-		gql.type edge
-	where
-		edge.type_type = 'Edge';
-
--- Connection
-insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
-	-- Connection.edges: 
-	select
-		conn.id, edge.id, 'edges', false, true, false::boolean, null::text
-	from
-		gql.type conn
-		join gql.type edge
-			on conn.entity = edge.entity
-	where
-		conn.type_type = 'Connection'
-		and edge.type_type = 'Edge'
-	union all
-	-- Connection.pageInfo
-	select
-		conn.id, gql.type_id_by_name('PageInfo'), 'pageInfo', true, false, null, null
-	from
-		gql.type conn
-	where
-		conn.type_type = 'Connection';
-
 
 
 create function gql.sql_type_to_gql_type(sql_type text)
@@ -521,48 +528,234 @@ $$
 $$;
 
 
+create function gql.build_schema()
+	returns void
+	language plpgsql
+as
+$$
+begin
+	truncate table gql.field cascade;
+	truncate table gql.type cascade;
+	truncate table gql.entity cascade;
 
--- Node
-insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
-	-- Node.<column>
+	insert into gql.entity(entity, is_disabled)
+	select
+		gql.to_regclass(schemaname, tablename) entity,
+		false is_disabled
+	from
+		pg_tables pgt
+	where
+		schemaname not in ('information_schema', 'pg_catalog', 'gql');
+
+
+	-- Constants
+	insert into gql.type (name, type_type, is_builtin)
+	values
+		('ID', 'Scalar', true),
+		('Int', 'Scalar', true),
+		('Float', 'Scalar', true),
+		('String', 'Scalar', true),
+		('Boolean', 'Scalar', true),
+		('DateTime', 'Scalar', false),
+		('BigInt', 'Scalar', false),
+		('UUID', 'Scalar', false),
+		('JSON', 'Scalar', false),
+		('Query', 'Object', false),
+		('Mutation', 'Object', false),
+		('PageInfo', 'PageInfo', false);
+	-- Node Types
+	-- TODO snake case to camel case to handle underscores
+	insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
+	select gql.to_pascal_case(gql.to_table_name(entity)), 'Node',	entity,	false, false
+	from gql.entity;
+	-- Edge Types
+	insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
+	select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'Edge',	entity,	false, false
+	from gql.entity;
+	-- Connection Types
+	insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
+	select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'Connection',	entity,	false, false
+	from gql.entity;
+
+    -- Enum Types
+	insert into gql.type (name, type_type, is_disabled, is_builtin, enum_variants)
     select
-		gt.id,
-		c.data_type,
-		-- TODO check for pkey and int/bigint/uuid type => 'ID!'
-		case
-			-- substring removes the underscore prefix from array types
-			when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
-			else gql.sql_type_to_gql_type(c.data_type)
-		end,
-		ent.entity,
-		gt.name,
-		gt.id,
-		c.*
+        gql.to_pascal_case(t.typname) as name,
+        'Enum' as type_type,
+        false,
+        false,
+        array_agg(e.enumlabel) as enum_value
     from
-		gql.entity ent
-		join gql.type gt
-			on ent.entity = gt.entity
-        join information_schema.role_column_grants rcg
-			on ent.entity = gql.to_regclass(rcg.table_schema, rcg.table_name)
-        join information_schema.columns c
-            on rcg.table_schema = c.table_schema
-            and rcg.table_name = c.table_name
-            and rcg.column_name = c.column_name,
-		left join pg_index pgi
-			on ent.entity = pgi.oid
-		, pg_class, pg_attribute, pg_namespace
-		
+        pg_type t
+        join pg_enum e
+            on t.oid = e.enumtypid
+        join pg_catalog.pg_namespace n
+            on n.oid = t.typnamespace
     where
-		gt.type_type = 'Node'
-        -- INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
-        and rcg.privilege_type = 'SELECT'
-        and (
-			-- Use access level of current role
-			rcg.grantee = current_setting('role')
-			-- If superuser, allow everything
-			or current_setting('role') = 'none'
-		)
-	order by
-		ent.entity, c.ordinal_position;
-*/
+        n.nspname not in ('gql', 'information_schema')
+    group by
+        n.nspname,
+        t.typname;
+
+
+	-- PageInfo
+	insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+	values
+		(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('Boolean'), 'hasPreviousPage', true, false, null, null),
+		(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('Boolean'), 'hasNextPage', true, false, null, null),
+		(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('String'), 'startCursor', true, false, null, null),
+		(gql.type_id_by_name('PageInfo'), gql.type_id_by_name('String'), 'endCursor', true, false, null, null);
+
+	-- Edges
+	insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+		-- Edge.node: 
+		select
+			edge.id parent_type_id,
+			node.id type_id,
+			'node' as name,
+			false is_not_null,
+			false is_array,
+			null::boolean is_array_not_null,
+			null::text as column_name
+		from
+			gql.type edge
+			join gql.type node
+				on edge.entity = node.entity
+		where
+			edge.type_type = 'Edge'
+			and node.type_type = 'Node'
+		union all
+		-- Edge.cursor
+		select
+			edge.id, gql.type_id_by_name('String'), 'cursor', true, false, null, null
+		from
+			gql.type edge
+		where
+			edge.type_type = 'Edge';
+
+	-- Connection
+	insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+		-- Connection.edges: 
+		select
+			conn.id parent_type_id,
+			edge.id type_id,
+			'edges' as name,
+			false is_not_null,
+			true is_array,
+			false::boolean is_array_not_null,
+			null::text as column_name
+		from
+			gql.type conn
+			join gql.type edge
+				on conn.entity = edge.entity
+		where
+			conn.type_type = 'Connection'
+			and edge.type_type = 'Edge'
+		union all
+		-- Connection.pageInfo
+		select conn.id, gql.type_id_by_name('PageInfo'), 'pageInfo', true, false, null, null
+		from gql.type conn
+		where conn.type_type = 'Connection'
+		union all
+		-- Connection.totalCount (disabled by default)
+		select conn.id, gql.type_id_by_name('Int'), 'totalCount', true, false, null, null
+		from gql.type conn
+		where conn.type_type = 'Connection';
+
+
+	-- Node
+	insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+		-- Node.<column>
+		select
+			gt.id parent_type_id,
+			case
+				-- Detect ID! types using pkey info, restricted by types
+				when c.column_name = 'id' and array[c.column_name::text] = gql.to_pkey_column_names(ent.entity)
+				then gql.type_id_by_name('ID')
+				-- substring removes the underscore prefix from array types
+				when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
+				else gql.sql_type_to_gql_type(c.data_type)
+			end type_id,
+			gql.to_camel_case(c.column_name::text) as name,
+			case when c.data_type = 'ARRAY' then false else c.is_nullable = 'NO' end as is_not_null,
+			case when c.data_type = 'ARRAY' then true else false end is_array,
+			case when c.data_type = 'ARRAY' then c.is_nullable = 'NO' else null end is_array_not_null,
+			c.column_name::text as column_name
+		from
+			gql.entity ent
+			join gql.type gt
+				on ent.entity = gt.entity
+			join information_schema.role_column_grants rcg
+				on ent.entity = gql.to_regclass(rcg.table_schema, rcg.table_name)
+			join information_schema.columns c
+				on rcg.table_schema = c.table_schema
+				and rcg.table_name = c.table_name
+				and rcg.column_name = c.column_name
+
+		where
+			gt.type_type = 'Node'
+			-- INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
+			and rcg.privilege_type = 'SELECT'
+			and (
+				-- Use access level of current role
+				rcg.grantee = current_setting('role')
+				-- If superuser, allow everything
+				or current_setting('role') = 'none'
+			)
+		order by
+			ent.entity, c.ordinal_position;
+
+	-- Node
+	insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, local_columns, foreign_columns)
+		-- Node.<connection>
+		select
+			node.id parent_type_id,
+			conn.id type_id,
+			case
+				-- owner_id -> owner
+				when (
+					array_length(rel.local_columns, 1) = 1
+					and rel.local_columns[1] like '%_id'
+					and rel.foreign_cardinality = 'ONE'
+					and gql.to_camel_case(left(rel.local_columns[1], -3)) not in (select name from gql.field where parent_type_id = node.id)
+				) then gql.to_camel_case(left(rel.local_columns[1], -3))
+				when (
+					rel.foreign_cardinality = 'ONE'
+					and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
+				) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
+				when (
+					rel.foreign_cardinality = 'MANY'
+					and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
+				) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
+				else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
+			end,
+			-- todo
+			false as is_not_null,
+			case
+				when rel.foreign_cardinality = 'MANY' then true
+				else false
+			end as is_array,
+			case
+				when rel.foreign_cardinality = 'MANY' then false
+				else null
+			end as is_array_not_null,
+			rel.local_columns,
+			rel.foreign_columns
+		from
+			gql.type node
+			join gql.relationship rel
+				on node.entity = rel.local_entity
+			join gql.type conn
+				on conn.entity = rel.foreign_entity
+		where
+			node.type_type = 'Node'
+			and conn.type_type = 'Connection'
+		order by
+			rel.local_entity, local_columns;
+end;
+$$;
+
+
+grant all on schema gql to postgres;
+grant all on all tables in schema gql to postgres;
 
