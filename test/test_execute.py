@@ -1,6 +1,7 @@
 import json
 
 from sqlalchemy import func, select, text
+import pytest
 
 
 def setup_data(sess) -> None:
@@ -127,3 +128,29 @@ def test_execute_alias_operation_name(sess):
     (result,) = sess.execute(select([func.gql.execute(query)])).fetchone()
 
     assert result["data"] == {"xXx": {"book_id": 2}}
+
+
+@pytest.mark.skip(reason="dnw")
+def test_execute_experimental(sess):
+    """Alias book query operation to xXx"""
+    setup_data(sess)
+
+    query = """
+    query {
+      book(id: 2) {
+        id
+        author {
+            name
+        }
+      }
+    }
+    """
+
+    (result,) = sess.execute(select([func.gql.execute(query)])).fetchone()
+
+    assert result["data"] == {"xXx": {"book_id": 2}}
+
+
+
+
+

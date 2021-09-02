@@ -28,6 +28,8 @@ DEV_REQUIRES = [
     "psycopg2",
     "sqlalchemy",
     "pre-commit",
+    "flupy",
+    "isort",
 ]
 
 

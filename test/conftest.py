@@ -2,6 +2,8 @@
 import json
 import os
 import subprocess
+from pathlib import Path
+from flupy import walk_files
 import time
 
 import pytest
@@ -69,6 +71,13 @@ def dockerize_database():
 @pytest.fixture(scope="session")
 def engine(dockerize_database):
     eng = create_engine(f"postgresql://postgres:password@localhost:{PORT}/{DB_NAME}")
+
+    path = Path('test/setup.sql')
+    contents = path.read_text()
+    with eng.connect() as conn:
+        conn.execute(text(contents))
+        conn.execute(text("commit"))
+
     eng.execute(
         text(
             """
