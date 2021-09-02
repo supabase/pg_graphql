@@ -1,7 +1,5 @@
-import json
-
-from sqlalchemy import func, select, text
 import pytest
+from sqlalchemy import func, select, text
 
 
 def setup_data(sess) -> None:
@@ -149,8 +147,3 @@ def test_execute_experimental(sess):
     (result,) = sess.execute(select([func.gql.execute(query)])).fetchone()
 
     assert result["data"] == {"xXx": {"book_id": 2}}
-
-
-
-
-

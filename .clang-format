@@ -1,4 +1,4 @@
-BasedOnStyle: LLVM 
+BasedOnStyle: LLVM
 IndentWidth: 4
 
 BinPackArguments: false

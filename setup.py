@@ -36,8 +36,8 @@ DEV_REQUIRES = [
 setuptools.setup(
     name="pg_graphql",
     version="0.0.1",
-    #packages=setuptools.find_packages("src/python", exclude=("tests",)),
-    #package_dir={"": "src/python"},
+    # packages=setuptools.find_packages("src/python", exclude=("tests",)),
+    # package_dir={"": "src/python"},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Natural Language :: English",

@@ -15,7 +15,7 @@
 ---
 
 
-## Summary 
+## Summary
 
 pg_graphql is an experimental PostgreSQL extension adding support for GraphQL.
 
@@ -44,14 +44,14 @@ Set up an interactive psql prompt with the extension installed using docker
 # Build image
 docker build -t pg_graphql -f Dockerfile .
 
-# Run container 
+# Run container
 docker run --rm --name pg_gql -p 5085:5432 -d -e POSTGRES_DB=gqldb -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -d pg_graphql
 
 # Attach to container
 docker exec -it pg_gql psql -U postgres gqldb
 ```
 
-Now we'll create the extension, and create a test table with some data to query 
+Now we'll create the extension, and create a test table with some data to query
 
 ```sql
 gqldb= create extension pg_graphql;
@@ -60,7 +60,7 @@ CREATE EXTENSION
 gqldb= create table book(id int primary key, title text);
 CREATE TABLE
 
-gqldb= insert into book(id, title) values (1, 'book 1'); 
+gqldb= insert into book(id, title) values (1, 'book 1');
 INSERT 0 1
 ```
 
@@ -74,7 +74,7 @@ query {
   }
 }
 $$);
-             execute            
+             execute
 ----------------------------------
  {"data": {"book": {"book_id": 1, "title": "book 1"}}}
 ```
@@ -119,7 +119,7 @@ $$);
 Requires:
 
 - Python 3.6+
-- Docker 
+- Docker
 
 ```shell
 pip intall -e .

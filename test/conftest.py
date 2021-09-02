@@ -2,9 +2,8 @@
 import json
 import os
 import subprocess
-from pathlib import Path
-from flupy import walk_files
 import time
+from pathlib import Path
 
 import pytest
 import sqlalchemy
@@ -72,7 +71,7 @@ def dockerize_database():
 def engine(dockerize_database):
     eng = create_engine(f"postgresql://postgres:password@localhost:{PORT}/{DB_NAME}")
 
-    path = Path('test/setup.sql')
+    path = Path("test/setup.sql")
     contents = path.read_text()
     with eng.connect() as conn:
         conn.execute(text(contents))
