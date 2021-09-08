@@ -452,30 +452,40 @@ create or replace view gql.relationship as
         directional;
 
 -- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
-create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+--create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
 create type gql.meta_kind as enum (
     'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
     'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN',
     -- Introspection types
-    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE'
+    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION'
 );
+
+create table gql.enum_value(
+    id integer generated always as identity primary key,
+    type_id integer not null,
+    value text not null,
+    description text,
+    unique (type_id, value)
+);
+
 
 create table gql.type (
     id integer generated always as identity primary key,
     name text not null unique,
-    type_kind gql.type_kind not null,
+    -- TODO triger enforce refers to __TypeKind
+    type_kind_id integer not null references gql.enum_value(id) deferrable initially deferred,
+    -- internal convenience designation
     meta_kind gql.meta_kind not null,
+    description text,
     entity regclass references gql.entity(entity),
     is_disabled boolean not null default false,
-    -- When true, do not render in schema
-    --is_builtin boolean not null default false,
-    enum_variants text[],
-    check (
-        type_kind != 'ENUM' and enum_variants is null
-        or type_kind = 'ENUM' and enum_variants is not null
-    ),
-    unique (type_kind, meta_kind, entity)
+    unique (type_kind_id, meta_kind, entity)
 );
+
+alter table gql.enum_value
+add constraint fk_enum_value_to_type
+    foreign key (type_id)
+    references gql.type(id);
 
 -- Enforce unique constraints on some special types
 create unique index uq_type_meta_singleton
@@ -488,11 +498,19 @@ create function gql.type_id_by_name(text)
 as
 $$ select id from gql.type where name = $1; $$;
 
+create function gql.type_kind_id_by_value(text)
+    returns int
+    language sql
+as
+$$ select id from gql.enum_value where value = $1 and type_id = gql.type_id_by_name('__TypeKind'); $$;
+
+
 create table gql.field (
     id integer generated always as identity primary key,
     parent_type_id integer not null references gql.type(id),
     type_id integer not null references gql.type(id),
     name text not null,
+    description text,
     is_not_null boolean,
     is_array boolean default false,
     is_array_not_null boolean,
@@ -547,9 +565,9 @@ create function gql.build_schema()
 as
 $$
 begin
-    truncate table gql.field cascade;
-    truncate table gql.type cascade;
-    truncate table gql.entity cascade;
+    truncate table gql.field restart identity cascade;
+    truncate table gql.type restart identity  cascade;
+    truncate table gql.entity restart identity cascade;
 
     insert into gql.entity(entity, is_disabled)
     select
@@ -560,49 +578,112 @@ begin
     where
         schemaname not in ('information_schema', 'pg_catalog', 'gql');
 
+    -- Populate gql.type_kind and __TypeKind because foreign keys rely on it
+    set constraints all deferred;
+
+    insert into gql.type (name, type_kind_id, meta_kind, description)
+    values ('__TypeKind', 0, '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.');
+
+    insert into gql.enum_value(type_id, value, description)
+    values
+        (gql.type_id_by_name('__TypeKind'), 'SCALAR', null),
+        (gql.type_id_by_name('__TypeKind'), 'OBJECT', null),
+        (gql.type_id_by_name('__TypeKind'), 'INTERFACE', null),
+        (gql.type_id_by_name('__TypeKind'), 'UNION', null),
+        (gql.type_id_by_name('__TypeKind'), 'ENUM', null),
+        (gql.type_id_by_name('__TypeKind'), 'INPUT_OBJECT', null),
+        (gql.type_id_by_name('__TypeKind'), 'LIST', null),
+        (gql.type_id_by_name('__TypeKind'), 'NON_NULL', null);
+
+    update gql.type
+    set type_kind_id = (select id from gql.enum_value where value = 'ENUM')
+    where name = '__TypeKind';
 
     -- Constants
-    insert into gql.type (name, type_kind, meta_kind)
+    insert into gql.type (name, type_kind_id, meta_kind, description)
     values
-        ('ID', 'SCALAR', 'BUILTIN'),
-        ('Int', 'SCALAR', 'BUILTIN'),
-        ('Float', 'SCALAR', 'BUILTIN'),
-        ('String', 'SCALAR', 'BUILTIN'),
-        ('Boolean', 'SCALAR', 'BUILTIN'),
-        ('DateTime', 'SCALAR', 'CUSTOM_SCALAR'),
-        ('BigInt', 'SCALAR', 'CUSTOM_SCALAR'),
-        ('UUID', 'SCALAR', 'CUSTOM_SCALAR'),
-        ('JSON', 'SCALAR', 'CUSTOM_SCALAR'),
-        ('Query', 'OBJECT', 'QUERY'),
-        ('Mutation', 'OBJECT', 'MUTATION'),
-        ('PageInfo', 'OBJECT', 'PAGE_INFO'),
+        ('ID', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
+        ('Int', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
+        ('Float', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
+        ('String', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
+        ('Boolean', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
+        ('DateTime', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
+        ('BigInt', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
+        ('UUID', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
+        ('JSON', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
+        ('Query', gql.type_kind_id_by_value('OBJECT'), 'QUERY', null),
+        ('Mutation', gql.type_kind_id_by_value('OBJECT'), 'MUTATION', null),
+        ('PageInfo', gql.type_kind_id_by_value('OBJECT'), 'PAGE_INFO', null),
         -- Introspection System
-        ('__Schema', 'OBJECT', 'PAGE_INFO'),
+        ('__Schema', gql.type_kind_id_by_value('OBJECT'), '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
+        ('__Type', gql.type_kind_id_by_value('OBJECT'), '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
+        ('__Field', gql.type_kind_id_by_value('OBJECT'), '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
+        ('__InputValue', gql.type_kind_id_by_value('OBJECT'), '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
+        ('__EnumValue', gql.type_kind_id_by_value('OBJECT'), '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
+        ('__DirectiveLocation', gql.type_kind_id_by_value('ENUM'), '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
+        ('__Directive', gql.type_kind_id_by_value('OBJECT'), '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.');
 
+
+    insert into gql.enum_value(type_id, value, description)
+    values
+        (gql.type_id_by_name('__DirectiveLocation'), 'QUERY', 'Location adjacent to a query operation.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'MUTATION', 'Location adjacent to a mutation operation.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'FIELD', 'Location adjacent to a field.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'SCHEMA', 'Location adjacent to a schema definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'SCALAR', 'Location adjacent to a scalar definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'OBJECT', 'Location adjacent to an object type definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'INTERFACE', 'Location adjacent to an interface definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'UNION', 'Location adjacent to a union definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'ENUM', 'Location adjacent to an enum definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
+        (gql.type_id_by_name('__DirectiveLocation'), 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.');
+
+
+    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, description)
+    values
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('String'), 'description', false, false, null, null),
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'types', true, true, true, 'A list of all types supported by this server.'),
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'directives', true, true, true, 'A list of all directives supported by this server.'),
+        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('String'), 'name', true, false, null, null),
+        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('String'), 'description', false, false, null, null),
+        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('Boolean'), 'isRepeatable', true, false, null, null),
+        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('__DirectiveLocation'), 'locations', true, true, true, null),
+        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__TypeKind'), 'kind', true, false, null, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'name', false, false, null, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'description', false, false, null, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'specifiedByURL', false, false, null, null),
+        -- TODO handle args for this field https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L252
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Field'), 'fields', true, true, false, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'interfaces', true, true, false, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'possibleTypes', true, true, false, null)
+        -- TODO STOPPED HERE
         ;
 
-    -- Node Types
-    -- TODO snake case to camel case to handle underscores
-    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
-    select gql.to_pascal_case(gql.to_table_name(entity)), 'OBJECT', 'NODE',    entity,    false
-    from gql.entity;
-    -- Edge Types
-    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
-    select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'OBJECT', 'EDGE',    entity,    false
-    from gql.entity;
-    -- Connection Types
-    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
-    select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'OBJECT', 'CONNECTION',    entity,    false
-    from gql.entity;
+    -- Node, Edge, and Connection Types
+    insert into gql.type (name, type_kind_id, meta_kind, entity, is_disabled)
+    select gql.to_pascal_case(gql.to_table_name(entity)), gql.type_kind_id_by_value('OBJECT'), 'NODE'::gql.meta_kind, entity, false from gql.entity
+    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', gql.type_kind_id_by_value('OBJECT'), 'EDGE', entity, false from gql.entity
+    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', gql.type_kind_id_by_value('OBJECT'), 'CONNECTION', entity, false from gql.entity;
 
     -- Enum Types
-    insert into gql.type (name, type_kind, meta_kind, is_disabled, enum_variants)
+    insert into gql.type (name, type_kind_id, meta_kind, is_disabled)
     select
         gql.to_pascal_case(t.typname) as name,
-        'ENUM' as type_kind,
+        gql.type_kind_id_by_value('ENUM') as type_kind,
         'CUSTOM_SCALAR' as meta_kind,
-        false,
-        array_agg(e.enumlabel) as enum_value
+        false
     from
         pg_type t
         join pg_enum e
@@ -614,6 +695,20 @@ begin
     group by
         n.nspname,
         t.typname;
+    -- Enum values
+    insert into gql.enum_value (type_id, value)
+    select
+        gql.type_id_by_name(gql.to_pascal_case(t.typname)),
+        e.enumlabel as value
+    from
+        pg_type t
+        join pg_enum e
+            on t.oid = e.enumtypid
+        join pg_catalog.pg_namespace n
+            on n.oid = t.typnamespace
+    where
+        n.nspname not in ('gql', 'information_schema');
+
 
 
     -- PageInfo
