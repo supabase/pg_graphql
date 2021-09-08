@@ -451,23 +451,36 @@ create or replace view gql.relationship as
     from
         directional;
 
-create type gql.type_type as enum('Scalar', 'Node', 'Edge', 'Connection', 'PageInfo', 'Object', 'Enum');
+-- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
+create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+create type gql.meta_kind as enum (
+    'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
+    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN',
+    -- Introspection types
+    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE'
+);
 
 create table gql.type (
     id integer generated always as identity primary key,
     name text not null unique,
-    type_type gql.type_type not null,
+    type_kind gql.type_kind not null,
+    meta_kind gql.meta_kind not null,
     entity regclass references gql.entity(entity),
     is_disabled boolean not null default false,
-    is_builtin boolean not null default false,
+    -- When true, do not render in schema
+    --is_builtin boolean not null default false,
     enum_variants text[],
     check (
-        type_type != 'Enum' and enum_variants is null
-        or type_type = 'Enum' and enum_variants is not null
+        type_kind != 'ENUM' and enum_variants is null
+        or type_kind = 'ENUM' and enum_variants is not null
     ),
-    unique (type_type, entity)
+    unique (type_kind, meta_kind, entity)
 );
 
+-- Enforce unique constraints on some special types
+create unique index uq_type_meta_singleton
+    on gql.type(meta_kind)
+    where (meta_kind in ('QUERY', 'MUTATION', 'CURSOR', 'PAGE_INFO'));
 
 create function gql.type_id_by_name(text)
     returns int
@@ -549,40 +562,45 @@ begin
 
 
     -- Constants
-    insert into gql.type (name, type_type, is_builtin)
+    insert into gql.type (name, type_kind, meta_kind)
     values
-        ('ID', 'Scalar', true),
-        ('Int', 'Scalar', true),
-        ('Float', 'Scalar', true),
-        ('String', 'Scalar', true),
-        ('Boolean', 'Scalar', true),
-        ('DateTime', 'Scalar', false),
-        ('BigInt', 'Scalar', false),
-        ('UUID', 'Scalar', false),
-        ('JSON', 'Scalar', false),
-        ('Query', 'Object', false),
-        ('Mutation', 'Object', false),
-        ('PageInfo', 'PageInfo', false);
+        ('ID', 'SCALAR', 'BUILTIN'),
+        ('Int', 'SCALAR', 'BUILTIN'),
+        ('Float', 'SCALAR', 'BUILTIN'),
+        ('String', 'SCALAR', 'BUILTIN'),
+        ('Boolean', 'SCALAR', 'BUILTIN'),
+        ('DateTime', 'SCALAR', 'CUSTOM_SCALAR'),
+        ('BigInt', 'SCALAR', 'CUSTOM_SCALAR'),
+        ('UUID', 'SCALAR', 'CUSTOM_SCALAR'),
+        ('JSON', 'SCALAR', 'CUSTOM_SCALAR'),
+        ('Query', 'OBJECT', 'QUERY'),
+        ('Mutation', 'OBJECT', 'MUTATION'),
+        ('PageInfo', 'OBJECT', 'PAGE_INFO'),
+        -- Introspection System
+        ('__Schema', 'OBJECT', 'PAGE_INFO'),
+
+        ;
+
     -- Node Types
     -- TODO snake case to camel case to handle underscores
-    insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
-    select gql.to_pascal_case(gql.to_table_name(entity)), 'Node',    entity,    false, false
+    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
+    select gql.to_pascal_case(gql.to_table_name(entity)), 'OBJECT', 'NODE',    entity,    false
     from gql.entity;
     -- Edge Types
-    insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
-    select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'Edge',    entity,    false, false
+    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
+    select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'OBJECT', 'EDGE',    entity,    false
     from gql.entity;
     -- Connection Types
-    insert into gql.type (name, type_type, entity, is_disabled, is_builtin)
-    select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'Connection',    entity,    false, false
+    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
+    select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'OBJECT', 'CONNECTION',    entity,    false
     from gql.entity;
 
     -- Enum Types
-    insert into gql.type (name, type_type, is_disabled, is_builtin, enum_variants)
+    insert into gql.type (name, type_kind, meta_kind, is_disabled, enum_variants)
     select
         gql.to_pascal_case(t.typname) as name,
-        'Enum' as type_type,
-        false,
+        'ENUM' as type_kind,
+        'CUSTOM_SCALAR' as meta_kind,
         false,
         array_agg(e.enumlabel) as enum_value
     from
@@ -622,8 +640,8 @@ begin
             join gql.type node
                 on edge.entity = node.entity
         where
-            edge.type_type = 'Edge'
-            and node.type_type = 'Node'
+            edge.meta_kind = 'EDGE'
+            and node.meta_kind = 'NODE'
         union all
         -- Edge.cursor
         select
@@ -631,7 +649,7 @@ begin
         from
             gql.type edge
         where
-            edge.type_type = 'Edge';
+            edge.meta_kind = 'EDGE';
 
     -- Connection
     insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
@@ -649,18 +667,18 @@ begin
             join gql.type edge
                 on conn.entity = edge.entity
         where
-            conn.type_type = 'Connection'
-            and edge.type_type = 'Edge'
+            conn.meta_kind = 'CONNECTION'
+            and edge.meta_kind = 'EDGE'
         union all
         -- Connection.pageInfo
         select conn.id, gql.type_id_by_name('PageInfo'), 'pageInfo', true, false, null, null
         from gql.type conn
-        where conn.type_type = 'Connection'
+        where conn.meta_kind = 'CONNECTION'
         union all
         -- Connection.totalCount (disabled by default)
         select conn.id, gql.type_id_by_name('Int'), 'totalCount', true, false, null, null
         from gql.type conn
-        where conn.type_type = 'Connection';
+        where conn.meta_kind = 'CONNECTION';
 
 
     -- Node
@@ -693,7 +711,7 @@ begin
                 and rcg.column_name = c.column_name
 
         where
-            gt.type_type = 'Node'
+            gt.meta_kind = 'NODE'
             -- INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
             and rcg.privilege_type = 'SELECT'
             and (
@@ -748,8 +766,8 @@ begin
             join gql.type conn
                 on conn.entity = rel.foreign_entity
         where
-            node.type_type = 'Node'
-            and conn.type_type = 'Connection'
+            node.meta_kind = 'NODE'
+            and conn.meta_kind = 'CONNECTION'
         order by
             rel.local_entity, local_columns;
 end;

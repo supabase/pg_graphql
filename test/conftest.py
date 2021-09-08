@@ -80,7 +80,7 @@ def engine(dockerize_database):
     eng.execute(
         text(
             """
-        create extension pg_graphql;
+            create extension pg_graphql;
         """
         )
     )
