@@ -468,7 +468,6 @@ create table gql.enum_value(
     unique (type_id, value)
 );
 
-
 create table gql.type (
     id integer generated always as identity primary key,
     name text not null unique,
@@ -486,6 +485,7 @@ alter table gql.enum_value
 add constraint fk_enum_value_to_type
     foreign key (type_id)
     references gql.type(id);
+
 
 -- Enforce unique constraints on some special types
 create unique index uq_type_meta_singleton
@@ -536,6 +536,7 @@ create table gql.field (
         or name = 'totalCount'
     )
 );
+
 
 
 create function gql.sql_type_to_gql_type(sql_type text)
@@ -664,12 +665,36 @@ begin
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'name', false, false, null, null),
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'description', false, false, null, null),
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'specifiedByURL', false, false, null, null),
-        -- TODO handle args for this field https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L252
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Field'), 'fields', true, true, false, null),
+        -- fields takes args https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L252
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'interfaces', true, true, false, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'possibleTypes', true, true, false, null)
-        -- TODO STOPPED HERE
-        ;
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'possibleTypes', true, true, false, null),
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__EnumValue'), 'enumValues', true, true, false, null),
+        -- enumValues takes args
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__InputValue'), 'inputFields', true, true, false, null),
+        -- inputFields takes args
+        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'ofType', false, false, null, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'name', true, false, null, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'description', false, false, null, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
+        -- args takes args
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'name', true, false, null, null),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'description', false, false, null, null),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
+        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'name', true, false, null, null),
+        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'description', false, false, null, null),
+        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
+        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null);
+
+    -- TODO: create a table for gql.field_argument and populate it with the the comments in the block above using the reference
+    -- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L252
+    -- Connections and entrypoints will also need input arguments
 
     -- Node, Edge, and Connection Types
     insert into gql.type (name, type_kind_id, meta_kind, entity, is_disabled)
