@@ -478,7 +478,11 @@ create table gql.type (
     description text,
     entity regclass references gql.entity(entity),
     is_disabled boolean not null default false,
-    unique (type_kind_id, meta_kind, entity)
+    unique (type_kind_id, meta_kind, entity),
+    check (
+        meta_kind not in ('NODE', 'EDGE', 'CONNECTION') and entity is null
+        or entity is not null
+    )
 );
 
 alter table gql.enum_value
@@ -507,7 +511,8 @@ $$ select id from gql.enum_value where value = $1 and type_id = gql.type_id_by_n
 
 create table gql.field (
     id integer generated always as identity primary key,
-    parent_type_id integer not null references gql.type(id),
+    -- a null parent_type_id = base level field (entrypoint)
+    parent_type_id integer references gql.type(id),
     type_id integer not null references gql.type(id),
     name text not null,
     description text,
@@ -529,11 +534,13 @@ create table gql.field (
         (not is_array and is_array_not_null is null)
         or (is_array and is_array_not_null is not null)
     ),
-    -- Only column fields and total can be disabled
+    -- Only column fields, total, and entrypoints can be disabled
     check (
         not is_disabled
         or column_name is not null
         or name = 'totalCount'
+        -- Is an entrypoint, but not part of the required introspection system
+        or (parent_type_id is null and name not in ('__type', '__schema'))
     )
 );
 
@@ -890,6 +897,24 @@ begin
             and conn.meta_kind = 'CONNECTION'
         order by
             rel.local_entity, local_columns;
+
+    -- Entrypoints
+    insert into gql.field(type_id, name, is_not_null, is_array)
+        select t.id, '__type', true, false from gql.type t where name in ('__Type')
+        union all
+        select t.id, '__schema', true, false from gql.type t where name in ('__Schema')
+        union all
+        -- Node
+        select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false
+        from gql.type t
+         where t.meta_kind = 'NODE'
+        union all
+        -- Connections
+        select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false
+        from gql.type t
+        where t.meta_kind = 'CONNECTION';
+
+
 end;
 $$;
 
