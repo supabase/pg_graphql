@@ -477,6 +477,8 @@ create table gql.type (
     meta_kind gql.meta_kind not null,
     description text,
     entity regclass references gql.entity(entity),
+    -- Is it an input type
+    is_input boolean not null default false,
     is_disabled boolean not null default false,
     unique (type_kind_id, meta_kind, entity),
     check (
@@ -544,6 +546,25 @@ create table gql.field (
     )
 );
 
+
+create table gql.arg (
+    id integer generated always as identity primary key,
+    -- the field that accepts the argument
+    field_id integer not null references gql.field(id),
+    -- type of the argument
+    type_id integer not null references gql.type(id),
+    name text not null,
+    description text,
+    is_not_null boolean,
+    is_array boolean default false,
+    is_array_not_null boolean,
+    -- Names must be unique on each type
+    unique(field_id, name),
+    check (
+        (not is_array and is_array_not_null is null)
+        or (is_array and is_array_not_null is not null)
+    )
+);
 
 
 create function gql.sql_type_to_gql_type(sql_type text)
@@ -898,7 +919,7 @@ begin
         order by
             rel.local_entity, local_columns;
 
-    -- Entrypoints
+    -- Resolver Entrypoints
     insert into gql.field(type_id, name, is_not_null, is_array)
         select t.id, '__type', true, false from gql.type t where name in ('__Type')
         union all
@@ -912,6 +933,50 @@ begin
         -- Connections
         select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false
         from gql.type t
+        where t.meta_kind = 'CONNECTION';
+
+    -- Arguments
+    insert into gql.arg(field_id, name, type_id, is_not_null)
+        -- __type(name)
+        select
+            f.id field_id,
+            'name' as name,
+            gql.type_id_by_name('String') type_id,
+            true as is_not_null
+        from gql.field f
+        where f.name = '__type'
+        union all
+        -- Node(id)
+        select
+            f.id field_id,
+            'id' as name,
+            gql.type_id_by_name('ID') type_id,
+            true as is_not_null
+        from
+            gql.type t
+            inner join gql.field f
+                on t.id = f.type_id
+        where
+            t.meta_kind = 'NODE'
+        union all
+        -- Connection(first, last, after, before)
+        -- TODO: conditions / value filters
+        select
+            f.id field_id, y.name_ as name, gql.type_id_by_name('Int') type_id, false as is_not_null
+        from
+            gql.type t
+            inner join gql.field f
+                on t.id = f.type_id,
+            lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+        where t.meta_kind = 'CONNECTION'
+        union all
+        select
+            f.id field_id, y.name_ as name, gql.type_id_by_name('String') type_id, false as is_not_null
+        from
+            gql.type t
+            inner join gql.field f
+                on t.id = f.type_id,
+            lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
         where t.meta_kind = 'CONNECTION';
 
 
