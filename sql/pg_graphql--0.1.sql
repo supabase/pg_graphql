@@ -558,6 +558,7 @@ create table gql.arg (
     is_not_null boolean,
     is_array boolean default false,
     is_array_not_null boolean,
+    default_value text,
     -- Names must be unique on each type
     unique(field_id, name),
     check (
@@ -694,18 +695,14 @@ begin
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'description', false, false, null, null),
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'specifiedByURL', false, false, null, null),
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Field'), 'fields', true, true, false, null),
-        -- fields takes args https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L252
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'interfaces', true, true, false, null),
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'possibleTypes', true, true, false, null),
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__EnumValue'), 'enumValues', true, true, false, null),
-        -- enumValues takes args
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__InputValue'), 'inputFields', true, true, false, null),
-        -- inputFields takes args
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'ofType', false, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'name', true, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'description', false, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
-        -- args takes args
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
@@ -928,14 +925,43 @@ begin
         -- Node
         select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false
         from gql.type t
-         where t.meta_kind = 'NODE'
+        where t.meta_kind = 'NODE'
         union all
         -- Connections
         select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false
         from gql.type t
         where t.meta_kind = 'CONNECTION';
 
+    -- Every output type with fields has a __typename field
+    insert into gql.field(parent_type_id, type_id, name, is_not_null)
+        select distinct f.parent_type_id, gql.type_id_by_name('String') type_id, '__typename', true
+        from gql.field f;
+
+
     -- Arguments
+    insert into gql.arg(field_id, name, type_id, is_not_null, default_value)
+        -- __Field(includeDeprecated)
+        select f.id, 'includeDeprecated', gql.type_id_by_name('Boolean'), false, 'f'
+        from gql.field f
+        where
+            f.type_id = gql.type_id_by_name('__Field')
+            and f.is_array
+        union all
+        -- __enumValue(includeDeprecated)
+        select f.id, 'includeDeprecated', gql.type_id_by_name('Boolean'), false, 'f'
+        from gql.field f
+        where
+            f.type_id = gql.type_id_by_name('__enumValue')
+            and f.is_array
+        union all
+        -- __InputFields(includeDeprecated)
+        select f.id, 'includeDeprecated', gql.type_id_by_name('Boolean'), false, 'f'
+        from gql.field f
+        where
+            f.type_id = gql.type_id_by_name('__InputFields')
+            and f.is_array;
+
+
     insert into gql.arg(field_id, name, type_id, is_not_null)
         -- __type(name)
         select
@@ -960,7 +986,6 @@ begin
             t.meta_kind = 'NODE'
         union all
         -- Connection(first, last, after, before)
-        -- TODO: conditions / value filters
         select
             f.id field_id, y.name_ as name, gql.type_id_by_name('Int') type_id, false as is_not_null
         from
@@ -980,8 +1005,66 @@ begin
         where t.meta_kind = 'CONNECTION';
 
 
+
 end;
 $$;
+
+
+/*
+        RESOLVE
+*/
+
+create or replace function gql.resolve___typename(ast jsonb, variables jsonb, parent_type_id int)
+    returns jsonb
+    language sql
+    stable
+as $$
+/*
+Notes:
+    - ast is expected to have "kind" = "Field"
+    - parent_type_id is required b/c __typename is only applicable for objects
+AST:
+{
+    "kind": "Field",
+    "name": {
+        "kind": "Name",
+        "value": "__typename"
+    },
+    "alias": null,
+    "arguments": null,
+    "directives": null,
+    "selectionSet": null
+}
+
+Examples:
+    select gql.resolve___typename('{"kind": "Field", "name": {"kind": "Name", "value": "__typename"}, "alias": null}', '{}', gql.type_id_by_name('Blog'))
+    select gql.resolve___typename('{"kind": "Field", "name": {"kind": "Name", "value": "__typename"}, "alias": "tname"}', '{}', gql.type_id_by_name('__Type'))
+*/
+    -- String!
+    -- {}
+    select jsonb_build_object(
+        coalesce((ast ->> 'alias'), (ast -> 'name' ->> 'value')),
+        (
+            select t.name
+            from
+                gql.field f
+                join gql.type t
+                    on f.parent_type_id = t.id
+            where
+                f.name = '__typename'
+                and (
+                    --
+                    or f.parent_type_id = $3
+                )
+        )
+    )
+$$;
+
+
+
+
+
+
 
 
 grant all on schema gql to postgres;
