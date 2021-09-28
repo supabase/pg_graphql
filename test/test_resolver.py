@@ -92,3 +92,32 @@ def test_resolve_relationship_to_connection(sess):
     assert len(blogs["edges"]) == 3
     assert blogs["edges"][0]["node"]["id"]
     assert blogs["edges"][0]["cursor"]
+
+
+def test_resolve_relationship_to_node(sess):
+
+    query = """
+{
+  allBlogs {
+    edges {
+      node {
+        ownerId
+        owner {
+          id
+        }
+      }
+    }
+  }
+}
+"""
+
+    (result,) = sess.execute(select([func.gql.dispatch(query)])).fetchone()
+    print(json.dumps(result, indent=2))
+    assert "data" in result
+    assert "errors" in result
+
+    edges = result["data"]["allBlogs"]["edges"]
+    assert len(edges) > 3
+
+    for edge in edges:
+        assert edge["node"]["ownerId"] == edge["node"]["owner"]["id"]
