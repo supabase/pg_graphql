@@ -1,4 +1,5 @@
 create extension "uuid-ossp";
+create extension pg_graphql;
 
 create table account(
     id uuid not null default uuid_generate_v4() primary key,
@@ -31,3 +32,24 @@ create table blog_post(
     created_at timestamp not null,
     updated_at timestamp not null
 );
+
+
+-- 5 Accounts
+insert into public.account(email, encrypted_password, created_at, updated_at)
+values
+    ('aardvarkx.com', 'asdfasdf', now(), now()),
+    ('bat@x.com', 'asdfasdf', now(), now()),
+    ('cat@x.com', 'asdfasdf', now(), now()),
+    ('dog@x.com', 'asdfasdf', now(), now()),
+    ('elephant@x.com', 'asdfasdf', now(), now());
+
+insert into blog(owner_id, name, description, created_at, updated_at)
+values
+    ((select id from account where email ilike 'a%'), 'A: Blog 1', 'a desc1', now(), now()),
+    ((select id from account where email ilike 'a%'), 'A: Blog 2', 'a desc2', now(), now()),
+    ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', now(), now()),
+    ((select id from account where email ilike 'b%'), 'A: Blog 3', 'a desc1', now(), now());
+
+
+-- Populate graphql schema
+select gql.build_schema();

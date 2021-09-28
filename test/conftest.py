@@ -77,13 +77,6 @@ def engine(dockerize_database):
         conn.execute(text(contents))
         conn.execute(text("commit"))
 
-    eng.execute(
-        text(
-            """
-            create extension pg_graphql;
-        """
-        )
-    )
     yield eng
     eng.dispose()
 
