@@ -95,10 +95,12 @@ as $$
 }
 */
     select
-        gql._recursive_strip_key(
-            body:=gql._parse(query)::jsonb,
-            key:='loc'
-        );
+        gql._parse(query)::jsonb
+        -- Enable for debugging readability
+        --gql._recursive_strip_key(
+        --    body:=gql._parse(query)::jsonb,
+        --    key:='loc'
+        --);
 $$;
 
 

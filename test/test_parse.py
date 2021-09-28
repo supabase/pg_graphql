@@ -13,7 +13,10 @@ def test_parse(sess):
     }
     """
 
-    (ast,) = sess.execute(select([func.gql.parse(query)])).fetchone()
+    (full_ast,) = sess.execute(select([func.gql.parse(query)])).fetchone()
+    (ast,) = sess.execute(
+        select([func.gql._recursive_strip_key(json.dumps(full_ast, indent=2))])
+    ).fetchone()
 
     with open("example.json", "w") as f:
         f.write(json.dumps(ast, indent=2))
