@@ -4,7 +4,7 @@ create schema if not exists gql;
 create function gql._parse(text)
 returns text
 language c
-strict
+immutable
 as 'pg_graphql';
 
 
@@ -526,7 +526,7 @@ create table gql.field (
     column_name text,
     -- Relationships
     local_columns text[],
-    foreign_columns text[],
+    parent_columns text[],
     -- Names must be unique on each type
     unique(parent_type_id, name),
     -- Upsert key
@@ -868,9 +868,37 @@ begin
         order by
             ent.entity, c.ordinal_position;
 
-    -- Node
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, local_columns, foreign_columns)
+    -- Node.<relationship>
+    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, parent_columns, local_columns)
         -- Node.<connection>
+        select
+            node.id parent_type_id,
+            conn.id type_id,
+            case
+                when (
+                    rel.foreign_cardinality = 'MANY'
+                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
+                ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
+                else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
+            end,
+            -- todo
+            false as is_not_null,
+            true as is_array,
+            false as is_array_not_null, -- TODO: check this
+            rel.local_columns,
+            rel.foreign_columns
+        from
+            gql.type node
+            join gql.relationship rel
+                on node.entity = rel.local_entity
+            join gql.type conn
+                on conn.entity = rel.foreign_entity
+        where
+            node.meta_kind = 'NODE'
+            and conn.meta_kind = 'CONNECTION'
+            and rel.foreign_cardinality = 'MANY'
+        union all
+        -- Node.<node>
         select
             node.id parent_type_id,
             conn.id type_id,
@@ -886,22 +914,12 @@ begin
                     rel.foreign_cardinality = 'ONE'
                     and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
                 ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
-                when (
-                    rel.foreign_cardinality = 'MANY'
-                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
-                ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
-                else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
+                else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride2'
             end,
             -- todo
             false as is_not_null,
-            case
-                when rel.foreign_cardinality = 'MANY' then true
-                else false
-            end as is_array,
-            case
-                when rel.foreign_cardinality = 'MANY' then false
-                else null
-            end as is_array_not_null,
+            false as is_array,
+            null as is_array_not_null,
             rel.local_columns,
             rel.foreign_columns
         from
@@ -912,9 +930,8 @@ begin
                 on conn.entity = rel.foreign_entity
         where
             node.meta_kind = 'NODE'
-            and conn.meta_kind = 'CONNECTION'
-        order by
-            rel.local_entity, local_columns;
+            and conn.meta_kind = 'NODE'
+            and rel.foreign_cardinality = 'ONE';
 
     -- Resolver Entrypoints
     insert into gql.field(type_id, name, is_not_null, is_array)
@@ -992,7 +1009,8 @@ begin
             gql.type t
             inner join gql.field f
                 on t.id = f.type_id,
-            lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+            --lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+            lateral (select name_ from unnest(array['first']) x(name_)) y(name_)
         where t.meta_kind = 'CONNECTION'
         union all
         select
@@ -1001,7 +1019,8 @@ begin
             gql.type t
             inner join gql.field f
                 on t.id = f.type_id,
-            lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+            --lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+            lateral (select name_ from unnest(array['after']) x(name_)) y(name_)
         where t.meta_kind = 'CONNECTION';
 
 
@@ -1014,57 +1033,577 @@ $$;
         RESOLVE
 */
 
-create or replace function gql.resolve___typename(ast jsonb, variables jsonb, parent_type_id int)
-    returns jsonb
+create or replace function gql.alias_or_name(field jsonb)
+    returns text
     language sql
-    stable
+    immutable
+    strict
 as $$
-/*
-Notes:
-    - ast is expected to have "kind" = "Field"
-    - parent_type_id is required b/c __typename is only applicable for objects
-AST:
-{
-    "kind": "Field",
-    "name": {
-        "kind": "Name",
-        "value": "__typename"
-    },
-    "alias": null,
-    "arguments": null,
-    "directives": null,
-    "selectionSet": null
-}
+    select coalesce(field ->> 'alias', (field -> 'name' ->> 'value'))
+$$;
 
-Examples:
-    select gql.resolve___typename('{"kind": "Field", "name": {"kind": "Name", "value": "__typename"}, "alias": null}', '{}', gql.type_id_by_name('Blog'))
-    select gql.resolve___typename('{"kind": "Field", "name": {"kind": "Name", "value": "__typename"}, "alias": "tname"}', '{}', gql.type_id_by_name('__Type'))
-*/
-    -- String!
-    -- {}
-    select jsonb_build_object(
-        coalesce((ast ->> 'alias'), (ast -> 'name' ->> 'value')),
-        (
-            select t.name
-            from
-                gql.field f
-                join gql.type t
-                    on f.parent_type_id = t.id
-            where
-                f.name = '__typename'
-                and (
-                    --
-                    or f.parent_type_id = $3
-                )
-        )
-    )
+create or replace function gql.tab(n int = 1)
+    returns text
+    language sql
+    immutable
+as
+$$
+    select repeat(E'\t', n)
 $$;
 
 
+create or replace function gql.array_first(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- First element of an array
+    select arr[1];
+$$;
+
+create or replace function gql.array_last(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- Last element of an array
+    select arr[array_length(arr, 1)];
+$$;
+
+create or replace function gql.primary_key(entity regclass)
+    returns text[]
+    language sql
+    immutable
+    as
+$$
+    select
+        array_agg(pg_attribute.attname::text order by attrelid asc)
+    from
+        pg_index, pg_class, pg_attribute, pg_namespace
+    where
+        pg_class.oid = entity and
+        indrelid = pg_class.oid and
+        pg_class.relnamespace = pg_namespace.oid and
+        pg_attribute.attrelid = pg_class.oid and
+        pg_attribute.attnum = any(pg_index.indkey)
+and indisprimary
+$$;
+
+create or replace function gql.primary_key_clause(entity regclass, alias_name text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    select '(' || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',') ||')'
+    from unnest(gql.primary_key(entity)) pk(x)
+$$;
+
+create or replace function gql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    -- select gql.join_clause(array['a', 'b', 'c'], 'abc', array['d', 'e', 'f'], 'def')
+    select 'and ' ||string_agg(quote_ident(local_alias_name) || '.' || quote_ident(x) || ' = ' || quote_ident(parent_alias_name) || '.' || quote_ident(y), ' and ')
+    from
+        unnest(local_columns) with ordinality local_(x, ix),
+        unnest(parent_columns) with ordinality parent_(y, iy)
+    where
+        ix = iy
+$$;
 
 
+create or replace function gql.quote_ident(regclass)
+    returns text
+    language sql
+    immutable
+as $$
+    select
+        quote_ident(nspname) || '.' || quote_ident(relname)
+    from
+        pg_catalog.pg_class AS c
+    join pg_catalog.pg_namespace AS ns
+          on c.relnamespace = ns.oid
+    where
+        c.oid = $1;
+$$;
+
+create or replace function gql.slug()
+    returns text
+    language sql
+    volatile
+as $$
+    select substr(md5(random()::text), 0, 12);
+$$;
+
+create or replace function gql.build_node_query(
+    ast jsonb,
+    variables jsonb = '{}',
+    variable_definitions jsonb = '{}',
+    parent_type_id int = null,
+    parent_block_name text = null,
+    indent_level int = 0
+)
+    returns text
+    language plpgsql
+    as $$
+declare
+    field_row gql.field;
+    field_name text = ast -> 'name' ->> 'value';
+    node_fields jsonb = jsonb_path_query(ast, '$.selectionSet.selections');
+    node_field jsonb;
+    node_field_alias text;
+    node_field_row gql.field;
+    req_comma bool;
+    req_concat bool;
+
+    q text = E'(\nselect\n';
+
+    i alias for indent_level;
+    pti alias for parent_type_id;
+    entity regclass;
+    errors text[];
+    block_name text = gql.slug();
+begin
+
+    field_row =    gf
+        from
+            gql.field gf
+        where
+            ((pti is null and gf.parent_type_id is null) or (gf.parent_type_id = pti))
+            and gf.name = (ast -> 'name' ->> 'value');
+
+    entity = t.entity from gql.type t where t.id = field_row.type_id;
+    q = (
+        q
+        || gql.tab(1) || E'jsonb_build_object(\n'
+    );
+    -- Loop node selections
+    req_comma = 'f';
+
+    for node_field in select * from jsonb_array_elements(node_fields) loop
+
+        node_field_row = gf
+            from
+                gql.field gf
+            where
+                gf.name = node_field -> 'name' ->> 'value'
+                and gf.parent_type_id = field_row.type_id
+                ;
+
+        -- Column fields
+        if node_field_row.column_name is not null then
+            q = (
+                q
+                || case when req_comma then E',\n' else E'\n' end
+                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
+                || quote_ident(block_name) || '.' || quote_ident(node_field_row.column_name)
+            );
+            req_comma = 't';
+        end if;
+
+    end loop;
+
+    q = q || ')';
+
+    q = q || format('
+    from
+        %s as %s
+    where
+        true
+        -- join clause
+        %s
+    limit 1
+)
+',
+    gql.quote_ident(entity),
+    quote_ident(block_name),
+    coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), '')
+    );
+
+    return q;
+
+end;
+$$;
 
 
+create or replace function gql.build_connection_query(
+    ast jsonb,
+    variables jsonb = '{}',
+    variable_definitions jsonb = '{}',
+    parent_type_id int = null,
+    parent_block_name text = null,
+    indent_level int = 0
+)
+    returns text
+    language plpgsql
+    as $$
+declare
+    field_name text = ast -> 'name' ->> 'value';
+    total_count jsonb = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "totalCount")');
+    -- page info
+    page_info jsonb = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "pageInfo")');
+    start_cursor jsonb = jsonb_path_query(page_info, '$.selectionSet.selections[*] ? (@.name.value == "startCursor")');
+    end_cursor jsonb = jsonb_path_query(page_info, '$.selectionSet.selections[*] ? (@.name.value == "endCursor")');
+    has_previous_page jsonb = jsonb_path_query(page_info, '$.selectionSet.selections[*] ? (@.name.value == "hasPreviousPage")');
+    has_next_page jsonb = jsonb_path_query(page_info, '$.selectionSet.selections[*] ? (@.name.value == "hasNextPage")');
+    -- edges
+    edges jsonb = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "edges")');
+    edge_cursor jsonb = jsonb_path_query(edges, '$.selectionSet.selections[*] ? (@.name.value == "cursor")');
+    edge_node jsonb = jsonb_path_query(edges, '$.selectionSet.selections[*] ? (@.name.value == "node")');
+    edge_node_fields jsonb = jsonb_path_query(edges, '$.selectionSet.selections[*] ? (@.name.value == "node").selectionSet.selections');
+
+    -- arguments
+    args jsonb = jsonb_path_query(ast, '$.arguments');
+    first_ jsonb = jsonb_path_query(args, '$[*] ? (@.name.value == "first")');
+    last_ jsonb = jsonb_path_query(args, '$[*] ? (@.name.value == "last")');
+    before_ jsonb = jsonb_path_query(args, '$[*] ? (@.name.value == "before")');
+    after_ jsonb = jsonb_path_query(args, '$[*] ? (@.name.value == "after")');
+
+    -- TODO handle variables
+    first_val int = first_ -> 'value' ->> 'value';
+    last_val int = last_ -> 'value' ->> 'value';
+    before_val text = before_ -> 'value' ->> 'value';
+    after_val text = after_ -> 'value' ->> 'value';
+
+    edge_node_field jsonb;
+    edge_node_field_alias text;
+
+    req_comma bool;
+    req_concat bool;
+
+    q text = E'(\nselect\n';
+
+    i alias for indent_level;
+    pti alias for parent_type_id;
+
+    field_row gql.field;
+    edge_node_field_row gql.field;
+    entity regclass;
+    errors text[];
+
+    -- TODO - set by path
+    block_name text = gql.slug();
+begin
+    field_row =    gf
+        from
+            gql.field gf
+        where
+            ((pti is null and gf.parent_type_id is null) or (gf.parent_type_id = pti))
+            and gf.name = (ast -> 'name' ->> 'value');
+
+    entity = t.entity from gql.type t where t.id = field_row.type_id;
+
+    /*
+    jsonb_build_object(
+        'pageInfo',
+        jsonb_build_object(
+            'startCursor', array_first(array_agg(block_a.id)),
+            'endCursor', array_last(array_agg(block_a.id)),
+            'hasPreviousPage', array_first(array_agg(block_a.id)) <> array_first(array_agg(block_a.__first_cursor)),
+            'hasNextPage', array_last(array_agg(block_a.id)) <> array_first(array_agg(block_a.__last_cursor))
+        )
+    )
+    */
+
+    if page_info is not null then
+        q = (
+            q
+            || gql.tab(1) || E'jsonb_build_object(\n'
+            || gql.tab(2) || quote_literal(gql.alias_or_name(page_info)) || E',\n'
+            || gql.tab(2) || E'jsonb_build_object(\n'
+        );
+
+        -- Is a leading comma required before pushing the next field
+        req_comma = false;
+        if start_cursor is not null then
+            q = (
+                q
+                || gql.tab(3) || quote_literal(gql.alias_or_name(start_cursor))
+                || ', ' || 'gql.array_first(array_agg(' || gql.primary_key_clause(entity, block_name) || E'))'
+            );
+            req_comma = true;
+        end if;
+
+        if end_cursor is not null then
+            q = (
+                q
+                || case when req_comma then E',\n' else '' end
+                || gql.tab(3) || quote_literal(gql.alias_or_name(end_cursor))
+                || ', ' || 'gql.array_last(array_agg(' || gql.primary_key_clause(entity, block_name) || E'))'
+            );
+            req_comma = true;
+        end if;
+
+        if has_previous_page is not null then
+            q = (
+                q
+                || case when req_comma then E',\n' else '' end
+                || gql.tab(3) || quote_literal(gql.alias_or_name(has_previous_page))
+                || ', ' || 'gql.array_first(array_agg(' || gql.primary_key_clause(entity, block_name) || ')) <> gql.array_first(array_agg(' || quote_ident(block_name) || '.__first_cursor))'
+            );
+            req_comma = true;
+        end if;
+
+        if has_next_page is not null then
+            q = (
+                q
+                || case when req_comma then E',\n' else '' end
+                || gql.tab(3) || quote_literal(gql.alias_or_name(has_next_page))
+                || ', ' || 'gql.array_last(array_agg(' || gql.primary_key_clause(entity, block_name) || ')) <> gql.array_first(array_agg(' || quote_ident(block_name) || '.__last_cursor))'
+            );
+            req_comma = true;
+        end if;
+
+        -- Close the functions
+        q = (
+            q
+            || E'\n'  || gql.tab(2) || E')\n'
+            || gql.tab(1) || E')\n'
+        );
+        req_concat = true;
+    end if;
+
+    /*
+    || jsonb_build_object(
+        'total_count',
+        coalesce(min(post_1.__total_count), 0)
+    )
+    */
+    if total_count is not null then
+        q = (
+            q
+            || gql.tab(1)
+            || case when req_concat then '|| ' else '' end
+            || E'jsonb_build_object(\n'
+            || gql.tab(2) || quote_literal(gql.alias_or_name(total_count))
+            || E', ' || 'coalesce(min(' || quote_ident(block_name) || E'.__total_count), 0)\n'
+            || gql.tab(1) || E')\n'
+        );
+        req_concat = true;
+    end if;
+
+    /*
+    || jsonb_build_object(
+        'edges', json_agg(
+            json_build_object(
+                'cursor', post_1.id,
+                'node', json_build_object(
+                    'id', post_1.id,
+                    'author_id', post_1.author_id,
+                    'body', post_1.body
+                )
+            )
+        )
+    )
+    */
+    if edges is not null then
+        q = (
+            q
+            || gql.tab(1)
+            || case when req_concat then '|| ' else '' end
+            || E'jsonb_build_object(\n'
+            || gql.tab(2) || quote_literal(gql.alias_or_name(edges)) || E', '
+            || E'jsonb_agg(\n'
+            || gql.tab(3) || E'jsonb_build_object(\n'
+        );
+
+        req_comma = 'f';
+        if edge_cursor is not null then
+            q = (
+                q
+                || gql.tab(4) || quote_literal(gql.alias_or_name(edge_cursor)) || E', '
+                -- TODO, pkey
+                || gql.primary_key_clause(entity, block_name)
+            );
+            req_comma = 't';
+        end if;
+
+        if edge_node is not null then
+
+            q = (
+                q
+                || case when req_comma then E',\n' else E'\n' end
+                || gql.tab(4) || quote_literal(gql.alias_or_name(edge_node)) || E', '
+                || E'jsonb_build_object('
+            );
+
+            -- Loop node selections
+            req_comma = 'f';
+            for edge_node_field in select * from jsonb_array_elements(edge_node_fields) loop
+
+                -- TODO: check for relationships and recurse
+                -- TODO: verify fields in gql.field before adding
+                edge_node_field_row = gf
+                    from
+                        gql.field gf
+                        left join gql.field gf2
+                            on gf.parent_type_id = gf2.type_id
+                        left join gql.field gf3
+                            on gf2.parent_type_id = gf3.type_id
+                    where
+                        gf.name = edge_node_field -> 'name' ->> 'value'
+                        and gf2.name = 'node'
+                        and gf3.name = 'edges'
+                        and gf3.parent_type_id = field_row.type_id;
+
+                -- Column fields
+                if edge_node_field_row.column_name is not null then
+                    q = (
+                        q
+                        || case when req_comma then E',\n' else E'\n' end
+                        || gql.tab(5) || quote_literal(gql.alias_or_name(edge_node_field)) || E', '
+                        || quote_ident(block_name) || '.' || quote_ident(edge_node_field_row.column_name)
+                    );
+                    req_comma = 't';
+                end if;
+
+                -- Connection
+                if edge_node_field_row.local_columns is not null and edge_node_field_row.is_array then
+                    q = q
+                        || case when req_comma then E',\n' else E'\n' end
+                        || gql.tab(5) || quote_literal(gql.alias_or_name(edge_node_field)) || E', '
+                        || gql.build_connection_query(
+                        ast := edge_node_field,
+                        variables := variables,
+                        variable_definitions := variable_definitions,
+                        parent_type_id := edge_node_field_row.parent_type_id,
+                        parent_block_name := block_name,
+                        indent_level := indent_level + 1
+                    );
+                end if;
+
+                -- Single
+                if edge_node_field_row.local_columns is not null and not edge_node_field_row.is_array then
+                    q = q
+                        || case when req_comma then E',\n' else E'\n' end
+                        || gql.tab(5) || quote_literal(gql.alias_or_name(edge_node_field)) || E', '
+                        || gql.build_node_query(
+                        ast := edge_node_field,
+                        variables := variables,
+                        variable_definitions := variable_definitions,
+                        parent_type_id := edge_node_field_row.parent_type_id,
+                        parent_block_name := block_name,
+                        indent_level := indent_level + 1
+                    );
+                end if;
+
+
+            end loop;
+
+            -- Close the functions
+            q = q || E'\n' || gql.tab(4) || E')\n';
+        end if;
+        q = q || gql.tab(3) || E')\n';
+        q = q || gql.tab(2) || E')\n';
+        q = q || gql.tab(1) || E')\n';
+    end if;
+
+
+    /*
+from
+    (
+        select
+            count(*) over () __total_count,
+            first_value((block_a.id)) over (order by (block_a.id) asc range between unbounded preceding and current row) as __first_cursor,
+            last_value((block_a.id)) over (order by (block_a.id) asc range between current row and unbounded following) as __last_cursor,
+            *
+        from
+            public.blog as block_a
+        where
+            true
+            --pagination_clause
+            %s
+        order by
+            (block_a.id) asc
+        limit 20
+    ) as block_a
+    */
+
+    --last_ = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "totalCount")');
+
+    q = q || format('from
+    (
+        select
+            count(*) over () __total_count,
+            first_value(%s) over (order by %s range between unbounded preceding and current row) as __first_cursor,
+            last_value(%s) over (order by %s range between current row and unbounded following) as __last_cursor,
+            *
+        from
+            %s as %s
+        where
+            true
+            --pagination_clause
+            -- join clause
+            %s
+        order by
+            %s asc
+        limit %s
+    ) as %s
+)
+',
+    gql.primary_key_clause(entity, block_name),
+    gql.primary_key_clause(entity, block_name) || ' asc',
+    gql.primary_key_clause(entity, block_name),
+    gql.primary_key_clause(entity, block_name) || ' asc',
+    gql.quote_ident(entity),
+    quote_ident(block_name),
+    coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), ''),
+    gql.primary_key_clause(entity, block_name),
+    -- limit here
+    -- TODO(enforce only 1 provided)
+    least(coalesce(first_val::int, last_val::int), 10),
+    quote_ident(block_name)
+    );
+
+    return q;
+
+end;
+$$;
+
+
+create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
+    returns jsonb
+    language plpgsql
+as $$
+declare
+    document_ast jsonb = gql.parse(stmt);
+    -- TODO support multiple ops per document
+    operation_ast jsonb = document_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+    variable_definitions_ast jsonb = document_ast -> 'definitions' -> 0 -> 'variableDefinitions';
+
+    q text;
+    res jsonb;
+begin
+    -- Check top type. Default connection
+    q = gql.build_connection_query(
+        ast := operation_ast,
+        variables := variables,
+        variable_definitions := variable_definitions_ast,
+        parent_type_id := null,
+        parent_block_name := null,
+        indent_level := 0
+    );
+
+    raise notice '%', q;
+
+    execute q into res;
+
+    return jsonb_build_object(
+        'data',
+        jsonb_build_object(
+            operation_ast -> 'name' ->> 'value',
+            res
+        ),
+        'errors',
+        '[]'::jsonb
+    );
+end;
+$$;
 
 
 grant all on schema gql to postgres;
