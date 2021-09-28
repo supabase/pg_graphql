@@ -37,7 +37,7 @@ create table blog_post(
 -- 5 Accounts
 insert into public.account(email, encrypted_password, created_at, updated_at)
 values
-    ('aardvarkx.com', 'asdfasdf', now(), now()),
+    ('aardvark@x.com', 'asdfasdf', now(), now()),
     ('bat@x.com', 'asdfasdf', now(), now()),
     ('cat@x.com', 'asdfasdf', now(), now()),
     ('dog@x.com', 'asdfasdf', now(), now()),
