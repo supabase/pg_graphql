@@ -831,7 +831,7 @@ begin
     -- Node
     insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
         -- Node.<column>
-        select
+        select distinct
             gt.id parent_type_id,
             case
                 -- Detect ID! types using pkey info, restricted by types
@@ -866,9 +866,7 @@ begin
                 rcg.grantee = current_setting('role')
                 -- If superuser, allow everything
                 or current_setting('role') = 'none'
-            )
-        order by
-            ent.entity, c.ordinal_position;
+            );
 
     -- Node.<relationship>
     insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, parent_columns, local_columns)

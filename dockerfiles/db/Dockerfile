@@ -15,7 +15,6 @@ RUN git clone https://github.com/graphql/libgraphqlparser.git \
     && make install
 
 ENV LD_LIBRARY_PATH="/usr/local/lib:${PATH}"
-#ENV PATH="/usr/local/lib:${PATH}"
 
 COPY . pg_graphql
 WORKDIR pg_graphql

@@ -4,6 +4,9 @@ from sqlalchemy import func, select
 
 
 def test_resolve_connection_entrypoint(sess):
+    import pdb
+
+    pdb.set_trace()
 
     query = """
 {
