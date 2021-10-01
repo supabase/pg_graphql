@@ -686,7 +686,7 @@ begin
         (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
         (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
         (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'directives', true, true, true, 'A list of all directives supported by this server.'),
+        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Directive'), 'directives', true, true, true, 'A list of all directives supported by this server.'),
         (gql.type_id_by_name('__Directive'), gql.type_id_by_name('String'), 'name', true, false, null, null),
         (gql.type_id_by_name('__Directive'), gql.type_id_by_name('String'), 'description', false, false, null, null),
         (gql.type_id_by_name('__Directive'), gql.type_id_by_name('Boolean'), 'isRepeatable', true, false, null, null),
@@ -1564,6 +1564,100 @@ from
 
 end;
 $$;
+
+
+create or replace function gql.resolve___Type(type_name text, ast jsonb)
+    returns jsonb
+    language sql
+as $$
+    select
+        jsonb_build_object(
+            ast -> 'name' ->> 'value',
+            coalesce(
+                jsonb_object_agg(
+                    fa.field_alias,
+                    case
+                        when selection_name = 'name' then gt.name -- same as type_name
+                        when selection_name = 'description' then gt.name
+                        else 'ERROR: Unknown Field'
+                    end
+                ),
+                'null'::jsonb
+            )
+        )
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        gql.type gt,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                gql.alias_or_name(x.sel) field_alias,
+                x.sel -> 'name' ->> 'value' as selection_name
+        ) fa
+    where
+        gt.name = type_name
+$$;
+
+
+create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
+    returns jsonb
+    language plpgsql
+as $$
+declare
+    document_ast jsonb = gql.parse(stmt);
+    -- TODO support multiple ops per document
+    operation_ast jsonb = document_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+    variable_definitions_ast jsonb = document_ast -> 'definitions' -> 0 -> 'variableDefinitions';
+
+    field_rec gql.field;
+    field_type gql.type;
+    q text;
+    res jsonb;
+begin
+    -- Get the top level field
+    field_rec = "field" from gql.field where parent_type_id is null and name = operation_ast -> 'name' ->> 'value';
+    raise notice 'Top Field: %', field_rec;
+    field_type = "type" from gql.type where id = field_rec.type_id;
+    raise notice 'Top Type: %', field_type;
+
+    if field_type.meta_kind ='CONNECTION' then
+        -- Check top type. Default connection
+        q = gql.build_connection_query(
+            ast := operation_ast,
+            variables := variables,
+            variable_definitions := variable_definitions_ast,
+            parent_type_id := null,
+            parent_block_name := null,
+            indent_level := 0
+        );
+        raise notice '%', q;
+        execute q into res;
+        return jsonb_build_object(
+            'data',
+            jsonb_build_object(
+                operation_ast -> 'name' ->> 'value',
+                res
+            ),
+            'errors',
+            '[]'::jsonb
+        );
+    end if;
+
+    if field_type.meta_kind ='__SCHEMA' then
+        return gql.resolve___schema(
+            ast := operation_ast,
+            variables := variables,
+            variable_definitions := variable_definitions_ast
+        );
+    end if;
+
+    return jsonb_build_object(
+        'data', '{}'::jsonb,
+        'errors', '["Not implemented"]'::jsonb
+    );
+end
+$$;
+
 
 
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')

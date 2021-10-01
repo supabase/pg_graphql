@@ -10,9 +10,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-CONTAINER_NAME = "pg_graphql_dev"
-IMAGE_NAME = "pg_graphql"
-DB_NAME = "gqldb"
+CONTAINER_NAME = "pg_graphql_test_db"
 PORT = 5402
 
 
@@ -22,33 +20,7 @@ def dockerize_database():
     # Skip if we're using github actions CI
     if not "GITHUB_SHA" in os.environ:
         subprocess.call(
-            [
-                "docker",
-                "run",
-                "--rm",
-                "--name",
-                CONTAINER_NAME,
-                "-p",
-                f"{PORT}:5432",
-                "-d",
-                "-e",
-                f"POSTGRES_DB={DB_NAME}",
-                "-e",
-                "POSTGRES_PASSWORD=password",
-                "-e",
-                "POSTGRES_USER=postgres",
-                "--health-cmd",
-                "pg_isready",
-                "--health-interval",
-                "3s",
-                "--health-timeout",
-                "3s",
-                "--health-retries",
-                "15",
-                IMAGE_NAME,
-                "-c",
-                "fsync=off",
-            ]
+            ["docker-compose", "-f", "docker-compose.tests.yml", "up", "-d"]
         )
         # Wait for postgres to become healthy
         for _ in range(10):
@@ -56,20 +28,23 @@ def dockerize_database():
             container_info = json.loads(out)
             container_health_status = container_info[0]["State"]["Health"]["Status"]
             if container_health_status == "healthy":
+                time.sleep(1)
                 break
             else:
                 time.sleep(1)
         else:
             raise Exception("Container never became healthy")
         yield
-        subprocess.call(["docker", "stop", CONTAINER_NAME])
+        subprocess.call(
+            ["docker-compose", "-f", "docker-compose.tests.yml", "down", "-v"]
+        )
         return
     yield
 
 
 @pytest.fixture(scope="session")
 def engine(dockerize_database):
-    eng = create_engine(f"postgresql://postgres:password@localhost:{PORT}/{DB_NAME}")
+    eng = create_engine(f"postgresql://postgres:password@localhost:5402/gqldb")
 
     path = Path("test/setup.sql")
     contents = path.read_text()

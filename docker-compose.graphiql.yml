@@ -8,7 +8,7 @@ services:
     volumes:
         - ./dockerfiles/db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
     ports:
-      - 5402:5432
+      - 5404:5432
     command:
       - postgres
       - -c
