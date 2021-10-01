@@ -1,6 +1,6 @@
 version: '3'
 services:
-  db:
+  test_db:
     container_name: pg_graphql_test_db
     build:
         context: .

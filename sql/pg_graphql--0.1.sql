@@ -1659,46 +1659,5 @@ end
 $$;
 
 
-
-create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
-    returns jsonb
-    language plpgsql
-as $$
-declare
-    document_ast jsonb = gql.parse(stmt);
-    -- TODO support multiple ops per document
-    operation_ast jsonb = document_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
-    variable_definitions_ast jsonb = document_ast -> 'definitions' -> 0 -> 'variableDefinitions';
-
-    q text;
-    res jsonb;
-begin
-    -- Check top type. Default connection
-    q = gql.build_connection_query(
-        ast := operation_ast,
-        variables := variables,
-        variable_definitions := variable_definitions_ast,
-        parent_type_id := null,
-        parent_block_name := null,
-        indent_level := 0
-    );
-
-    raise notice '%', q;
-
-    execute q into res;
-
-    return jsonb_build_object(
-        'data',
-        jsonb_build_object(
-            operation_ast -> 'name' ->> 'value',
-            res
-        ),
-        'errors',
-        '[]'::jsonb
-    );
-end;
-$$;
-
-
 grant all on schema gql to postgres;
 grant all on all tables in schema gql to postgres;

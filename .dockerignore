@@ -13,4 +13,5 @@ docs/
 pg_graphql.egg-info/
 site/
 venv/
-
+docs/
+.benchmarks/
