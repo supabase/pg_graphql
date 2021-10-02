@@ -4,10 +4,6 @@ from sqlalchemy import func, select
 
 
 def test_resolve_connection_entrypoint(sess):
-    import pdb
-
-    pdb.set_trace()
-
     query = """
 {
   allAccounts {
@@ -124,3 +120,36 @@ def test_resolve_relationship_to_node(sess):
 
     for edge in edges:
         assert edge["node"]["ownerId"] == edge["node"]["owner"]["id"]
+
+
+def test_resolve_fragment(sess):
+
+    query = """
+{
+  allBlogs(first: 1) {
+    edges {
+      cursor
+      node {
+        ...BaseBlog
+        createdAt
+      }
+    }
+  }
+}
+
+fragment BaseBlog on Blog {
+  name
+  description
+}
+"""
+    (result,) = sess.execute(select([func.gql.dispatch(query)])).fetchone()
+    print(json.dumps(result, indent=2))
+    assert "data" in result
+    assert "errors" in result
+
+    edges = result["data"]["allBlogs"]["edges"]
+    assert len(edges) == 1
+    node = edges[0]["node"]
+    for key in ["name", "description", "createdAt"]:
+        assert key in node
+        assert node[key] is not None

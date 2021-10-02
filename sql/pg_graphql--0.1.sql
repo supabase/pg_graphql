@@ -1143,7 +1143,7 @@ $$;
 create or replace function gql.build_node_query(
     ast jsonb,
     variables jsonb = '{}',
-    variable_definitions jsonb = '{}',
+    variable_definitions jsonb = '[]',
     parent_type_id int = null,
     parent_block_name text = null,
     indent_level int = 0
@@ -1234,7 +1234,7 @@ $$;
 create or replace function gql.build_connection_query(
     ast jsonb,
     variables jsonb = '{}',
-    variable_definitions jsonb = '{}',
+    variable_definitions jsonb = '[]',
     parent_type_id int = null,
     parent_block_name text = null,
     indent_level int = 0
@@ -1599,26 +1599,91 @@ as $$
 $$;
 
 
+
+create or replace function gql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
+    returns jsonb
+    language sql
+    immutable
+as $$
+/*
+Recursively replace fragment spreads with the fragment definition's selection set
+*/
+    select
+        case
+            when jsonb_typeof(ast) = 'object' then
+                    (
+                        select
+                            jsonb_object_agg(key_, gql.ast_pass_fragments(value_, fragment_defs))
+                        from
+                            jsonb_each(ast) x(key_, value_)
+                    )
+            when jsonb_typeof(ast) = 'array' then
+                coalesce(
+                    (
+                        select
+                            jsonb_agg(gql.ast_pass_fragments(value_, fragment_defs))
+                        from
+                            jsonb_array_elements(ast) x(value_)
+                        where
+                            value_ ->> 'kind' <> 'FragmentSpread'
+                    ),
+                    '[]'::jsonb
+                )
+                ||
+                coalesce(
+                    (
+                        select
+                            jsonb_agg(
+                                frag_selection
+                            )
+                        from
+                            jsonb_array_elements(ast) x(value_),
+                            lateral(
+                                select jsonb_path_query_first(
+                                    fragment_defs,
+                                    ('$ ? (@.name.value == "'|| (value_ -> 'name' ->> 'value') || '")')::jsonpath
+                                ) as raw_frag_def
+                            ) x1,
+                            lateral (
+                                -- Nested fragments are possible
+                                select gql.ast_pass_fragments(raw_frag_def, fragment_defs) as frag
+                            ) x2,
+                            lateral (
+                                select y1.frag_selection
+                                from jsonb_array_elements(frag -> 'selectionSet' -> 'selections') y1(frag_selection)
+                            ) x3
+                        where
+                            value_ ->> 'kind' = 'FragmentSpread'
+                    ),
+                    '[]'::jsonb
+                )
+            else
+                ast
+        end;
+$$;
+
+
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
     returns jsonb
     language plpgsql
 as $$
 declare
-    document_ast jsonb = gql.parse(stmt);
-    -- TODO support multiple ops per document
-    operation_ast jsonb = document_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
-    variable_definitions_ast jsonb = document_ast -> 'definitions' -> 0 -> 'variableDefinitions';
+    raw_ast jsonb = gql.parse(stmt);
 
-    field_rec gql.field;
-    field_type gql.type;
+    -- TODO support multiple ops per document
+    variable_definitions_ast jsonb = coalesce(raw_ast -> 'definitions' -> 0 -> 'variableDefinitions', '[]');
+    fragment_definitions jsonb = jsonb_path_query_array(raw_ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
+
+    -- Inline fragments
+    clean_ast jsonb =  gql.ast_pass_fragments(raw_ast, fragment_definitions);
+    operation_ast jsonb = clean_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+
+    field_rec gql.field = "field" from gql.field where parent_type_id is null and name = (operation_ast -> 'name' ->> 'value');
+    field_type gql.type = "type" from gql.type where id = field_rec.type_id;
     q text;
     res jsonb;
 begin
-    -- Get the top level field
-    field_rec = "field" from gql.field where parent_type_id is null and name = operation_ast -> 'name' ->> 'value';
-    raise notice 'Top Field: %', field_rec;
-    field_type = "type" from gql.type where id = field_rec.type_id;
-    raise notice 'Top Type: %', field_type;
+    --raise exception 'field_type %', field_type;
 
     if field_type.meta_kind ='CONNECTION' then
         -- Check top type. Default connection
@@ -1643,13 +1708,15 @@ begin
         );
     end if;
 
+    /*
     if field_type.meta_kind ='__SCHEMA' then
         return gql.resolve___schema(
             ast := operation_ast,
             variables := variables,
-            variable_definitions := variable_definitions_ast
+            variable_definitions := variable_definitions_ast,
         );
     end if;
+    */
 
     return jsonb_build_object(
         'data', '{}'::jsonb,

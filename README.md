@@ -123,6 +123,5 @@ Requires:
 
 ```shell
 pip intall -e .
-
-docker build -t pg_graphql -f Dockerfile . && pytest
+docker rmi pg_graphql_test_db; pytest
 ```
