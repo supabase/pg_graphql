@@ -457,7 +457,7 @@ create or replace view gql.relationship as
 --create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
 create type gql.meta_kind as enum (
     'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
-    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN',
+    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
     -- Introspection types
     '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION'
 );
@@ -526,6 +526,7 @@ create table gql.field (
     is_deprecated boolean not null default false,
     deprecation_reason text,
     is_disabled boolean default false,
+    is_hidden_from_schema boolean default false,
     -- TODO trigger check column name only non-null when type is scalar
     column_name text,
     -- Relationships
@@ -938,25 +939,25 @@ begin
             and rel.foreign_cardinality = 'ONE';
 
     -- Resolver Entrypoints
-    insert into gql.field(type_id, name, is_not_null, is_array, parent_type_id)
-        select gql.type_id_by_name('__Type'), '__type', true, false, gql.type_id_by_name('Query')
+    insert into gql.field(type_id, name, is_not_null, is_array, parent_type_id, is_hidden_from_schema)
+        select gql.type_id_by_name('__Type'), '__type', true, false, gql.type_id_by_name('Query'), true
         union all
-        select gql.type_id_by_name('__Schema'), '__schema', true, false, gql.type_id_by_name('Query')
+        select gql.type_id_by_name('__Schema'), '__schema', true, false, gql.type_id_by_name('Query'), true
         union all
         -- Node
-        select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, gql.type_id_by_name('Query')
+        select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, gql.type_id_by_name('Query'), false
         from gql.type t
         where t.meta_kind = 'NODE'
         union all
         -- Connections
-        select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, gql.type_id_by_name('Query')
+        select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, gql.type_id_by_name('Query'), false
         from gql.type t
         where t.meta_kind = 'CONNECTION';
 
     -- Every output type with fields has a __typename field
-    insert into gql.field(parent_type_id, type_id, name, is_not_null)
-        select distinct f.parent_type_id, gql.type_id_by_name('String') type_id, '__typename', true
-        from gql.field f;
+    --insert into gql.field(parent_type_id, type_id, name, is_not_null)
+    --    select distinct f.parent_type_id, gql.type_id_by_name('String') type_id, '__typename', true
+    --    from gql.field f;
 
 
     -- Arguments
@@ -1297,7 +1298,7 @@ begin
         from
             gql.field gf
         where
-            ((pti is null and gf.parent_type_id is null) or (gf.parent_type_id = pti))
+            ((pti is null and gf.parent_type_id = gql.type_id_by_name('Query')) or (gf.parent_type_id = pti))
             and gf.name = (ast -> 'name' ->> 'value');
 
     entity = t.entity from gql.type t where t.id = field_row.type_id;
@@ -1662,8 +1663,14 @@ $$;
 
 -- stubs for recursion
 create or replace function gql.resolve___input_value(arg_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
-create or replace function gql."resolve___Type"(type_id int, ast jsonb, is_array_not_null bool = false, is_array bool = false, is_not_null bool = false) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
-create or replace function gql."resolve___Field"(field_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+create or replace function gql."resolve___Type"(
+    type_id int,
+    ast jsonb,
+    is_array_not_null bool = false,
+    is_array bool = false,
+    is_not_null bool = false
+) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+create or replace function gql.resolve_field(field_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 
 
 create or replace function gql.resolve___input_value(arg_id int, ast jsonb)
@@ -1688,8 +1695,7 @@ as $$
             'null'::jsonb
         )
     from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
         lateral (
             select
                 gql.alias_or_name(x.sel) field_alias,
@@ -1700,7 +1706,7 @@ as $$
 $$;
 
 
-create or replace function gql."resolve___Field"(field_id int, ast jsonb)
+create or replace function gql.resolve_field(field_id int, ast jsonb)
     returns jsonb
     stable
     language sql
@@ -1715,15 +1721,14 @@ as $$
                     when selection_name = 'isDeprecated' then to_jsonb(f.is_deprecated)
                     when selection_name = 'deprecationReason' then to_jsonb(f.deprecation_reason)
                     when selection_name = 'type' then gql."resolve___Type"(f.type_id, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
-                    when selection_name = 'args' then '[]' -- todo
+                    when selection_name = 'args' then '[]'::jsonb --gql."resolve___InputValues"(f.type_id, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
             ),
             'null'::jsonb
         )
     from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
         lateral (
             select
                 gql.alias_or_name(x.sel) field_alias,
@@ -1758,8 +1763,20 @@ as $$
                             --else to_jsonb('OTHER'::text)
                         end
                     )
-                    when selection_name = 'fields' and not has_modifiers then (select jsonb_agg(gql."resolve___Field"(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id)
-                    when selection_name = 'interfaces' and not has_modifiers then '[]'::jsonb
+                    when selection_name = 'fields' and not has_modifiers then (
+                        case
+                            -- TODO, un-hardcode
+                            when gt.name = 'Mutation' then '[]'::jsonb
+                            else (select jsonb_agg(gql.resolve_field(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id and not f.is_hidden_from_schema)
+                        end
+                    )
+                    when selection_name = 'interfaces' and not has_modifiers then (
+                        case
+                            -- Scalars get null, objects get an empty list. This is a poor implementation
+                            when (gt.meta_kind not in ('INTERFACE', 'BUILTIN', 'CURSOR') and gt.meta_kind::text not like '\_\_%') then '[]'::jsonb
+                            else to_jsonb(null::text)
+                        end
+                    )
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
                     -- wasteful
                     when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.id, x.sel)
@@ -1834,10 +1851,7 @@ create or replace function gql."resolve_mutationType"(ast jsonb)
     stable
     language sql
 as $$
-    select
-        --jsonb_build_object(
-        --    gql.name(ast),
-            coalesce(
+    select  coalesce(
                 jsonb_object_agg(
                     fa.field_alias,
                     case
@@ -1848,7 +1862,6 @@ as $$
                 ),
                 'null'::jsonb
             )
-        --)
     from
         jsonb_path_query(ast, '$.selectionSet.selections') selections,
         lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
@@ -1962,7 +1975,6 @@ begin
             ast := operation_ast,
             variables := variables,
             variable_definitions := variable_definitions_ast,
-            fragment_definitions := fragment_definitions,
             parent_type_id := null,
             parent_block_name := null,
             indent_level := 0

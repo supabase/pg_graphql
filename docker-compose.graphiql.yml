@@ -39,12 +39,8 @@ services:
       PGRST_DB_ANON_ROLE: postgres
 
   graphiql:
-    container_name: pg_graphql_graphiql
-    image: npalm/graphiql
+    container_name: graphiql
+    build:
+        context: ./dockerfiles/graphiql
     ports:
-        - 4000:4000
-    depends_on:
-      - db
-      - rest
-    environment:
-        API_URL: http://localhost:3000/rpc/graphql
+        - 4000:8000

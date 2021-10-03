@@ -125,3 +125,14 @@ Requires:
 pip intall -e .
 docker rmi pg_graphql_test_db; pytest
 ```
+
+### Demo
+
+Requires:
+
+- Docker
+
+```shell
+docker-compose -f docker-compose.graphiql.yml down -v; docker rm pg_graphql_db; docker rmi pg_graphql_db; docker-compose -f docker-compose.graphiql.yml up
+```
+then navigate to `http://localhost:4000/` for an interactive (graphiql)[https://github.com/graphql/graphiql] IDE instance.
