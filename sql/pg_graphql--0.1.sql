@@ -523,6 +523,8 @@ create table gql.field (
     is_not_null boolean,
     is_array boolean default false,
     is_array_not_null boolean,
+    is_deprecated boolean not null default false,
+    deprecation_reason text,
     is_disabled boolean default false,
     -- TODO trigger check column name only non-null when type is scalar
     column_name text,
@@ -560,6 +562,8 @@ create table gql.arg (
     is_not_null boolean,
     is_array boolean default false,
     is_array_not_null boolean,
+    is_deprecated boolean not null default false,
+    deprecation_reason text,
     default_value text,
     -- Names must be unique on each type
     unique(field_id, name),
@@ -704,16 +708,16 @@ begin
         (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'ofType', false, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'name', true, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
         (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
+        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
         (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'name', true, false, null, null),
         (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
         (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
         (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
         (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
+        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
         (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'name', true, false, null, null),
         (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'description', false, false, null, null),
         (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
@@ -1566,39 +1570,6 @@ end;
 $$;
 
 
-create or replace function gql.resolve___Type(type_name text, ast jsonb)
-    returns jsonb
-    language sql
-as $$
-    select
-        jsonb_build_object(
-            ast -> 'name' ->> 'value',
-            coalesce(
-                jsonb_object_agg(
-                    fa.field_alias,
-                    case
-                        when selection_name = 'name' then gt.name -- same as type_name
-                        when selection_name = 'description' then gt.name
-                        else 'ERROR: Unknown Field'
-                    end
-                ),
-                'null'::jsonb
-            )
-        )
-    from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        gql.type gt,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
-        lateral (
-            select
-                gql.alias_or_name(x.sel) field_alias,
-                x.sel -> 'name' ->> 'value' as selection_name
-        ) fa
-    where
-        gt.name = type_name
-$$;
-
-
 
 create or replace function gql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
     returns jsonb
@@ -1663,12 +1634,279 @@ Recursively replace fragment spreads with the fragment definition's selection se
 $$;
 
 
+create or replace function gql.name(ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select ast -> 'name' ->> 'value';
+$$;
+
+
+
+create or replace function gql."resolve_enumValues"(type_id int, ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select jsonb_agg(value::text order by id asc) from gql.enum_value ev where ev.type_id = $1;
+$$;
+
+
+-- stubs for recursion
+create or replace function gql.resolve___input_value(arg_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+create or replace function gql."resolve___Type"(type_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+create or replace function gql."resolve___Field"(field_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+
+
+create or replace function gql.resolve___input_value(arg_id int, ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' then to_jsonb(ar.name)
+                    when selection_name = 'description' then to_jsonb(ar.description)
+                    when selection_name = 'defaultValue' then to_jsonb(ar.default_value)
+                    when selection_name = 'isDeprecated' then to_jsonb(ar.is_deprecated)
+                    when selection_name = 'deprecationReason' then to_jsonb(ar.deprecation_reason)
+                    when selection_name = 'type' then gql."resolve___Type"(ar.type_id, x.sel)
+                    else to_jsonb('ERROR: Unknown Field'::text)
+                end
+            ),
+            'null'::jsonb
+        )
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                gql.alias_or_name(x.sel) field_alias,
+                gql.name(x.sel) as selection_name
+        ) fa
+        join gql.arg ar
+            on ar.id = arg_id
+$$;
+
+
+create or replace function gql."resolve___Field"(field_id int, ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' then to_jsonb(f.name)
+                    when selection_name = 'description' then to_jsonb(f.description)
+                    when selection_name = 'isDeprecated' then to_jsonb(f.is_deprecated)
+                    when selection_name = 'deprecationReason' then to_jsonb(f.deprecation_reason)
+                    when selection_name = 'type' then gql."resolve___Type"(f.type_id, x.sel)
+                    when selection_name = 'args' then '[]' -- todo
+                    else to_jsonb('ERROR: Unknown Field'::text)
+                end
+            ),
+            'null'::jsonb
+        )
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                gql.alias_or_name(x.sel) field_alias,
+                gql.name(x.sel) as selection_name
+        ) fa
+        join gql.field f
+            on f.id = field_id
+$$;
+
+
+
+
+create or replace function gql."resolve___Type"(type_id int, ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        --jsonb_build_object(
+        --    gql.name(ast),
+            coalesce(
+                jsonb_object_agg(
+                    fa.field_alias,
+                    case
+                        when selection_name = 'name' then to_jsonb(gt.name::text)
+                        when selection_name = 'description' then to_jsonb(gt.description::text)
+                        when selection_name = 'specifiedByURL' then to_jsonb(null::text)
+                        when selection_name = 'kind' then to_jsonb(tk.value::text)
+                        when selection_name = 'fields' then (select jsonb_agg(gql."resolve___Field"(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id)
+                        when selection_name = 'interfaces' then to_jsonb(null::text)
+                        when selection_name = 'possibleTypes' then to_jsonb(null::text)
+                        when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.id, x.sel)
+                        when selection_name = 'inputFields' then to_jsonb(null::text)
+                        when selection_name = 'ofType' then to_jsonb(null::text)
+                        else to_jsonb('ERROR: Unknown Field'::text)
+                    end
+                ),
+                'null'::jsonb
+            )
+       -- )
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                gql.alias_or_name(x.sel) field_alias,
+                gql.name(x.sel) as selection_name
+        ) fa
+        join gql.type gt
+            on gt.id = type_id
+        -- Type Kind (always 1:1)
+        join gql.enum_value tk
+            on gt.type_kind_id = tk.id
+$$;
+
+
+create or replace function gql."resolve_queryType"(ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        --jsonb_build_object(
+        --    gql.name(ast),
+            coalesce(
+                jsonb_object_agg(
+                    fa.field_alias,
+                    case
+                        when selection_name = 'name' then 'queryType'
+                        when selection_name = 'description' then null
+                        else 'ERROR: Unknown Field'
+                    end
+                ),
+                'null'::jsonb
+            )
+        --)
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                gql.alias_or_name(x.sel) field_alias,
+                gql.name(x.sel) as selection_name
+        ) fa
+$$;
+
+
+create or replace function gql."resolve_mutationType"(ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        --jsonb_build_object(
+        --    gql.name(ast),
+            coalesce(
+                jsonb_object_agg(
+                    fa.field_alias,
+                    case
+                        when selection_name = 'name' then 'mutationType'
+                        when selection_name = 'description' then null
+                        else 'ERROR: Unknown Field'
+                    end
+                ),
+                'null'::jsonb
+            )
+        --)
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                gql.alias_or_name(x.sel) field_alias,
+                gql.name(x.sel) as selection_name
+        ) fa
+$$;
+
+
+create or replace function gql."resolve___Schema"(
+    ast jsonb,
+    variables jsonb = '{}',
+    variable_definitions jsonb = '[]',
+    indent_level int = 0
+)
+    returns text
+    stable
+    language plpgsql
+    as $$
+declare
+    node_fields jsonb = jsonb_path_query(ast, '$.selectionSet.selections');
+    node_field jsonb;
+    node_field_rec gql.field;
+    agg jsonb = '{}';
+begin
+    --field_rec = "field" from gql.field where parent_type_id = gql.type_id_by_name('__Schema') and name = field_name;
+
+    for node_field in select * from jsonb_array_elements(node_fields) loop
+        node_field_rec = "field" from gql.field where parent_type_id = gql.type_id_by_name('__Schema') and name = gql.name(node_field);
+
+        if gql.name(node_field) = 'description' then
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), node_field_rec.description);
+        elsif node_field_rec.type_id = gql.type_id_by_name('__Directive') then
+            -- TODO
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), '[]'::jsonb);
+
+        elsif node_field_rec.name = 'queryType' then
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), gql."resolve_queryType"(node_field));
+
+        elsif node_field_rec.name = 'mutationType' then
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), gql."resolve_mutationType"(node_field));
+
+        elsif node_field_rec.name = 'subscriptionType' then
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), null);
+
+        elsif node_field_rec.name = 'types' then
+            -- TODO
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), jsonb_agg(gql."resolve___Type"(gt.id, node_field))) from gql.type gt;
+
+
+        elsif node_field_rec.type_id = gql.type_id_by_name('__Type') and not node_field_rec.is_array then
+            agg = agg || gql."resolve___Type"(node_field_rec.type_id, node_field);
+
+        else
+            -- TODO, no mach
+            perform 1;
+
+        end if;
+    end loop;
+
+    return jsonb_build_object(gql.alias_or_name(ast), agg);
+end
+$$;
+
+
+create or replace function gql.argument_value_by_name(name text, ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select jsonb_path_query_first(ast, ('$.arguments[*] ? (@.name.value == "' || name ||'")')::jsonpath) -> 'value' ->> 'value';
+$$;
+
+
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
     returns jsonb
+    stable
     language plpgsql
 as $$
 declare
-    raw_ast jsonb = gql.parse(stmt);
+    raw_ast jsonb = gql._recursive_strip_key(gql.parse(stmt));
 
     -- TODO support multiple ops per document
     variable_definitions_ast jsonb = coalesce(raw_ast -> 'definitions' -> 0 -> 'variableDefinitions', '[]');
@@ -1678,7 +1916,7 @@ declare
     clean_ast jsonb =  gql.ast_pass_fragments(raw_ast, fragment_definitions);
     operation_ast jsonb = clean_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
 
-    field_rec gql.field = "field" from gql.field where parent_type_id is null and name = (operation_ast -> 'name' ->> 'value');
+    field_rec gql.field = "field" from gql.field where parent_type_id is null and name = (gql.name(operation_ast));
     field_type gql.type = "type" from gql.type where id = field_rec.type_id;
     q text;
     res jsonb;
@@ -1691,6 +1929,7 @@ begin
             ast := operation_ast,
             variables := variables,
             variable_definitions := variable_definitions_ast,
+            fragment_definitions := fragment_definitions,
             parent_type_id := null,
             parent_block_name := null,
             indent_level := 0
@@ -1700,23 +1939,31 @@ begin
         return jsonb_build_object(
             'data',
             jsonb_build_object(
-                operation_ast -> 'name' ->> 'value',
+                gql.name(operation_ast),
                 res
             ),
             'errors',
             '[]'::jsonb
         );
-    end if;
 
-    /*
-    if field_type.meta_kind ='__SCHEMA' then
-        return gql.resolve___schema(
+    elsif field_type.meta_kind ='__SCHEMA' then
+        return gql."resolve___Schema"(
             ast := operation_ast,
             variables := variables,
-            variable_definitions := variable_definitions_ast,
+            variable_definitions := variable_definitions_ast
         );
+
+    elsif field_type.meta_kind ='__TYPE' then
+        return jsonb_build_object(
+            'data',
+            gql."resolve___Type"(
+                (select id from gql.type where name = gql.argument_value_by_name('name', operation_ast)),
+                operation_ast
+            ),
+            'errors', '[]'
+        );
+
     end if;
-    */
 
     return jsonb_build_object(
         'data', '{}'::jsonb,
@@ -1724,6 +1971,7 @@ begin
     );
 end
 $$;
+
 
 
 grant all on schema gql to postgres;
