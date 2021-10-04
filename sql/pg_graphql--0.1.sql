@@ -1655,7 +1655,7 @@ $$;
 
 -- stubs for recursion
 create or replace function gql.resolve___input_value(arg_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
-create or replace function gql."resolve___Type"(type_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+create or replace function gql."resolve___Type"(type_id int, ast jsonb, is_array_not_null bool = false, is_array bool = false, is_not_null bool = false) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 create or replace function gql."resolve___Field"(field_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 
 
@@ -1707,7 +1707,7 @@ as $$
                     when selection_name = 'description' then to_jsonb(f.description)
                     when selection_name = 'isDeprecated' then to_jsonb(f.is_deprecated)
                     when selection_name = 'deprecationReason' then to_jsonb(f.deprecation_reason)
-                    when selection_name = 'type' then gql."resolve___Type"(f.type_id, x.sel)
+                    when selection_name = 'type' then gql."resolve___Type"(f.type_id, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
                     when selection_name = 'args' then '[]' -- todo
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
@@ -1729,47 +1729,65 @@ $$;
 
 
 
-create or replace function gql."resolve___Type"(type_id int, ast jsonb)
+create or replace function gql."resolve___Type"(type_id int, ast jsonb, is_array_not_null bool = false, is_array bool = false, is_not_null bool = false)
     returns jsonb
     stable
     language sql
 as $$
     select
-        --jsonb_build_object(
-        --    gql.name(ast),
-            coalesce(
-                jsonb_object_agg(
-                    fa.field_alias,
-                    case
-                        when selection_name = 'name' then to_jsonb(gt.name::text)
-                        when selection_name = 'description' then to_jsonb(gt.description::text)
-                        when selection_name = 'specifiedByURL' then to_jsonb(null::text)
-                        when selection_name = 'kind' then to_jsonb(tk.value::text)
-                        when selection_name = 'fields' then (select jsonb_agg(gql."resolve___Field"(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id)
-                        when selection_name = 'interfaces' then to_jsonb(null::text)
-                        when selection_name = 'possibleTypes' then to_jsonb(null::text)
-                        when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.id, x.sel)
-                        when selection_name = 'inputFields' then to_jsonb(null::text)
-                        when selection_name = 'ofType' then to_jsonb(null::text)
-                        else to_jsonb('ERROR: Unknown Field'::text)
-                    end
-                ),
-                'null'::jsonb
-            )
-       -- )
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' and not has_modifiers then to_jsonb(gt.name::text)
+                    when selection_name = 'description' and not has_modifiers then to_jsonb(gt.description::text)
+                    when selection_name = 'specifiedByURL' and not has_modifiers then to_jsonb(null::text)
+                    when selection_name = 'kind' then (
+                        case
+                            when is_array_not_null then to_jsonb('NON_NULL'::text)
+                            when is_array then to_jsonb('LIST'::text)
+                            when is_not_null then to_jsonb('NON_NULL'::text)
+                            else to_jsonb((select value::text from gql.enum_value where id = gt.type_kind_id limit 1))
+                            --else to_jsonb('OTHER'::text)
+                        end
+                    )
+                    when selection_name = 'fields' and not has_modifiers then (select jsonb_agg(gql."resolve___Field"(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id)
+                    when selection_name = 'interfaces' and not has_modifiers then to_jsonb(null::text)
+                    when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
+                    -- wasteful
+                    when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.id, x.sel)
+                    when selection_name = 'inputFields' and not has_modifiers then to_jsonb(null::text)
+                    when selection_name = 'ofType' then (
+                        case
+                            -- NON_NULL(LIST(...))
+                            when is_array_not_null then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := is_array, is_not_null := is_not_null)
+                            -- LIST(...)
+                            when is_array then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := false, is_not_null := is_not_null)
+                            -- NON_NULL(...)
+                            when is_not_null then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := false, is_not_null := false)
+                            -- TYPE
+                            else null
+                        end
+                    )
+                    else null
+                end
+            ),
+            'null'::jsonb
+        )
     from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        gql.type gt
+        join jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
+            on true,
         lateral (
             select
                 gql.alias_or_name(x.sel) field_alias,
                 gql.name(x.sel) as selection_name
-        ) fa
-        join gql.type gt
-            on gt.id = type_id
-        -- Type Kind (always 1:1)
-        join gql.enum_value tk
-            on gt.type_kind_id = tk.id
+        ) fa,
+        lateral (
+            select is_array_not_null or is_array or is_not_null as has_modifiers
+        ) hm
+    where
+        gt.id = type_id
 $$;
 
 
@@ -1877,7 +1895,13 @@ begin
 
 
         elsif node_field_rec.type_id = gql.type_id_by_name('__Type') and not node_field_rec.is_array then
-            agg = agg || gql."resolve___Type"(node_field_rec.type_id, node_field);
+            agg = agg || gql."resolve___Type"(
+                node_field_rec.type_id,
+                node_field,
+                node_field_rec.is_array_not_null,
+                node_field_rec.is_array,
+                node_field_rec.is_not_null
+            );
 
         else
             -- TODO, no mach
