@@ -938,18 +938,18 @@ begin
             and rel.foreign_cardinality = 'ONE';
 
     -- Resolver Entrypoints
-    insert into gql.field(type_id, name, is_not_null, is_array)
-        select t.id, '__type', true, false from gql.type t where name in ('__Type')
+    insert into gql.field(type_id, name, is_not_null, is_array, parent_type_id)
+        select gql.type_id_by_name('__Type'), '__type', true, false, gql.type_id_by_name('Query')
         union all
-        select t.id, '__schema', true, false from gql.type t where name in ('__Schema')
+        select gql.type_id_by_name('__Schema'), '__schema', true, false, gql.type_id_by_name('Query')
         union all
         -- Node
-        select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false
+        select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, gql.type_id_by_name('Query')
         from gql.type t
         where t.meta_kind = 'NODE'
         union all
         -- Connections
-        select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false
+        select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, gql.type_id_by_name('Query')
         from gql.type t
         where t.meta_kind = 'CONNECTION';
 
@@ -1649,7 +1649,14 @@ create or replace function gql."resolve_enumValues"(type_id int, ast jsonb)
     stable
     language sql
 as $$
-    select jsonb_agg(value::text order by id asc) from gql.enum_value ev where ev.type_id = $1;
+    select jsonb_agg(
+        jsonb_build_object(
+            'description', value::text,
+            'deprecationReason', null
+        )
+        order by id asc)
+    from
+        gql.enum_value ev where ev.type_id = $1;
 $$;
 
 
@@ -1752,7 +1759,7 @@ as $$
                         end
                     )
                     when selection_name = 'fields' and not has_modifiers then (select jsonb_agg(gql."resolve___Field"(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id)
-                    when selection_name = 'interfaces' and not has_modifiers then to_jsonb(null::text)
+                    when selection_name = 'interfaces' and not has_modifiers then '[]'::jsonb
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
                     -- wasteful
                     when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.id, x.sel)
@@ -1760,7 +1767,7 @@ as $$
                     when selection_name = 'ofType' then (
                         case
                             -- NON_NULL(LIST(...))
-                            when is_array_not_null then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := is_array, is_not_null := is_not_null)
+                            when is_array_not_null is true then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := is_array, is_not_null := is_not_null)
                             -- LIST(...)
                             when is_array then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := false, is_not_null := is_not_null)
                             -- NON_NULL(...)
@@ -1784,7 +1791,7 @@ as $$
                 gql.name(x.sel) as selection_name
         ) fa,
         lateral (
-            select is_array_not_null or is_array or is_not_null as has_modifiers
+            select (coalesce(is_array_not_null, false) or is_array or is_not_null) as has_modifiers
         ) hm
     where
         gt.id = type_id
@@ -1803,7 +1810,7 @@ as $$
                 jsonb_object_agg(
                     fa.field_alias,
                     case
-                        when selection_name = 'name' then 'queryType'
+                        when selection_name = 'name' then 'Query'
                         when selection_name = 'description' then null
                         else 'ERROR: Unknown Field'
                     end
@@ -1834,7 +1841,7 @@ as $$
                 jsonb_object_agg(
                     fa.field_alias,
                     case
-                        when selection_name = 'name' then 'mutationType'
+                        when selection_name = 'name' then 'Mutation'
                         when selection_name = 'description' then null
                         else 'ERROR: Unknown Field'
                     end
@@ -1890,7 +1897,6 @@ begin
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), null);
 
         elsif node_field_rec.name = 'types' then
-            -- TODO
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), jsonb_agg(gql."resolve___Type"(gt.id, node_field))) from gql.type gt;
 
 
@@ -1940,8 +1946,11 @@ declare
     clean_ast jsonb =  gql.ast_pass_fragments(raw_ast, fragment_definitions);
     operation_ast jsonb = clean_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
 
-    field_rec gql.field = "field" from gql.field where parent_type_id is null and name = (gql.name(operation_ast));
+    field_rec gql.field = "field" from gql.field where parent_type_id = gql.type_id_by_name('Query') and name = (gql.name(operation_ast));
     field_type gql.type = "type" from gql.type where id = field_rec.type_id;
+
+    working_type gql.type;
+
     q text;
     res jsonb;
 begin
@@ -1971,17 +1980,21 @@ begin
         );
 
     elsif field_type.meta_kind ='__SCHEMA' then
-        return gql."resolve___Schema"(
-            ast := operation_ast,
-            variables := variables,
-            variable_definitions := variable_definitions_ast
+        return jsonb_build_object(
+            'data', gql."resolve___Schema"(
+                ast := operation_ast,
+                variables := variables,
+                variable_definitions := variable_definitions_ast
+            )::jsonb,
+            'errors', '[]'
         );
 
     elsif field_type.meta_kind ='__TYPE' then
+        working_type = "type" from gql.type where name = gql.argument_value_by_name('name', operation_ast);
         return jsonb_build_object(
             'data',
             gql."resolve___Type"(
-                (select id from gql.type where name = gql.argument_value_by_name('name', operation_ast)),
+                working_type.id,
                 operation_ast
             ),
             'errors', '[]'
