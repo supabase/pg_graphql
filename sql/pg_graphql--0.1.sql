@@ -506,6 +506,12 @@ create function gql.type_id_by_name(text)
 as
 $$ select id from gql.type where name = $1; $$;
 
+create function gql.type_name_by_id(int)
+    returns text
+    language sql
+as
+$$ select name from gql.type where id = $1; $$;
+
 create function gql.type_kind_id_by_value(text)
     returns int
     language sql
@@ -955,9 +961,9 @@ begin
         where t.meta_kind = 'CONNECTION';
 
     -- Every output type with fields has a __typename field
-    --insert into gql.field(parent_type_id, type_id, name, is_not_null)
-    --    select distinct f.parent_type_id, gql.type_id_by_name('String') type_id, '__typename', true
-    --    from gql.field f;
+    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_hidden_from_schema)
+        select distinct f.parent_type_id, gql.type_id_by_name('String'), '__typename', true, true
+        from gql.field f;
 
 
     -- Arguments
@@ -1197,8 +1203,7 @@ begin
                 gql.field gf
             where
                 gf.name = node_field -> 'name' ->> 'value'
-                and gf.parent_type_id = field_row.type_id
-                ;
+                and gf.parent_type_id = field_row.type_id;
 
         -- Column fields
         if node_field_row.column_name is not null then
@@ -1209,10 +1214,20 @@ begin
                 || quote_ident(block_name) || '.' || quote_ident(node_field_row.column_name)
             );
             req_comma = 't';
-        end if;
+
+        --elsif node_field_row.name = '__typename' then
+        elsif gql.get_name(node_field) = '__typename' then
+            --raise 'yyy %', field_row;
+            q = (
+                q
+                || case when req_comma then E',\n' else E'\n' end
+                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
+                || quote_literal(gql.type_name_by_id(node_field_row.parent_type_id))
+            );
+            req_comma = 't';
 
         -- Connection
-        if node_field_row.local_columns is not null and node_field_row.is_array then
+        elsif node_field_row.local_columns is not null and node_field_row.is_array then
             q = q
                 || case when req_comma then E',\n' else E'\n' end
                 || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
@@ -1224,10 +1239,9 @@ begin
                 parent_block_name := block_name,
                 indent_level := indent_level + 1
             );
-        end if;
 
         -- Single
-        if node_field_row.local_columns is not null and not node_field_row.is_array then
+        elsif node_field_row.local_columns is not null and not node_field_row.is_array then
             q = q
                 || case when req_comma then E',\n' else E'\n' end
                 || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
@@ -1239,6 +1253,9 @@ begin
                 parent_block_name := block_name,
                 indent_level := indent_level + 1
             );
+
+        else
+            raise notice 'Unhandled field %', gql.name(node_field);
         end if;
 
     end loop;
