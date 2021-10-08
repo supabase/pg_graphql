@@ -1211,6 +1211,36 @@ begin
             req_comma = 't';
         end if;
 
+        -- Connection
+        if node_field_row.local_columns is not null and node_field_row.is_array then
+            q = q
+                || case when req_comma then E',\n' else E'\n' end
+                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
+                || gql.build_connection_query(
+                ast := node_field,
+                variables := variables,
+                variable_definitions := variable_definitions,
+                parent_type_id := node_field_row.parent_type_id,
+                parent_block_name := block_name,
+                indent_level := indent_level + 1
+            );
+        end if;
+
+        -- Single
+        if node_field_row.local_columns is not null and not node_field_row.is_array then
+            q = q
+                || case when req_comma then E',\n' else E'\n' end
+                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
+                || gql.build_node_query(
+                ast := node_field,
+                variables := variables,
+                variable_definitions := variable_definitions,
+                parent_type_id := node_field_row.parent_type_id,
+                parent_block_name := block_name,
+                indent_level := indent_level + 1
+            );
+        end if;
+
     end loop;
 
     q = q || ')';
@@ -1496,8 +1526,6 @@ begin
                         indent_level := indent_level + 1
                     );
                 end if;
-
-
             end loop;
 
             -- Close the functions

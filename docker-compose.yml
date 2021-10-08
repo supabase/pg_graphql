@@ -44,3 +44,6 @@ services:
         context: ./dockerfiles/graphiql
     ports:
         - 4000:8000
+    depends_on:
+      - db
+      - rest
