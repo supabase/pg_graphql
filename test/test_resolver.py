@@ -3,6 +3,75 @@ import json
 from sqlalchemy import func, select
 
 
+def test_resolve_account_entrypoint(sess):
+    query = """
+{
+  account(id: "1") {
+    id
+  }
+}
+"""
+    (result,) = sess.execute(select([func.gql.dispatch(query)])).fetchone()
+    print(json.dumps(result, indent=2))
+    assert "data" in result
+    assert "errors" in result
+    assert result["errors"] == []
+    assert result["data"] == {"account": {"id": 1}}
+
+
+def test_resolve___Type(sess):
+    query = """
+{
+  __type(name: "Account") {
+    kind
+    fields {
+    	name
+    }
+  }
+}
+"""
+    (result,) = sess.execute(select([func.gql.dispatch(query)])).fetchone()
+    print(json.dumps(result, indent=2))
+    assert "data" in result
+    assert "errors" in result
+    assert result["errors"] == []
+    assert result["data"]["__type"]["kind"] == "OBJECT"
+    fields = result["data"]["__type"]["fields"]
+    assert len(fields) == 6
+    assert "createdAt" in [x["name"] for x in fields]
+
+
+def test_resolve___Schema(sess):
+    query = """
+query IntrospectionQuery {
+  __schema {
+    queryType {
+      name
+    }
+    mutationType {
+      name
+    }
+    types {
+      kind
+      name
+    }
+    directives {
+      name
+      description
+      locations
+    }
+  }
+}
+"""
+    (result,) = sess.execute(select([func.gql.dispatch(query)])).fetchone()
+    print(json.dumps(result, indent=2))
+    assert "data" in result
+    assert result["errors"] == []
+    assert result["data"]["__schema"]["queryType"]["name"] == "Query"
+    assert result["data"]["__schema"]["mutationType"]["name"] == "Mutation"
+    assert len(result["data"]["__schema"]["types"]) > 5
+
+
 def test_resolve_connection_entrypoint(sess):
     query = """
 {
@@ -38,7 +107,7 @@ def test_resolve_connection_entrypoint(sess):
     assert isinstance(edges[0]["cursor"], str)
     node = edges[0]["node"]
     assert isinstance(node, dict)
-    assert isinstance(node["id"], str)
+    assert isinstance(node["id"], int)
     assert isinstance(node["email"], str)
     assert isinstance(node["createdAt"], str)
 

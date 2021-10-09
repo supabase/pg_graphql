@@ -1227,7 +1227,7 @@ as $$
         b
     where
         gf.name = gql.name(ast)
-        and (($4 is null and gf.parent_type_id is null) or (gf.parent_type_id = $4))
+        and coalesce($4, gql.type_id_by_name('Query')) = gf.parent_type_id
     group by
         gt.entity, b.block_name, gf.parent_columns, gf.local_columns
 $$;
@@ -1326,7 +1326,7 @@ begin
             q = (
                 q
                 || gql.tab(3) || quote_literal(gql.alias_or_name(start_cursor))
-                || ', ' || 'gql.array_first(array_agg(' || gql.primary_key_clause(entity, block_name) || E'))'
+                || ', ' || 'gql.array_first(array_agg(' || gql.primary_key_clause(entity, block_name) || E'))' || '::text'
             );
             req_comma = true;
         end if;
@@ -1336,7 +1336,7 @@ begin
                 q
                 || case when req_comma then E',\n' else '' end
                 || gql.tab(3) || quote_literal(gql.alias_or_name(end_cursor))
-                || ', ' || 'gql.array_last(array_agg(' || gql.primary_key_clause(entity, block_name) || E'))'
+                || ', ' || 'gql.array_last(array_agg(' || gql.primary_key_clause(entity, block_name) || E'))' || '::text'
             );
             req_comma = true;
         end if;
@@ -1420,7 +1420,7 @@ begin
                 q
                 || gql.tab(4) || quote_literal(gql.alias_or_name(edge_cursor)) || E', '
                 -- TODO, pkey
-                || gql.primary_key_clause(entity, block_name)
+                || gql.primary_key_clause(entity, block_name) || '::text'
             );
             req_comma = 't';
         end if;
@@ -1945,26 +1945,27 @@ create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
 as $$
 declare
     raw_ast jsonb = gql._recursive_strip_key(gql.parse(stmt));
-
-    -- TODO support multiple ops per document
     variable_definitions_ast jsonb = coalesce(raw_ast -> 'definitions' -> 0 -> 'variableDefinitions', '[]');
-    fragment_definitions jsonb = jsonb_path_query_array(raw_ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
-
     -- Inline fragments
+    fragment_definitions jsonb = jsonb_path_query_array(raw_ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
     clean_ast jsonb =  gql.ast_pass_fragments(raw_ast, fragment_definitions);
     operation_ast jsonb = clean_ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
 
-    field_rec gql.field = "field" from gql.field where parent_type_id = gql.type_id_by_name('Query') and name = (gql.name(operation_ast));
-    field_type gql.type = "type" from gql.type where id = field_rec.type_id;
-
-    working_type gql.type;
+    meta_kind gql.meta_kind = meta_kind
+        from
+            gql.field
+            join gql.type
+                on field.type_id = type.id
+        where
+            field.parent_type_id = gql.type_id_by_name('Query')
+            and field.name = gql.name(operation_ast);
 
     q text;
-    res jsonb;
-begin
-    --raise exception 'field_type %', field_type;
+    data_ jsonb;
+    errors_ text[] = '{}';
 
-    if field_type.meta_kind ='CONNECTION' then
+begin
+    if meta_kind ='CONNECTION' then
         -- Check top type. Default connection
         q = gql.build_connection_query(
             ast := operation_ast,
@@ -1974,44 +1975,48 @@ begin
             parent_block_name := null,
             indent_level := 0
         );
-        raise notice '%', q;
-        execute q into res;
-        return jsonb_build_object(
-            'data',
-            jsonb_build_object(
-                gql.name(operation_ast),
-                res
-            ),
-            'errors',
-            '[]'::jsonb
+        execute q into data_;
+        data_ = jsonb_build_object(
+            gql.name(operation_ast),
+            data_
         );
 
-    elsif field_type.meta_kind ='__SCHEMA' then
-        return jsonb_build_object(
-            'data', gql."resolve___Schema"(
-                ast := operation_ast,
-                variables := variables,
-                variable_definitions := variable_definitions_ast
-            )::jsonb,
-            'errors', '[]'
+    elsif meta_kind ='NODE' then
+        raise notice '%', operation_ast;
+        q = gql.build_node_query(
+            ast := operation_ast,
+            variables := variables,
+            variable_definitions := variable_definitions_ast,
+            parent_type_id := null,
+            parent_block_name := null,
+            indent_level := 0
+        );
+        execute q into data_;
+        data_ = jsonb_build_object(
+            gql.name(operation_ast),
+            data_
         );
 
-    elsif field_type.meta_kind ='__TYPE' then
-        working_type = "type" from gql.type where name = gql.argument_value_by_name('name', operation_ast);
-        return jsonb_build_object(
-            'data',
+    elsif meta_kind ='__SCHEMA' then
+        data_ = gql."resolve___Schema"(
+            ast := operation_ast,
+            variables := variables,
+            variable_definitions := variable_definitions_ast
+         );
+
+    elsif meta_kind ='__TYPE' then
+        data_ = jsonb_build_object(
+            gql.name(operation_ast),
             gql."resolve___Type"(
-                working_type.id,
+                (select id from gql.type where name = gql.argument_value_by_name('name', operation_ast)),
                 operation_ast
-            ),
-            'errors', '[]'
+            )
         );
-
     end if;
 
     return jsonb_build_object(
-        'data', '{}'::jsonb,
-        'errors', '["Not implemented"]'::jsonb
+        'data', data_,
+        'errors', to_jsonb(errors_)
     );
 end
 $$;
