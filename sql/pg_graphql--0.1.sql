@@ -1151,6 +1151,7 @@ as $$
     select substr(md5(random()::text), 0, 12);
 $$;
 
+
 create or replace function gql.build_node_query(
     ast jsonb,
     variables jsonb = '{}',
@@ -1160,109 +1161,47 @@ create or replace function gql.build_node_query(
     indent_level int = 0
 )
     returns text
-    language plpgsql
-    as $$
-declare
-    field_row gql.field;
-    field_name text = ast -> 'name' ->> 'value';
-    node_fields jsonb = jsonb_path_query(ast, '$.selectionSet.selections');
-    node_field jsonb;
-    node_field_alias text;
-    node_field_row gql.field;
-    req_comma bool;
-    req_concat bool;
-
-    q text = E'(\nselect\n';
-
-    i alias for indent_level;
-    pti alias for parent_type_id;
-    entity regclass;
-    errors text[];
-    block_name text = gql.slug();
-begin
-
-    field_row =    gf
+    language sql
+as $$
+    with b as (
+        select gql.slug() as block_name
+    ),
+    x(sel) as (
+        select
+            *
         from
-            gql.field gf
-        where
-            ((pti is null and gf.parent_type_id is null) or (gf.parent_type_id = pti))
-            and gf.name = (ast -> 'name' ->> 'value');
+            jsonb_array_elements(ast -> 'selectionSet' -> 'selections')
+    )
+    select
+        E'(\nselect\n' || gql.tab(1) || E'jsonb_build_object(\n'
+        || string_agg(
+            gql.tab(5) || quote_literal(gql.alias_or_name(x.sel)) || E',\n' ||
+            case
 
-    entity = t.entity from gql.type t where t.id = field_row.type_id;
-    q = (
-        q
-        || gql.tab(1) || E'jsonb_build_object(\n'
-    );
-    -- Loop node selections
-    req_comma = 'f';
-
-    for node_field in select * from jsonb_array_elements(node_fields) loop
-
-        node_field_row = gf
-            from
-                gql.field gf
-            where
-                gf.name = node_field -> 'name' ->> 'value'
-                and gf.parent_type_id = field_row.type_id;
-
-        -- Column fields
-        if node_field_row.column_name is not null then
-            q = (
-                q
-                || case when req_comma then E',\n' else E'\n' end
-                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
-                || quote_ident(block_name) || '.' || quote_ident(node_field_row.column_name)
-            );
-            req_comma = 't';
-
-        --elsif node_field_row.name = '__typename' then
-        elsif gql.get_name(node_field) = '__typename' then
-            --raise 'yyy %', field_row;
-            q = (
-                q
-                || case when req_comma then E',\n' else E'\n' end
-                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
-                || quote_literal(gql.type_name_by_id(node_field_row.parent_type_id))
-            );
-            req_comma = 't';
-
-        -- Connection
-        elsif node_field_row.local_columns is not null and node_field_row.is_array then
-            q = q
-                || case when req_comma then E',\n' else E'\n' end
-                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
-                || gql.build_connection_query(
-                ast := node_field,
-                variables := variables,
-                variable_definitions := variable_definitions,
-                parent_type_id := node_field_row.parent_type_id,
-                parent_block_name := block_name,
-                indent_level := indent_level + 1
-            );
-
-        -- Single
-        elsif node_field_row.local_columns is not null and not node_field_row.is_array then
-            q = q
-                || case when req_comma then E',\n' else E'\n' end
-                || gql.tab(5) || quote_literal(gql.alias_or_name(node_field)) || E', '
-                || gql.build_node_query(
-                ast := node_field,
-                variables := variables,
-                variable_definitions := variable_definitions,
-                parent_type_id := node_field_row.parent_type_id,
-                parent_block_name := block_name,
-                indent_level := indent_level + 1
-            );
-
-        else
-            raise notice 'Unhandled field %', gql.name(node_field);
-        end if;
-
-    end loop;
-
-    q = q || ')';
-
-    q = q || format('
+                when nf.column_name is not null then (quote_ident(b.block_name) || '.' || quote_ident(nf.column_name))
+                when nf.name = '__typename' then quote_literal(gt.name)
+                when nf.local_columns is not null and nf.is_array then gql.build_connection_query(
+                    ast := x.sel,
+                    variables := variables,
+                    variable_definitions := variable_definitions,
+                    parent_type_id := gf.type_id,
+                    parent_block_name := b.block_name,
+                    indent_level := indent_level + 1
+                )
+                when nf.local_columns is not null then gql.build_node_query(
+                    ast := x.sel,
+                    variables := variables,
+                    variable_definitions := variable_definitions,
+                    parent_type_id := gf.type_id,
+                    parent_block_name := b.block_name,
+                    indent_level := indent_level + 1
+                )
+                else null::text
+            end,
+            E',\n'
+        )
+        || ')'
+        || format('
     from
         %s as %s
     where
@@ -1272,14 +1211,25 @@ begin
     limit 1
 )
 ',
-    gql.quote_ident(entity),
-    quote_ident(block_name),
-    coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), '')
-    );
-
-    return q;
-
-end;
+    gql.quote_ident(gt.entity),
+    quote_ident(b.block_name),
+    coalesce(gql.join_clause(gf.local_columns, b.block_name, gf.parent_columns, parent_block_name), '')
+    )
+    from
+        x
+        join gql.field gf -- top level
+            on true
+        join gql.type gt -- for gt.entity
+            on gt.id = gf.type_id
+        join gql.field nf -- selected fields (node_field_row)
+            on nf.parent_type_id = gf.type_id
+            and gql.name(x.sel) = nf.name,
+        b
+    where
+        gf.name = gql.name(ast)
+        and (($4 is null and gf.parent_type_id is null) or (gf.parent_type_id = $4))
+    group by
+        gt.entity, b.block_name, gf.parent_columns, gf.local_columns
 $$;
 
 
