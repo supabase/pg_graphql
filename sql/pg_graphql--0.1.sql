@@ -948,7 +948,7 @@ create or replace function gql.join_clause(local_columns text[], local_alias_nam
     as
 $$
     -- select gql.join_clause(array['a', 'b', 'c'], 'abc', array['d', 'e', 'f'], 'def')
-    select 'and ' ||string_agg(quote_ident(local_alias_name) || '.' || quote_ident(x) || ' = ' || quote_ident(parent_alias_name) || '.' || quote_ident(y), ' and ')
+    select string_agg(quote_ident(local_alias_name) || '.' || quote_ident(x) || ' = ' || quote_ident(parent_alias_name) || '.' || quote_ident(y), ' and ')
     from
         unnest(local_columns) with ordinality local_(x, ix),
         unnest(parent_columns) with ordinality parent_(y, iy)
@@ -1105,6 +1105,13 @@ ent(entity) as (
 root(sel) as (select * from jsonb_array_elements(ast -> 'selectionSet' -> 'selections')),
 field_row as (select * from gql.field f where f.name = gql.name(ast) and f.parent_type_id = $4),
 total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), b.block_name, '__total_count')  from root, b where gql.name(sel) = 'totalCount'),
+args as (
+    select
+        min(case when gql.name(sel) = 'first' then coalesce(ar.sel -> 'value' ->> 'value') else null end) as first_val,
+        min(null::text) as last_val
+    from
+        jsonb_array_elements(case when jsonb_typeof(ast -> 'arguments') = 'array' then ast -> 'arguments' else '[]' end ) ar(sel)
+),
 page_info(sel, q) as (
     select
         root.sel,
@@ -1169,18 +1176,20 @@ edges(sel, q) as (
                                                                                     ast := n.sel,
                                                                                     variables := variables,
                                                                                     variable_definitions := variable_definitions,
-                                                                                    parent_type_id := gf_s.parent_type_id,
+                                                                                    parent_type_id := gf_n.type_id,
                                                                                     parent_block_name := b.block_name,
-                                                                                    indent_level := indent_level + 1
+                                                                                    indent_level := 0
                                                                                 )
                                 when gf_s.local_columns is not null and gf_s.is_array then gql.build_connection_query(
                                                                                     ast := n.sel,
                                                                                     variables := variables,
                                                                                     variable_definitions := variable_definitions,
-                                                                                    parent_type_id := gf_s.parent_type_id,
+                                                                                    parent_type_id := gf_n.type_id,
                                                                                     parent_block_name := b.block_name,
-                                                                                    indent_level := indent_level + 1
+                                                                                    indent_level := 0
                                                                                 )
+
+
                                 else quote_literal(gf_s.name)
                             end
                         ),
@@ -1235,7 +1244,7 @@ select
             count(*) over () __total_count,
             first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
             last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
-               %s::text as __cursor,
+            %s::text as __cursor,
             *
         from
             %s as %s
@@ -1243,15 +1252,15 @@ select
             true
             --pagination_clause
             -- join clause
-            %s
+            and %s
         order by
             %s asc
         limit %s
     ) as %s
 )',
-        coalesce(total_count.q, ''),
-        coalesce(page_info.q, ''),
-        coalesce(edges.q, ''),
+        (select coalesce(total_count.q, '') from total_count),
+        (select coalesce(page_info.q, '') from page_info),
+        (select coalesce(edges.q, '') from edges),
         gql.primary_key_clause(entity, block_name),
         gql.primary_key_clause(entity, block_name) || ' asc',
         gql.primary_key_clause(entity, block_name),
@@ -1259,21 +1268,17 @@ select
         gql.primary_key_clause(entity, block_name),
         gql.quote_ident(entity),
         quote_ident(block_name),
-        coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), ''),
+        coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
         gql.primary_key_clause(entity, block_name),
         -- limit here
         -- TODO(enforce only 1 provided)
-        --least(coalesce(first_val::int, last_val::int), 10),
-        10,
+        (select least(coalesce(args.first_val::int, args.last_val::int, 10), 10) from args),
         quote_ident(block_name)
 
           )
     from
         b,
         ent,
-        total_count,
-        page_info,
-        edges,
         field_row
 $$;
 
