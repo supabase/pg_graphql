@@ -1,6 +1,6 @@
 create role anon;
 create extension if not exists "uuid-ossp";
-create extension if not exists pg_graphql;
+create extension if not exists pg_graphql cascade;
 
 
 grant usage on schema public to postgres, anon;

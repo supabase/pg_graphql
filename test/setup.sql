@@ -1,5 +1,5 @@
+create extension pg_graphql cascade;
 create extension "uuid-ossp";
-create extension pg_graphql;
 
 create table account(
     id serial primary key,
