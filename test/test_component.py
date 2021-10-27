@@ -16,12 +16,12 @@ def test_get_name(sess):
         }
     )
 
-    (result,) = sess.execute(select([func.gql.get_name(selection)])).fetchone()
+    (result,) = sess.execute(select([func.gql.name(selection)])).fetchone()
 
     assert result == "hello"
 
 
-def test_get_alias(sess):
+def test_get_alias_or_name_w_alias(sess):
 
     selection = json.dumps(
         {
@@ -34,12 +34,12 @@ def test_get_alias(sess):
         }
     )
 
-    (result,) = sess.execute(select([func.gql.get_alias(selection)])).fetchone()
+    (result,) = sess.execute(select([func.gql.alias_or_name(selection)])).fetchone()
 
     assert result == "hello_alias"
 
 
-def test_get_alias_defaults_to_name(sess):
+def test_get_alias_or_name_wo_alias(sess):
 
     selection = json.dumps(
         {
@@ -52,6 +52,6 @@ def test_get_alias_defaults_to_name(sess):
         }
     )
 
-    (result,) = sess.execute(select([func.gql.get_alias(selection)])).fetchone()
+    (result,) = sess.execute(select([func.gql.alias_or_name(selection)])).fetchone()
 
     assert result == "hello"

@@ -15,7 +15,7 @@ def test_parse(sess):
 
     (full_ast,) = sess.execute(select([func.gql.parse(query)])).fetchone()
     (ast,) = sess.execute(
-        select([func.gql._recursive_strip_key(json.dumps(full_ast, indent=2))])
+        select([func.gql.ast_pass_strip_loc(json.dumps(full_ast, indent=2))])
     ).fetchone()
 
     with open("example.json", "w") as f:

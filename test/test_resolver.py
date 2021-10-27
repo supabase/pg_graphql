@@ -2,11 +2,14 @@ import json
 
 from sqlalchemy import func, select
 
+# Cursor for ['public', 'account', 1]
+ACCOUNT_CURSOR = "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"
+
 
 def test_resolve_account_entrypoint(sess):
     query = """
 {
-  account(id: "1") {
+  account(id: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
     id
   }
 }
@@ -16,7 +19,31 @@ def test_resolve_account_entrypoint(sess):
     assert "data" in result
     assert "errors" in result
     assert result["errors"] == []
-    assert result["data"] == {"account": {"id": 1}}
+    assert result["data"] == {"account": {"id": 2}}
+
+
+def test_resolve_account_entrypoint_with_named_operation(sess):
+    query = """
+query GetAccount($nodeId: ID!) {
+  account(nodeId: $nodeId) {
+    id
+  }
+}
+"""
+    (result,) = sess.execute(
+        select(
+            [
+                func.gql.dispatch(
+                    query, json.dumps({"nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"})
+                )
+            ]
+        )
+    ).fetchone()
+    print(json.dumps(result, indent=2))
+    assert "data" in result
+    assert "errors" in result
+    assert result["errors"] == []
+    assert result["data"] == {"account": {"id": 2}}
 
 
 def test_resolve___Type(sess):

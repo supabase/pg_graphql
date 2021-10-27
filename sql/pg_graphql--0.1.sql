@@ -1,48 +1,8 @@
 create schema if not exists gql;
 
-
-create function gql._parse(text)
-returns text
-language c
-immutable
-as 'pg_graphql';
-
-
-create function gql._recursive_strip_key(body jsonb, key text default 'loc')
-returns jsonb
-language sql
-immutable
-as $$
-/*
-Recursively remove a key from a jsonb object by name
-*/
-    select
-        case
-            when jsonb_typeof(body) = 'object' then
-                (
-                    select
-                        jsonb_object_agg(key_, gql._recursive_strip_key(value_))
-                    from
-                        jsonb_each(body) x(key_, value_)
-                    where
-                        x.key_ <> 'loc'
-                    limit
-                        1
-                )
-            when jsonb_typeof(body) = 'array' then
-                (
-                    select
-                        jsonb_agg(gql._recursive_strip_key(value_))
-                    from
-                        jsonb_array_elements(body) x(value_)
-                    limit
-                        1
-                )
-            else
-                body
-        end;
-$$;
-
+-------------
+-- Hashing --
+-------------
 create or replace function gql.sha1(text)
     returns text
     strict
@@ -53,6 +13,9 @@ as $$
 $$;
 
 
+-----------
+-- JSONB --
+-----------
 create or replace function gql.jsonb_coalesce(val jsonb, default_ jsonb)
     returns jsonb
     strict
@@ -65,117 +28,33 @@ as $$
     end;
 $$;
 
+-----------
+-- Array --
+-----------
+create or replace function gql.array_first(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- First element of an array
+    select arr[1];
+$$;
 
-create function gql.parse(query text)
-returns jsonb
-language sql
-strict
-as $$
-/*
-{
-  "kind": "Document",
-  "definitions": [
-    {
-      "kind": "OperationDefinition",
-      "name": null,
-      "operation": "query",
-      "directives": null,
-      "selectionSet": {
-        "kind": "SelectionSet",
-        "selections": [
-          {
-            "kind": "Field",
-            "name": {
-              "kind": "Name",
-              "value": "account"
-            },
-            "alias": null,
-            "arguments": null,
-            "directives": null,
-            "selectionSet": {
-              "kind": "SelectionSet",
-              "selections": [
-                {
-                  "kind": "Field",
-                  "name": {
-                    "kind": "Name",
-                    "value": "name"
-                  },
-                  "alias": null,
-                  "arguments": null,
-                  "directives": null,
-                  "selectionSet": null
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "variableDefinitions": null
-    }
-  ]
-}
-*/
-    select
-        gql._parse(query)::jsonb
-        -- Enable for debugging readability
-        --gql._recursive_strip_key(
-        --    body:=gql._parse(query)::jsonb,
-        --    key:='loc'
-        --);
+create or replace function gql.array_last(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- Last element of an array
+    select arr[array_length(arr, 1)];
 $$;
 
 
-create function gql.get_name(selection jsonb)
-returns text
-language sql
-immutable
-as $$
-/*
-{
-  "kind": "Field",
-  "name": {
-    "kind": "Name",
-    "value": "name"
-  },
-  "alias": null,
-  "arguments": null,
-  "directives": null,
-  "selectionSet": null
-}
-*/
-    select selection -> 'name' ->> 'value';
-$$;
-
-create function gql.get_alias(selection jsonb)
-returns text
-language sql
-immutable
-as $$
-/*
-{
-  "kind": "Field",
-  "name": {
-    "kind": "Name",
-    "value": "name"
-  },
-  "alias": null,
-  "arguments": null,
-  "directives": null,
-  "selectionSet": null
-}
-*/
-    select
-        coalesce(
-            selection -> 'alias' ->> 'value',
-            selection -> 'name' ->> 'value'
-        );
-$$;
-
-
-create type gql.cardinality as enum ('ONE', 'MANY');
-
-
+-------------------------
+-- Entity Manipulation --
+-------------------------
 create function gql.to_regclass(schema_ text, name_ text)
     returns regclass
     language sql
@@ -192,24 +71,24 @@ as
 $$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
 
 
-create function gql.to_pkey_column_names(regclass)
-    returns text[]
+create or replace function gql.to_schema_name(entity regclass)
+    returns text
     language sql
     stable
-as
-$$
+as $$
     select
-        coalesce(array_agg(pga.attname), '{}')
+        nsp.nspname::text
     from
-        pg_index i
-        join pg_attribute pga
-            on pga.attrelid = i.indrelid
-            and pga.attnum = any(i.indkey)
+        pg_class pc
+        join pg_namespace nsp
+            on pc.relnamespace = nsp.oid
     where
-        i.indrelid = $1::regclass
-        and i.indisprimary;
+        pc.oid = entity
 $$;
 
+-------------------
+-- String Casing --
+-------------------
 
 create function gql.to_pascal_case(text)
     returns text
@@ -239,6 +118,264 @@ select
 from
     unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
 $$;
+
+
+
+-------------------
+-- Introspection --
+-------------------
+create or replace function gql.primary_key_columns(entity regclass)
+    returns text[]
+    language sql
+    immutable
+    as
+$$
+    select
+        coalesce(array_agg(pg_attribute.attname::text order by attrelid asc), '{}')
+    from
+        pg_index, pg_class, pg_attribute, pg_namespace
+    where
+        pg_class.oid = entity and
+        indrelid = pg_class.oid and
+        pg_class.relnamespace = pg_namespace.oid and
+        pg_attribute.attrelid = pg_class.oid and
+        pg_attribute.attnum = any(pg_index.indkey)
+        and indisprimary
+$$;
+
+
+create or replace function gql.primary_key_types(entity regclass)
+    returns regtype[]
+    language sql
+    immutable
+    as
+$$
+    select
+        coalesce(array_agg(pg_attribute.atttypid::regtype order by attrelid asc), '{}')
+    from
+        pg_index, pg_class, pg_attribute, pg_namespace
+    where
+        pg_class.oid = entity and
+        indrelid = pg_class.oid and
+        pg_class.relnamespace = pg_namespace.oid and
+        pg_attribute.attrelid = pg_class.oid and
+        pg_attribute.attnum = any(pg_index.indkey)
+        and indisprimary
+$$;
+
+
+----------------------
+-- AST Manipulation --
+----------------------
+
+create function gql._parse(text)
+    returns text
+    language c
+    immutable
+as 'pg_graphql';
+
+create function gql.parse(text)
+    returns jsonb
+    language sql
+    immutable
+as $$
+    select gql._parse($1)::jsonb
+
+$$;
+
+
+create function gql.ast_pass_strip_loc(body jsonb)
+returns jsonb
+language sql
+immutable
+as $$
+/*
+Recursively remove a 'loc' key from a jsonb object by name
+*/
+    select
+        case
+            when jsonb_typeof(body) = 'object' then
+                (
+                    select
+                        jsonb_object_agg(key_, gql.ast_pass_strip_loc(value_))
+                    from
+                        jsonb_each(body) x(key_, value_)
+                    where
+                        x.key_ <> 'loc'
+                    limit
+                        1
+                )
+            when jsonb_typeof(body) = 'array' then
+                (
+                    select
+                        jsonb_agg(gql.ast_pass_strip_loc(value_))
+                    from
+                        jsonb_array_elements(body) x(value_)
+                    limit
+                        1
+                )
+            else
+                body
+        end;
+$$;
+
+create or replace function gql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
+    returns jsonb
+    language sql
+    immutable
+as $$
+/*
+Recursively replace fragment spreads with the fragment definition's selection set
+*/
+    select
+        case
+            when jsonb_typeof(ast) = 'object' then
+                    (
+                        select
+                            jsonb_object_agg(key_, gql.ast_pass_fragments(value_, fragment_defs))
+                        from
+                            jsonb_each(ast) x(key_, value_)
+                    )
+            when jsonb_typeof(ast) = 'array' then
+                coalesce(
+                    (
+                        select
+                            jsonb_agg(gql.ast_pass_fragments(value_, fragment_defs))
+                        from
+                            jsonb_array_elements(ast) x(value_)
+                        where
+                            value_ ->> 'kind' <> 'FragmentSpread'
+                    ),
+                    '[]'::jsonb
+                )
+                ||
+                coalesce(
+                    (
+                        select
+                            jsonb_agg(
+                                frag_selection
+                            )
+                        from
+                            jsonb_array_elements(ast) x(value_),
+                            lateral(
+                                select jsonb_path_query_first(
+                                    fragment_defs,
+                                    ('$ ? (@.name.value == "'|| (value_ -> 'name' ->> 'value') || '")')::jsonpath
+                                ) as raw_frag_def
+                            ) x1,
+                            lateral (
+                                -- Nested fragments are possible
+                                select gql.ast_pass_fragments(raw_frag_def, fragment_defs) as frag
+                            ) x2,
+                            lateral (
+                                select y1.frag_selection
+                                from jsonb_array_elements(frag -> 'selectionSet' -> 'selections') y1(frag_selection)
+                            ) x3
+                        where
+                            value_ ->> 'kind' = 'FragmentSpread'
+                    ),
+                    '[]'::jsonb
+                )
+            else
+                ast
+        end;
+$$;
+
+
+
+create or replace function gql.name(ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select ast -> 'name' ->> 'value';
+$$;
+
+
+create or replace function gql.alias_or_name(field jsonb)
+    returns text
+    language sql
+    immutable
+    strict
+as $$
+    select coalesce(field -> 'alias' ->> 'value', field -> 'name' ->> 'value')
+$$;
+
+
+------------
+-- CURSOR --
+------------
+-- base64 encoded utf-8 jsonb array of [schema_name, table_name, pkey_val1, pkey_val2 ...]
+
+create or replace function gql.cursor_decode(cursor_ text)
+    returns jsonb
+    language sql
+    immutable
+    strict
+as $$
+    -- Decodes a base64 encoded jsonb array of [schema_name, table_name, pkey_val1, pkey_val2, ...]
+    -- Example:
+    --        select gql.cursor_decode('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
+    --        ["public", "account", 1]
+    select convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb
+$$;
+
+
+create or replace function gql.cursor_clause(entity regclass, alias_name text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    -- SQL string returning decoded cursor for an aliased table
+    -- Example:
+    --        select gql.cursor_clause('public.account', 'abcxyz')
+    --        row('public', 'account', abcxyz.id)
+    select
+        'row('
+        || format('%L::text,%L::text,', gql.to_schema_name(entity), gql.to_table_name(entity))
+        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
+        ||')'
+    from unnest(gql.primary_key_columns(entity)) pk(x)
+$$;
+
+create or replace function gql.cursor_clause_for_variable(entity regclass, variable_idx int)
+    returns text
+    language sql
+    immutable
+    strict
+as $$
+    -- SQL string to decode a cursor and convert it to a record for equality or pagination
+    -- Example:
+    --        select gql.cursor_clause_for_variable('public.account', 1)
+    --        row(gql.cursor_decode($1)::text, gql.cursor_decode($1)::text, gql.cursor_decode($1)::integer)
+    select
+        'row(' || string_agg(format('(gql.cursor_decode($%s) ->> %s)::%s', variable_idx, ctype.idx-1, ctype.val), ', ') || ')'
+    from
+        unnest(array['text'::regtype, 'text'::regtype] || gql.primary_key_types(entity)) with ordinality ctype(val, idx);
+$$;
+
+create or replace function gql.cursor_clause_for_literal(cursor_ text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    -- SQL string
+    -- Example:
+    --        select gql.cursor_clause_for_literal('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
+    --        row('public','account','2')
+    -- Note:
+    --         Type casts are not necessary because the values are visible to the planner allowing coercion
+    select 'row(' || string_agg(quote_literal(x), ',') || ')'
+    from jsonb_array_elements_text(convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb) y(x)
+$$;
+
+--------------------------
+-- Table/View/Type Defs --
+--------------------------
+
+create type gql.cardinality as enum ('ONE', 'MANY');
 
 
 create table gql.entity (
@@ -452,6 +589,10 @@ $$
     end;
 $$;
 
+
+------------------------
+-- Schema Translation --
+------------------------
 
 create function gql.build_schema()
     returns void
@@ -697,7 +838,7 @@ begin
             gt.id parent_type_id,
             case
                 -- Detect ID! types using pkey info, restricted by types
-                when c.column_name = 'id' and array[c.column_name::text] = gql.to_pkey_column_names(ent.entity)
+                when c.column_name = 'id' and array[c.column_name::text] = gql.primary_key_columns(ent.entity)
                 then gql.type_id_by_name('ID')
                 -- substring removes the underscore prefix from array types
                 when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
@@ -891,18 +1032,10 @@ end;
 $$;
 
 
-/*
-        RESOLVE
-*/
+-------------
+-- Resolve --
+-------------
 
-create or replace function gql.alias_or_name(field jsonb)
-    returns text
-    language sql
-    immutable
-    strict
-as $$
-    select coalesce(field -> 'alias' ->> 'value', field -> 'name' ->> 'value')
-$$;
 
 create or replace function gql.tab(n int = 1)
     returns text
@@ -914,44 +1047,8 @@ $$
 $$;
 
 
-create or replace function gql.array_first(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- First element of an array
-    select arr[1];
-$$;
 
-create or replace function gql.array_last(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- Last element of an array
-    select arr[array_length(arr, 1)];
-$$;
 
-create or replace function gql.primary_key(entity regclass)
-    returns text[]
-    language sql
-    immutable
-    as
-$$
-    select
-        array_agg(pg_attribute.attname::text order by attrelid asc)
-    from
-        pg_index, pg_class, pg_attribute, pg_namespace
-    where
-        pg_class.oid = entity and
-        indrelid = pg_class.oid and
-        pg_class.relnamespace = pg_namespace.oid and
-        pg_attribute.attrelid = pg_class.oid and
-        pg_attribute.attnum = any(pg_index.indkey)
-and indisprimary
-$$;
 
 create or replace function gql.primary_key_clause(entity regclass, alias_name text)
     returns text
@@ -960,7 +1057,7 @@ create or replace function gql.primary_key_clause(entity regclass, alias_name te
     as
 $$
     select '(' || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',') ||')'
-    from unnest(gql.primary_key(entity)) pk(x)
+    from unnest(gql.primary_key_columns(entity)) pk(x)
 $$;
 
 create or replace function gql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
@@ -1003,6 +1100,7 @@ as $$
 $$;
 
 
+
 create or replace function gql.build_node_query(
     ast jsonb,
     variables jsonb = '{}',
@@ -1033,13 +1131,15 @@ as $$
         select
             case
                 -- Provided via variable definition
-                when defs.idx is not null then '$' || idx::text
+                when defs.idx is not null then gql.cursor_clause_for_variable(type_.entity, defs.idx::int)
                 -- Hard coded value
-                else quote_literal(ar.elem -> 'value' ->> 'value')
+                else gql.cursor_clause_for_literal(ar.elem -> 'value' ->> 'value')
             end
         from
             jsonb_array_elements(gql.jsonb_coalesce(ast -> 'arguments', '[]'::jsonb)) ar(elem)
             join field
+                on true
+            join type_
                 on true
             left join gql.arg ga
                 on ga.field_id = field.id
@@ -1049,11 +1149,9 @@ as $$
         limit 1
     )
     select
-        E'(\nselect\n' || gql.tab(1) || E'jsonb_build_object(\n'
-        || string_agg(
-            gql.tab(5) || quote_literal(gql.alias_or_name(x.sel)) || E',\n' ||
+        E'(\nselect\njsonb_build_object(\n'
+        || string_agg(quote_literal(gql.alias_or_name(x.sel)) || E',\n' ||
             case
-
                 when nf.column_name is not null then (quote_ident(b.block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(gt.name)
                 when nf.local_columns is not null and nf.is_array then gql.build_connection_query(
@@ -1094,7 +1192,7 @@ as $$
     coalesce(gql.join_clause(gf.local_columns, b.block_name, gf.parent_columns, parent_block_name), 'true'),
     case
         when args.pkey_safe is null then 'true'
-        else gql.primary_key_clause(gt.entity, b.block_name)
+        else gql.cursor_clause(gt.entity, b.block_name)
     end,
     case
         when args.pkey_safe is null then 'true'
@@ -1326,76 +1424,7 @@ select
 $$;
 
 
-create or replace function gql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
-    returns jsonb
-    language sql
-    immutable
-as $$
-/*
-Recursively replace fragment spreads with the fragment definition's selection set
-*/
-    select
-        case
-            when jsonb_typeof(ast) = 'object' then
-                    (
-                        select
-                            jsonb_object_agg(key_, gql.ast_pass_fragments(value_, fragment_defs))
-                        from
-                            jsonb_each(ast) x(key_, value_)
-                    )
-            when jsonb_typeof(ast) = 'array' then
-                coalesce(
-                    (
-                        select
-                            jsonb_agg(gql.ast_pass_fragments(value_, fragment_defs))
-                        from
-                            jsonb_array_elements(ast) x(value_)
-                        where
-                            value_ ->> 'kind' <> 'FragmentSpread'
-                    ),
-                    '[]'::jsonb
-                )
-                ||
-                coalesce(
-                    (
-                        select
-                            jsonb_agg(
-                                frag_selection
-                            )
-                        from
-                            jsonb_array_elements(ast) x(value_),
-                            lateral(
-                                select jsonb_path_query_first(
-                                    fragment_defs,
-                                    ('$ ? (@.name.value == "'|| (value_ -> 'name' ->> 'value') || '")')::jsonpath
-                                ) as raw_frag_def
-                            ) x1,
-                            lateral (
-                                -- Nested fragments are possible
-                                select gql.ast_pass_fragments(raw_frag_def, fragment_defs) as frag
-                            ) x2,
-                            lateral (
-                                select y1.frag_selection
-                                from jsonb_array_elements(frag -> 'selectionSet' -> 'selections') y1(frag_selection)
-                            ) x3
-                        where
-                            value_ ->> 'kind' = 'FragmentSpread'
-                    ),
-                    '[]'::jsonb
-                )
-            else
-                ast
-        end;
-$$;
 
-
-create or replace function gql.name(ast jsonb)
-    returns text
-    immutable
-    language sql
-as $$
-    select ast -> 'name' ->> 'value';
-$$;
 
 
 
@@ -1697,6 +1726,7 @@ as $$
 $$;
 
 
+
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
     returns jsonb
     volatile
@@ -1723,6 +1753,7 @@ declare
             ) jae(f)
     );
 
+    prep_statement_exec text;
     q text;
     data_ jsonb;
     errors_ text[] = '{}';
@@ -1732,31 +1763,60 @@ declare
     ---------------------
 
     -- AST without location info ("loc" key)
-    ast_locless jsonb = gql._recursive_strip_key(ast);
+    ast_locless jsonb;
 
     -- ast with fragments inlined
-    fragment_definitions jsonb = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
-    ast_inlined jsonb =  gql.ast_pass_fragments(ast_locless, fragment_definitions);
-    ast_operation jsonb = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+    fragment_definitions jsonb;
+    ast_inlined jsonb;
+    ast_operation jsonb;
 
-    meta_kind gql.meta_kind = meta_kind
-        from
-            gql.field
-            join gql.type
-                on field.type_id = type.id
-        where
-            field.parent_type_id = gql.type_id_by_name('Query')
-            and field.name = gql.name(ast_operation);
+    meta_kind gql.meta_kind;
 begin
+    -- Call prepared statement respecting passed values and variable definition defaults
+    select
+        case count(1)
+            when 0 then format('execute %I', prepared_statement_name)
+            else
+                format('execute %I (', prepared_statement_name)
+                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
+                || ')'
+        end
+    from
+        jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
+        left join jsonb_each_text(variables) var(key_, val)
+            on gql.name(def -> 'variable') = var.key_
+    into prep_statement_exec;
 
+    raise notice 'prep_statment_exec %s', prep_statement_exec;
+
+    -- Check cache
     if exists(select 1 from pg_prepared_statements where name = prepared_statement_name) then
-        execute format('execute %I', prepared_statement_name) into data_;
+
+        execute prep_statement_exec into data_;
+
+
         data_ = jsonb_build_object(
-            gql.name(ast_operation),
+            gql.name(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
             data_
         );
 
-    elsif meta_kind ='CONNECTION' then
+        raise notice 'data %', data_;
+
+        return jsonb_build_object(
+            'data', data_,
+            'errors', to_jsonb(errors_)
+        );
+    end if;
+
+    -- Didn't exist in cache
+    ast_locless = gql.ast_pass_strip_loc(ast);
+    fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
+    ast_inlined =  gql.ast_pass_fragments(ast_locless, fragment_definitions);
+    ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+    meta_kind = type_.meta_kind from gql.field join gql.type type_ on field.type_id = type_.id
+                where field.parent_type_id = gql.type_id_by_name('Query') and field.name = gql.name(ast_operation);
+
+    if meta_kind ='CONNECTION' then
         -- Check top type. Default connection
         q = gql.build_connection_query(
             ast := ast_operation,
@@ -1781,7 +1841,7 @@ begin
             parent_block_name := null,
             indent_level := 0
         );
-        raise notice '%s', q;
+        raise notice 'Query %s', q;
 
         -- Create Prepared Statement
         execute format(
@@ -1794,7 +1854,7 @@ begin
             q
         );
 
-        execute format('execute %I', prepared_statement_name) into data_;
+        execute prep_statement_exec into data_;
 
         data_ = jsonb_build_object(
             gql.name(ast_operation),
@@ -1824,7 +1884,6 @@ begin
     );
 end
 $$;
-
 
 
 grant all on schema gql to postgres;
