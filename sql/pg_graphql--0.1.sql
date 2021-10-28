@@ -1386,9 +1386,8 @@ edges(sel, q) as (
                                                                                     parent_block_name := b.block_name,
                                                                                     indent_level := 0
                                                                                 )
-
-
-                                else quote_literal(gf_s.name)
+                                when gf_s.name = 'nodeId' then format('%I.%I', b.block_name, '__cursor')
+                                else quote_literal('UNRESOLVED')
                             end
                         ),
                         E',\n\t\t\t\t\t\t'
@@ -1458,11 +1457,11 @@ select
         (select coalesce(total_count.q, '') from total_count),
         (select coalesce(page_info.q, '') from page_info),
         (select coalesce(edges.q, '') from edges),
-        gql.primary_key_clause(entity, block_name),
+        gql.cursor_encoded_clause(entity, block_name),
         gql.primary_key_clause(entity, block_name) || ' asc',
-        gql.primary_key_clause(entity, block_name),
+        gql.cursor_encoded_clause(entity, block_name),
         gql.primary_key_clause(entity, block_name) || ' asc',
-        gql.primary_key_clause(entity, block_name),
+        gql.cursor_encoded_clause(entity, block_name),
         gql.quote_ident(entity),
         quote_ident(block_name),
         coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),

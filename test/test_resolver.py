@@ -128,6 +128,7 @@ def test_resolve_connection_entrypoint(sess):
       cursor
       node {
         id
+        nodeId
         email
         createdAt
       }
@@ -151,6 +152,8 @@ def test_resolve_connection_entrypoint(sess):
     assert isinstance(node["id"], int)
     assert isinstance(node["email"], str)
     assert isinstance(node["createdAt"], str)
+    assert isinstance(node["nodeId"], str)
+    assert len(node["nodeId"]) > 5
 
 
 def test_resolve_relationship_to_connection(sess):
