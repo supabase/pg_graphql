@@ -46,6 +46,19 @@ query GetAccount($nodeId: ID!) {
     assert result["data"] == {"account": {"id": 2}}
 
 
+def test_resolve_account_nodeId(sess):
+    query = """
+{
+  account(id: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
+    nodeId
+  }
+}
+"""
+    (result,) = sess.execute(select([func.gql.dispatch(query)])).fetchone()
+    print(json.dumps(result, indent=2))
+    assert result["data"] == {"account": {"nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}}
+
+
 def test_resolve___Type(sess):
     query = """
 {
@@ -64,8 +77,9 @@ def test_resolve___Type(sess):
     assert result["errors"] == []
     assert result["data"]["__type"]["kind"] == "OBJECT"
     fields = result["data"]["__type"]["fields"]
-    assert len(fields) == 6
+    assert len(fields) == 7
     assert "createdAt" in [x["name"] for x in fields]
+    assert "nodeId" in [x["name"] for x in fields]
 
 
 def test_resolve___Schema(sess):

@@ -321,7 +321,22 @@ as $$
 $$;
 
 
-create or replace function gql.cursor_clause(entity regclass, alias_name text)
+create or replace function gql.cursor_encode(contents jsonb)
+    returns text
+    language sql
+    immutable
+    strict
+as $$
+    -- Encodes a jsonb array of [schema_name, table_name, pkey_val1, pkey_val2, ...] to a base64 encoded string
+    -- Example:
+    --        select gql.cursor_encode('["public", "account", 1]'::jsonb)
+    --        'WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd'
+    select encode(convert_to(contents::text, 'utf-8'), 'base64')
+$$;
+
+
+
+create or replace function gql.cursor_row_clause(entity regclass, alias_name text)
     returns text
     language sql
     immutable
@@ -329,7 +344,7 @@ create or replace function gql.cursor_clause(entity regclass, alias_name text)
 $$
     -- SQL string returning decoded cursor for an aliased table
     -- Example:
-    --        select gql.cursor_clause('public.account', 'abcxyz')
+    --        select gql.cursor_row_clause('public.account', 'abcxyz')
     --        row('public', 'account', abcxyz.id)
     select
         'row('
@@ -338,6 +353,26 @@ $$
         ||')'
     from unnest(gql.primary_key_columns(entity)) pk(x)
 $$;
+
+
+create or replace function gql.cursor_encoded_clause(entity regclass, alias_name text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    -- SQL string returning encoded cursor for an aliased table
+    -- Example:
+    --        select gql.cursor_encoded_clause('public.account', 'abcxyz')
+    --        gql.cursor_encode(jsonb_build_array('public', 'account', abcxyz.id))
+    select
+        'gql.cursor_encode(jsonb_build_array('
+        || format('%L::text,%L::text,', gql.to_schema_name(entity), gql.to_table_name(entity))
+        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
+        ||'))'
+    from unnest(gql.primary_key_columns(entity)) pk(x)
+$$;
+
 
 create or replace function gql.cursor_clause_for_variable(entity regclass, variable_idx int)
     returns text
@@ -837,9 +872,6 @@ begin
         select distinct
             gt.id parent_type_id,
             case
-                -- Detect ID! types using pkey info, restricted by types
-                when c.column_name = 'id' and array[c.column_name::text] = gql.primary_key_columns(ent.entity)
-                then gql.type_id_by_name('ID')
                 -- substring removes the underscore prefix from array types
                 when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
                 else gql.sql_type_to_gql_type(c.data_type)
@@ -859,7 +891,6 @@ begin
                 on rcg.table_schema = c.table_schema
                 and rcg.table_name = c.table_name
                 and rcg.column_name = c.column_name
-
         where
             gt.meta_kind = 'NODE'
             -- INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
@@ -869,7 +900,23 @@ begin
                 rcg.grantee = current_setting('role')
                 -- If superuser, allow everything
                 or current_setting('role') = 'none'
-            );
+            )
+        union all
+        -- Node.nodeId
+        select distinct
+            gt.id parent_type_id,
+            gql.type_id_by_name('ID'),
+            'nodeId',
+            true,
+            false,
+            null::boolean,
+            null::text
+        from
+            gql.entity ent
+            join gql.type gt
+                on ent.entity = gt.entity
+        where
+            gt.meta_kind = 'NODE';
 
     -- Node.<relationship>
     insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, parent_columns, local_columns)
@@ -1024,9 +1071,17 @@ begin
                 on t.id = f.type_id,
             --lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
             lateral (select name_ from unnest(array['after']) x(name_)) y(name_)
-        where t.meta_kind = 'CONNECTION';
-
-
+        where t.meta_kind = 'CONNECTION'
+        union all
+        -- Node(nodeId)
+        -- Restrict to entrypoint only?
+        select
+            f.id field_id, 'nodeId' as name, gql.type_id_by_name('ID') type_id, true as is_not_null
+        from
+            gql.type t
+            inner join gql.field f
+                on t.id = f.type_id
+        where t.meta_kind = 'NODE';
 
 end;
 $$;
@@ -1154,6 +1209,7 @@ as $$
             case
                 when nf.column_name is not null then (quote_ident(b.block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(gt.name)
+                when nf.name = 'nodeId' then gql.cursor_encoded_clause(gt.entity, b.block_name)
                 when nf.local_columns is not null and nf.is_array then gql.build_connection_query(
                     ast := x.sel,
                     variables := variables,
@@ -1192,7 +1248,7 @@ as $$
     coalesce(gql.join_clause(gf.local_columns, b.block_name, gf.parent_columns, parent_block_name), 'true'),
     case
         when args.pkey_safe is null then 'true'
-        else gql.cursor_clause(gt.entity, b.block_name)
+        else gql.cursor_row_clause(gt.entity, b.block_name)
     end,
     case
         when args.pkey_safe is null then 'true'
