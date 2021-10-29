@@ -1818,6 +1818,31 @@ as $$
 $$;
 
 
+create or replace function gql.variable_definitioons_sort(variable_definitions jsonb)
+    returns jsonb
+    immutable
+    language sql
+as $$
+  -- Deterministically sort variable definitions
+  select
+        jsonb_agg(jae.f order by jae.f -> 'variable' -> 'name' ->> 'value' asc)
+    from
+        jsonb_array_elements(
+            case jsonb_typeof(variable_definitions)
+                when 'array' then variable_definitions
+                else to_jsonb('{}'::text[])
+            end
+        ) jae(f)
+$$;
+
+create or replace function gql.prepared_statement_exists(statement_name text)
+    returns boolean
+    language sql
+    stable
+as $$
+    select exists(select 1 from pg_prepared_statements where name = statement_name)
+$$;
+
 
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
     returns jsonb
@@ -1829,21 +1854,8 @@ declare
     -- Always required --
     ---------------------
     prepared_statement_name text = gql.sha1(stmt);
-
     ast jsonb = gql.parse(stmt);
-
-    -- Variable Definitions (deterministic sorted)
-    variable_definitions jsonb = (
-        select
-            jsonb_agg(jae.f order by jae.f -> 'variable' -> 'name' ->> 'value' asc)
-        from
-            jsonb_array_elements(
-                case jsonb_typeof(ast -> 'definitions' -> 0 -> 'variableDefinitions')
-                    when 'array' then ast -> 'definitions' -> 0 -> 'variableDefinitions'
-                    else to_jsonb('{}'::text[])
-                end
-            ) jae(f)
-    );
+    variable_definitions jsonb = gql.variable_definitioons_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions');
 
     q text;
     data_ jsonb;
@@ -1864,7 +1876,7 @@ declare
     meta_kind gql.meta_kind;
 begin
     -- Build query if not in cache
-    if not exists(select 1 from pg_prepared_statements where name = prepared_statement_name) then
+    if not gql.prepared_statement_exists(prepared_statement_name) then
 
         ast_locless = gql.ast_pass_strip_loc(ast);
         fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
