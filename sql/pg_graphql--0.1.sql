@@ -1308,7 +1308,7 @@ args as (
         min(case when gql.name(sel) = 'first' then coalesce(ar.sel -> 'value' ->> 'value') else null end) as first_val,
         min(null::text) as last_val
     from
-        jsonb_array_elements(case when jsonb_typeof(ast -> 'arguments') = 'array' then ast -> 'arguments' else '[]' end ) ar(sel)
+        jsonb_array_elements(gql.jsonb_coalesce(ast -> 'arguments', '[]')) ar(sel)
 ),
 page_info(sel, q) as (
     select
@@ -1717,7 +1717,7 @@ create or replace function gql."resolve___Schema"(
     variable_definitions jsonb = '[]',
     indent_level int = 0
 )
-    returns text
+    returns jsonb
     stable
     language plpgsql
     as $$
@@ -1781,6 +1781,23 @@ as $$
 $$;
 
 
+create or replace function gql.prepared_statement_create_clause(statement_name text, variable_definitions jsonb, query_ text)
+    returns text
+    immutable
+    language sql
+as $$
+    -- Create Prepared Statement
+    select format(
+        'prepare %I %s as %s',
+        statement_name,
+        case jsonb_array_length(variable_definitions)
+            when 0 then ''
+            else (select '(' || string_agg('text', ', ') || ')' from jsonb_array_elements(variable_definitions) jae(vd))
+        end,
+        query_
+    )
+$$;
+
 
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
     returns jsonb
@@ -1842,94 +1859,67 @@ begin
             on gql.name(def -> 'variable') = var.key_
     into prep_statement_exec;
 
-    raise notice 'prep_statment_exec %s', prep_statement_exec;
+    -- Build query if not in cache
+    if not exists(select 1 from pg_prepared_statements where name = prepared_statement_name) then
 
-    -- Check cache
-    if exists(select 1 from pg_prepared_statements where name = prepared_statement_name) then
+        -- Didn't exist in cache
+        ast_locless = gql.ast_pass_strip_loc(ast);
+        fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
+        ast_inlined =  gql.ast_pass_fragments(ast_locless, fragment_definitions);
+        ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+        meta_kind = type_.meta_kind from gql.field join gql.type type_ on field.type_id = type_.id
+                    where field.parent_type_id = gql.type_id_by_name('Query') and field.name = gql.name(ast_operation);
 
+        q = case meta_kind
+            when 'CONNECTION' then
+                gql.build_connection_query(
+                    ast := ast_operation,
+                    variables := variables,
+                    variable_definitions := variable_definitions,
+                    parent_type_id :=  gql.type_id_by_name('Query'),
+                    parent_block_name := null,
+                    indent_level := 0
+                )
+            when 'NODE' then
+                gql.build_node_query(
+                    ast := ast_operation,
+                    variables := variables,
+                    variable_definitions := variable_definitions,
+                    parent_type_id := gql.type_id_by_name('Query'),
+                    parent_block_name := null,
+                    indent_level := 0
+                )
+            else null::text
+        end;
+
+        data_ = case meta_kind
+            when '__SCHEMA' then
+                gql."resolve___Schema"(
+                    ast := ast_operation,
+                    variables := variables,
+                    variable_definitions := variable_definitions
+                )
+            when '__TYPE' then
+                jsonb_build_object(
+                    gql.name(ast_operation),
+                    gql."resolve___Type"(
+                        (select id from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
+                        ast_operation
+                    )
+                )
+            else null::jsonb
+        end;
+    end if;
+
+    if q is not null then
+        execute gql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
+    end if;
+
+    if data_ is null then
         execute prep_statement_exec into data_;
-
-
         data_ = jsonb_build_object(
             gql.name(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
             data_
-        );
-
-        raise notice 'data %', data_;
-
-        return jsonb_build_object(
-            'data', data_,
-            'errors', to_jsonb(errors_)
-        );
-    end if;
-
-    -- Didn't exist in cache
-    ast_locless = gql.ast_pass_strip_loc(ast);
-    fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
-    ast_inlined =  gql.ast_pass_fragments(ast_locless, fragment_definitions);
-    ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
-    meta_kind = type_.meta_kind from gql.field join gql.type type_ on field.type_id = type_.id
-                where field.parent_type_id = gql.type_id_by_name('Query') and field.name = gql.name(ast_operation);
-
-    if meta_kind ='CONNECTION' then
-        -- Check top type. Default connection
-        q = gql.build_connection_query(
-            ast := ast_operation,
-            variables := variables,
-            variable_definitions := variable_definitions,
-            parent_type_id :=  gql.type_id_by_name('Query'),
-            parent_block_name := null,
-            indent_level := 0
-        );
-        execute q into data_;
-        data_ = jsonb_build_object(
-            gql.name(ast_operation),
-            data_
-        );
-
-    elsif meta_kind ='NODE' then
-        q = gql.build_node_query(
-            ast := ast_operation,
-            variables := variables,
-            variable_definitions := variable_definitions,
-            parent_type_id := gql.type_id_by_name('Query'),
-            parent_block_name := null,
-            indent_level := 0
-        );
-        raise notice 'Query %s', q;
-
-        -- Create Prepared Statement
-        execute format(
-            'prepare %I %s as %s',
-            prepared_statement_name,
-            case jsonb_array_length(variable_definitions)
-                when 0 then ''
-                else (select '(' || string_agg('text', ', ') || ')' from jsonb_array_elements(variable_definitions) jae(vd))
-            end,
-            q
-        );
-
-        execute prep_statement_exec into data_;
-
-        data_ = jsonb_build_object(
-            gql.name(ast_operation),
-            data_
-        );
-
-    elsif meta_kind ='__SCHEMA' then
-        data_ = gql."resolve___Schema"(
-            ast := ast_operation,
-            variables := variables,
-            variable_definitions := variable_definitions
-         );
-
-    elsif meta_kind ='__TYPE' then
-        data_ = jsonb_build_object(
-            gql.name(ast_operation),
-            gql."resolve___Type"(
-                (select id from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
-                ast_operation
-            )
         );
     end if;
 
