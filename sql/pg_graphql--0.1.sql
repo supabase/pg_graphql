@@ -1798,6 +1798,26 @@ as $$
     )
 $$;
 
+create or replace function gql.prepared_statement_execute_clause(statement_name text, variable_definitions jsonb, variables jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+   select
+        case count(1)
+            when 0 then format('execute %I', statement_name)
+            else
+                format('execute %I (', statement_name)
+                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
+                || ')'
+        end
+    from
+        jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
+        left join jsonb_each_text(variables) var(key_, val)
+            on gql.name(def -> 'variable') = var.key_
+$$;
+
+
 
 create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
     returns jsonb
@@ -1825,7 +1845,6 @@ declare
             ) jae(f)
     );
 
-    prep_statement_exec text;
     q text;
     data_ jsonb;
     errors_ text[] = '{}';
@@ -1844,31 +1863,21 @@ declare
 
     meta_kind gql.meta_kind;
 begin
-    -- Call prepared statement respecting passed values and variable definition defaults
-    select
-        case count(1)
-            when 0 then format('execute %I', prepared_statement_name)
-            else
-                format('execute %I (', prepared_statement_name)
-                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
-                || ')'
-        end
-    from
-        jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
-        left join jsonb_each_text(variables) var(key_, val)
-            on gql.name(def -> 'variable') = var.key_
-    into prep_statement_exec;
-
     -- Build query if not in cache
     if not exists(select 1 from pg_prepared_statements where name = prepared_statement_name) then
 
-        -- Didn't exist in cache
         ast_locless = gql.ast_pass_strip_loc(ast);
         fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
         ast_inlined =  gql.ast_pass_fragments(ast_locless, fragment_definitions);
         ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
-        meta_kind = type_.meta_kind from gql.field join gql.type type_ on field.type_id = type_.id
-                    where field.parent_type_id = gql.type_id_by_name('Query') and field.name = gql.name(ast_operation);
+        meta_kind = type_.meta_kind
+            from
+                gql.field
+                join gql.type type_
+                    on field.type_id = type_.id
+            where
+                field.parent_type_id = gql.type_id_by_name('Query')
+                and field.name = gql.name(ast_operation);
 
         q = case meta_kind
             when 'CONNECTION' then
@@ -1892,6 +1901,10 @@ begin
             else null::text
         end;
 
+        if q is not null then
+            execute gql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
+        end if;
+
         data_ = case meta_kind
             when '__SCHEMA' then
                 gql."resolve___Schema"(
@@ -1911,12 +1924,9 @@ begin
         end;
     end if;
 
-    if q is not null then
-        execute gql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
-    end if;
-
     if data_ is null then
-        execute prep_statement_exec into data_;
+        -- Call prepared statement respecting passed values and variable definition defaults
+        execute gql.prepared_statement_execute_clause(prepared_statement_name, variable_definitions, variables) into data_;
         data_ = jsonb_build_object(
             gql.name(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
             data_
