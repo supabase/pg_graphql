@@ -1,0 +1,26 @@
+select gql.dispatch($$
+    query IntrospectionQuery {
+      __schema {
+        queryType {
+          name
+        }
+        mutationType {
+          name
+        }
+        types {
+          kind
+          name
+        }
+        directives {
+          name
+          description
+          locations
+        }
+      }
+    }
+$$);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  dispatch                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"__schema": {"types": [{"kind": "ENUM", "name": "__TypeKind"}, {"kind": "SCALAR", "name": "ID"}, {"kind": "SCALAR", "name": "Int"}, {"kind": "SCALAR", "name": "Float"}, {"kind": "SCALAR", "name": "String"}, {"kind": "SCALAR", "name": "Boolean"}, {"kind": "SCALAR", "name": "DateTime"}, {"kind": "SCALAR", "name": "BigInt"}, {"kind": "SCALAR", "name": "UUID"}, {"kind": "SCALAR", "name": "JSON"}, {"kind": "OBJECT", "name": "Query"}, {"kind": "OBJECT", "name": "Mutation"}, {"kind": "OBJECT", "name": "PageInfo"}, {"kind": "OBJECT", "name": "__Schema"}, {"kind": "OBJECT", "name": "__Type"}, {"kind": "OBJECT", "name": "__Field"}, {"kind": "OBJECT", "name": "__InputValue"}, {"kind": "OBJECT", "name": "__EnumValue"}, {"kind": "ENUM", "name": "__DirectiveLocation"}, {"kind": "OBJECT", "name": "__Directive"}, {"kind": "OBJECT", "name": "Account"}, {"kind": "OBJECT", "name": "Blog"}, {"kind": "OBJECT", "name": "BlogPost"}, {"kind": "OBJECT", "name": "AccountEdge"}, {"kind": "OBJECT", "name": "BlogEdge"}, {"kind": "OBJECT", "name": "BlogPostEdge"}, {"kind": "OBJECT", "name": "AccountConnection"}, {"kind": "OBJECT", "name": "BlogConnection"}, {"kind": "OBJECT", "name": "BlogPostConnection"}, {"kind": "ENUM", "name": "BlogPostStatus"}], "queryType": {"name": "Query"}, "directives": [], "mutationType": {"name": "Mutation"}}}, "errors": []}
+(1 row)
+

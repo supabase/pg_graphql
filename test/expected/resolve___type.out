@@ -1,0 +1,14 @@
+select gql.dispatch($$
+    {
+      __type(name: "Account") {
+        kind
+        fields {
+            name
+        }
+    }
+}$$);
+                                                                                                         dispatch                                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"__type": {"kind": "OBJECT", "fields": [{"name": "id"}, {"name": "email"}, {"name": "encryptedPassword"}, {"name": "createdAt"}, {"name": "updatedAt"}, {"name": "nodeId"}, {"name": "blogs"}]}}, "errors": []}
+(1 row)
+

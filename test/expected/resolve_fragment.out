@@ -1,0 +1,23 @@
+select gql.dispatch($$
+    {
+      allBlogs(first: 1) {
+        edges {
+          cursor
+          node {
+            ...BaseBlog
+            ownerId
+          }
+        }
+      }
+    }
+
+    fragment BaseBlog on Blog {
+      name
+      description
+    }
+$$);
+                                                                               dispatch                                                                               
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"allBlogs": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "a desc1"}, "cursor": "WyJwdWJsaWMiLCAiYmxvZyIsIDFd"}]}}, "errors": []}
+(1 row)
+

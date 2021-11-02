@@ -1,7 +1,12 @@
 results/
+__pycache__/
+docs/
 .python-version
 venv/
 site/
 regression.*
-__pycache__/
 *.egg-info/
+*.sql
+*.json
+*.ipynb
+.ipynb_checkpoints/*

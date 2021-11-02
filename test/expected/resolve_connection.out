@@ -1,0 +1,28 @@
+select gql.dispatch($$
+{
+  account(id: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
+    id
+    nodeId
+  }
+}
+$$);
+                                           dispatch                                           
+----------------------------------------------------------------------------------------------
+ {"data": {"account": {"id": 2, "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}}, "errors": []}
+(1 row)
+
+select gql.dispatch(
+    $$
+    query GetAccount($nodeId: ID!) {
+      account(nodeId: $nodeId) {
+        id
+      }
+    }
+    $$,
+    '{"nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}'::jsonb
+);
+                    dispatch                    
+------------------------------------------------
+ {"data": {"account": {"id": 2}}, "errors": []}
+(1 row)
+

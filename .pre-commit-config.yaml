@@ -3,7 +3,7 @@ repos:
     rev: v4.0.1
     hooks:
     -   id: trailing-whitespace
-        exclude: ^src/test/resources/.*\.(htm|txt)$
+        exclude: ^test/expected
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-added-large-files
@@ -37,3 +37,4 @@ repos:
         name: Tabs-to-Spaces
         args: [--whitespaces-count, '4']
         types: [sql]
+        exclude: ^test/expected
