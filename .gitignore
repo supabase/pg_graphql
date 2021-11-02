@@ -6,7 +6,6 @@ venv/
 site/
 regression.*
 *.egg-info/
-*.sql
 *.json
 *.ipynb
 .ipynb_checkpoints/*
