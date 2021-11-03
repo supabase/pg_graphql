@@ -413,11 +413,27 @@ $$;
 create type gql.cardinality as enum ('ONE', 'MANY');
 
 
-create table gql.entity (
-    --id integer generated always as identity primary key,
-    entity regclass primary key,
-    is_disabled boolean default false
+-- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
+create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+
+
+create type gql.meta_kind as enum (
+    'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
+    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
+    -- Introspection types
+    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION'
 );
+
+
+create or replace view gql.entity as
+select
+    gql.to_regclass(schemaname, tablename) entity
+from
+    pg_tables pgt
+where
+    schemaname not in ('information_schema', 'pg_catalog', 'gql')
+    and pg_catalog.has_schema_privilege(current_user, pgt.schemaname, 'USAGE')
+    and pg_catalog.has_any_column_privilege(gql.to_regclass(schemaname, tablename), 'SELECT');
 
 
 create or replace view gql.relationship as
@@ -476,15 +492,7 @@ create or replace view gql.relationship as
     from
         directional;
 
--- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
-create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
 
-create type gql.meta_kind as enum (
-    'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
-    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
-    -- Introspection types
-    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION'
-);
 
 create table gql.enum_value(
     id integer generated always as identity primary key,
@@ -634,16 +642,6 @@ $$
 $$;
 
 
-create or replace view gql._entity as
-select
-    gql.to_regclass(schemaname, tablename) entity
-from
-    pg_tables pgt
-where
-    schemaname not in ('information_schema', 'pg_catalog', 'gql')
-    and pg_catalog.has_schema_privilege(current_user, pgt.schemaname, 'USAGE')
-    and pg_catalog.has_any_column_privilege(gql.to_regclass(schemaname, tablename), 'SELECT');
-
 
 ------------------------
 -- Schema Translation --
@@ -656,10 +654,6 @@ as
 $$
 begin
     truncate table gql.field restart identity cascade;
-    truncate table gql.entity restart identity cascade;
-
-    insert into gql.entity(entity, is_disabled)
-    select entity, false is_disabled from gql._entity;
 
     insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
     values
@@ -699,53 +693,7 @@ begin
         ('__EnumValue', 'Boolean', 'isDeprecated', true, false, null, null),
         ('__EnumValue', 'String', 'deprecationReason', false, false, null, null);
 
-    -- Enum values
-    -- TODO (OR) link to ENUM types in gql.type
-    insert into gql.enum_value (type_, value)
-    select
-        gql.to_pascal_case(t.typname),
-        e.enumlabel as value
-    from
-        pg_type t
-        join pg_enum e
-            on t.oid = e.enumtypid
-        join pg_catalog.pg_namespace n
-            on n.oid = t.typnamespace
-    where
-        n.nspname not in ('gql', 'information_schema');
 
-    insert into gql.enum_value(type_, value, description)
-    values
-        ('__DirectiveLocation', 'QUERY', 'Location adjacent to a query operation.'),
-        ('__DirectiveLocation', 'MUTATION', 'Location adjacent to a mutation operation.'),
-        ('__DirectiveLocation', 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
-        ('__DirectiveLocation', 'FIELD', 'Location adjacent to a field.'),
-        ('__DirectiveLocation', 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
-        ('__DirectiveLocation', 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
-        ('__DirectiveLocation', 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
-        ('__DirectiveLocation', 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
-        ('__DirectiveLocation', 'SCHEMA', 'Location adjacent to a schema definition.'),
-        ('__DirectiveLocation', 'SCALAR', 'Location adjacent to a scalar definition.'),
-        ('__DirectiveLocation', 'OBJECT', 'Location adjacent to an object type definition.'),
-        ('__DirectiveLocation', 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
-        ('__DirectiveLocation', 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
-        ('__DirectiveLocation', 'INTERFACE', 'Location adjacent to an interface definition.'),
-        ('__DirectiveLocation', 'UNION', 'Location adjacent to a union definition.'),
-        ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
-        ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
-        ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
-        ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.');
-
-    insert into gql.enum_value(type_, value, description)
-    values
-        ('__TypeKind', 'SCALAR', null),
-        ('__TypeKind', 'OBJECT', null),
-        ('__TypeKind', 'INTERFACE', null),
-        ('__TypeKind', 'UNION', null),
-        ('__TypeKind', 'ENUM', null),
-        ('__TypeKind', 'INPUT_OBJECT', null),
-        ('__TypeKind', 'LIST', null),
-        ('__TypeKind', 'NON_NULL', null);
 
     -- PageInfo
     insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
