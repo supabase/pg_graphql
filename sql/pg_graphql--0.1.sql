@@ -494,48 +494,10 @@ create or replace view gql.relationship as
 
 
 
-create table gql.field (
-    id integer generated always as identity primary key,
-    parent_type text,
-    type_ text,
-    name text not null,
-    description text,
-    is_not_null boolean,
-    is_array boolean default false,
-    is_array_not_null boolean,
-    is_deprecated boolean not null default false,
-    deprecation_reason text,
-    is_disabled boolean default false,
-    is_hidden_from_schema boolean default false,
-    -- TODO trigger check column name only non-null when type is scalar
-    column_name text,
-    -- Relationships
-    local_columns text[],
-    parent_columns text[],
-    -- Names must be unique on each type
-    unique(parent_type, name),
-    -- Upsert key
-    unique(parent_type, column_name),
-    -- is_array_not_null only set if is_array is true
-    check (
-        (not is_array and is_array_not_null is null)
-        or (is_array and is_array_not_null is not null)
-    ),
-    -- Only column fields, total, and entrypoints can be disabled
-    check (
-        not is_disabled
-        or column_name is not null
-        or name = 'totalCount'
-        -- Is an entrypoint, but not part of the required introspection system
-        or (parent_type is null and name not in ('__type', '__schema'))
-    )
-);
-
-
 create table gql.arg (
     id integer generated always as identity primary key,
     -- the field that accepts the argument
-    field_id integer not null references gql.field(id),
+    field text not null,
     -- type of the argument
     type_ text not null,
     name text not null,
@@ -547,7 +509,7 @@ create table gql.arg (
     deprecation_reason text,
     default_value text,
     -- Names must be unique on each type
-    unique(field_id, name),
+    unique(field, name),
     check (
         (not is_array and is_array_not_null is null)
         or (is_array and is_array_not_null is not null)
@@ -682,20 +644,20 @@ $$
 $$;
 
 
-
-------------------------
--- Schema Translation --
-------------------------
-
-create function gql.build_schema()
-    returns void
-    language plpgsql
-as
-$$
-begin
-    truncate table gql.field restart identity cascade;
-
-    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
+create or replace view gql.field as
+select
+    parent_type,
+    type_,
+    name,
+    is_not_null,
+    is_array,
+    is_array_not_null,
+    description,
+    null::text as column_name,
+    null::text[] parent_columns,
+    null::text[] local_columns,
+    false as is_hidden_from_schema
+from (
     values
         ('__Schema', 'String', 'description', false, false, null, null),
         ('__Schema', '__Type', 'types', true, true, true, 'A list of all types supported by this server.'),
@@ -731,242 +693,233 @@ begin
         ('__EnumValue', 'String', 'name', true, false, null, null),
         ('__EnumValue', 'String', 'description', false, false, null, null),
         ('__EnumValue', 'Boolean', 'isDeprecated', true, false, null, null),
-        ('__EnumValue', 'String', 'deprecationReason', false, false, null, null);
-
-
-
-    -- PageInfo
-    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
-    values
+        ('__EnumValue', 'String', 'deprecationReason', false, false, null, null),
         ('PageInfo', 'Boolean', 'hasPreviousPage', true, false, null, null),
         ('PageInfo', 'Boolean', 'hasNextPage', true, false, null, null),
         ('PageInfo', 'String', 'startCursor', true, false, null, null),
-        ('PageInfo', 'String', 'endCursor', true, false, null, null);
-
-    -- Edges
-    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
-        -- Edge.node:
-        select
-            edge.name parent_type,
-            node.name type_,
-            'node' as name,
-            false is_not_null,
-            false is_array,
-            null::boolean is_array_not_null,
-            null::text as column_name
-        from
-            gql.type edge
-            join gql.type node
-                on edge.entity = node.entity
-        where
-            edge.meta_kind = 'EDGE'
-            and node.meta_kind = 'NODE'
-        union all
-        -- Edge.cursor
-        select
-            edge.name, 'String', 'cursor', true, false, null, null
-        from
-            gql.type edge
-        where
-            edge.meta_kind = 'EDGE';
-
+        ('PageInfo', 'String', 'endCursor', true, false, null, null),
+        ('Query', '__Type', '__type', true, false, null, null), -- todo is_hidden_from_schema = true
+        ('Query', '__Schema', '__schema', true, false, null, null) -- todo is_hidden_from_schema = true
+    ) x(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
+    union all
+    -- Edge
+    -- Edge.node:
+    select
+        edge.name parent_type,
+        node.name type_,
+        'node' as name,
+        false is_not_null,
+        false is_array,
+        null::boolean is_array_not_null,
+        null::text as description,
+        null::text as column_name,
+        null::text[],
+        null::text[],
+        false
+    from
+        gql.type edge
+        join gql.type node
+            on edge.entity = node.entity
+    where
+        edge.meta_kind = 'EDGE'
+        and node.meta_kind = 'NODE'
+    union all
+    -- Edge.cursor
+    select
+        edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false
+    from
+        gql.type edge
+    where
+        edge.meta_kind = 'EDGE'
+    union all
     -- Connection
-    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
-        -- Connection.edges:
-        select
-            conn.name parent_type,
-            edge.name type_,
-            'edges' as name,
-            false is_not_null,
-            true is_array,
-            false::boolean is_array_not_null,
-            null::text as column_name
-        from
-            gql.type conn
-            join gql.type edge
-                on conn.entity = edge.entity
-        where
-            conn.meta_kind = 'CONNECTION'
-            and edge.meta_kind = 'EDGE'
-        union all
-        -- Connection.pageInfo
-        select conn.name, 'PageInfo', 'pageInfo', true, false, null, null
-        from gql.type conn
-        where conn.meta_kind = 'CONNECTION'
-        union all
-        -- Connection.totalCount (disabled by default)
-        select conn.name, 'Int', 'totalCount', true, false, null, null
-        from gql.type conn
-        where conn.meta_kind = 'CONNECTION';
-
-
+    -- Connection.edges:
+    select
+        conn.name parent_type,
+        edge.name type_,
+        'edges' as name,
+        false is_not_null,
+        true is_array,
+        false::boolean is_array_not_null,
+        null::text as description,
+        null::text as column_name,
+        null::text[],
+        null::text[],
+        false
+    from
+        gql.type conn
+        join gql.type edge
+            on conn.entity = edge.entity
+    where
+        conn.meta_kind = 'CONNECTION'
+        and edge.meta_kind = 'EDGE'
+    union all
+    -- Connection.pageInfo
+    select conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false
+    from gql.type conn
+    where conn.meta_kind = 'CONNECTION'
+    union all
+    -- Connection.totalCount (disabled by default)
+    select conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false
+    from gql.type conn
+    where conn.meta_kind = 'CONNECTION'
+    union all
     -- Node
-    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
-        -- Node.<column>
-        select distinct
-            gt.name parent_type,
-            case
-                -- substring removes the underscore prefix from array types
-                when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
-                else gql.sql_type_to_gql_type(c.data_type)
-            end type_,
-            gql.to_camel_case(c.column_name::text) as name,
-            case when c.data_type = 'ARRAY' then false else c.is_nullable = 'NO' end as is_not_null,
-            case when c.data_type = 'ARRAY' then true else false end is_array,
-            case when c.data_type = 'ARRAY' then c.is_nullable = 'NO' else null end is_array_not_null,
-            c.column_name::text as column_name
-        from
-            gql.entity ent
-            join gql.type gt
-                on ent.entity = gt.entity
-            join information_schema.role_column_grants rcg
-                on ent.entity = gql.to_regclass(rcg.table_schema, rcg.table_name)
-            join information_schema.columns c
-                on rcg.table_schema = c.table_schema
-                and rcg.table_name = c.table_name
-                and rcg.column_name = c.column_name
-        where
-            gt.meta_kind = 'NODE'
-            -- INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
-            and rcg.privilege_type = 'SELECT'
-            and (
-                -- Use access level of current role
-                rcg.grantee = current_setting('role')
-                -- If superuser, allow everything
-                or current_setting('role') = 'none'
-            )
-        union all
-        -- Node.nodeId
-        select distinct
-            gt.name parent_type,
-            'ID',
-            'nodeId',
-            true,
-            false,
-            null::boolean,
-            null::text
-        from
-            gql.entity ent
-            join gql.type gt
-                on ent.entity = gt.entity
-        where
-            gt.meta_kind = 'NODE';
-
+    -- Node.<column>
+    select distinct
+        gt.name parent_type,
+        case
+            -- substring removes the underscore prefix from array types
+            when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
+            else gql.sql_type_to_gql_type(c.data_type)
+        end type_,
+        gql.to_camel_case(c.column_name::text) as name,
+        case when c.data_type = 'ARRAY' then false else c.is_nullable = 'NO' end as is_not_null,
+        case when c.data_type = 'ARRAY' then true else false end is_array,
+        case when c.data_type = 'ARRAY' then c.is_nullable = 'NO' else null end is_array_not_null,
+        null::text description,
+        c.column_name::text as column_name,
+        null::text[],
+        null::text[],
+        false
+    from
+        gql.entity ent
+        join gql.type gt
+            on ent.entity = gt.entity
+        join information_schema.columns c
+            on ent.entity = gql.to_regclass(c.table_schema, c.table_name)
+    where
+        gt.meta_kind = 'NODE'
+        and pg_catalog.has_column_privilege(current_user, ent.entity, c.column_name, 'SELECT')
+    union all
+    -- Node.nodeId
+    select distinct
+        gt.name parent_type, 'ID', 'nodeId', true, false, null::boolean, null::text description, null::text, null::text[], null::text[], false
+    from
+        gql.entity ent
+        join gql.type gt
+            on ent.entity = gt.entity
+    where
+        gt.meta_kind = 'NODE'
+    union all
     -- Node.<relationship>
-    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, parent_columns, local_columns)
-        -- Node.<connection>
-        select
-            node.name parent_type,
-            conn.name type_,
-            case
-                when (
-                    rel.foreign_cardinality = 'MANY'
-                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type = node.name)
-                ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
-                else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
-            end,
-            -- todo
-            false as is_not_null,
-            true as is_array,
-            false as is_array_not_null, -- TODO: check this
-            rel.local_columns,
-            rel.foreign_columns
-        from
-            gql.type node
-            join gql.relationship rel
-                on node.entity = rel.local_entity
-            join gql.type conn
-                on conn.entity = rel.foreign_entity
-        where
-            node.meta_kind = 'NODE'
-            and conn.meta_kind = 'CONNECTION'
-            and rel.foreign_cardinality = 'MANY'
-        union all
-        -- Node.<node>
-        select
-            node.name parent_type,
-            conn.name type_,
-            case
-                -- owner_id -> owner
-                when (
-                    array_length(rel.local_columns, 1) = 1
-                    and rel.local_columns[1] like '%_id'
-                    and rel.foreign_cardinality = 'ONE'
-                    and gql.to_camel_case(left(rel.local_columns[1], -3)) not in (select name from gql.field where parent_type = node.name)
-                ) then gql.to_camel_case(left(rel.local_columns[1], -3))
-                when (
-                    rel.foreign_cardinality = 'ONE'
-                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type = node.name)
-                ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
-                else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride2'
-            end,
-            -- todo
-            false as is_not_null,
-            false as is_array,
-            null as is_array_not_null,
-            rel.local_columns,
-            rel.foreign_columns
-        from
-            gql.type node
-            join gql.relationship rel
-                on node.entity = rel.local_entity
-            join gql.type conn
-                on conn.entity = rel.foreign_entity
-        where
-            node.meta_kind = 'NODE'
-            and conn.meta_kind = 'NODE'
-            and rel.foreign_cardinality = 'ONE';
-
+    -- Node.<connection>
+    select
+        node.name parent_type,
+        conn.name type_,
+        case
+            when rel.foreign_cardinality = 'MANY' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
+            else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
+        end,
+        -- todo
+        false as is_not_null,
+        true as is_array,
+        false as is_array_not_null, -- TODO: check this
+        null description,
+        null column_name,
+        rel.local_columns,
+        rel.foreign_columns,
+        false
+    from
+        gql.type node
+        join gql.relationship rel
+            on node.entity = rel.local_entity
+        join gql.type conn
+            on conn.entity = rel.foreign_entity
+    where
+        node.meta_kind = 'NODE'
+        and conn.meta_kind = 'CONNECTION'
+        and rel.foreign_cardinality = 'MANY'
+    union all
+    -- Node.<node>
+    select
+        node.name parent_type,
+        conn.name type_,
+        case
+            -- owner_id -> owner
+            when (
+                array_length(rel.local_columns, 1) = 1
+                and rel.local_columns[1] like '%_id'
+                and rel.foreign_cardinality = 'ONE'
+            ) then gql.to_camel_case(left(rel.local_columns[1], -3))
+            when rel.foreign_cardinality = 'ONE' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
+            else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride2'
+        end,
+        -- todo
+        false as is_not_null,
+        false as is_array,
+        null as is_array_not_null,
+        null description,
+        null column_name,
+        rel.local_columns,
+        rel.foreign_columns,
+        false
+    from
+        gql.type node
+        join gql.relationship rel
+            on node.entity = rel.local_entity
+        join gql.type conn
+            on conn.entity = rel.foreign_entity
+    where
+        node.meta_kind = 'NODE'
+        and conn.meta_kind = 'NODE'
+        and rel.foreign_cardinality = 'ONE'
+    union all
     -- Resolver Entrypoints
-    insert into gql.field(type_, name, is_not_null, is_array, parent_type, is_hidden_from_schema)
-        select '__Type', '__type', true, false, 'Query', true
-        union all
-        select '__Schema', '__schema', true, false, 'Query', true
-        union all
-        -- Node
-        select t.name, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, 'Query', false
-        from gql.type t
-        where t.meta_kind = 'NODE'
-        union all
-        -- Connections
-        select t.name, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, 'Query', false
-        from gql.type t
-        where t.meta_kind = 'CONNECTION';
-
+    -- Node
+    select 'Query', t.name, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, null, null, null, null, null, false
+    from gql.type t
+    where t.meta_kind = 'NODE'
+    union all
+    -- Connections
+    select 'Query', t.name, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, null, null, null, null, null, false
+    from gql.type t
+    where t.meta_kind = 'CONNECTION'
+    union all
     -- Every output type with fields has a __typename field
-    insert into gql.field(parent_type, type_, name, is_not_null, is_hidden_from_schema)
-        select distinct f.parent_type, 'String', '__typename', true, true
-        from gql.field f;
+    select t.name, 'String', '__typename', true, false, null, null, null, null, null, true
+    from gql.type t
+    where t.type_kind = 'OBJECT';
 
 
+------------------------
+-- Schema Translation --
+------------------------
+
+create function gql.build_schema()
+    returns void
+    language plpgsql
+as
+$$
+begin
     -- Arguments
-    insert into gql.arg(field_id, name, type_, is_not_null, default_value)
+    insert into gql.arg(field, name, type_, is_not_null, default_value)
         -- __Field(includeDeprecated)
-        select f.id, 'includeDeprecated', 'Boolean', false, 'f'
+        select f.name, 'includeDeprecated', 'Boolean', false, 'f'
         from gql.field f
         where
             f.type_ = '__Field'
             and f.is_array
         union all
         -- __enumValue(includeDeprecated)
-        select f.id, 'includeDeprecated', 'Boolean', false, 'f'
+        select f.name, 'includeDeprecated', 'Boolean', false, 'f'
         from gql.field f
         where
             f.type_ = '__enumValue'
             and f.is_array
         union all
         -- __InputFields(includeDeprecated)
-        select f.id, 'includeDeprecated', 'Boolean', false, 'f'
+        select f.name, 'includeDeprecated', 'Boolean', false, 'f'
         from gql.field f
         where
             f.type_ = '__InputFields'
             and f.is_array;
 
 
-    insert into gql.arg(field_id, name, type_, is_not_null)
+    insert into gql.arg(field, name, type_, is_not_null)
         -- __type(name)
         select
-            f.id field_id,
+            f.name,
             'name' as name,
             'String' type_,
             true as is_not_null
@@ -975,7 +928,7 @@ begin
         union all
         -- Node(id)
         select
-            f.id field_id,
+            f.name,
             'id' as name,
             'ID' type_,
             true as is_not_null
@@ -988,7 +941,7 @@ begin
         union all
         -- Connection(first, last, after, before)
         select
-            f.id field_id, y.name_ as name, 'Int' type_, false as is_not_null
+            f.name field, y.name_ as name, 'Int' type_, false as is_not_null
         from
             gql.type t
             inner join gql.field f
@@ -998,7 +951,7 @@ begin
         where t.meta_kind = 'CONNECTION'
         union all
         select
-            f.id field_id, y.name_ as name, 'String' type_, false as is_not_null
+            f.name field, y.name_ as name, 'String' type_, false as is_not_null
         from
             gql.type t
             inner join gql.field f
@@ -1010,7 +963,7 @@ begin
         -- Node(nodeId)
         -- Restrict to entrypoint only?
         select
-            f.id field_id, 'nodeId' as name, 'ID' type_, true as is_not_null
+            f.name field, 'nodeId' as name, 'ID' type_, true as is_not_null
         from
             gql.type t
             inner join gql.field f
@@ -1131,7 +1084,7 @@ as $$
             join type_
                 on true
             left join gql.arg ga
-                on ga.field_id = field.id
+                on ga.field = field.name
             left join jsonb_array_elements(variable_definitions) with ordinality as defs(elem, idx)
                 on (ar.elem -> 'value' ->> 'kind') = 'Variable'
                 and gql.name(ar.elem -> 'value') = gql.name(defs.elem -> 'variable')
@@ -1438,7 +1391,8 @@ create or replace function gql."resolve___Type"(
     is_array bool = false,
     is_not_null bool = false
 ) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
-create or replace function gql.resolve_field(field_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
+
+create or replace function gql.resolve_field(field text, parent_type text, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 
 
 create or replace function gql.resolve___input_value(arg_id int, ast jsonb)
@@ -1474,7 +1428,7 @@ as $$
 $$;
 
 
-create or replace function gql.resolve_field(field_id int, ast jsonb)
+create or replace function gql.resolve_field(field text, parent_type text, ast jsonb)
     returns jsonb
     stable
     language sql
@@ -1486,8 +1440,8 @@ as $$
                 case
                     when selection_name = 'name' then to_jsonb(f.name)
                     when selection_name = 'description' then to_jsonb(f.description)
-                    when selection_name = 'isDeprecated' then to_jsonb(f.is_deprecated)
-                    when selection_name = 'deprecationReason' then to_jsonb(f.deprecation_reason)
+                    when selection_name = 'isDeprecated' then to_jsonb(false) -- todo
+                    when selection_name = 'deprecationReason' then to_jsonb(null::text) -- todo
                     when selection_name = 'type' then gql."resolve___Type"(f.type_, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
                     when selection_name = 'args' then '[]'::jsonb --gql."resolve___InputValues"(f.type_, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
                     else to_jsonb('ERROR: Unknown Field'::text)
@@ -1503,7 +1457,8 @@ as $$
                 gql.name(x.sel) as selection_name
         ) fa
         join gql.field f
-            on f.id = field_id
+            on f.name = field
+            and f.parent_type = parent_type
 $$;
 
 
@@ -1534,7 +1489,7 @@ as $$
                         case
                             -- TODO, un-hardcode
                             when gt.name = 'Mutation' then '[]'::jsonb
-                            else (select jsonb_agg(gql.resolve_field(f.id, x.sel)) from gql.field f where f.parent_type = gt.name and not f.is_hidden_from_schema)
+                            else (select jsonb_agg(gql.resolve_field(f.name, f.parent_type, x.sel)) from gql.field f where f.parent_type = gt.name and not f.is_hidden_from_schema)
                         end
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
@@ -1842,10 +1797,6 @@ begin
             else null::text
         end;
 
-        if q is not null then
-            execute gql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
-        end if;
-
         data_ = case meta_kind
             when '__SCHEMA' then
                 gql."resolve___Schema"(
@@ -1863,6 +1814,11 @@ begin
                 )
             else null::jsonb
         end;
+
+    end if;
+
+    if q is not null then
+        execute gql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
     end if;
 
     if data_ is null then

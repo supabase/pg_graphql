@@ -109,6 +109,18 @@ select jsonb_pretty(
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
+                     "name": "BlogPost"           +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogPostEdge"       +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogPostConnection" +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
                      "name": "Account"            +
                  },                               +
                  {                                +
@@ -130,18 +142,6 @@ select jsonb_pretty(
                  {                                +
                      "kind": "OBJECT",            +
                      "name": "BlogConnection"     +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogPost"           +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogPostEdge"       +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogPostConnection" +
                  },                               +
                  {                                +
                      "kind": "ENUM",              +
