@@ -477,7 +477,8 @@ create or replace view gql.relationship as
         directional;
 
 -- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
---create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+create type gql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+
 create type gql.meta_kind as enum (
     'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
     'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
@@ -496,8 +497,7 @@ create table gql.enum_value(
 create table gql.type (
     id integer generated always as identity primary key,
     name text not null unique,
-    -- TODO triger enforce refers to __TypeKind
-    type_kind_id integer not null references gql.enum_value(id) deferrable initially deferred,
+    type_kind gql.type_kind,
     -- internal convenience designation
     meta_kind gql.meta_kind not null,
     description text,
@@ -505,7 +505,7 @@ create table gql.type (
     -- Is it an input type
     is_input boolean not null default false,
     is_disabled boolean not null default false,
-    unique (type_kind_id, meta_kind, entity),
+    unique (type_kind, meta_kind, entity),
     check (
         meta_kind not in ('NODE', 'EDGE', 'CONNECTION') and entity is null
         or entity is not null
@@ -534,12 +534,6 @@ create function gql.type_name_by_id(int)
     language sql
 as
 $$ select name from gql.type where id = $1; $$;
-
-create function gql.type_kind_id_by_value(text)
-    returns int
-    language sql
-as
-$$ select id from gql.enum_value where value = $1 and type_id = gql.type_id_by_name('__TypeKind'); $$;
 
 
 create table gql.field (
@@ -625,6 +619,17 @@ $$
 $$;
 
 
+create or replace view gql._entity as
+select
+    gql.to_regclass(schemaname, tablename) entity
+from
+    pg_tables pgt
+where
+    schemaname not in ('information_schema', 'pg_catalog', 'gql')
+    and pg_catalog.has_schema_privilege(current_user, pgt.schemaname, 'USAGE')
+    and pg_catalog.has_any_column_privilege(gql.to_regclass(schemaname, tablename), 'SELECT');
+
+
 ------------------------
 -- Schema Translation --
 ------------------------
@@ -640,58 +645,37 @@ begin
     truncate table gql.entity restart identity cascade;
 
     insert into gql.entity(entity, is_disabled)
-    select
-        gql.to_regclass(schemaname, tablename) entity,
-        false is_disabled
-    from
-        pg_tables pgt
-    where
-        schemaname not in ('information_schema', 'pg_catalog', 'gql');
+    select entity, false is_disabled from gql._entity;
 
     -- Populate gql.type_kind and __TypeKind because foreign keys rely on it
     set constraints all deferred;
 
-    insert into gql.type (name, type_kind_id, meta_kind, description)
-    values ('__TypeKind', 0, '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.');
-
-    insert into gql.enum_value(type_id, value, description)
-    values
-        (gql.type_id_by_name('__TypeKind'), 'SCALAR', null),
-        (gql.type_id_by_name('__TypeKind'), 'OBJECT', null),
-        (gql.type_id_by_name('__TypeKind'), 'INTERFACE', null),
-        (gql.type_id_by_name('__TypeKind'), 'UNION', null),
-        (gql.type_id_by_name('__TypeKind'), 'ENUM', null),
-        (gql.type_id_by_name('__TypeKind'), 'INPUT_OBJECT', null),
-        (gql.type_id_by_name('__TypeKind'), 'LIST', null),
-        (gql.type_id_by_name('__TypeKind'), 'NON_NULL', null);
-
-    update gql.type
-    set type_kind_id = (select id from gql.enum_value where value = 'ENUM')
-    where name = '__TypeKind';
+    insert into gql.type (name, type_kind, meta_kind, description)
+    values ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.');
 
     -- Constants
-    insert into gql.type (name, type_kind_id, meta_kind, description)
+    insert into gql.type (name, type_kind, meta_kind, description)
     values
-        ('ID', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
-        ('Int', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
-        ('Float', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
-        ('String', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
-        ('Boolean', gql.type_kind_id_by_value('SCALAR'), 'BUILTIN', null),
-        ('DateTime', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
-        ('BigInt', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
-        ('UUID', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
-        ('JSON', gql.type_kind_id_by_value('SCALAR'), 'CUSTOM_SCALAR', null),
-        ('Query', gql.type_kind_id_by_value('OBJECT'), 'QUERY', null),
-        ('Mutation', gql.type_kind_id_by_value('OBJECT'), 'MUTATION', null),
-        ('PageInfo', gql.type_kind_id_by_value('OBJECT'), 'PAGE_INFO', null),
+        ('ID', 'SCALAR', 'BUILTIN', null),
+        ('Int', 'SCALAR', 'BUILTIN', null),
+        ('Float', 'SCALAR', 'BUILTIN', null),
+        ('String', 'SCALAR', 'BUILTIN', null),
+        ('Boolean', 'SCALAR', 'BUILTIN', null),
+        ('DateTime', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('Query', 'OBJECT', 'QUERY', null),
+        ('Mutation', 'OBJECT', 'MUTATION', null),
+        ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
         -- Introspection System
-        ('__Schema', gql.type_kind_id_by_value('OBJECT'), '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
-        ('__Type', gql.type_kind_id_by_value('OBJECT'), '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
-        ('__Field', gql.type_kind_id_by_value('OBJECT'), '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
-        ('__InputValue', gql.type_kind_id_by_value('OBJECT'), '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
-        ('__EnumValue', gql.type_kind_id_by_value('OBJECT'), '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
-        ('__DirectiveLocation', gql.type_kind_id_by_value('ENUM'), '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
-        ('__Directive', gql.type_kind_id_by_value('OBJECT'), '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.');
+        ('__Schema', 'OBJECT', '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
+        ('__Type', 'OBJECT', '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
+        ('__Field', 'OBJECT', '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
+        ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
+        ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
+        ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
+        ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.');
 
 
     insert into gql.enum_value(type_id, value, description)
@@ -762,16 +746,16 @@ begin
     -- Connections and entrypoints will also need input arguments
 
     -- Node, Edge, and Connection Types
-    insert into gql.type (name, type_kind_id, meta_kind, entity, is_disabled)
-    select gql.to_pascal_case(gql.to_table_name(entity)), gql.type_kind_id_by_value('OBJECT'), 'NODE'::gql.meta_kind, entity, false from gql.entity
-    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', gql.type_kind_id_by_value('OBJECT'), 'EDGE', entity, false from gql.entity
-    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', gql.type_kind_id_by_value('OBJECT'), 'CONNECTION', entity, false from gql.entity;
+    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
+    select gql.to_pascal_case(gql.to_table_name(entity)), 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, entity, false from gql.entity
+    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'OBJECT', 'EDGE', entity, false from gql.entity
+    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'OBJECT', 'CONNECTION', entity, false from gql.entity;
 
     -- Enum Types
-    insert into gql.type (name, type_kind_id, meta_kind, is_disabled)
+    insert into gql.type (name, type_kind, meta_kind, is_disabled)
     select
         gql.to_pascal_case(t.typname) as name,
-        gql.type_kind_id_by_value('ENUM') as type_kind,
+        'ENUM' as type_kind,
         'CUSTOM_SCALAR' as meta_kind,
         false
     from
@@ -1597,8 +1581,7 @@ as $$
                             when is_array_not_null then to_jsonb('NON_NULL'::text)
                             when is_array then to_jsonb('LIST'::text)
                             when is_not_null then to_jsonb('NON_NULL'::text)
-                            else to_jsonb((select value::text from gql.enum_value where id = gt.type_kind_id limit 1))
-                            --else to_jsonb('OTHER'::text)
+                            else to_jsonb(gt.type_kind::text)
                         end
                     )
                     when selection_name = 'fields' and not has_modifiers then (
