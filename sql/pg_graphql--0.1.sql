@@ -488,59 +488,16 @@ create type gql.meta_kind as enum (
 
 create table gql.enum_value(
     id integer generated always as identity primary key,
-    type_id integer not null,
+    type_ text not null,
     value text not null,
     description text,
-    unique (type_id, value)
+    unique (type_, value)
 );
-
-create table gql.type (
-    id integer generated always as identity primary key,
-    name text not null unique,
-    type_kind gql.type_kind,
-    -- internal convenience designation
-    meta_kind gql.meta_kind not null,
-    description text,
-    entity regclass references gql.entity(entity),
-    -- Is it an input type
-    is_input boolean not null default false,
-    is_disabled boolean not null default false,
-    unique (type_kind, meta_kind, entity),
-    check (
-        meta_kind not in ('NODE', 'EDGE', 'CONNECTION') and entity is null
-        or entity is not null
-    )
-);
-
-alter table gql.enum_value
-add constraint fk_enum_value_to_type
-    foreign key (type_id)
-    references gql.type(id);
-
-
--- Enforce unique constraints on some special types
-create unique index uq_type_meta_singleton
-    on gql.type(meta_kind)
-    where (meta_kind in ('QUERY', 'MUTATION', 'CURSOR', 'PAGE_INFO'));
-
-create function gql.type_id_by_name(text)
-    returns int
-    language sql
-as
-$$ select id from gql.type where name = $1; $$;
-
-create function gql.type_name_by_id(int)
-    returns text
-    language sql
-as
-$$ select name from gql.type where id = $1; $$;
-
 
 create table gql.field (
     id integer generated always as identity primary key,
-    -- a null parent_type_id = base level field (entrypoint)
-    parent_type_id integer references gql.type(id),
-    type_id integer not null references gql.type(id),
+    parent_type text,
+    type_ text,
     name text not null,
     description text,
     is_not_null boolean,
@@ -556,9 +513,9 @@ create table gql.field (
     local_columns text[],
     parent_columns text[],
     -- Names must be unique on each type
-    unique(parent_type_id, name),
+    unique(parent_type, name),
     -- Upsert key
-    unique(parent_type_id, column_name),
+    unique(parent_type, column_name),
     -- is_array_not_null only set if is_array is true
     check (
         (not is_array and is_array_not_null is null)
@@ -570,7 +527,7 @@ create table gql.field (
         or column_name is not null
         or name = 'totalCount'
         -- Is an entrypoint, but not part of the required introspection system
-        or (parent_type_id is null and name not in ('__type', '__schema'))
+        or (parent_type is null and name not in ('__type', '__schema'))
     )
 );
 
@@ -580,7 +537,7 @@ create table gql.arg (
     -- the field that accepts the argument
     field_id integer not null references gql.field(id),
     -- type of the argument
-    type_id integer not null references gql.type(id),
+    type_ text not null,
     name text not null,
     description text,
     is_not_null boolean,
@@ -598,23 +555,81 @@ create table gql.arg (
 );
 
 
+create or replace view gql.type as
+select
+    name,
+    type_kind::gql.type_kind,
+    meta_kind::gql.meta_kind,
+    description,
+    null::regclass as entity
+from (
+    values
+    ('ID', 'SCALAR', 'BUILTIN', null),
+    ('Int', 'SCALAR', 'BUILTIN', null),
+    ('Float', 'SCALAR', 'BUILTIN', null),
+    ('String', 'SCALAR', 'BUILTIN', null),
+    ('Boolean', 'SCALAR', 'BUILTIN', null),
+    ('DateTime', 'SCALAR', 'CUSTOM_SCALAR', null),
+    ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
+    ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
+    ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
+    ('Query', 'OBJECT', 'QUERY', null),
+    ('Mutation', 'OBJECT', 'MUTATION', null),
+    ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
+    -- Introspection System
+    ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.'),
+    ('__Schema', 'OBJECT', '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
+    ('__Type', 'OBJECT', '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
+    ('__Field', 'OBJECT', '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
+    ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
+    ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
+    ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
+    ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.')
+) as const(name, type_kind, meta_kind, description)
+union all
+select
+    x.*
+from
+    gql.entity ent,
+    lateral (
+        select gql.to_pascal_case(gql.to_table_name(ent.entity)), 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, null, ent.entity
+        union all select gql.to_pascal_case(gql.to_table_name(ent.entity)) || 'Edge', 'OBJECT', 'EDGE', null, ent.entity
+        union all select gql.to_pascal_case(gql.to_table_name(ent.entity)) || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity
+    ) x
+union all
+select distinct
+    gql.to_pascal_case(t.typname), 'ENUM'::gql.type_kind, 'CUSTOM_SCALAR'::gql.meta_kind, null, null::regclass
+from
+    pg_type t
+    join pg_enum e
+        on t.oid = e.enumtypid
+    join pg_catalog.pg_namespace n
+        on n.oid = t.typnamespace
+where
+    n.nspname not in ('gql', 'information_schema', 'pg_catalog')
+    and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
+
+
+
+
+
 create function gql.sql_type_to_gql_type(sql_type text)
-    returns int
+    returns text
     language sql
 as
 $$
     -- SQL type from information_schema.columns.data_type
     select
         case
-            when sql_type like 'int%' then gql.type_id_by_name('Int')
-            when sql_type like 'bool%' then gql.type_id_by_name('Boolean')
-            when sql_type like 'float%' then gql.type_id_by_name('Float')
-            when sql_type like 'numeric%' then gql.type_id_by_name('Float')
-            when sql_type like 'json%' then gql.type_id_by_name('JSON')
-            when sql_type = 'uuid' then gql.type_id_by_name('UUID')
-            when sql_type like 'date%' then gql.type_id_by_name('DateTime')
-            when sql_type like 'timestamp%' then gql.type_id_by_name('DateTime')
-        else gql.type_id_by_name('String')
+            when sql_type like 'int%' then 'Int'
+            when sql_type like 'bool%' then 'Boolean'
+            when sql_type like 'float%' then 'Float'
+            when sql_type like 'numeric%' then 'Float'
+            when sql_type like 'json%' then 'JSON'
+            when sql_type = 'uuid' then 'UUID'
+            when sql_type like 'date%' then 'DateTime'
+            when sql_type like 'timestamp%' then 'DateTime'
+        else 'String'
     end;
 $$;
 
@@ -641,138 +656,54 @@ as
 $$
 begin
     truncate table gql.field restart identity cascade;
-    truncate table gql.type restart identity  cascade;
     truncate table gql.entity restart identity cascade;
 
     insert into gql.entity(entity, is_disabled)
     select entity, false is_disabled from gql._entity;
 
-    -- Populate gql.type_kind and __TypeKind because foreign keys rely on it
-    set constraints all deferred;
-
-    insert into gql.type (name, type_kind, meta_kind, description)
-    values ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.');
-
-    -- Constants
-    insert into gql.type (name, type_kind, meta_kind, description)
+    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
     values
-        ('ID', 'SCALAR', 'BUILTIN', null),
-        ('Int', 'SCALAR', 'BUILTIN', null),
-        ('Float', 'SCALAR', 'BUILTIN', null),
-        ('String', 'SCALAR', 'BUILTIN', null),
-        ('Boolean', 'SCALAR', 'BUILTIN', null),
-        ('DateTime', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('Query', 'OBJECT', 'QUERY', null),
-        ('Mutation', 'OBJECT', 'MUTATION', null),
-        ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
-        -- Introspection System
-        ('__Schema', 'OBJECT', '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
-        ('__Type', 'OBJECT', '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
-        ('__Field', 'OBJECT', '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
-        ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
-        ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
-        ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
-        ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.');
+        ('__Schema', 'String', 'description', false, false, null, null),
+        ('__Schema', '__Type', 'types', true, true, true, 'A list of all types supported by this server.'),
+        ('__Schema', '__Type', 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
+        ('__Schema', '__Type', 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
+        ('__Schema', '__Type', 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
+        ('__Schema', '__Directive', 'directives', true, true, true, 'A list of all directives supported by this server.'),
+        ('__Directive', 'String', 'name', true, false, null, null),
+        ('__Directive', 'String', 'description', false, false, null, null),
+        ('__Directive', 'Boolean', 'isRepeatable', true, false, null, null),
+        ('__Directive', '__DirectiveLocation', 'locations', true, true, true, null),
+        ('__Directive', '__InputValue', 'args', true, true, true, null),
+        ('__Type', '__TypeKind', 'kind', true, false, null, null),
+        ('__Type', 'String', 'name', false, false, null, null),
+        ('__Type', 'String', 'description', false, false, null, null),
+        ('__Type', 'String', 'specifiedByURL', false, false, null, null),
+        ('__Type', '__Field', 'fields', true, true, false, null),
+        ('__Type', '__Type', 'interfaces', true, true, false, null),
+        ('__Type', '__Type', 'possibleTypes', true, true, false, null),
+        ('__Type', '__EnumValue', 'enumValues', true, true, false, null),
+        ('__Type', '__InputValue', 'inputFields', true, true, false, null),
+        ('__Type', '__Type', 'ofType', false, false, null, null),
+        ('__Field', 'Boolean', 'isDeprecated', true, false, null, null),
+        ('__Field', 'String', 'deprecationReason', false, false, null, null),
+        ('__Field', '__InputValue', 'args', true, true, true, null),
+        ('__Field', '__Type', 'type', true, false, null, null),
+        ('__InputValue', 'String', 'name', true, false, null, null),
+        ('__InputValue', 'String', 'description', false, false, null, null),
+        ('__InputValue', 'String', 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
+        ('__InputValue', 'Boolean', 'isDeprecated', true, false, null, null),
+        ('__InputValue', 'String', 'deprecationReason', false, false, null, null),
+        ('__InputValue', '__Type', 'type', true, false, null, null),
+        ('__EnumValue', 'String', 'name', true, false, null, null),
+        ('__EnumValue', 'String', 'description', false, false, null, null),
+        ('__EnumValue', 'Boolean', 'isDeprecated', true, false, null, null),
+        ('__EnumValue', 'String', 'deprecationReason', false, false, null, null);
 
-
-    insert into gql.enum_value(type_id, value, description)
-    values
-        (gql.type_id_by_name('__DirectiveLocation'), 'QUERY', 'Location adjacent to a query operation.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'MUTATION', 'Location adjacent to a mutation operation.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'FIELD', 'Location adjacent to a field.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'SCHEMA', 'Location adjacent to a schema definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'SCALAR', 'Location adjacent to a scalar definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'OBJECT', 'Location adjacent to an object type definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'INTERFACE', 'Location adjacent to an interface definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'UNION', 'Location adjacent to a union definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'ENUM', 'Location adjacent to an enum definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
-        (gql.type_id_by_name('__DirectiveLocation'), 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.');
-
-
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, description)
-    values
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'types', true, true, true, 'A list of all types supported by this server.'),
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Type'), 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
-        (gql.type_id_by_name('__Schema'), gql.type_id_by_name('__Directive'), 'directives', true, true, true, 'A list of all directives supported by this server.'),
-        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('String'), 'name', true, false, null, null),
-        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('Boolean'), 'isRepeatable', true, false, null, null),
-        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('__DirectiveLocation'), 'locations', true, true, true, null),
-        (gql.type_id_by_name('__Directive'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__TypeKind'), 'kind', true, false, null, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'name', false, false, null, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('String'), 'specifiedByURL', false, false, null, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Field'), 'fields', true, true, false, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'interfaces', true, true, false, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'possibleTypes', true, true, false, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__EnumValue'), 'enumValues', true, true, false, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__InputValue'), 'inputFields', true, true, false, null),
-        (gql.type_id_by_name('__Type'), gql.type_id_by_name('__Type'), 'ofType', false, false, null, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'name', true, false, null, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__InputValue'), 'args', true, true, true, null),
-        (gql.type_id_by_name('__Field'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'name', true, false, null, null),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null),
-        (gql.type_id_by_name('__InputValue'), gql.type_id_by_name('__Type'), 'type', true, false, null, null),
-        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'name', true, false, null, null),
-        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'description', false, false, null, null),
-        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('Boolean'), 'isDeprecated', true, false, null, null),
-        (gql.type_id_by_name('__EnumValue'), gql.type_id_by_name('String'), 'deprecationReason', false, false, null, null);
-
-    -- TODO: create a table for gql.field_argument and populate it with the the comments in the block above using the reference
-    -- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L252
-    -- Connections and entrypoints will also need input arguments
-
-    -- Node, Edge, and Connection Types
-    insert into gql.type (name, type_kind, meta_kind, entity, is_disabled)
-    select gql.to_pascal_case(gql.to_table_name(entity)), 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, entity, false from gql.entity
-    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Edge', 'OBJECT', 'EDGE', entity, false from gql.entity
-    union all select gql.to_pascal_case(gql.to_table_name(entity)) || 'Connection', 'OBJECT', 'CONNECTION', entity, false from gql.entity;
-
-    -- Enum Types
-    insert into gql.type (name, type_kind, meta_kind, is_disabled)
-    select
-        gql.to_pascal_case(t.typname) as name,
-        'ENUM' as type_kind,
-        'CUSTOM_SCALAR' as meta_kind,
-        false
-    from
-        pg_type t
-        join pg_enum e
-            on t.oid = e.enumtypid
-        join pg_catalog.pg_namespace n
-            on n.oid = t.typnamespace
-    where
-        n.nspname not in ('gql', 'information_schema')
-    group by
-        n.nspname,
-        t.typname;
     -- Enum values
-    insert into gql.enum_value (type_id, value)
+    -- TODO (OR) link to ENUM types in gql.type
+    insert into gql.enum_value (type_, value)
     select
-        gql.type_id_by_name(gql.to_pascal_case(t.typname)),
+        gql.to_pascal_case(t.typname),
         e.enumlabel as value
     from
         pg_type t
@@ -783,22 +714,53 @@ begin
     where
         n.nspname not in ('gql', 'information_schema');
 
+    insert into gql.enum_value(type_, value, description)
+    values
+        ('__DirectiveLocation', 'QUERY', 'Location adjacent to a query operation.'),
+        ('__DirectiveLocation', 'MUTATION', 'Location adjacent to a mutation operation.'),
+        ('__DirectiveLocation', 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
+        ('__DirectiveLocation', 'FIELD', 'Location adjacent to a field.'),
+        ('__DirectiveLocation', 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
+        ('__DirectiveLocation', 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
+        ('__DirectiveLocation', 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
+        ('__DirectiveLocation', 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
+        ('__DirectiveLocation', 'SCHEMA', 'Location adjacent to a schema definition.'),
+        ('__DirectiveLocation', 'SCALAR', 'Location adjacent to a scalar definition.'),
+        ('__DirectiveLocation', 'OBJECT', 'Location adjacent to an object type definition.'),
+        ('__DirectiveLocation', 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
+        ('__DirectiveLocation', 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
+        ('__DirectiveLocation', 'INTERFACE', 'Location adjacent to an interface definition.'),
+        ('__DirectiveLocation', 'UNION', 'Location adjacent to a union definition.'),
+        ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
+        ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
+        ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
+        ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.');
 
+    insert into gql.enum_value(type_, value, description)
+    values
+        ('__TypeKind', 'SCALAR', null),
+        ('__TypeKind', 'OBJECT', null),
+        ('__TypeKind', 'INTERFACE', null),
+        ('__TypeKind', 'UNION', null),
+        ('__TypeKind', 'ENUM', null),
+        ('__TypeKind', 'INPUT_OBJECT', null),
+        ('__TypeKind', 'LIST', null),
+        ('__TypeKind', 'NON_NULL', null);
 
     -- PageInfo
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
     values
-        (gql.type_id_by_name('PageInfo'), gql.type_id_by_name('Boolean'), 'hasPreviousPage', true, false, null, null),
-        (gql.type_id_by_name('PageInfo'), gql.type_id_by_name('Boolean'), 'hasNextPage', true, false, null, null),
-        (gql.type_id_by_name('PageInfo'), gql.type_id_by_name('String'), 'startCursor', true, false, null, null),
-        (gql.type_id_by_name('PageInfo'), gql.type_id_by_name('String'), 'endCursor', true, false, null, null);
+        ('PageInfo', 'Boolean', 'hasPreviousPage', true, false, null, null),
+        ('PageInfo', 'Boolean', 'hasNextPage', true, false, null, null),
+        ('PageInfo', 'String', 'startCursor', true, false, null, null),
+        ('PageInfo', 'String', 'endCursor', true, false, null, null);
 
     -- Edges
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
         -- Edge.node:
         select
-            edge.id parent_type_id,
-            node.id type_id,
+            edge.name parent_type,
+            node.name type_,
             'node' as name,
             false is_not_null,
             false is_array,
@@ -814,18 +776,18 @@ begin
         union all
         -- Edge.cursor
         select
-            edge.id, gql.type_id_by_name('String'), 'cursor', true, false, null, null
+            edge.name, 'String', 'cursor', true, false, null, null
         from
             gql.type edge
         where
             edge.meta_kind = 'EDGE';
 
     -- Connection
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
         -- Connection.edges:
         select
-            conn.id parent_type_id,
-            edge.id type_id,
+            conn.name parent_type,
+            edge.name type_,
             'edges' as name,
             false is_not_null,
             true is_array,
@@ -840,26 +802,26 @@ begin
             and edge.meta_kind = 'EDGE'
         union all
         -- Connection.pageInfo
-        select conn.id, gql.type_id_by_name('PageInfo'), 'pageInfo', true, false, null, null
+        select conn.name, 'PageInfo', 'pageInfo', true, false, null, null
         from gql.type conn
         where conn.meta_kind = 'CONNECTION'
         union all
         -- Connection.totalCount (disabled by default)
-        select conn.id, gql.type_id_by_name('Int'), 'totalCount', true, false, null, null
+        select conn.name, 'Int', 'totalCount', true, false, null, null
         from gql.type conn
         where conn.meta_kind = 'CONNECTION';
 
 
     -- Node
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, column_name)
+    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, column_name)
         -- Node.<column>
         select distinct
-            gt.id parent_type_id,
+            gt.name parent_type,
             case
                 -- substring removes the underscore prefix from array types
                 when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
                 else gql.sql_type_to_gql_type(c.data_type)
-            end type_id,
+            end type_,
             gql.to_camel_case(c.column_name::text) as name,
             case when c.data_type = 'ARRAY' then false else c.is_nullable = 'NO' end as is_not_null,
             case when c.data_type = 'ARRAY' then true else false end is_array,
@@ -888,8 +850,8 @@ begin
         union all
         -- Node.nodeId
         select distinct
-            gt.id parent_type_id,
-            gql.type_id_by_name('ID'),
+            gt.name parent_type,
+            'ID',
             'nodeId',
             true,
             false,
@@ -903,15 +865,15 @@ begin
             gt.meta_kind = 'NODE';
 
     -- Node.<relationship>
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_array, is_array_not_null, parent_columns, local_columns)
+    insert into gql.field(parent_type, type_, name, is_not_null, is_array, is_array_not_null, parent_columns, local_columns)
         -- Node.<connection>
         select
-            node.id parent_type_id,
-            conn.id type_id,
+            node.name parent_type,
+            conn.name type_,
             case
                 when (
                     rel.foreign_cardinality = 'MANY'
-                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
+                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type = node.name)
                 ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
                 else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
             end,
@@ -934,19 +896,19 @@ begin
         union all
         -- Node.<node>
         select
-            node.id parent_type_id,
-            conn.id type_id,
+            node.name parent_type,
+            conn.name type_,
             case
                 -- owner_id -> owner
                 when (
                     array_length(rel.local_columns, 1) = 1
                     and rel.local_columns[1] like '%_id'
                     and rel.foreign_cardinality = 'ONE'
-                    and gql.to_camel_case(left(rel.local_columns[1], -3)) not in (select name from gql.field where parent_type_id = node.id)
+                    and gql.to_camel_case(left(rel.local_columns[1], -3)) not in (select name from gql.field where parent_type = node.name)
                 ) then gql.to_camel_case(left(rel.local_columns[1], -3))
                 when (
                     rel.foreign_cardinality = 'ONE'
-                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type_id = node.id)
+                    and gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) not in (select name from gql.field where parent_type = node.name)
                 ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
                 else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride2'
             end,
@@ -968,57 +930,57 @@ begin
             and rel.foreign_cardinality = 'ONE';
 
     -- Resolver Entrypoints
-    insert into gql.field(type_id, name, is_not_null, is_array, parent_type_id, is_hidden_from_schema)
-        select gql.type_id_by_name('__Type'), '__type', true, false, gql.type_id_by_name('Query'), true
+    insert into gql.field(type_, name, is_not_null, is_array, parent_type, is_hidden_from_schema)
+        select '__Type', '__type', true, false, 'Query', true
         union all
-        select gql.type_id_by_name('__Schema'), '__schema', true, false, gql.type_id_by_name('Query'), true
+        select '__Schema', '__schema', true, false, 'Query', true
         union all
         -- Node
-        select t.id, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, gql.type_id_by_name('Query'), false
+        select t.name, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, 'Query', false
         from gql.type t
         where t.meta_kind = 'NODE'
         union all
         -- Connections
-        select t.id, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, gql.type_id_by_name('Query'), false
+        select t.name, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, 'Query', false
         from gql.type t
         where t.meta_kind = 'CONNECTION';
 
     -- Every output type with fields has a __typename field
-    insert into gql.field(parent_type_id, type_id, name, is_not_null, is_hidden_from_schema)
-        select distinct f.parent_type_id, gql.type_id_by_name('String'), '__typename', true, true
+    insert into gql.field(parent_type, type_, name, is_not_null, is_hidden_from_schema)
+        select distinct f.parent_type, 'String', '__typename', true, true
         from gql.field f;
 
 
     -- Arguments
-    insert into gql.arg(field_id, name, type_id, is_not_null, default_value)
+    insert into gql.arg(field_id, name, type_, is_not_null, default_value)
         -- __Field(includeDeprecated)
-        select f.id, 'includeDeprecated', gql.type_id_by_name('Boolean'), false, 'f'
+        select f.id, 'includeDeprecated', 'Boolean', false, 'f'
         from gql.field f
         where
-            f.type_id = gql.type_id_by_name('__Field')
+            f.type_ = '__Field'
             and f.is_array
         union all
         -- __enumValue(includeDeprecated)
-        select f.id, 'includeDeprecated', gql.type_id_by_name('Boolean'), false, 'f'
+        select f.id, 'includeDeprecated', 'Boolean', false, 'f'
         from gql.field f
         where
-            f.type_id = gql.type_id_by_name('__enumValue')
+            f.type_ = '__enumValue'
             and f.is_array
         union all
         -- __InputFields(includeDeprecated)
-        select f.id, 'includeDeprecated', gql.type_id_by_name('Boolean'), false, 'f'
+        select f.id, 'includeDeprecated', 'Boolean', false, 'f'
         from gql.field f
         where
-            f.type_id = gql.type_id_by_name('__InputFields')
+            f.type_ = '__InputFields'
             and f.is_array;
 
 
-    insert into gql.arg(field_id, name, type_id, is_not_null)
+    insert into gql.arg(field_id, name, type_, is_not_null)
         -- __type(name)
         select
             f.id field_id,
             'name' as name,
-            gql.type_id_by_name('String') type_id,
+            'String' type_,
             true as is_not_null
         from gql.field f
         where f.name = '__type'
@@ -1027,32 +989,32 @@ begin
         select
             f.id field_id,
             'id' as name,
-            gql.type_id_by_name('ID') type_id,
+            'ID' type_,
             true as is_not_null
         from
             gql.type t
             inner join gql.field f
-                on t.id = f.type_id
+                on t.name = f.type_
         where
             t.meta_kind = 'NODE'
         union all
         -- Connection(first, last, after, before)
         select
-            f.id field_id, y.name_ as name, gql.type_id_by_name('Int') type_id, false as is_not_null
+            f.id field_id, y.name_ as name, 'Int' type_, false as is_not_null
         from
             gql.type t
             inner join gql.field f
-                on t.id = f.type_id,
+                on t.name = f.type_,
             --lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
             lateral (select name_ from unnest(array['first']) x(name_)) y(name_)
         where t.meta_kind = 'CONNECTION'
         union all
         select
-            f.id field_id, y.name_ as name, gql.type_id_by_name('String') type_id, false as is_not_null
+            f.id field_id, y.name_ as name, 'String' type_, false as is_not_null
         from
             gql.type t
             inner join gql.field f
-                on t.id = f.type_id,
+                on t.name = f.type_,
             --lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
             lateral (select name_ from unnest(array['after']) x(name_)) y(name_)
         where t.meta_kind = 'CONNECTION'
@@ -1060,11 +1022,11 @@ begin
         -- Node(nodeId)
         -- Restrict to entrypoint only?
         select
-            f.id field_id, 'nodeId' as name, gql.type_id_by_name('ID') type_id, true as is_not_null
+            f.id field_id, 'nodeId' as name, 'ID' type_, true as is_not_null
         from
             gql.type t
             inner join gql.field f
-                on t.id = f.type_id
+                on t.name = f.type_
         where t.meta_kind = 'NODE';
 
 end;
@@ -1144,7 +1106,7 @@ create or replace function gql.build_node_query(
     ast jsonb,
     variables jsonb = '{}',
     variable_definitions jsonb = '[]',
-    parent_type_id int = null,
+    parent_type text = null,
     parent_block_name text = null,
     indent_level int = 0
 )
@@ -1155,10 +1117,10 @@ as $$
         select gql.slug() as block_name
     ),
     field as (
-        select * from gql.field gf where gf.name = gql.name(ast) and gf.parent_type_id = $4
+        select * from gql.field gf where gf.name = gql.name(ast) and gf.parent_type = $4
     ),
     type_ as (
-        select * from gql.type gt where gt.id = (select type_id from field)
+        select * from gql.type gt where gt.name = (select type_ from field)
     ),
     x(sel) as (
         select
@@ -1198,7 +1160,7 @@ as $$
                     ast := x.sel,
                     variables := variables,
                     variable_definitions := variable_definitions,
-                    parent_type_id := gf.type_id,
+                    parent_type := gf.type_,
                     parent_block_name := b.block_name,
                     indent_level := indent_level + 1
                 )
@@ -1206,7 +1168,7 @@ as $$
                     ast := x.sel,
                     variables := variables,
                     variable_definitions := variable_definitions,
-                    parent_type_id := gf.type_id,
+                    parent_type := gf.type_,
                     parent_block_name := b.block_name,
                     indent_level := indent_level + 1
                 )
@@ -1248,12 +1210,12 @@ as $$
         join type_ gt -- for gt.entity
             on true
         join gql.field nf -- selected fields (node_field_row)
-            on nf.parent_type_id = gf.type_id
+            on nf.parent_type = gf.type_
             and gql.name(x.sel) = nf.name,
         b
     where
         gf.name = gql.name(ast)
-        and $4 = gf.parent_type_id
+        and $4 = gf.parent_type
     group by
         gt.entity, b.block_name, gf.parent_columns, gf.local_columns, args.pkey_safe
 $$;
@@ -1265,7 +1227,7 @@ create or replace function gql.build_connection_query(
     ast jsonb,
     variables jsonb = '{}',
     variable_definitions jsonb = '[]',
-    parent_type_id int = null,
+    parent_type text = null,
     parent_block_name text = null,
     indent_level int = 0
 )
@@ -1279,13 +1241,13 @@ ent(entity) as (
     from
         gql.field f
         join gql.type t
-            on f.type_id = t.id
+            on f.type_ = t.name
     where
         f.name = gql.name(ast)
-        and f.parent_type_id = $4
+        and f.parent_type = $4
 ),
 root(sel) as (select * from jsonb_array_elements(ast -> 'selectionSet' -> 'selections')),
-field_row as (select * from gql.field f where f.name = gql.name(ast) and f.parent_type_id = $4),
+field_row as (select * from gql.field f where f.name = gql.name(ast) and f.parent_type = $4),
 total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), b.block_name, '__total_count')  from root, b where gql.name(sel) = 'totalCount'),
 args as (
     select
@@ -1358,7 +1320,7 @@ edges(sel, q) as (
                                                                                     ast := n.sel,
                                                                                     variables := variables,
                                                                                     variable_definitions := variable_definitions,
-                                                                                    parent_type_id := gf_n.type_id,
+                                                                                    parent_type := gf_n.type_,
                                                                                     parent_block_name := b.block_name,
                                                                                     indent_level := 0
                                                                                 )
@@ -1366,7 +1328,7 @@ edges(sel, q) as (
                                                                                     ast := n.sel,
                                                                                     variables := variables,
                                                                                     variable_definitions := variable_definitions,
-                                                                                    parent_type_id := gf_n.type_id,
+                                                                                    parent_type := gf_n.type_,
                                                                                     parent_block_name := b.block_name,
                                                                                     indent_level := 0
                                                                                 )
@@ -1383,16 +1345,16 @@ edges(sel, q) as (
             join field_row gf_c -- connection field
                  on true
              join gql.field gf_e -- edge field
-                 on gf_c.type_id = gf_e.parent_type_id
+                 on gf_c.type_ = gf_e.parent_type
                  and gf_e.name = 'edges'
             join gql.field gf_n -- node field
-                 on gf_e.type_id = gf_n.parent_type_id
+                 on gf_e.type_ = gf_n.parent_type
                  and gf_n.name = 'node'
              join gql.field gf_s -- node selections
-                 on gf_n.type_id = gf_s.parent_type_id
+                 on gf_n.type_ = gf_s.parent_type
                  and gql.name(n.sel) = gf_s.name
              join gql.type gt_s -- node selection type
-                 on gf_n.type_id = gt_s.id
+                 on gf_n.type_ = gt_s.name
          where
              gql.name(e.sel) = 'node'
          group by
@@ -1467,7 +1429,7 @@ $$;
 
 
 
-create or replace function gql."resolve_enumValues"(type_id int, ast jsonb)
+create or replace function gql."resolve_enumValues"(type_ text, ast jsonb)
     returns jsonb
     stable
     language sql
@@ -1479,14 +1441,14 @@ as $$
         )
         order by id asc)
     from
-        gql.enum_value ev where ev.type_id = $1;
+        gql.enum_value ev where ev.type_ = $1;
 $$;
 
 
 -- stubs for recursion
 create or replace function gql.resolve___input_value(arg_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 create or replace function gql."resolve___Type"(
-    type_id int,
+    type_ text,
     ast jsonb,
     is_array_not_null bool = false,
     is_array bool = false,
@@ -1510,7 +1472,7 @@ as $$
                     when selection_name = 'defaultValue' then to_jsonb(ar.default_value)
                     when selection_name = 'isDeprecated' then to_jsonb(ar.is_deprecated)
                     when selection_name = 'deprecationReason' then to_jsonb(ar.deprecation_reason)
-                    when selection_name = 'type' then gql."resolve___Type"(ar.type_id, x.sel)
+                    when selection_name = 'type' then gql."resolve___Type"(ar.type_, x.sel)
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
             ),
@@ -1542,8 +1504,8 @@ as $$
                     when selection_name = 'description' then to_jsonb(f.description)
                     when selection_name = 'isDeprecated' then to_jsonb(f.is_deprecated)
                     when selection_name = 'deprecationReason' then to_jsonb(f.deprecation_reason)
-                    when selection_name = 'type' then gql."resolve___Type"(f.type_id, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
-                    when selection_name = 'args' then '[]'::jsonb --gql."resolve___InputValues"(f.type_id, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
+                    when selection_name = 'type' then gql."resolve___Type"(f.type_, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
+                    when selection_name = 'args' then '[]'::jsonb --gql."resolve___InputValues"(f.type_, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
             ),
@@ -1563,7 +1525,7 @@ $$;
 
 
 
-create or replace function gql."resolve___Type"(type_id int, ast jsonb, is_array_not_null bool = false, is_array bool = false, is_not_null bool = false)
+create or replace function gql."resolve___Type"(type_ text, ast jsonb, is_array_not_null bool = false, is_array bool = false, is_not_null bool = false)
     returns jsonb
     stable
     language sql
@@ -1588,7 +1550,7 @@ as $$
                         case
                             -- TODO, un-hardcode
                             when gt.name = 'Mutation' then '[]'::jsonb
-                            else (select jsonb_agg(gql.resolve_field(f.id, x.sel)) from gql.field f where f.parent_type_id = gt.id and not f.is_hidden_from_schema)
+                            else (select jsonb_agg(gql.resolve_field(f.id, x.sel)) from gql.field f where f.parent_type = gt.name and not f.is_hidden_from_schema)
                         end
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
@@ -1600,16 +1562,16 @@ as $$
                     )
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
                     -- wasteful
-                    when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.id, x.sel)
+                    when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then to_jsonb(null::text)
                     when selection_name = 'ofType' then (
                         case
                             -- NON_NULL(LIST(...))
-                            when is_array_not_null is true then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := is_array, is_not_null := is_not_null)
+                            when is_array_not_null is true then gql."resolve___Type"(type_, x.sel, is_array_not_null := false, is_array := is_array, is_not_null := is_not_null)
                             -- LIST(...)
-                            when is_array then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := false, is_not_null := is_not_null)
+                            when is_array then gql."resolve___Type"(type_, x.sel, is_array_not_null := false, is_array := false, is_not_null := is_not_null)
                             -- NON_NULL(...)
-                            when is_not_null then gql."resolve___Type"(type_id, x.sel, is_array_not_null := false, is_array := false, is_not_null := false)
+                            when is_not_null then gql."resolve___Type"(type_, x.sel, is_array_not_null := false, is_array := false, is_not_null := false)
                             -- TYPE
                             else null
                         end
@@ -1632,7 +1594,7 @@ as $$
             select (coalesce(is_array_not_null, false) or is_array or is_not_null) as has_modifiers
         ) hm
     where
-        gt.id = type_id
+        gt.name = type_
 $$;
 
 
@@ -1710,14 +1672,14 @@ declare
     node_field_rec gql.field;
     agg jsonb = '{}';
 begin
-    --field_rec = "field" from gql.field where parent_type_id = gql.type_id_by_name('__Schema') and name = field_name;
+    --field_rec = "field" from gql.field where parent_type = '__Schema' and name = field_name;
 
     for node_field in select * from jsonb_array_elements(node_fields) loop
-        node_field_rec = "field" from gql.field where parent_type_id = gql.type_id_by_name('__Schema') and name = gql.name(node_field);
+        node_field_rec = "field" from gql.field where parent_type = '__Schema' and name = gql.name(node_field);
 
         if gql.name(node_field) = 'description' then
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), node_field_rec.description);
-        elsif node_field_rec.type_id = gql.type_id_by_name('__Directive') then
+        elsif node_field_rec.type_ = '__Directive' then
             -- TODO
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), '[]'::jsonb);
 
@@ -1731,12 +1693,12 @@ begin
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), null);
 
         elsif node_field_rec.name = 'types' then
-            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), jsonb_agg(gql."resolve___Type"(gt.id, node_field))) from gql.type gt;
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), jsonb_agg(gql."resolve___Type"(gt.name, node_field))) from gql.type gt;
 
 
-        elsif node_field_rec.type_id = gql.type_id_by_name('__Type') and not node_field_rec.is_array then
+        elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
             agg = agg || gql."resolve___Type"(
-                node_field_rec.type_id,
+                node_field_rec.type_,
                 node_field,
                 node_field_rec.is_array_not_null,
                 node_field_rec.is_array,
@@ -1869,9 +1831,9 @@ begin
             from
                 gql.field
                 join gql.type type_
-                    on field.type_id = type_.id
+                    on field.type_ = type_.name
             where
-                field.parent_type_id = gql.type_id_by_name('Query')
+                field.parent_type = 'Query'
                 and field.name = gql.name(ast_operation);
 
         q = case meta_kind
@@ -1880,7 +1842,7 @@ begin
                     ast := ast_operation,
                     variables := variables,
                     variable_definitions := variable_definitions,
-                    parent_type_id :=  gql.type_id_by_name('Query'),
+                    parent_type :=  'Query',
                     parent_block_name := null,
                     indent_level := 0
                 )
@@ -1889,7 +1851,7 @@ begin
                     ast := ast_operation,
                     variables := variables,
                     variable_definitions := variable_definitions,
-                    parent_type_id := gql.type_id_by_name('Query'),
+                    parent_type := 'Query',
                     parent_block_name := null,
                     indent_level := 0
                 )
@@ -1911,7 +1873,7 @@ begin
                 jsonb_build_object(
                     gql.name(ast_operation),
                     gql."resolve___Type"(
-                        (select id from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
+                        (select name from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
                         ast_operation
                     )
                 )

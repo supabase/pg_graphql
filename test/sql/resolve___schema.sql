@@ -1,21 +1,23 @@
-select gql.dispatch($$
-    query IntrospectionQuery {
-      __schema {
-        queryType {
-          name
+select jsonb_pretty(
+    gql.dispatch($$
+        query IntrospectionQuery {
+          __schema {
+            queryType {
+              name
+            }
+            mutationType {
+              name
+            }
+            types {
+              kind
+              name
+            }
+            directives {
+              name
+              description
+              locations
+            }
+          }
         }
-        mutationType {
-          name
-        }
-        types {
-          kind
-          name
-        }
-        directives {
-          name
-          description
-          locations
-        }
-      }
-    }
-$$);
+    $$)
+);
