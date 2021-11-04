@@ -6,10 +6,10 @@ select gql.dispatch(
       }
     }
     $$,
-    '{"nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}'::jsonb
+    '{"nodeId": "WyJhY2NvdW50IiwgMV0="}'::jsonb
 );
                     dispatch                    
 ------------------------------------------------
- {"data": {"account": {"id": 2}}, "errors": []}
+ {"data": {"account": {"id": 1}}, "errors": []}
 (1 row)
 

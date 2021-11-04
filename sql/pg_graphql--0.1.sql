@@ -71,21 +71,6 @@ as
 $$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
 
 
-create or replace function gql.to_schema_name(entity regclass)
-    returns text
-    language sql
-    stable
-as $$
-    select
-        nsp.nspname::text
-    from
-        pg_class pc
-        join pg_namespace nsp
-            on pc.relnamespace = nsp.oid
-    where
-        pc.oid = entity
-$$;
-
 -------------------
 -- String Casing --
 -------------------
@@ -348,7 +333,7 @@ $$
     --        row('public', 'account', abcxyz.id)
     select
         'row('
-        || format('%L::text,%L::text,', gql.to_schema_name(entity), gql.to_table_name(entity))
+        || format('%L::text,', quote_ident(entity::text))
         || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
         ||')'
     from unnest(gql.primary_key_columns(entity)) pk(x)
@@ -367,7 +352,7 @@ $$
     --        gql.cursor_encode(jsonb_build_array('public', 'account', abcxyz.id))
     select
         'gql.cursor_encode(jsonb_build_array('
-        || format('%L::text,%L::text,', gql.to_schema_name(entity), gql.to_table_name(entity))
+        || format('%L::text,', quote_ident(entity::text))
         || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
         ||'))'
     from unnest(gql.primary_key_columns(entity)) pk(x)
@@ -387,7 +372,7 @@ as $$
     select
         'row(' || string_agg(format('(gql.cursor_decode($%s) ->> %s)::%s', variable_idx, ctype.idx-1, ctype.val), ', ') || ')'
     from
-        unnest(array['text'::regtype, 'text'::regtype] || gql.primary_key_types(entity)) with ordinality ctype(val, idx);
+        unnest(array['text'::regtype] || gql.primary_key_types(entity)) with ordinality ctype(val, idx);
 $$;
 
 create or replace function gql.cursor_clause_for_literal(cursor_ text)

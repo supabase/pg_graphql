@@ -1,6 +1,6 @@
 select gql.dispatch($$
 {
-  account(id: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
+  account(id: "WyJhY2NvdW50IiwgMV0=") {
     id
     nodeId
   }

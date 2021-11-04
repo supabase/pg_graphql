@@ -16,8 +16,8 @@ select gql.dispatch($$
       description
     }
 $$);
-                                                                               dispatch                                                                               
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"allBlogs": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "a desc1"}, "cursor": "WyJwdWJsaWMiLCAiYmxvZyIsIDFd"}]}}, "errors": []}
+                                                                         dispatch                                                                         
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"allBlogs": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "a desc1"}, "cursor": "WyJibG9nIiwgMV0="}]}}, "errors": []}
 (1 row)
 

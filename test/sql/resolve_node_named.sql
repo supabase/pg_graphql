@@ -6,5 +6,5 @@ select gql.dispatch(
       }
     }
     $$,
-    '{"nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}'::jsonb
+    '{"nodeId": "WyJhY2NvdW50IiwgMV0="}'::jsonb
 );
