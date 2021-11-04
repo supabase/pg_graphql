@@ -722,13 +722,27 @@ from (
         node.name parent_type,
         conn.name type_,
         case
-            when rel.foreign_cardinality = 'MANY' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
+            when (
+                conn.meta_kind = 'CONNECTION'
+                and rel.foreign_cardinality = 'MANY'
+            ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
+
+            -- owner_id -> owner
+            when (
+                conn.meta_kind = 'NODE'
+                and rel.foreign_cardinality = 'ONE'
+                and array_length(rel.local_columns, 1) = 1
+                and rel.local_columns[1] like '%_id'
+            ) then gql.to_camel_case(left(rel.local_columns[1], -3))
+
+            when rel.foreign_cardinality = 'ONE' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
+
             else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
         end,
         -- todo
         false as is_not_null,
-        true as is_array,
-        false as is_array_not_null, -- TODO: check this
+        rel.foreign_cardinality = 'MANY' as is_array,
+        case when rel.foreign_cardinality = 'MANY' then false else null end as is_array_not_null,
         null description,
         null column_name,
         rel.local_columns,
@@ -740,44 +754,12 @@ from (
             on node.entity = rel.local_entity
         join gql.type conn
             on conn.entity = rel.foreign_entity
+            and (
+                (conn.meta_kind = 'NODE' and rel.foreign_cardinality = 'ONE')
+                or (conn.meta_kind = 'CONNECTION' and rel.foreign_cardinality = 'MANY')
+            )
     where
-        node.meta_kind = 'NODE'
-        and conn.meta_kind = 'CONNECTION'
-        and rel.foreign_cardinality = 'MANY'
-    union all
-    -- Node.<node>
-    select
-        node.name parent_type,
-        conn.name type_,
-        case
-            -- owner_id -> owner
-            when (
-                array_length(rel.local_columns, 1) = 1
-                and rel.local_columns[1] like '%_id'
-                and rel.foreign_cardinality = 'ONE'
-            ) then gql.to_camel_case(left(rel.local_columns[1], -3))
-            when rel.foreign_cardinality = 'ONE' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
-            else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride2'
-        end,
-        -- todo
-        false as is_not_null,
-        false as is_array,
-        null as is_array_not_null,
-        null description,
-        null column_name,
-        rel.local_columns,
-        rel.foreign_columns,
-        false
-    from
-        gql.type node
-        join gql.relationship rel
-            on node.entity = rel.local_entity
-        join gql.type conn
-            on conn.entity = rel.foreign_entity
-    where
-        node.meta_kind = 'NODE'
-        and conn.meta_kind = 'NODE'
-        and rel.foreign_cardinality = 'ONE';
+        node.meta_kind = 'NODE';
 
 -- Arguments
 create or replace view gql.arg as
