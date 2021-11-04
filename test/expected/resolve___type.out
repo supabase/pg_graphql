@@ -18,6 +18,12 @@ select jsonb_pretty(
              "kind": "OBJECT",                  +
              "fields": [                        +
                  {                              +
+                     "name": "email"            +
+                 },                             +
+                 {                              +
+                     "name": "encryptedPassword"+
+                 },                             +
+                 {                              +
                      "name": "createdAt"        +
                  },                             +
                  {                              +
@@ -25,12 +31,6 @@ select jsonb_pretty(
                  },                             +
                  {                              +
                      "name": "id"               +
-                 },                             +
-                 {                              +
-                     "name": "email"            +
-                 },                             +
-                 {                              +
-                     "name": "encryptedPassword"+
                  },                             +
                  {                              +
                      "name": "nodeId"           +

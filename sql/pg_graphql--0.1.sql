@@ -744,31 +744,31 @@ from (
     union all
     -- Node
     -- Node.<column>
-    select distinct
+    select
         gt.name parent_type,
-        case
-            -- substring removes the underscore prefix from array types
-            when c.data_type = 'ARRAY' then gql.sql_type_to_gql_type(substring(udt_name, 2, 100))
-            else gql.sql_type_to_gql_type(c.data_type)
-        end type_,
-        gql.to_camel_case(c.column_name::text) as name,
-        case when c.data_type = 'ARRAY' then false else c.is_nullable = 'NO' end as is_not_null,
-        case when c.data_type = 'ARRAY' then true else false end is_array,
-        case when c.data_type = 'ARRAY' then c.is_nullable = 'NO' else null end is_array_not_null,
+        -- substring removes the underscore prefix from array types
+        gql.sql_type_to_gql_type(regexp_replace(tf.type_str, '\[\]$', '')) as type_,
+        gql.to_camel_case(pa.attname::text) as name,
+        pa.attnotnull as is_not_null,
+        tf.type_str like '%[]' as is_array,
+        pa.attnotnull and tf.type_str like '%[]' as is_array_not_null,
         null::text description,
-        c.column_name::text as column_name,
+        pa.attname::text as column_name,
         null::text[],
         null::text[],
         false
     from
-        gql.entity ent
-        join gql.type gt
-            on ent.entity = gt.entity
-        join information_schema.columns c
-            on ent.entity = gql.to_regclass(c.table_schema, c.table_name)
+        gql.type gt
+        join pg_attribute pa
+            on gt.entity = pa.attrelid,
+        lateral (
+            select pg_catalog.format_type(atttypid, atttypmod) type_str
+        ) tf
     where
         gt.meta_kind = 'NODE'
-        and pg_catalog.has_column_privilege(current_user, ent.entity, c.column_name, 'SELECT')
+        and pa.attnum > 0
+        and pg_catalog.has_column_privilege(current_user, gt.entity, pa.attname, 'SELECT')
+
     union all
     -- Node.nodeId
     select distinct
