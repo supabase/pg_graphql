@@ -680,70 +680,37 @@ from (
         ('Query', '__Schema', '__schema', true, false, null, null) -- todo is_hidden_from_schema = true
     ) x(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
     union all
-    -- Edge
-    -- Edge.node:
     select
-        edge.name parent_type,
-        node.name type_,
-        'node' as name,
-        false is_not_null,
-        false is_array,
-        null::boolean is_array_not_null,
-        null::text as description,
-        null::text as column_name,
-        null::text[],
-        null::text[],
-        false
-    from
-        gql.type edge
-        join gql.type node
-            on edge.entity = node.entity
-    where
-        edge.meta_kind = 'EDGE'
-        and node.meta_kind = 'NODE'
-    union all
-    -- Edge.cursor
-    select
-        edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false
-    from
-        gql.type edge
-    where
-        edge.meta_kind = 'EDGE'
-    union all
-    -- Connection
-    -- Connection.edges:
-    select
-        conn.name parent_type,
-        edge.name type_,
-        'edges' as name,
-        false is_not_null,
-        true is_array,
-        false::boolean is_array_not_null,
-        null::text as description,
-        null::text as column_name,
-        null::text[],
-        null::text[],
-        false
+        fs.*
     from
         gql.type conn
         join gql.type edge
             on conn.entity = edge.entity
-    where
-        conn.meta_kind = 'CONNECTION'
-        and edge.meta_kind = 'EDGE'
-    union all
-    -- Connection.pageInfo
-    select conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false
-    from gql.type conn
-    where conn.meta_kind = 'CONNECTION'
-    union all
-    -- Connection.totalCount (disabled by default)
-    select conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false
-    from gql.type conn
-    where conn.meta_kind = 'CONNECTION'
-    union all
+            and conn.meta_kind = 'CONNECTION'
+            and edge.meta_kind = 'EDGE'
+        join gql.type node
+            on edge.entity = node.entity
+            and node.meta_kind = 'NODE',
+        lateral (
+            select *
+            from (
+                values
+                    (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                    (edge.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                    (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                    (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
+                    (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
+                    (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
+                    (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
+                    (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
+                    (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
+                    ('Query', node.name, gql.to_camel_case(gql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
+                    ('Query', conn.name, gql.to_camel_case('all_' || gql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
+            ) x (parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
+        ) fs
     -- Node
     -- Node.<column>
+    union all
     select
         gt.name parent_type,
         -- substring removes the underscore prefix from array types
@@ -768,17 +735,6 @@ from (
         gt.meta_kind = 'NODE'
         and pa.attnum > 0
         and pg_catalog.has_column_privilege(current_user, gt.entity, pa.attname, 'SELECT')
-
-    union all
-    -- Node.nodeId
-    select distinct
-        gt.name parent_type, 'ID', 'nodeId', true, false, null::boolean, null::text description, null::text, null::text[], null::text[], false
-    from
-        gql.entity ent
-        join gql.type gt
-            on ent.entity = gt.entity
-    where
-        gt.meta_kind = 'NODE'
     union all
     -- Node.<relationship>
     -- Node.<connection>
@@ -841,24 +797,7 @@ from (
     where
         node.meta_kind = 'NODE'
         and conn.meta_kind = 'NODE'
-        and rel.foreign_cardinality = 'ONE'
-    union all
-    -- Resolver Entrypoints
-    -- Node
-    select 'Query', t.name, gql.to_camel_case(gql.to_table_name(t.entity)), false, false, null, null, null, null, null, false
-    from gql.type t
-    where t.meta_kind = 'NODE'
-    union all
-    -- Connections
-    select 'Query', t.name, gql.to_camel_case('all_' || gql.to_table_name(t.entity) || 's'), false, false, null, null, null, null, null, false
-    from gql.type t
-    where t.meta_kind = 'CONNECTION'
-    union all
-    -- Every output type with fields has a __typename field
-    select t.name, 'String', '__typename', true, false, null, null, null, null, null, true
-    from gql.type t
-    where t.type_kind = 'OBJECT';
-
+        and rel.foreign_cardinality = 'ONE';
 
 -- Arguments
 create or replace view gql.arg as

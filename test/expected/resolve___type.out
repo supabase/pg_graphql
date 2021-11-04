@@ -18,6 +18,9 @@ select jsonb_pretty(
              "kind": "OBJECT",                  +
              "fields": [                        +
                  {                              +
+                     "name": "nodeId"           +
+                 },                             +
+                 {                              +
                      "name": "email"            +
                  },                             +
                  {                              +
@@ -31,9 +34,6 @@ select jsonb_pretty(
                  },                             +
                  {                              +
                      "name": "id"               +
-                 },                             +
-                 {                              +
-                     "name": "nodeId"           +
                  },                             +
                  {                              +
                      "name": "blogs"            +
