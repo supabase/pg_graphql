@@ -494,28 +494,6 @@ create or replace view gql.relationship as
 
 
 
-create table gql.arg (
-    id integer generated always as identity primary key,
-    -- the field that accepts the argument
-    field text not null,
-    -- type of the argument
-    type_ text not null,
-    name text not null,
-    description text,
-    is_not_null boolean,
-    is_array boolean default false,
-    is_array_not_null boolean,
-    is_deprecated boolean not null default false,
-    deprecation_reason text,
-    default_value text,
-    -- Names must be unique on each type
-    unique(field, name),
-    check (
-        (not is_array and is_array_not_null is null)
-        or (is_array and is_array_not_null is not null)
-    )
-);
-
 
 create or replace view gql.type as
 select
@@ -882,96 +860,84 @@ from (
     where t.type_kind = 'OBJECT';
 
 
-------------------------
--- Schema Translation --
-------------------------
-
-create function gql.build_schema()
-    returns void
-    language plpgsql
-as
-$$
-begin
-    -- Arguments
-    insert into gql.arg(field, name, type_, is_not_null, default_value)
-        -- __Field(includeDeprecated)
-        select f.name, 'includeDeprecated', 'Boolean', false, 'f'
-        from gql.field f
-        where
-            f.type_ = '__Field'
-            and f.is_array
-        union all
-        -- __enumValue(includeDeprecated)
-        select f.name, 'includeDeprecated', 'Boolean', false, 'f'
-        from gql.field f
-        where
-            f.type_ = '__enumValue'
-            and f.is_array
-        union all
-        -- __InputFields(includeDeprecated)
-        select f.name, 'includeDeprecated', 'Boolean', false, 'f'
-        from gql.field f
-        where
-            f.type_ = '__InputFields'
-            and f.is_array;
-
-
-    insert into gql.arg(field, name, type_, is_not_null)
-        -- __type(name)
-        select
-            f.name,
-            'name' as name,
-            'String' type_,
-            true as is_not_null
-        from gql.field f
-        where f.name = '__type'
-        union all
-        -- Node(id)
-        select
-            f.name,
-            'id' as name,
-            'ID' type_,
-            true as is_not_null
-        from
-            gql.type t
-            inner join gql.field f
-                on t.name = f.type_
-        where
-            t.meta_kind = 'NODE'
-        union all
-        -- Connection(first, last, after, before)
-        select
-            f.name field, y.name_ as name, 'Int' type_, false as is_not_null
-        from
-            gql.type t
-            inner join gql.field f
-                on t.name = f.type_,
-            --lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
-            lateral (select name_ from unnest(array['first']) x(name_)) y(name_)
-        where t.meta_kind = 'CONNECTION'
-        union all
-        select
-            f.name field, y.name_ as name, 'String' type_, false as is_not_null
-        from
-            gql.type t
-            inner join gql.field f
-                on t.name = f.type_,
-            --lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
-            lateral (select name_ from unnest(array['after']) x(name_)) y(name_)
-        where t.meta_kind = 'CONNECTION'
-        union all
-        -- Node(nodeId)
-        -- Restrict to entrypoint only?
-        select
-            f.name field, 'nodeId' as name, 'ID' type_, true as is_not_null
-        from
-            gql.type t
-            inner join gql.field f
-                on t.name = f.type_
-        where t.meta_kind = 'NODE';
-
-end;
-$$;
+-- Arguments
+create or replace view gql.arg as
+-- TODO(OR): is_deprecated field?
+-- __Field(includeDeprecated)
+select f.name as field, 'includeDeprecated' as name, 'Boolean' as type_, false as is_not_null, 'f' as default_value
+from gql.field f
+where
+    f.type_ = '__Field'
+    and f.is_array
+union all
+-- __enumValue(includeDeprecated)
+select f.name, 'includeDeprecated', 'Boolean', false, 'f'
+from gql.field f
+where
+    f.type_ = '__enumValue'
+    and f.is_array
+union all
+-- __InputFields(includeDeprecated)
+select f.name, 'includeDeprecated', 'Boolean', false, 'f'
+from gql.field f
+where
+    f.type_ = '__InputFields'
+    and f.is_array
+union all
+-- __type(name)
+select
+    f.name,
+    'name' as name,
+    'String' type_,
+    true as is_not_null,
+    null
+from gql.field f
+where f.name = '__type'
+union all
+-- Node(id)
+select
+    f.name,
+    'id' as name,
+    'ID' type_,
+    true as is_not_null,
+    null
+from
+    gql.type t
+    inner join gql.field f
+        on t.name = f.type_
+where
+    t.meta_kind = 'NODE'
+union all
+-- Connection(first, last, after, before)
+select
+    f.name field, y.name_ as name, 'Int' type_, false as is_not_null, null
+from
+    gql.type t
+    inner join gql.field f
+        on t.name = f.type_,
+    --lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+    lateral (select name_ from unnest(array['first']) x(name_)) y(name_)
+where t.meta_kind = 'CONNECTION'
+union all
+select
+    f.name field, y.name_ as name, 'String' type_, false as is_not_null, null
+from
+    gql.type t
+    inner join gql.field f
+        on t.name = f.type_,
+    --lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+    lateral (select name_ from unnest(array['after']) x(name_)) y(name_)
+where t.meta_kind = 'CONNECTION'
+union all
+-- Node(nodeId)
+-- Restrict to entrypoint only?
+select
+    f.name field, 'nodeId' as name, 'ID' type_, true as is_not_null, null
+from
+    gql.type t
+    inner join gql.field f
+        on t.name = f.type_
+where t.meta_kind = 'NODE';
 
 
 -------------
@@ -987,9 +953,6 @@ as
 $$
     select repeat(E'\t', n)
 $$;
-
-
-
 
 
 create or replace function gql.primary_key_clause(entity regclass, alias_name text)
@@ -1632,7 +1595,11 @@ begin
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), null);
 
         elsif node_field_rec.name = 'types' then
-            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), jsonb_agg(gql."resolve___Type"(gt.name, node_field))) from gql.type gt;
+            agg = agg || jsonb_build_object(
+                    gql.alias_or_name(node_field),
+                    jsonb_agg(gql."resolve___Type"(gt.name, node_field) order by gt.name)
+                )
+            from gql.type gt;
 
 
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then

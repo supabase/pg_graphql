@@ -28,20 +28,48 @@ select jsonb_pretty(
          "__schema": {                            +
              "types": [                           +
                  {                                +
-                     "kind": "SCALAR",            +
-                     "name": "ID"                 +
+                     "kind": "OBJECT",            +
+                     "name": "Account"            +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "AccountConnection"  +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "AccountEdge"        +
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
-                     "name": "Int"                +
+                     "name": "BigInt"             +
                  },                               +
                  {                                +
-                     "kind": "SCALAR",            +
-                     "name": "Float"              +
+                     "kind": "OBJECT",            +
+                     "name": "Blog"               +
                  },                               +
                  {                                +
-                     "kind": "SCALAR",            +
-                     "name": "String"             +
+                     "kind": "OBJECT",            +
+                     "name": "BlogConnection"     +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogEdge"           +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogPost"           +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogPostConnection" +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogPostEdge"       +
+                 },                               +
+                 {                                +
+                     "kind": "ENUM",              +
+                     "name": "BlogPostStatus"     +
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
@@ -53,19 +81,19 @@ select jsonb_pretty(
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
-                     "name": "BigInt"             +
+                     "name": "Float"              +
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
-                     "name": "UUID"               +
+                     "name": "ID"                 +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Int"                +
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
                      "name": "JSON"               +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "Query"              +
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
@@ -76,16 +104,28 @@ select jsonb_pretty(
                      "name": "PageInfo"           +
                  },                               +
                  {                                +
+                     "kind": "OBJECT",            +
+                     "name": "Query"              +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "String"             +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "UUID"               +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__Directive"        +
+                 },                               +
+                 {                                +
                      "kind": "ENUM",              +
-                     "name": "__TypeKind"         +
+                     "name": "__DirectiveLocation"+
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
-                     "name": "__Schema"           +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "__Type"             +
+                     "name": "__EnumValue"        +
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
@@ -97,55 +137,15 @@ select jsonb_pretty(
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
-                     "name": "__EnumValue"        +
+                     "name": "__Schema"           +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__Type"             +
                  },                               +
                  {                                +
                      "kind": "ENUM",              +
-                     "name": "__DirectiveLocation"+
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "__Directive"        +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogPost"           +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogPostEdge"       +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogPostConnection" +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "Account"            +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "AccountEdge"        +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "AccountConnection"  +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "Blog"               +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogEdge"           +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
-                     "name": "BlogConnection"     +
-                 },                               +
-                 {                                +
-                     "kind": "ENUM",              +
-                     "name": "BlogPostStatus"     +
+                     "name": "__TypeKind"         +
                  }                                +
              ],                                   +
              "queryType": {                       +
