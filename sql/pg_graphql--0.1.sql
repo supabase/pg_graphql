@@ -912,8 +912,7 @@ create or replace function gql.build_node_query(
     variables jsonb = '{}',
     variable_definitions jsonb = '[]',
     parent_type text = null,
-    parent_block_name text = null,
-    indent_level int = 0
+    parent_block_name text = null
 )
     returns text
     language sql
@@ -966,16 +965,14 @@ as $$
                     variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type := gf.type_,
-                    parent_block_name := b.block_name,
-                    indent_level := indent_level + 1
+                    parent_block_name := b.block_name
                 )
                 when nf.local_columns is not null then gql.build_node_query(
                     ast := x.sel,
                     variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type := gf.type_,
-                    parent_block_name := b.block_name,
-                    indent_level := indent_level + 1
+                    parent_block_name := b.block_name
                 )
                 else null::text
             end,
@@ -1033,8 +1030,7 @@ create or replace function gql.build_connection_query(
     variables jsonb = '{}',
     variable_definitions jsonb = '[]',
     parent_type text = null,
-    parent_block_name text = null,
-    indent_level int = 0
+    parent_block_name text = null
 )
     returns text
     language sql
@@ -1126,16 +1122,14 @@ edges(sel, q) as (
                                                                                     variables := variables,
                                                                                     variable_definitions := variable_definitions,
                                                                                     parent_type := gf_n.type_,
-                                                                                    parent_block_name := b.block_name,
-                                                                                    indent_level := 0
+                                                                                    parent_block_name := b.block_name
                                                                                 )
                                 when gf_s.local_columns is not null and gf_s.is_array then gql.build_connection_query(
                                                                                     ast := n.sel,
                                                                                     variables := variables,
                                                                                     variable_definitions := variable_definitions,
                                                                                     parent_type := gf_n.type_,
-                                                                                    parent_block_name := b.block_name,
-                                                                                    indent_level := 0
+                                                                                    parent_block_name := b.block_name
                                                                                 )
                                 when gf_s.name = 'nodeId' then format('%I.%I', b.block_name, '__cursor')
                                 else quote_literal('UNRESOLVED')
@@ -1462,8 +1456,7 @@ $$;
 create or replace function gql."resolve___Schema"(
     ast jsonb,
     variables jsonb = '{}',
-    variable_definitions jsonb = '[]',
-    indent_level int = 0
+    variable_definitions jsonb = '[]'
 )
     returns jsonb
     stable
@@ -1650,8 +1643,7 @@ begin
                     variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type :=  'Query',
-                    parent_block_name := null,
-                    indent_level := 0
+                    parent_block_name := null
                 )
             when 'NODE' then
                 gql.build_node_query(
@@ -1659,8 +1651,7 @@ begin
                     variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type := 'Query',
-                    parent_block_name := null,
-                    indent_level := 0
+                    parent_block_name := null
                 )
             else null::text
         end;
