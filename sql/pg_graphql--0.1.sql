@@ -846,16 +846,6 @@ where t.meta_kind = 'NODE';
 -------------
 
 
-create or replace function gql.tab(n int = 1)
-    returns text
-    language sql
-    immutable
-as
-$$
-    select repeat(E'\t', n)
-$$;
-
-
 create or replace function gql.primary_key_clause(entity regclass, alias_name text)
     returns text
     language sql
@@ -881,21 +871,6 @@ $$
         ix = iy
 $$;
 
-
-create or replace function gql.quote_ident(regclass)
-    returns text
-    language sql
-    immutable
-as $$
-    select
-        quote_ident(nspname) || '.' || quote_ident(relname)
-    from
-        pg_catalog.pg_class AS c
-    join pg_catalog.pg_namespace AS ns
-          on c.relnamespace = ns.oid
-    where
-        c.oid = $1;
-$$;
 
 create or replace function gql.slug()
     returns text
@@ -981,7 +956,7 @@ as $$
         || ')'
         || format('
     from
-        %s as %s
+        %I as %s
     where
         true
         -- join clause
@@ -991,7 +966,7 @@ as $$
     limit 1
 )
 ',
-    gql.quote_ident(gt.entity),
+    gt.entity,
     quote_ident(b.block_name),
     coalesce(gql.join_clause(gf.local_columns, b.block_name, gf.parent_columns, parent_block_name), 'true'),
     case
@@ -1188,7 +1163,7 @@ select
             %s::text as __cursor,
             *
         from
-            %s as %s
+            %I as %s
         where
             true
             --pagination_clause
@@ -1207,7 +1182,7 @@ select
         gql.cursor_encoded_clause(entity, block_name),
         gql.primary_key_clause(entity, block_name) || ' asc',
         gql.cursor_encoded_clause(entity, block_name),
-        gql.quote_ident(entity),
+        entity,
         quote_ident(block_name),
         coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
         gql.primary_key_clause(entity, block_name),
