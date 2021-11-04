@@ -1,4 +1,5 @@
-select gql.dispatch($$
+select jsonb_pretty(
+    gql.dispatch($$
 {
   allAccounts {
     edges {
@@ -9,7 +10,7 @@ select gql.dispatch($$
           totalCount
             edges {
               node {
-                title
+                name
             }
           }
         }
@@ -17,4 +18,5 @@ select gql.dispatch($$
     }
   }
 }
-$$);
+    $$)
+);

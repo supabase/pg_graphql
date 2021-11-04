@@ -21,6 +21,9 @@ select jsonb_pretty(
                      "name": "nodeId"           +
                  },                             +
                  {                              +
+                     "name": "id"               +
+                 },                             +
+                 {                              +
                      "name": "email"            +
                  },                             +
                  {                              +
@@ -31,9 +34,6 @@ select jsonb_pretty(
                  },                             +
                  {                              +
                      "name": "updatedAt"        +
-                 },                             +
-                 {                              +
-                     "name": "id"               +
                  },                             +
                  {                              +
                      "name": "blogs"            +

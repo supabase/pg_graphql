@@ -1,4 +1,5 @@
-select gql.dispatch($$
+select jsonb_pretty(
+    gql.dispatch($$
     {
       allBlogs {
         edges {
@@ -11,9 +12,51 @@ select gql.dispatch($$
         }
       }
     }
-$$);
-                                                                                                                 dispatch                                                                                                                  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"allBlogs": {"edges": [{"node": {"owner": {"id": 1}, "ownerId": 1}}, {"node": {"owner": {"id": 1}, "ownerId": 1}}, {"node": {"owner": {"id": 1}, "ownerId": 1}}, {"node": {"owner": {"id": 2}, "ownerId": 2}}]}}, "errors": []}
+    $$)
+);
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "allBlogs": {               +
+             "edges": [              +
+                 {                   +
+                     "node": {       +
+                         "owner": {  +
+                             "id": 1 +
+                         },          +
+                         "ownerId": 1+
+                     }               +
+                 },                  +
+                 {                   +
+                     "node": {       +
+                         "owner": {  +
+                             "id": 1 +
+                         },          +
+                         "ownerId": 1+
+                     }               +
+                 },                  +
+                 {                   +
+                     "node": {       +
+                         "owner": {  +
+                             "id": 1 +
+                         },          +
+                         "ownerId": 1+
+                     }               +
+                 },                  +
+                 {                   +
+                     "node": {       +
+                         "owner": {  +
+                             "id": 2 +
+                         },          +
+                         "ownerId": 2+
+                     }               +
+                 }                   +
+             ]                       +
+         }                           +
+     },                              +
+     "errors": [                     +
+     ]                               +
+ }
 (1 row)
 

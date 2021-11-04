@@ -1,4 +1,5 @@
-select gql.dispatch($$
+select jsonb_pretty(
+    gql.dispatch($$
     {
       allBlogs {
         edges {
@@ -11,4 +12,5 @@ select gql.dispatch($$
         }
       }
     }
-$$);
+    $$)
+);

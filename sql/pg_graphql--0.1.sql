@@ -427,72 +427,49 @@ create type gql.meta_kind as enum (
 
 create or replace view gql.entity as
 select
-    gql.to_regclass(schemaname, tablename) entity
+    oid::regclass as entity
 from
-    pg_tables pgt
+    pg_class
 where
-    schemaname not in ('information_schema', 'pg_catalog', 'gql')
-    and pg_catalog.has_schema_privilege(current_user, pgt.schemaname, 'USAGE')
-    and pg_catalog.has_any_column_privilege(gql.to_regclass(schemaname, tablename), 'SELECT');
+    relkind = ANY (ARRAY['r', 'p'])
+    and not relnamespace = ANY (ARRAY['information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace])
+    and pg_catalog.has_schema_privilege(current_user, relnamespace, 'USAGE')
+    and pg_catalog.has_any_column_privilege(oid::regclass, 'SELECT');
 
 
 create or replace view gql.relationship as
-    with constraint_cols as (
+    with rels as materialized (
         select
-            gql.to_regclass(table_schema::text, table_name::text) entity,
-            constraint_name::text,
-            table_schema::text as table_schema,
-            array_agg(column_name::text) column_names
-        from
-            gql.entity ge
-            join information_schema.constraint_column_usage ccu
-                on ge.entity = gql.to_regclass(table_schema::text, table_name::text)
-        group by table_schema,
-            table_name,
-            constraint_name
-    ),
-    directional as (
-        select
-            tc.constraint_name::text,
-            gql.to_regclass(tc.table_schema::text, tc.table_name::text) local_entity,
-            array_agg(kcu.column_name) local_columns,
+            const.conname as constraint_name,
+            e.entity as local_entity,
+            array_agg(local_.attname::text order by l.col_ix asc) as local_columns,
             'MANY'::gql.cardinality as local_cardinality,
-            ccu.entity foreign_entity,
-            ccu.column_names::text[] as foreign_columns,
+            const.confrelid::regclass as foreign_entity,
+            array_agg(ref_.attname::text order by r.col_ix asc) as foreign_columns,
             'ONE'::gql.cardinality as foreign_cardinality
         from
-            information_schema.table_constraints tc
-        join information_schema.key_column_usage kcu
-            on tc.constraint_name = kcu.constraint_name
-            and tc.table_schema = kcu.table_schema
-        join constraint_cols as ccu
-            on ccu.constraint_name = tc.constraint_name
-            and ccu.table_schema = tc.table_schema
+            gql.entity e
+            join pg_constraint const
+                on const.conrelid = e.entity
+            join pg_attribute local_
+                on const.conrelid = local_.attrelid
+                and local_.attnum = any(const.conkey)
+            join pg_attribute ref_
+                on const.confrelid = ref_.attrelid
+                and ref_.attnum = any(const.confkey),
+            unnest(const.conkey) with ordinality l(col, col_ix)
+            join unnest(const.confkey) with ordinality r(col, col_ix)
+                on l.col_ix = r.col_ix
         where
-            tc.constraint_type = 'FOREIGN KEY'
+            const.contype = 'f'
         group by
-            tc.constraint_name,
-            tc.table_schema,
-            tc.table_name,
-            ccu.entity,
-            ccu.column_names
+            e.entity,
+            const.conname,
+            const.confrelid
     )
-    select *
-    from
-        directional
+    select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
     union all
-    select
-        constraint_name,
-        foreign_entity as local_entity,
-        foreign_columns as local_columns,
-        foreign_cardinality as local_cardinality,
-        local_entity as foreign_entity,
-        local_columns as foreign_columns,
-        local_cardinality as foreign_cardinality
-    from
-        directional;
-
-
+    select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
 
 
 create or replace view gql.type as
@@ -532,21 +509,24 @@ select
 from
     gql.entity ent,
     lateral (
-        select gql.to_pascal_case(gql.to_table_name(ent.entity)), 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, null, ent.entity
-        union all select gql.to_pascal_case(gql.to_table_name(ent.entity)) || 'Edge', 'OBJECT', 'EDGE', null, ent.entity
-        union all select gql.to_pascal_case(gql.to_table_name(ent.entity)) || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity
+        select
+            gql.to_pascal_case(gql.to_table_name(ent.entity)) table_name_pascal_case
+    ) names_,
+    lateral (
+        values
+            (names_.table_name_pascal_case::text, 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, null::text, ent.entity),
+            (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
+            (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity)
     ) x
 union all
-select distinct
-    gql.to_pascal_case(t.typname), 'ENUM'::gql.type_kind, 'CUSTOM_SCALAR'::gql.meta_kind, null, null::regclass
+select
+    gql.to_pascal_case(t.typname), 'ENUM', 'CUSTOM_SCALAR', null, null
 from
     pg_type t
     join pg_enum e
         on t.oid = e.enumtypid
-    join pg_catalog.pg_namespace n
-        on n.oid = t.typnamespace
 where
-    n.nspname not in ('gql', 'information_schema', 'pg_catalog')
+    t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace)
     and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
 
 
@@ -634,7 +614,10 @@ select
     null::text as column_name,
     null::text[] parent_columns,
     null::text[] local_columns,
-    false as is_hidden_from_schema
+    case
+        when name in ('__type', '__schema') then true
+        else false
+    end as is_hidden_from_schema
 from (
     values
         ('__Schema', 'String', 'description', false, false, null, null),
@@ -692,22 +675,19 @@ from (
             on edge.entity = node.entity
             and node.meta_kind = 'NODE',
         lateral (
-            select *
-            from (
-                values
-                    (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                    (edge.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                    (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                    (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
-                    (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
-                    (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
-                    (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
-                    (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
-                    (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
-                    ('Query', node.name, gql.to_camel_case(gql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
-                    ('Query', conn.name, gql.to_camel_case('all_' || gql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
-            ) x (parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
-        ) fs
+            values
+                (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                (edge.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
+                (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
+                (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
+                (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
+                (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
+                (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
+                ('Query', node.name, gql.to_camel_case(gql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
+                ('Query', conn.name, gql.to_camel_case('all_' || gql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
+        ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
     -- Node
     -- Node.<column>
     union all

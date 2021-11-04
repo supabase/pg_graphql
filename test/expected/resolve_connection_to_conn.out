@@ -1,4 +1,5 @@
-select gql.dispatch($$
+select jsonb_pretty(
+    gql.dispatch($$
 {
   allAccounts {
     edges {
@@ -9,7 +10,7 @@ select gql.dispatch($$
           totalCount
             edges {
               node {
-                title
+                name
             }
           }
         }
@@ -17,9 +18,91 @@ select gql.dispatch($$
     }
   }
 }
-$$);
-                                                                                                                                                                                                                                                       dispatch                                                                                                                                                                                                                                                       
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"allAccounts": {"edges": [{"node": {"id": 1, "blogs": {"edges": [{}, {}, {}], "totalCount": 3}, "email": "aardvark@x.com"}}, {"node": {"id": 2, "blogs": {"edges": [{}], "totalCount": 1}, "email": "bat@x.com"}}, {"node": {"id": 3, "blogs": {"edges": null, "totalCount": 0}, "email": "cat@x.com"}}, {"node": {"id": 4, "blogs": {"edges": null, "totalCount": 0}, "email": "dog@x.com"}}, {"node": {"id": 5, "blogs": {"edges": null, "totalCount": 0}, "email": "elephant@x.com"}}]}}, "errors": []}
+    $$)
+);
+                        jsonb_pretty                         
+-------------------------------------------------------------
+ {                                                          +
+     "data": {                                              +
+         "allAccounts": {                                   +
+             "edges": [                                     +
+                 {                                          +
+                     "node": {                              +
+                         "id": 1,                           +
+                         "blogs": {                         +
+                             "edges": [                     +
+                                 {                          +
+                                     "node": {              +
+                                         "name": "A: Blog 1"+
+                                     }                      +
+                                 },                         +
+                                 {                          +
+                                     "node": {              +
+                                         "name": "A: Blog 2"+
+                                     }                      +
+                                 },                         +
+                                 {                          +
+                                     "node": {              +
+                                         "name": "A: Blog 3"+
+                                     }                      +
+                                 }                          +
+                             ],                             +
+                             "totalCount": 3                +
+                         },                                 +
+                         "email": "aardvark@x.com"          +
+                     }                                      +
+                 },                                         +
+                 {                                          +
+                     "node": {                              +
+                         "id": 2,                           +
+                         "blogs": {                         +
+                             "edges": [                     +
+                                 {                          +
+                                     "node": {              +
+                                         "name": "B: Blog 3"+
+                                     }                      +
+                                 }                          +
+                             ],                             +
+                             "totalCount": 1                +
+                         },                                 +
+                         "email": "bat@x.com"               +
+                     }                                      +
+                 },                                         +
+                 {                                          +
+                     "node": {                              +
+                         "id": 3,                           +
+                         "blogs": {                         +
+                             "edges": null,                 +
+                             "totalCount": 0                +
+                         },                                 +
+                         "email": "cat@x.com"               +
+                     }                                      +
+                 },                                         +
+                 {                                          +
+                     "node": {                              +
+                         "id": 4,                           +
+                         "blogs": {                         +
+                             "edges": null,                 +
+                             "totalCount": 0                +
+                         },                                 +
+                         "email": "dog@x.com"               +
+                     }                                      +
+                 },                                         +
+                 {                                          +
+                     "node": {                              +
+                         "id": 5,                           +
+                         "blogs": {                         +
+                             "edges": null,                 +
+                             "totalCount": 0                +
+                         },                                 +
+                         "email": "elephant@x.com"          +
+                     }                                      +
+                 }                                          +
+             ]                                              +
+         }                                                  +
+     },                                                     +
+     "errors": [                                            +
+     ]                                                      +
+ }
 (1 row)
 
