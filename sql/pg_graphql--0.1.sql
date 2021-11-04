@@ -115,18 +115,16 @@ create or replace function gql.primary_key_columns(entity regclass)
     immutable
     as
 $$
-       select
+    select
         coalesce(array_agg(pg_attribute.attname::text order by attrelid asc), '{}')
     from
-        pg_class
-        join pg_index
-            on pg_class.oid = pg_index.indrelid
-            and pg_index.indisprimary
+        pg_index
         join pg_attribute
-            on pg_class.oid = pg_attribute.attrelid
+            on pg_attribute.attrelid = pg_index.indrelid
             and pg_attribute.attnum = any(pg_index.indkey)
     where
-        pg_class.oid = entity
+        pg_index.indrelid = entity
+        and pg_index.indisprimary
 $$;
 
 
@@ -139,15 +137,13 @@ $$
     select
         coalesce(array_agg(pg_attribute.atttypid::regtype order by attrelid asc), '{}')
     from
-        pg_class
-        join pg_index
-            on pg_class.oid = pg_index.indrelid
-            and pg_index.indisprimary
+        pg_index
         join pg_attribute
-            on pg_class.oid = pg_attribute.attrelid
+            on pg_attribute.attrelid = pg_index.indrelid
             and pg_attribute.attnum = any(pg_index.indkey)
     where
-        pg_class.oid = entity
+        pg_index.indrelid = entity
+        and pg_index.indisprimary
 $$;
 
 
