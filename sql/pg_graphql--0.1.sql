@@ -890,11 +890,14 @@ begin
     elsif arg_is_nodeId then
         return gql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
 
+
+    -- Non-special variable
     elsif gql.is_arg_a_variable(arg) then
         return '$' || gql.arg_index(name, variable_definitions)::text || '::' || cast_to;
 
+    -- Non-special literal
     else
-        return (arg -> 'value' ->> 'value');
+        return format('%L::%s', (arg -> 'value' ->> 'value'), cast_to);
     end if;
 end
 $$;
@@ -1063,10 +1066,10 @@ field_row as (select * from gql.field f where f.name = gql.name(ast) and f.paren
 total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), b.block_name, '__total_count')  from root, b where gql.name(sel) = 'totalCount'),
 args as (
     select
-        min(case when gql.name(sel) = 'first' then coalesce(ar.sel -> 'value' ->> 'value') else null end) as first_val,
-        min(null::text) as last_val
+        gql.arg_clause('first', (ast -> 'arguments'), variable_definitions, ent.entity) as first_val,
+        gql.arg_clause('last', (ast -> 'arguments'), variable_definitions, ent.entity) as last_val
     from
-        jsonb_array_elements(gql.jsonb_coalesce(ast -> 'arguments', '[]')) ar(sel)
+        ent
 ),
 page_info(sel, q) as (
     select
@@ -1220,9 +1223,8 @@ select
         quote_ident(block_name),
         coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
         gql.primary_key_clause(entity, block_name),
-        -- limit here
-        -- TODO(enforce only 1 provided)
-        (select least(coalesce(args.first_val::int, args.last_val::int, 10), 10) from args),
+        -- TODO(limit the max value)
+        (select coalesce(args.first_val, args.last_val, '10') from args),
         quote_ident(block_name)
 
           )
