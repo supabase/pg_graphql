@@ -823,6 +823,82 @@ from
         on t.name = f.type_
 where t.meta_kind = 'NODE';
 
+---------------
+-- Arguments --
+---------------
+
+create or replace function gql.get_arg_by_name(name text, arguments jsonb)
+    returns jsonb
+    immutable
+    strict
+    language sql
+as $$
+    select
+        ar.elem
+    from
+        jsonb_array_elements(arguments) ar(elem)
+    where
+        gql.name(elem) = $1
+$$;
+
+create or replace function gql.is_arg_a_variable(argument jsonb)
+    returns boolean
+    immutable
+    strict
+    language sql
+as $$
+    select (argument -> 'value' ->> 'kind') = 'Variable'
+$$;
+
+create or replace function gql.arg_index(arg_name text, variable_definitions jsonb)
+    returns int
+    immutable
+    strict
+    language sql
+as $$
+    select
+        ar.idx
+    from
+        jsonb_array_elements(variable_definitions) with ordinality ar(elem, idx)
+    where
+        gql.name(elem -> 'variable') = $1
+$$;
+
+create or replace function gql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass)
+    returns text
+    immutable
+    language plpgsql
+as $$
+declare
+    arg jsonb = gql.get_arg_by_name(name, gql.jsonb_coalesce(arguments, '[]'));
+    arg_is_nodeId boolean = name = 'nodeId';
+    res text;
+
+    cast_to text = case
+        when name in ('first', 'last') then 'int'
+        when name in ('nodeId', 'after', 'before') then 'UNDEFINED'
+        else 'text'
+    end;
+
+begin
+    if arg is null then
+        return null;
+
+    elsif gql.is_arg_a_variable(arg) and arg_is_nodeId then
+        return gql.cursor_clause_for_variable(entity, gql.arg_index(name, variable_definitions));
+
+    elsif arg_is_nodeId then
+        return gql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
+
+    elsif gql.is_arg_a_variable(arg) then
+        return '$' || gql.arg_index(name, variable_definitions)::text || '::' || cast_to;
+
+    else
+        return (arg -> 'value' ->> 'value');
+    end if;
+end
+$$;
+
 
 -------------
 -- Resolve --
@@ -845,7 +921,6 @@ create or replace function gql.join_clause(local_columns text[], local_alias_nam
     immutable
     as
 $$
-    -- select gql.join_clause(array['a', 'b', 'c'], 'abc', array['d', 'e', 'f'], 'def')
     select string_agg(quote_ident(local_alias_name) || '.' || quote_ident(x) || ' = ' || quote_ident(parent_alias_name) || '.' || quote_ident(y), ' and ')
     from
         unnest(local_columns) with ordinality local_(x, ix),
@@ -862,7 +937,6 @@ create or replace function gql.slug()
 as $$
     select substr(md5(random()::text), 0, 12);
 $$;
-
 
 
 create or replace function gql.build_node_query(
@@ -890,25 +964,8 @@ as $$
             jsonb_array_elements(ast -> 'selectionSet' -> 'selections')
     ),
     args(pkey_safe) as (
-        select
-            case
-                -- Provided via variable definition
-                when defs.idx is not null then gql.cursor_clause_for_variable(type_.entity, defs.idx::int)
-                -- Hard coded value
-                else gql.cursor_clause_for_literal(ar.elem -> 'value' ->> 'value')
-            end
-        from
-            jsonb_array_elements(gql.jsonb_coalesce(ast -> 'arguments', '[]'::jsonb)) ar(elem)
-            join field
-                on true
-            join type_
-                on true
-            left join gql.arg ga
-                on ga.field = field.name
-            left join jsonb_array_elements(variable_definitions) with ordinality as defs(elem, idx)
-                on (ar.elem -> 'value' ->> 'kind') = 'Variable'
-                and gql.name(ar.elem -> 'value') = gql.name(defs.elem -> 'variable')
-        limit 1
+        select gql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity)
+        from type_
     )
     select
         E'(\nselect\njsonb_build_object(\n'
