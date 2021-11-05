@@ -867,7 +867,6 @@ $$;
 
 create or replace function gql.build_node_query(
     ast jsonb,
-    variables jsonb = '{}',
     variable_definitions jsonb = '[]',
     parent_type text = null,
     parent_block_name text = null
@@ -879,7 +878,7 @@ as $$
         select gql.slug() as block_name
     ),
     field as (
-        select * from gql.field gf where gf.name = gql.name(ast) and gf.parent_type = $4
+        select * from gql.field gf where gf.name = gql.name(ast) and gf.parent_type = $3
     ),
     type_ as (
         select * from gql.type gt where gt.name = (select type_ from field)
@@ -920,14 +919,12 @@ as $$
                 when nf.name = 'nodeId' then gql.cursor_encoded_clause(gt.entity, b.block_name)
                 when nf.local_columns is not null and nf.is_array then gql.build_connection_query(
                     ast := x.sel,
-                    variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type := gf.type_,
                     parent_block_name := b.block_name
                 )
                 when nf.local_columns is not null then gql.build_node_query(
                     ast := x.sel,
-                    variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type := gf.type_,
                     parent_block_name := b.block_name
@@ -975,7 +972,7 @@ as $$
         b
     where
         gf.name = gql.name(ast)
-        and $4 = gf.parent_type
+        and $3 = gf.parent_type
     group by
         gt.entity, b.block_name, gf.parent_columns, gf.local_columns, args.pkey_safe
 $$;
@@ -985,7 +982,6 @@ $$;
 
 create or replace function gql.build_connection_query(
     ast jsonb,
-    variables jsonb = '{}',
     variable_definitions jsonb = '[]',
     parent_type text = null,
     parent_block_name text = null
@@ -1003,10 +999,10 @@ ent(entity) as (
             on f.type_ = t.name
     where
         f.name = gql.name(ast)
-        and f.parent_type = $4
+        and f.parent_type = $3
 ),
 root(sel) as (select * from jsonb_array_elements(ast -> 'selectionSet' -> 'selections')),
-field_row as (select * from gql.field f where f.name = gql.name(ast) and f.parent_type = $4),
+field_row as (select * from gql.field f where f.name = gql.name(ast) and f.parent_type = $3),
 total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), b.block_name, '__total_count')  from root, b where gql.name(sel) = 'totalCount'),
 args as (
     select
@@ -1077,14 +1073,12 @@ edges(sel, q) as (
                                 when gf_s.column_name is not null then format('%I.%I', b.block_name, gf_s.column_name)
                                 when gf_s.local_columns is not null and not gf_s.is_array then gql.build_node_query(
                                                                                     ast := n.sel,
-                                                                                    variables := variables,
                                                                                     variable_definitions := variable_definitions,
                                                                                     parent_type := gf_n.type_,
                                                                                     parent_block_name := b.block_name
                                                                                 )
                                 when gf_s.local_columns is not null and gf_s.is_array then gql.build_connection_query(
                                                                                     ast := n.sel,
-                                                                                    variables := variables,
                                                                                     variable_definitions := variable_definitions,
                                                                                     parent_type := gf_n.type_,
                                                                                     parent_block_name := b.block_name
@@ -1413,7 +1407,6 @@ $$;
 
 create or replace function gql."resolve___Schema"(
     ast jsonb,
-    variables jsonb = '{}',
     variable_definitions jsonb = '[]'
 )
     returns jsonb
@@ -1598,7 +1591,6 @@ begin
             when 'CONNECTION' then
                 gql.build_connection_query(
                     ast := ast_operation,
-                    variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type :=  'Query',
                     parent_block_name := null
@@ -1606,7 +1598,6 @@ begin
             when 'NODE' then
                 gql.build_node_query(
                     ast := ast_operation,
-                    variables := variables,
                     variable_definitions := variable_definitions,
                     parent_type := 'Query',
                     parent_block_name := null
@@ -1618,7 +1609,6 @@ begin
             when '__SCHEMA' then
                 gql."resolve___Schema"(
                     ast := ast_operation,
-                    variables := variables,
                     variable_definitions := variable_definitions
                 )
             when '__TYPE' then
