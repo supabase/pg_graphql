@@ -1,0 +1,19 @@
+select gql.dispatch(
+    $$
+    query FirstNAccounts($first: Int!) {
+      allAccounts(first: $first) {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }	
+    $$,
+    '{"first": 2}'::jsonb
+);
+                    dispatch                    
+------------------------------------------------
+ {"data": {"account": {"id": 1}}, "errors": []}
+(1 row)
+
