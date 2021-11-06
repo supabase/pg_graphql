@@ -871,12 +871,13 @@ create or replace function gql.arg_clause(name text, arguments jsonb, variable_d
 as $$
 declare
     arg jsonb = gql.get_arg_by_name(name, gql.jsonb_coalesce(arguments, '[]'));
-    arg_is_nodeId boolean = name = 'nodeId';
+
+    is_opaque boolean = name in ('nodeId', 'before', 'after');
+
     res text;
 
     cast_to text = case
         when name in ('first', 'last') then 'int'
-        when name in ('nodeId', 'after', 'before') then 'UNDEFINED'
         else 'text'
     end;
 
@@ -884,12 +885,11 @@ begin
     if arg is null then
         return null;
 
-    elsif gql.is_arg_a_variable(arg) and arg_is_nodeId then
+    elsif gql.is_arg_a_variable(arg) and is_opaque then
         return gql.cursor_clause_for_variable(entity, gql.arg_index(name, variable_definitions));
 
-    elsif arg_is_nodeId then
+    elsif is_opaque then
         return gql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
-
 
     -- Non-special variable
     elsif gql.is_arg_a_variable(arg) then
@@ -1066,8 +1066,10 @@ field_row as (select * from gql.field f where f.name = gql.name(ast) and f.paren
 total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), b.block_name, '__total_count')  from root, b where gql.name(sel) = 'totalCount'),
 args as (
     select
-        gql.arg_clause('first', (ast -> 'arguments'), variable_definitions, ent.entity) as first_val,
-        gql.arg_clause('last', (ast -> 'arguments'), variable_definitions, ent.entity) as last_val
+        gql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, ent.entity) as first_,
+        gql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, ent.entity) as last_,
+        gql.arg_clause('before', (ast -> 'arguments'), variable_definitions, ent.entity) as before_,
+        gql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, ent.entity) as after_
     from
         ent
 ),
@@ -1177,22 +1179,9 @@ edges(sel, q) as (
         gql.name(sel) = 'edges')
 
 select
-    format('(
-    select
-        -- total count
-        jsonb_build_object(
-           %s
-        )
-        -- page info
-        || jsonb_build_object(
-           %s
-        )
-        -- edges
-        || jsonb_build_object(
-           %s
-        )
-    from
-    (
+    format('
+(
+    with xyz as (
         select
             count(*) over () __total_count,
             first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
@@ -1209,24 +1198,55 @@ select
         order by
             %s asc
         limit %s
+    )
+    select
+        -- total count
+        jsonb_build_object(
+           %s
+        )
+        -- page info
+        || jsonb_build_object(
+           %s
+        )
+        -- edges
+        || jsonb_build_object(
+           %s
+        )
+    from
+    (
+        select
+            *
+        from
+            xyz
+        order by
+            %s asc
     ) as %s
 )',
+        -- __first_cursor
+        gql.cursor_encoded_clause(entity, block_name),
+        gql.primary_key_clause(entity, block_name) || ' asc',
+        -- __last_cursor
+        gql.cursor_encoded_clause(entity, block_name),
+        gql.primary_key_clause(entity, block_name) || ' asc',
+        -- __cursor
+        gql.cursor_encoded_clause(entity, block_name),
+        -- from
+        entity,
+        quote_ident(block_name),
+        -- join
+        coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+        -- order
+        gql.primary_key_clause(entity, block_name),
+        -- limit
+        (select coalesce(args.first_, args.last_, '10') from args),
+        -- JSON selects
         (select coalesce(total_count.q, '') from total_count),
         (select coalesce(page_info.q, '') from page_info),
         (select coalesce(edges.q, '') from edges),
-        gql.cursor_encoded_clause(entity, block_name),
-        gql.primary_key_clause(entity, block_name) || ' asc',
-        gql.cursor_encoded_clause(entity, block_name),
-        gql.primary_key_clause(entity, block_name) || ' asc',
-        gql.cursor_encoded_clause(entity, block_name),
-        entity,
-        quote_ident(block_name),
-        coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
-        gql.primary_key_clause(entity, block_name),
-        -- TODO(limit the max value)
-        (select coalesce(args.first_val, args.last_val, '10') from args),
+        -- final order by
+        gql.primary_key_clause(entity, 'xyz'),
+        -- block name
         quote_ident(block_name)
-
           )
     from
         b,
