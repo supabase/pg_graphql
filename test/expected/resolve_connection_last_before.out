@@ -1,0 +1,40 @@
+select jsonb_pretty(
+    gql.dispatch($$
+        {
+          allAccounts(last: 2, before: "WyJhY2NvdW50IiwgM10=") {
+            edges {
+              node {
+                nodeId
+                id
+              }
+            }
+          }
+        }
+    $$)
+);
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "allAccounts": {                                +
+             "edges": [                                  +
+                 {                                       +
+                     "node": {                           +
+                         "id": 1,                        +
+                         "nodeId": "WyJhY2NvdW50IiwgMV0="+
+                     }                                   +
+                 },                                      +
+                 {                                       +
+                     "node": {                           +
+                         "id": 2,                        +
+                         "nodeId": "WyJhY2NvdW50IiwgMl0="+
+                     }                                   +
+                 }                                       +
+             ]                                           +
+         }                                               +
+     },                                                  +
+     "errors": [                                         +
+     ]                                                   +
+ }
+(1 row)
+

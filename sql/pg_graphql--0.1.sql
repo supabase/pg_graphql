@@ -1193,10 +1193,11 @@ select
         where
             true
             --pagination_clause
+            and %s %s %s
             -- join clause
             and %s
         order by
-            %s asc
+            %s %s
         limit %s
     )
     select
@@ -1233,12 +1234,18 @@ select
         -- from
         entity,
         quote_ident(block_name),
+        -- pagination
+        case when coalesce(args.after_, args.before_) is null then 'true' else gql.cursor_row_clause(entity, block_name) end,
+        case when args.after_ is not null then '>' when args.before_ is not null then '<' else '=' end,
+        case when coalesce(args.after_, args.before_) is null then 'true' else coalesce(args.after_, args.before_) end,
         -- join
         coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
         -- order
         gql.primary_key_clause(entity, block_name),
+        -- directions
+        case when args.before_ is not null then 'desc' else 'asc' end,
         -- limit
-        (select coalesce(args.first_, args.last_, '10') from args),
+        coalesce(args.first_, args.last_, '10'),
         -- JSON selects
         (select coalesce(total_count.q, '') from total_count),
         (select coalesce(page_info.q, '') from page_info),
@@ -1251,7 +1258,8 @@ select
     from
         b,
         ent,
-        field_row
+        field_row,
+        args
 $$;
 
 
