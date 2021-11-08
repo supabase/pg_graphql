@@ -506,11 +506,10 @@ select
     gql.to_pascal_case(t.typname), 'ENUM', 'CUSTOM_SCALAR', null, null
 from
     pg_type t
-    join pg_enum e
-        on t.oid = e.enumtypid
 where
     t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace)
-    and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
+    and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE')
+    and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
 
 
 create materialized view gql.enum_value as
@@ -743,6 +742,7 @@ from (
             )
     where
         node.meta_kind = 'NODE';
+
 
 -- Arguments
 create materialized view gql.arg as

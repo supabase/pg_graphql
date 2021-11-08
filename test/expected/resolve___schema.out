@@ -72,10 +72,6 @@ select jsonb_pretty(
                      "name": "BlogPostStatus"     +
                  },                               +
                  {                                +
-                     "kind": "ENUM",              +
-                     "name": "BlogPostStatus"     +
-                 },                               +
-                 {                                +
                      "kind": "SCALAR",            +
                      "name": "Boolean"            +
                  },                               +
