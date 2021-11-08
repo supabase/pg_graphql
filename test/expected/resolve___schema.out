@@ -101,10 +101,6 @@ select jsonb_pretty(
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
-                     "name": "Mutation"           +
-                 },                               +
-                 {                                +
-                     "kind": "OBJECT",            +
                      "name": "PageInfo"           +
                  },                               +
                  {                                +
@@ -157,9 +153,7 @@ select jsonb_pretty(
              },                                   +
              "directives": [                      +
              ],                                   +
-             "mutationType": {                    +
-                 "name": "Mutation"               +
-             }                                    +
+             "mutationType": null                 +
          }                                        +
      },                                           +
      "errors": [                                  +

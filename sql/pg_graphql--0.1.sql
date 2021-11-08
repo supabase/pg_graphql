@@ -474,7 +474,7 @@ from (
     ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
     ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
     ('Query', 'OBJECT', 'QUERY', null),
-    ('Mutation', 'OBJECT', 'MUTATION', null),
+    --('Mutation', 'OBJECT', 'MUTATION', null),
     ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
     -- Introspection System
     ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.'),
@@ -618,7 +618,7 @@ from (
         ('__Type', 'String', 'name', false, false, null, null),
         ('__Type', 'String', 'description', false, false, null, null),
         ('__Type', 'String', 'specifiedByURL', false, false, null, null),
-        ('__Type', '__Field', 'fields', true, true, false, null),
+        ('__Type', '__Field', 'fields', false, true, true, null),
         ('__Type', '__Type', 'interfaces', true, true, false, null),
         ('__Type', '__Type', 'possibleTypes', true, true, false, null),
         ('__Type', '__EnumValue', 'enumValues', true, true, false, null),
@@ -1361,7 +1361,13 @@ $$;
 
 
 
-create or replace function gql."resolve___Type"(type_ text, ast jsonb, is_array_not_null bool = false, is_array bool = false, is_not_null bool = false)
+create or replace function gql."resolve___Type"(
+    type_ text,
+    ast jsonb,
+    is_array_not_null bool = false,
+    is_array bool = false,
+    is_not_null bool = false
+)
     returns jsonb
     stable
     language sql
@@ -1383,11 +1389,13 @@ as $$
                         end
                     )
                     when selection_name = 'fields' and not has_modifiers then (
-                        case
-                            -- TODO, un-hardcode
-                            when gt.name = 'Mutation' then '[]'::jsonb
-                            else (select jsonb_agg(gql.resolve_field(f.name, f.parent_type, x.sel)) from gql.field f where f.parent_type = gt.name and not f.is_hidden_from_schema)
-                        end
+                        select
+                            jsonb_agg(gql.resolve_field(f.name, f.parent_type, x.sel))
+                        from
+                            gql.field f
+                        where
+                            f.parent_type = gt.name
+                            and not f.is_hidden_from_schema
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
@@ -1418,9 +1426,8 @@ as $$
             'null'::jsonb
         )
     from
-        gql.type gt
-        join jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
-            on true,
+        gql.type gt,
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
         lateral (
             select
                 gql.alias_or_name(x.sel) field_alias,
@@ -1465,33 +1472,6 @@ as $$
 $$;
 
 
-create or replace function gql."resolve_mutationType"(ast jsonb)
-    returns jsonb
-    stable
-    language sql
-as $$
-    select  coalesce(
-                jsonb_object_agg(
-                    fa.field_alias,
-                    case
-                        when selection_name = 'name' then 'Mutation'
-                        when selection_name = 'description' then null
-                        else 'ERROR: Unknown Field'
-                    end
-                ),
-                'null'::jsonb
-            )
-    from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
-        lateral (
-            select
-                gql.alias_or_name(x.sel) field_alias,
-                gql.name(x.sel) as selection_name
-        ) fa
-$$;
-
-
 create or replace function gql."resolve___Schema"(
     ast jsonb,
     variable_definitions jsonb = '[]'
@@ -1521,7 +1501,7 @@ begin
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), gql."resolve_queryType"(node_field));
 
         elsif node_field_rec.name = 'mutationType' then
-            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), gql."resolve_mutationType"(node_field));
+            agg = agg || jsonb_build_object(gql.alias_or_name(node_field), 'null'::jsonb);
 
         elsif node_field_rec.name = 'subscriptionType' then
             agg = agg || jsonb_build_object(gql.alias_or_name(node_field), null);
@@ -1533,7 +1513,6 @@ begin
                 )
             from gql.type gt;
 
-
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
             agg = agg || gql."resolve___Type"(
                 node_field_rec.type_,
@@ -1544,9 +1523,7 @@ begin
             );
 
         else
-            -- TODO, no mach
-            perform 1;
-
+            raise 'Invalid field for type __Schema: "%"', gql.name(node_field);
         end if;
     end loop;
 
