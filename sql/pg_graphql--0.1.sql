@@ -408,7 +408,7 @@ create type gql.meta_kind as enum (
 );
 
 
-create or replace view gql.entity as
+create materialized view gql.entity as
 select
     oid::regclass as entity
 from
@@ -420,7 +420,7 @@ where
     and pg_catalog.has_any_column_privilege(oid::regclass, 'SELECT');
 
 
-create or replace view gql.relationship as
+create view gql.relationship as
     with rels as materialized (
         select
             const.conname as constraint_name,
@@ -455,7 +455,7 @@ create or replace view gql.relationship as
     select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
 
 
-create or replace view gql.type as
+create materialized view gql.type as
 select
     name,
     type_kind::gql.type_kind,
@@ -513,7 +513,7 @@ where
     and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
 
 
-create or replace view gql.enum_value as
+create materialized view gql.enum_value as
 select
     type_::text,
     value::text,
@@ -585,7 +585,7 @@ $$
 $$;
 
 
-create or replace view gql.field as
+create materialized view gql.field as
 select
     parent_type,
     type_,
@@ -745,7 +745,7 @@ from (
         node.meta_kind = 'NODE';
 
 -- Arguments
-create or replace view gql.arg as
+create materialized view gql.arg as
 -- TODO(OR): is_deprecated field?
 -- __Field(includeDeprecated)
 select f.name as field, 'includeDeprecated' as name, 'Boolean' as type_, false as is_not_null, 'f' as default_value
@@ -822,6 +822,33 @@ from
     inner join gql.field f
         on t.name = f.type_
 where t.meta_kind = 'NODE';
+
+
+-----------------
+-- Schema Cache -
+-----------------
+
+create or replace function gql.rebuild_schema() returns event_trigger
+  language plpgsql
+as $$
+begin
+    if tg_tag = 'REFRESH MATERIALIZED VIEW' then
+        return;
+    end if;
+
+    refresh materialized view gql.entity with data;
+    refresh materialized view gql.type with data;
+    refresh materialized view gql.field with data;
+    refresh materialized view gql.enum_value with data;
+    refresh materialized view gql.arg with data;
+end;
+$$;
+
+
+create event trigger gql_watch
+    on ddl_command_end
+    execute procedure gql.rebuild_schema();
+
 
 ---------------
 -- Arguments --
@@ -1396,6 +1423,7 @@ as $$
                         where
                             f.parent_type = gt.name
                             and not f.is_hidden_from_schema
+                            and gt.type_kind not in ('SCALAR', 'ENUM')
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
@@ -1405,7 +1433,6 @@ as $$
                         end
                     )
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
-                    -- wasteful
                     when selection_name = 'enumValues' then gql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then to_jsonb(null::text)
                     when selection_name = 'ofType' then (
@@ -1447,20 +1474,17 @@ create or replace function gql."resolve_queryType"(ast jsonb)
     language sql
 as $$
     select
-        --jsonb_build_object(
-        --    gql.name(ast),
-            coalesce(
-                jsonb_object_agg(
-                    fa.field_alias,
-                    case
-                        when selection_name = 'name' then 'Query'
-                        when selection_name = 'description' then null
-                        else 'ERROR: Unknown Field'
-                    end
-                ),
-                'null'::jsonb
-            )
-        --)
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' then 'Query'
+                    when selection_name = 'description' then null
+                    else 'ERROR: Unknown Field'
+                end
+            ),
+            'null'::jsonb
+        )
     from
         jsonb_path_query(ast, '$.selectionSet.selections') selections,
         lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
@@ -1708,6 +1732,7 @@ begin
 end
 $$;
 
-
 grant all on schema gql to postgres;
 grant all on all tables in schema gql to postgres;
+
+
