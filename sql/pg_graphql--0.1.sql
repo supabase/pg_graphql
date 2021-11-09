@@ -173,34 +173,17 @@ language sql
 immutable
 as $$
 /*
-Recursively remove a 'loc' key from a jsonb object by name
+Remove a 'loc' key from a jsonb object by name
 */
-    select
-        case
-            when jsonb_typeof(body) = 'object' then
-                (
-                    select
-                        jsonb_object_agg(key_, gql.ast_pass_strip_loc(value_))
-                    from
-                        jsonb_each(body) x(key_, value_)
-                    where
-                        x.key_ <> 'loc'
-                    limit
-                        1
-                )
-            when jsonb_typeof(body) = 'array' then
-                (
-                    select
-                        jsonb_agg(gql.ast_pass_strip_loc(value_))
-                    from
-                        jsonb_array_elements(body) x(value_)
-                    limit
-                        1
-                )
-            else
-                body
-        end;
+select
+    regexp_replace(
+        body::text,
+        '"loc":\s*\{\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*},\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*}\s*},'::text,
+        '',
+        'g'
+    )::jsonb
 $$;
+
 
 create or replace function gql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
     returns jsonb
