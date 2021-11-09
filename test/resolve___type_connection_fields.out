@@ -1,0 +1,80 @@
+select jsonb_pretty(
+    gql.dispatch($$
+
+{
+  __type(name: "AccountConnection") {
+    fields {
+      name
+      type {
+        name
+        kind
+        ofType {
+          name
+          kind
+          ofType {
+            name
+            kind
+            ofType {
+              name
+              kind
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+    $$)
+)
+;
+                    jsonb_pretty
+----------------------------------------------------
+ {                                                 +
+     "data": {                                     +
+         "__type": {                               +
+             "fields": [                           +
+                 {                                 +
+                     "name": "edges",              +
+                     "type": {                     +
+                         "kind": "LIST",           +
+                         "name": null,             +
+                         "ofType": {               +
+                             "kind": "OBJECT",     +
+                             "name": "AccountEdge",+
+                             "ofType": null        +
+                         }                         +
+                     }                             +
+                 },                                +
+                 {                                 +
+                     "name": "pageInfo",           +
+                     "type": {                     +
+                         "kind": "NON_NULL",       +
+                         "name": null,             +
+                         "ofType": {               +
+                             "kind": "OBJECT",     +
+                             "name": "PageInfo",   +
+                             "ofType": null        +
+                         }                         +
+                     }                             +
+                 },                                +
+                 {                                 +
+                     "name": "totalCount",         +
+                     "type": {                     +
+                         "kind": "NON_NULL",       +
+                         "name": null,             +
+                         "ofType": {               +
+                             "kind": "SCALAR",     +
+                             "name": "Int",        +
+                             "ofType": null        +
+                         }                         +
+                     }                             +
+                 }                                 +
+             ]                                     +
+         }                                         +
+     },                                            +
+     "errors": [                                   +
+     ]                                             +
+ }
+(1 row)
+

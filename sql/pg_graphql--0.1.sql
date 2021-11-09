@@ -1339,19 +1339,30 @@ $$;
 create or replace function gql.resolve_field(field text, parent_type text, ast jsonb)
     returns jsonb
     stable
-    language sql
+    language plpgsql
 as $$
-    select
+declare
+    field_rec gql.field;
+begin
+    field_rec = gf from gql.field gf where gf.name = $1 and gf.parent_type = $2;
+
+    return
         coalesce(
             jsonb_object_agg(
                 fa.field_alias,
                 case
-                    when selection_name = 'name' then to_jsonb(f.name)
-                    when selection_name = 'description' then to_jsonb(f.description)
+                    when selection_name = 'name' then to_jsonb(field_rec.name)
+                    when selection_name = 'description' then to_jsonb(field_rec.description)
                     when selection_name = 'isDeprecated' then to_jsonb(false) -- todo
                     when selection_name = 'deprecationReason' then to_jsonb(null::text) -- todo
-                    when selection_name = 'type' then gql."resolve___Type"(f.type_, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
-                    when selection_name = 'args' then '[]'::jsonb --gql."resolve___InputValues"(f.type_, x.sel, f.is_array_not_null, f.is_array, f.is_not_null)
+                    when selection_name = 'type' then gql."resolve___Type"(
+                                                            field_rec.type_,
+                                                            x.sel,
+                                                            field_rec.is_array_not_null,
+                                                            field_rec.is_array,
+                                                            field_rec.is_not_null
+                    )
+                    when selection_name = 'args' then '[]'::jsonb
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
             ),
@@ -1363,10 +1374,8 @@ as $$
             select
                 gql.alias_or_name(x.sel) field_alias,
                 gql.name(x.sel) as selection_name
-        ) fa
-        join gql.field f
-            on f.name = field
-            and f.parent_type = parent_type
+        ) fa;
+end;
 $$;
 
 
@@ -1381,9 +1390,11 @@ create or replace function gql."resolve___Type"(
 )
     returns jsonb
     stable
-    language sql
+    language plpgsql
 as $$
-    select
+declare
+begin
+       return
         coalesce(
             jsonb_object_agg(
                 fa.field_alias,
@@ -1449,7 +1460,8 @@ as $$
             select (coalesce(is_array_not_null, false) or is_array or is_not_null) as has_modifiers
         ) hm
     where
-        gt.name = type_
+        gt.name = type_;
+end;
 $$;
 
 
