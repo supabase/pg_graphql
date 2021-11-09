@@ -634,11 +634,8 @@ from (
         gql.type conn
         join gql.type edge
             on conn.entity = edge.entity
-            and conn.meta_kind = 'CONNECTION'
-            and edge.meta_kind = 'EDGE'
         join gql.type node
-            on edge.entity = node.entity
-            and node.meta_kind = 'NODE',
+            on edge.entity = node.entity,
         lateral (
             values
                 (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
@@ -653,6 +650,10 @@ from (
                 ('Query', node.name, gql.to_camel_case(gql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
                 ('Query', conn.name, gql.to_camel_case('all_' || gql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
         ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
+    where
+        conn.meta_kind = 'CONNECTION'
+        and edge.meta_kind = 'EDGE'
+        and node.meta_kind = 'NODE'
     -- Node
     -- Node.<column>
     union all
@@ -1436,8 +1437,9 @@ as $$
             'null'::jsonb
         )
     from
-        gql.type gt,
-        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
+        gql.type gt
+        join jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
+            on true,
         lateral (
             select
                 gql.alias_or_name(x.sel) field_alias,
