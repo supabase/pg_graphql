@@ -456,6 +456,7 @@ from (
     ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
     ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
     ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
+    ('Cursor', 'SCALAR', 'CUSTOM_SCALAR', null),
     ('Query', 'OBJECT', 'QUERY', null),
     --('Mutation', 'OBJECT', 'MUTATION', null),
     ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
@@ -730,83 +731,86 @@ from (
 
 -- Arguments
 create materialized view gql.arg as
--- TODO(OR): is_deprecated field?
--- __Field(includeDeprecated)
-select f.name as field, 'includeDeprecated' as name, 'Boolean' as type_, false as is_not_null, 'f' as default_value
-from gql.field f
-where
-    f.type_ = '__Field'
-    and f.is_array
-union all
--- __enumValue(includeDeprecated)
-select f.name, 'includeDeprecated', 'Boolean', false, 'f'
-from gql.field f
-where
-    f.type_ = '__enumValue'
-    and f.is_array
-union all
--- __InputFields(includeDeprecated)
-select f.name, 'includeDeprecated', 'Boolean', false, 'f'
-from gql.field f
-where
-    f.type_ = '__InputFields'
-    and f.is_array
-union all
--- __type(name)
-select
-    f.name,
-    'name' as name,
-    'String' type_,
-    true as is_not_null,
-    null
-from gql.field f
-where f.name = '__type'
-union all
--- Node(id)
-select
-    f.name,
-    'id' as name,
-    'ID' type_,
-    true as is_not_null,
-    null
-from
-    gql.type t
-    inner join gql.field f
-        on t.name = f.type_
-where
-    t.meta_kind = 'NODE'
-union all
--- Connection(first, last, after, before)
-select
-    f.name field, y.name_ as name, 'Int' type_, false as is_not_null, null
-from
-    gql.type t
-    inner join gql.field f
-        on t.name = f.type_,
-    --lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
-    lateral (select name_ from unnest(array['first']) x(name_)) y(name_)
-where t.meta_kind = 'CONNECTION'
-union all
-select
-    f.name field, y.name_ as name, 'String' type_, false as is_not_null, null
-from
-    gql.type t
-    inner join gql.field f
-        on t.name = f.type_,
-    --lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
-    lateral (select name_ from unnest(array['after']) x(name_)) y(name_)
-where t.meta_kind = 'CONNECTION'
-union all
--- Node(nodeId)
--- Restrict to entrypoint only?
-select
-    f.name field, 'nodeId' as name, 'ID' type_, true as is_not_null, null
-from
-    gql.type t
-    inner join gql.field f
-        on t.name = f.type_
-where t.meta_kind = 'NODE';
-
+    -- __Field(includeDeprecated)
+    -- __enumValue(includeDeprecated)
+    -- __InputFields(includeDeprecated)
+    select
+        f.name as field_name,
+        f.parent_type as field_parent_type,
+        f.type_ as field_type,
+        'includeDeprecated' as name,
+        'Boolean' as type_,
+        false as is_not_null,
+        'f' as default_value
+    from
+        gql.field f
+    where
+        f.type_ in ('__Field', '__enumValue', '__InputFields')
+    union all
+    -- __type(name)
+    select
+        f.name,
+        f.parent_type,
+        f.type_,
+        'name' as name,
+        'String' type_,
+        true as is_not_null,
+        null
+    from
+        gql.field f
+    where
+        f.name = '__type'
+    union all
+    -- Node(nodeId)
+    select
+        f.name,
+        f.parent_type,
+        f.type_,
+        'nodeId' as name,
+        'ID' type_,
+        true as is_not_null,
+        null
+    from
+        gql.type t
+        inner join gql.field f
+            on t.name = f.type_
+    where
+        t.meta_kind = 'NODE'
+        and f.parent_type = 'Query'
+    union all
+    -- Connection(first, last)
+    select
+        f.name field,
+        f.parent_type,
+        f.type_,
+        y.name_ as name,
+        'Int' type_,
+        false as is_not_null,
+        null
+    from
+        gql.type t
+        inner join gql.field f
+            on t.name = f.type_,
+        lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+    where
+        t.meta_kind = 'CONNECTION'
+    -- Connection(first, last)
+    union all
+    select
+        f.name field,
+        f.parent_type,
+        f.type_,
+        y.name_ as name,
+        'Cursor' type_,
+        false as is_not_null,
+        null
+    from
+        gql.type t
+        inner join gql.field f
+            on t.name = f.type_,
+        lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+    where
+        t.meta_kind = 'CONNECTION';
 
 -----------------
 -- Schema Cache -
@@ -1303,22 +1307,33 @@ create or replace function gql."resolve___Type"(
 create or replace function gql.resolve_field(field text, parent_type text, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 
 
-create or replace function gql.resolve___input_value(arg_id int, ast jsonb)
+create or replace function gql.resolve___input_value(arg_name text, field_name text, field_type text, field_parent_type text, ast jsonb)
     returns jsonb
     stable
-    language sql
+    language plpgsql
 as $$
-    select
+declare
+    arg_rec gql.arg;
+begin
+    arg_rec = ga from gql.arg ga where ga.name = $1 and ga.field_name = $2 and ga.field_type = $3 and ga.field_parent_type = $4;
+
+    return
         coalesce(
             jsonb_object_agg(
                 fa.field_alias,
                 case
-                    when selection_name = 'name' then to_jsonb(ar.name)
-                    when selection_name = 'description' then to_jsonb(ar.description)
-                    when selection_name = 'defaultValue' then to_jsonb(ar.default_value)
-                    when selection_name = 'isDeprecated' then to_jsonb(ar.is_deprecated)
-                    when selection_name = 'deprecationReason' then to_jsonb(ar.deprecation_reason)
-                    when selection_name = 'type' then gql."resolve___Type"(ar.type_, x.sel)
+                    when selection_name = 'name' then to_jsonb(arg_rec.name)
+                    when selection_name = 'description' then to_jsonb(null::text)
+                    when selection_name = 'isDeprecated' then to_jsonb(false)
+                    when selection_name = 'deprecationReason' then to_jsonb(null::text)
+                    when selection_name = 'defaultValue' then to_jsonb(arg_rec.default_value)
+                    when selection_name = 'type' then gql."resolve___Type"(
+                                                            arg_rec.type_,
+                                                            x.sel,
+                                                            false,
+                                                            false,
+                                                            arg_rec.is_not_null
+                    )
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
             ),
@@ -1330,11 +1345,9 @@ as $$
             select
                 gql.alias_or_name(x.sel) field_alias,
                 gql.name(x.sel) as selection_name
-        ) fa
-        join gql.arg ar
-            on ar.id = arg_id
+        ) fa;
+end;
 $$;
-
 
 create or replace function gql.resolve_field(field text, parent_type text, ast jsonb)
     returns jsonb
@@ -1362,7 +1375,27 @@ begin
                                                             field_rec.is_array,
                                                             field_rec.is_not_null
                     )
-                    when selection_name = 'args' then '[]'::jsonb
+                    when selection_name = 'args' then (
+                        select
+                            coalesce(
+                                jsonb_agg(
+                                    gql.resolve___input_value(
+                                        ga.name,
+                                        field_rec.name,
+                                        field_rec.type_,
+                                        field_rec.parent_type,
+                                        x.sel
+                                    )
+                                    order by ga.name
+                                ),
+                                '[]'
+                            )
+                        from
+                            gql.arg ga
+                        where
+                            ga.field_name = field_rec.name
+                            and ga.field_parent_type = field_rec.parent_type
+                    )
                     else to_jsonb('ERROR: Unknown Field'::text)
                 end
             ),

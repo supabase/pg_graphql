@@ -77,6 +77,10 @@ select jsonb_pretty(
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
+                     "name": "Cursor"             +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
                      "name": "DateTime"           +
                  },                               +
                  {                                +
