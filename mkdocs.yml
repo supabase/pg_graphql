@@ -1,0 +1,32 @@
+site_name: pg_graphql
+site_url: https://supabase.github.io/pg_graphql
+site_description: A PostgreSQL extension adding GraphQL support
+
+repo_name: supabase/pg_graphql
+repo_url: https://github.com/supabase/pg_graphql
+
+nav:
+    - Welcome: 'index.md'
+    - Quickstart: 'quickstart.md'
+    - API: 'api.md'
+    - Spec: 'spec.md'
+    - Roadmap: 'roadmap.md'
+    - Installation: 'installation.md'
+    - Contributing: 'contributing.md'
+
+theme:
+    name: 'material'
+    favicon: 'assets/favicon.ico'
+    logo: 'assets/favicon.ico'
+    homepage: https://supabase.github.io/pg_graphql
+    palette:
+        primary: black
+        accent: light green
+
+markdown_extensions:
+    - pymdownx.highlight:
+        linenums: true
+    - pymdownx.superfences
+    - pymdownx.snippets
+    - pymdownx.tasklist
+    - admonition
