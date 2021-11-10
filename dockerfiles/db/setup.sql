@@ -9,7 +9,7 @@ alter default privileges in schema public grant all on functions to postgres, an
 alter default privileges in schema public grant all on sequences to postgres, anon;
 
 grant usage on schema gql to postgres, anon;
-grant all on function gql.dispatch to postgres, anon;
+grant all on function gql.resolve to postgres, anon;
 
 alter default privileges in schema gql grant all on tables to postgres, anon;
 alter default privileges in schema gql grant all on functions to postgres, anon;
@@ -21,7 +21,7 @@ create function graphql("operationName" text default null, query text default nu
     returns jsonb
     language sql
 as $$
-    select gql.dispatch(query, variables);
+    select gql.resolve(query, variables);
 $$;
 
 

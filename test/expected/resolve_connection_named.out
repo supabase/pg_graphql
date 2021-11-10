@@ -1,4 +1,4 @@
-select gql.dispatch(
+select gql.resolve(
     $$
     query FirstNAccounts($first: Int!) {
       allAccounts(first: $first) {
@@ -12,7 +12,7 @@ select gql.dispatch(
     $$,
     '{"first": 2}'::jsonb
 );
-                                            dispatch                                            
+                                            resolve                                             
 ------------------------------------------------------------------------------------------------
  {"data": {"allAccounts": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}, "errors": []}
 (1 row)

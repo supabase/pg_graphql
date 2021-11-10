@@ -1,4 +1,4 @@
-select gql.dispatch($$
+select gql.resolve($$
 {
   account(id: "WyJhY2NvdW50IiwgMV0=") {
     id

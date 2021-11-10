@@ -1625,7 +1625,7 @@ as $$
 $$;
 
 
-create or replace function gql.dispatch(stmt text, variables jsonb = '{}')
+create or replace function gql.resolve(stmt text, variables jsonb = '{}')
     returns jsonb
     volatile
     language plpgsql
@@ -1661,7 +1661,11 @@ begin
 
         ast_locless = gql.ast_pass_strip_loc(ast);
         fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
-        ast_inlined =  gql.ast_pass_fragments(ast_locless, fragment_definitions);
+        -- Skip fragment inline when no fragments are present
+        ast_inlined = case
+            when fragment_definitions = '[]'::jsonb then ast_locless
+            else gql.ast_pass_fragments(ast_locless, fragment_definitions)
+        end;
         ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
         meta_kind = type_.meta_kind
             from

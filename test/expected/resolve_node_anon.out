@@ -1,4 +1,4 @@
-select gql.dispatch($$
+select gql.resolve($$
 {
   account(id: "WyJhY2NvdW50IiwgMV0=") {
     id
@@ -6,7 +6,7 @@ select gql.dispatch($$
   }
 }
 $$);
-                                     dispatch                                     
+                                     resolve                                      
 ----------------------------------------------------------------------------------
  {"data": {"account": {"id": 1, "nodeId": "WyJhY2NvdW50IiwgMV0="}}, "errors": []}
 (1 row)

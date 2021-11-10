@@ -1,4 +1,4 @@
-select gql.dispatch(
+select gql.resolve(
     $$
     query FirstNAccounts($first: Int!) {
       allAccounts(first: $first) {

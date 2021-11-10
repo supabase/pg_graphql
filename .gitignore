@@ -1,6 +1,6 @@
 results/
 __pycache__/
-docs/
+ex/
 .python-version
 venv/
 site/

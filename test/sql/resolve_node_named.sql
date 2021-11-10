@@ -1,4 +1,4 @@
-select gql.dispatch(
+select gql.resolve(
     $$
     query GetAccount($nodeId: ID!) {
       account(nodeId: $nodeId) {

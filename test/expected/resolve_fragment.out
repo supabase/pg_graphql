@@ -1,4 +1,4 @@
-select gql.dispatch($$
+select gql.resolve($$
     {
       allBlogs(first: 1) {
         edges {
@@ -16,7 +16,7 @@ select gql.dispatch($$
       description
     }
 $$);
-                                                                         dispatch                                                                         
+                                                                         resolve                                                                          
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
  {"data": {"allBlogs": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "a desc1"}, "cursor": "WyJibG9nIiwgMV0="}]}}, "errors": []}
 (1 row)

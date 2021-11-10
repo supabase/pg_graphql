@@ -1,5 +1,5 @@
 select jsonb_pretty(
-    gql.dispatch($$
+    gql.resolve($$
     {
       allBlogs {
         edges {

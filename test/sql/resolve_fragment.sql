@@ -1,4 +1,4 @@
-select gql.dispatch($$
+select gql.resolve($$
     {
       allBlogs(first: 1) {
         edges {
