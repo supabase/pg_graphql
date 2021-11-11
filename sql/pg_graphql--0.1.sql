@@ -917,6 +917,19 @@ begin
 end
 $$;
 
+----------------
+-- Exceptions --
+----------------
+
+create or replace function gql.exception_unknown_field(field_name text, type_name text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
+end;
+$$;
+
 
 -------------
 -- Resolve --
@@ -955,17 +968,6 @@ create or replace function gql.slug()
 as $$
     select substr(md5(random()::text), 0, 12);
 $$;
-
-
-create or replace function gql.exception_unknown_field(field_name text, type_name text)
-    returns text
-    language plpgsql
-as $$
-begin
-    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
-end;
-$$;
-
 
 
 create or replace function gql.build_node_query(
@@ -1042,8 +1044,6 @@ begin
         and $3 = field.parent_type;
 end;
 $$;
-
-
 
 
 create or replace function gql.build_connection_query(
@@ -1681,7 +1681,7 @@ declare
     meta_kind gql.meta_kind;
 
     -- Exception stack
-    v_error_stack text;
+    error_message text;
 begin
     -- Build query if not in cache
     if not gql.prepared_statement_exists(prepared_statement_name) then
@@ -1742,8 +1742,8 @@ begin
 
         exception when others then
             -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql
-            get stacked diagnostics v_error_stack = MESSAGE_TEXT;
-            errors_ = errors_ || v_error_stack;
+            get stacked diagnostics error_message = MESSAGE_TEXT;
+            errors_ = errors_ || error_message;
         end;
 
     end if;
