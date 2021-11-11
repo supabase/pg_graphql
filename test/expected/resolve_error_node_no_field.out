@@ -1,0 +1,13 @@
+select gql.resolve($$
+{
+  account(id: "WyJhY2NvdW50IiwgMV0=") {
+    id
+    shouldFail
+  }
+}
+$$);
+                                  resolve                                   
+----------------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'shouldFail' on type 'Account'"]}
+(1 row)
+

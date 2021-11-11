@@ -957,6 +957,17 @@ as $$
 $$;
 
 
+create or replace function gql.exception_unknown_field(field_name text, type_name text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
+end;
+$$;
+
+
+
 create or replace function gql.build_node_query(
     ast jsonb,
     variable_definitions jsonb = '[]',
@@ -973,13 +984,7 @@ declare
     nodeId text = gql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
     result text;
 begin
-    with x(sel) as (
-        select
-            *
-        from
-            jsonb_array_elements(ast -> 'selectionSet' -> 'selections')
-    )
-    select
+    return
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(gql.alias_or_name(x.sel)) || E',\n' ||
             case
@@ -998,7 +1003,7 @@ begin
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
-                else null::text
+                else gql.exception_unknown_field(gql.name(x.sel), field.type_)
             end,
             E',\n'
         )
@@ -1028,16 +1033,13 @@ begin
     end
     )
     from
-        x
-        join gql.field nf -- selected fields (node_field_row)
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
+        left join gql.field nf -- selected fields (node_field_row)
             on nf.parent_type = field.type_
             and gql.name(x.sel) = nf.name
     where
         field.name = gql.name(ast)
-        and $3 = field.parent_type
-    into result;
-
-    return result;
+        and $3 = field.parent_type;
 end;
 $$;
 
@@ -1677,69 +1679,80 @@ declare
     ast_operation jsonb;
 
     meta_kind gql.meta_kind;
+
+    -- Exception stack
+    v_error_stack text;
 begin
     -- Build query if not in cache
     if not gql.prepared_statement_exists(prepared_statement_name) then
 
-        ast_locless = gql.ast_pass_strip_loc(ast);
-        fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
-        -- Skip fragment inline when no fragments are present
-        ast_inlined = case
-            when fragment_definitions = '[]'::jsonb then ast_locless
-            else gql.ast_pass_fragments(ast_locless, fragment_definitions)
-        end;
-        ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
-        meta_kind = type_.meta_kind
-            from
-                gql.field
-                join gql.type type_
-                    on field.type_ = type_.name
-            where
-                field.parent_type = 'Query'
-                and field.name = gql.name(ast_operation);
+        begin
 
-        q = case meta_kind
-            when 'CONNECTION' then
-                gql.build_connection_query(
-                    ast := ast_operation,
-                    variable_definitions := variable_definitions,
-                    parent_type :=  'Query',
-                    parent_block_name := null
-                )
-            when 'NODE' then
-                gql.build_node_query(
-                    ast := ast_operation,
-                    variable_definitions := variable_definitions,
-                    parent_type := 'Query',
-                    parent_block_name := null
-                )
-            else null::text
-        end;
+            ast_locless = gql.ast_pass_strip_loc(ast);
+            fragment_definitions = jsonb_path_query_array(ast_locless, '$.definitions[*] ? (@.kind == "FragmentDefinition")');
+            -- Skip fragment inline when no fragments are present
+            ast_inlined = case
+                when fragment_definitions = '[]'::jsonb then ast_locless
+                else gql.ast_pass_fragments(ast_locless, fragment_definitions)
+            end;
+            ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
+            meta_kind = type_.meta_kind
+                from
+                    gql.field
+                    join gql.type type_
+                        on field.type_ = type_.name
+                where
+                    field.parent_type = 'Query'
+                    and field.name = gql.name(ast_operation);
 
-        data_ = case meta_kind
-            when '__SCHEMA' then
-                gql."resolve___Schema"(
-                    ast := ast_operation,
-                    variable_definitions := variable_definitions
-                )
-            when '__TYPE' then
-                jsonb_build_object(
-                    gql.name(ast_operation),
-                    gql."resolve___Type"(
-                        (select name from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
-                        ast_operation
+            q = case meta_kind
+                when 'CONNECTION' then
+                    gql.build_connection_query(
+                        ast := ast_operation,
+                        variable_definitions := variable_definitions,
+                        parent_type :=  'Query',
+                        parent_block_name := null
                     )
-                )
-            else null::jsonb
+                when 'NODE' then
+                    gql.build_node_query(
+                        ast := ast_operation,
+                        variable_definitions := variable_definitions,
+                        parent_type := 'Query',
+                        parent_block_name := null
+                    )
+                else null::text
+            end;
+
+            data_ = case meta_kind
+                when '__SCHEMA' then
+                    gql."resolve___Schema"(
+                        ast := ast_operation,
+                        variable_definitions := variable_definitions
+                    )
+                when '__TYPE' then
+                    jsonb_build_object(
+                        gql.name(ast_operation),
+                        gql."resolve___Type"(
+                            (select name from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
+                            ast_operation
+                        )
+                    )
+                else null::jsonb
+            end;
+
+        exception when others then
+            -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql
+            get stacked diagnostics v_error_stack = MESSAGE_TEXT;
+            errors_ = errors_ || v_error_stack;
         end;
 
     end if;
 
-    if q is not null then
+    if errors_ = '{}' and q is not null then
         execute gql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
     end if;
 
-    if data_ is null then
+    if errors_ = '{}' and data_ is null then
         -- Call prepared statement respecting passed values and variable definition defaults
         execute gql.prepared_statement_execute_clause(prepared_statement_name, variable_definitions, variables) into data_;
         data_ = jsonb_build_object(

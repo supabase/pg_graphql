@@ -47,6 +47,9 @@ At time of writing, the introspection schema is a partial implementation. It is 
 - [ ] Display parser syntax errors
 - [ ] Useful error on non-existent type
 - [ ] Useful error on non-existent field
+    * [x] resolve Node
+    * [ ] resolve Connection
+
 
 ### Configuration
 - [ ] Max Query Depth
