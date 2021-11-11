@@ -964,45 +964,39 @@ create or replace function gql.build_node_query(
     parent_block_name text = null
 )
     returns text
-    language sql
+    language plpgsql
 as $$
-    with b as (
-        select gql.slug() as block_name
-    ),
-    field as (
-        select * from gql.field gf where gf.name = gql.name(ast) and gf.parent_type = $3
-    ),
-    type_ as (
-        select * from gql.type gt where gt.name = (select type_ from field)
-    ),
-    x(sel) as (
+declare
+    block_name text = gql.slug();
+    field gql.field = gf from gql.field gf where gf.name = gql.name(ast) and gf.parent_type = $3;
+    type_ gql.type = gt from gql.type gt where gt.name = field.type_;
+    nodeId text = gql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
+    result text;
+begin
+    with x(sel) as (
         select
             *
         from
             jsonb_array_elements(ast -> 'selectionSet' -> 'selections')
-    ),
-    args(pkey_safe) as (
-        select gql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity)
-        from type_
     )
     select
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(gql.alias_or_name(x.sel)) || E',\n' ||
             case
-                when nf.column_name is not null then (quote_ident(b.block_name) || '.' || quote_ident(nf.column_name))
-                when nf.name = '__typename' then quote_literal(gt.name)
-                when nf.name = 'nodeId' then gql.cursor_encoded_clause(gt.entity, b.block_name)
+                when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
+                when nf.name = '__typename' then quote_literal(type_.name)
+                when nf.name = 'nodeId' then gql.cursor_encoded_clause(type_.entity, block_name)
                 when nf.local_columns is not null and nf.is_array then gql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
-                    parent_type := gf.type_,
-                    parent_block_name := b.block_name
+                    parent_type := field.type_,
+                    parent_block_name := block_name
                 )
                 when nf.local_columns is not null then gql.build_node_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
-                    parent_type := gf.type_,
-                    parent_block_name := b.block_name
+                    parent_type := field.type_,
+                    parent_block_name := block_name
                 )
                 else null::text
             end,
@@ -1021,35 +1015,30 @@ as $$
     limit 1
 )
 ',
-    gt.entity,
-    quote_ident(b.block_name),
-    coalesce(gql.join_clause(gf.local_columns, b.block_name, gf.parent_columns, parent_block_name), 'true'),
+    type_.entity,
+    quote_ident(block_name),
+    coalesce(gql.join_clause(field.local_columns, block_name, field.parent_columns, parent_block_name), 'true'),
     case
-        when args.pkey_safe is null then 'true'
-        else gql.cursor_row_clause(gt.entity, b.block_name)
+        when nodeId is null then 'true'
+        else gql.cursor_row_clause(type_.entity, block_name)
     end,
     case
-        when args.pkey_safe is null then 'true'
-        else args.pkey_safe
+        when nodeId is null then 'true'
+        else nodeId
     end
     )
     from
         x
-        join field gf -- top level
-            on true
-        left join args
-            on true
-        join type_ gt -- for gt.entity
-            on true
         join gql.field nf -- selected fields (node_field_row)
-            on nf.parent_type = gf.type_
-            and gql.name(x.sel) = nf.name,
-        b
+            on nf.parent_type = field.type_
+            and gql.name(x.sel) = nf.name
     where
-        gf.name = gql.name(ast)
-        and $3 = gf.parent_type
-    group by
-        gt.entity, b.block_name, gf.parent_columns, gf.local_columns, args.pkey_safe
+        field.name = gql.name(ast)
+        and $3 = field.parent_type
+    into result;
+
+    return result;
+end;
 $$;
 
 
