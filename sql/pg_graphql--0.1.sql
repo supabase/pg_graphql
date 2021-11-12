@@ -1,5 +1,6 @@
 create schema if not exists gql;
 
+
 -------------
 -- Hashing --
 -------------
@@ -156,6 +157,20 @@ create function gql._parse(text)
     language c
     immutable
 as 'pg_graphql';
+
+
+CREATE TYPE parse_result AS (
+    ast text,
+    errors text
+);
+
+create or replace function test_parse()
+    returns parse_result
+    immutable
+    language c
+as 'pg_graphql.so', 'test_parse';
+
+
 
 create function gql.parse(text)
     returns jsonb
