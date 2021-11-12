@@ -1770,5 +1770,3 @@ $$;
 
 grant all on schema gql to postgres;
 grant all on all tables in schema gql to postgres;
-
-

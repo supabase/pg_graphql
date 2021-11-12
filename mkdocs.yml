@@ -11,6 +11,7 @@ nav:
     - API: 'api.md'
     - Spec: 'spec.md'
     - Roadmap: 'roadmap.md'
+    - Performance: 'performance.md'
     - Installation: 'installation.md'
     - Contributing: 'contributing.md'
 
