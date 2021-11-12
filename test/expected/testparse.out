@@ -1,6 +1,0 @@
-select test_parse();
-  test_parse   
----------------
- (hello,world)
-(1 row)
-

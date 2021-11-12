@@ -152,34 +152,18 @@ $$;
 -- AST Manipulation --
 ----------------------
 
-create function gql._parse(text)
-    returns text
-    language c
-    immutable
-as 'pg_graphql';
-
-
-CREATE TYPE parse_result AS (
+create type gql.parse_result AS (
     ast text,
-    errors text
+    error text
 );
-
-create or replace function test_parse()
-    returns parse_result
-    immutable
-    language c
-as 'pg_graphql.so', 'test_parse';
-
 
 
 create function gql.parse(text)
-    returns jsonb
-    language sql
+    returns gql.parse_result
+    language c
     immutable
-as $$
-    select gql._parse($1)::jsonb
+as 'pg_graphql', 'parse';
 
-$$;
 
 
 create function gql.ast_pass_strip_loc(body jsonb)
@@ -1674,7 +1658,10 @@ declare
     -- Always required --
     ---------------------
     prepared_statement_name text = gql.sha1(stmt);
-    ast jsonb = gql.parse(stmt);
+
+    parsed gql.parse_result = gql.parse(stmt);
+    ast jsonb = parsed.ast;
+
     variable_definitions jsonb = gql.variable_definitioons_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions');
 
     q text;

@@ -22,51 +22,46 @@
 PG_MODULE_MAGIC;
 
 
-PG_FUNCTION_INFO_V1(_parse);
-
-Datum _parse(PG_FUNCTION_ARGS) {
-    // Read argument 0 from the sql function call as text
-    // and convert to a c string
-    char *query = text_to_cstring(PG_GETARG_TEXT_PP(0));
-    const char **error;
-    struct GraphQLAstNode *node;
-    const char *json;
-    text *t;
-
-    // TODO error handling
-    // TODO free memory
-
-    // Parse
-    node = graphql_parse_string(query, error);
-
-    json = graphql_ast_to_json(node);
-
-    t = cstring_to_text(json);
-    // t = cstring_to_text(error);
-
-    // Return the text from the sql function
-    PG_RETURN_TEXT_P(t);
-}
-
-
-PG_FUNCTION_INFO_V1(test_parse);
+PG_FUNCTION_INFO_V1(parse);
 
 Datum
-test_parse(PG_FUNCTION_ARGS) {
+parse(PG_FUNCTION_ARGS) {
+	// Read first argument as c string
+    char *query = text_to_cstring(PG_GETARG_TEXT_PP(0));
+	struct GraphQLAstNode *node;
+    const char *error = NULL;
+
+
+	// Description of the composite type we're returning
     TupleDesc   tupdesc;
+	// Heap allocated tuple we will return
 	HeapTuple   rettuple;
-    char		*values[2];
+    char        *values[2];
 
+	// Define the structure of the composite type
+	// 2 attributes
 	tupdesc = CreateTemplateTupleDesc(2);
+	// definition of attr 1
 	TupleDescInitEntry(tupdesc, (AttrNumber) 1, "ast", TEXTOID, -1, 0);
-	TupleDescInitEntry(tupdesc, (AttrNumber) 2, "errors", TEXTOID, -1, 0);
+	// definition of attr 2
+	TupleDescInitEntry(tupdesc, (AttrNumber) 2, "error", TEXTOID, -1, 0);
 
-	values[0] = "hello";
-	values[1] = "world";
+	// Values for the output
+	// Parse
+    node = graphql_parse_string(query, &error);
+	if (node == NULL) {
+		values[0] = NULL;
+	}
+	else {
+		values[0] = (char *) graphql_ast_to_json(node);
+	}
+	values[1] = (char *) error;
+	//graphql_error_free(error);
+	//graphql_node_free(node);
 
+	// convert values into a heap allocated tuple with the description we defined
 	rettuple = BuildTupleFromCStrings(TupleDescGetAttInMetadata(tupdesc), values);
 
-
-
+	// return the heap tuple as datum
     PG_RETURN_DATUM( HeapTupleGetDatum( rettuple ) );
 }
