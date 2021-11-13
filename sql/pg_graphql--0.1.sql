@@ -1079,7 +1079,13 @@ begin
                 array_remove(
                     array_agg(
                         case
-                            when gql.name(root.sel) = 'totalCount' then format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), block_name, '__total_count')
+                            when gql.name(root.sel) = 'totalCount' then
+                                format(
+                                    '%L, coalesce(min(%I.%I), 0)',
+                                    gql.alias_or_name(root.sel),
+                                    block_name,
+                                    '__total_count'
+                                )
                             else null::text
                         end
                     ),
@@ -1095,23 +1101,25 @@ begin
                                 format(
                                     '%L, jsonb_build_object(%s)',
                                     gql.alias_or_name(root.sel),
-                                    (select
-                                        string_agg(
-                                            format(
-                                                '%L, %s',
-                                                gql.alias_or_name(pi.sel),
-                                                case gql.name(pi.sel)
-                                                    when 'startCursor' then format('gql.array_first(array_agg(%I.__cursor))', block_name)
-                                                    when 'endCursor' then format('gql.array_last(array_agg(%I.__cursor))', block_name)
-                                                    when 'hasNextPage' then format('gql.array_last(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
-                                                    when 'hasPreviousPage' then format('gql.array_first(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__first_cursor))', block_name, block_name)
-                                                    else 'INVALID_FIELD ' || gql.name(pi.sel)::text
-                                                end
+                                    (
+                                        select
+                                            string_agg(
+                                                format(
+                                                    '%L, %s',
+                                                    gql.alias_or_name(pi.sel),
+                                                    case gql.name(pi.sel)
+                                                        when 'startCursor' then format('gql.array_first(array_agg(%I.__cursor))', block_name)
+                                                        when 'endCursor' then format('gql.array_last(array_agg(%I.__cursor))', block_name)
+                                                        when 'hasNextPage' then format('gql.array_last(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
+                                                        when 'hasPreviousPage' then format('gql.array_first(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__first_cursor))', block_name, block_name)
+                                                        else gql.exception_unknown_field(gql.name(pi.sel), 'PageInfo')
+
+                                                    end
+                                                )
+                                                , E','
                                             )
-                                            , E',\n\t\t\t\t'
-                                        )
-                                    from
-                                        jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel)
+                                        from
+                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel)
                                     )
                                 )
                             else null::text
@@ -1132,42 +1140,47 @@ begin
                                     gql.alias_or_name(root.sel),
                                     (
                                         select
-                                            format('%L, %I.%I', gql.alias_or_name(ec.sel), block_name, '__cursor')
+                                            case
+                                                when gql.name(ec.sel) = 'cursor' then format('%L, %I.%I', gql.alias_or_name(ec.sel), block_name, '__cursor')
+                                                else gql.exception_unknown_field(gql.name(ec.sel), 'Edge') -- TODO: incomplete type info
+                                            end
                                         from
-                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel) where gql.name(ec.sel) = 'cursor'
+                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel)
+                                        where
+                                            gql.name(root.sel) = 'edges'
+                                            and gql.name(ec.sel) <> 'node'
                                     ),
                                     (
                                         select
-                                            format('|| jsonb_build_object(
-                                                %L, jsonb_build_object(
-                                                        %s
-                                                        )
-                                                )',
+                                            format(
+                                                '|| jsonb_build_object(%L, jsonb_build_object(%s))',
                                                 gql.alias_or_name(e.sel),
                                                     string_agg(
                                                         format(
                                                             '%L, %s',
                                                             gql.alias_or_name(n.sel),
                                                             case
-                                                                when gf_s.name = '__typename' then quote_literal(gt_s.name)
+                                                                when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
-                                                                when gf_s.local_columns is not null and not gf_s.is_array then gql.build_node_query(
-                                                                                                                    ast := n.sel,
-                                                                                                                    variable_definitions := variable_definitions,
-                                                                                                                    parent_type := gf_n.type_,
-                                                                                                                    parent_block_name := block_name
-                                                                                                                )
-                                                                when gf_s.local_columns is not null and gf_s.is_array then gql.build_connection_query(
-                                                                                                                    ast := n.sel,
-                                                                                                                    variable_definitions := variable_definitions,
-                                                                                                                    parent_type := gf_n.type_,
-                                                                                                                    parent_block_name := block_name
-                                                                                                                )
+                                                                when gf_s.local_columns is not null and not gf_s.is_array then
+                                                                    gql.build_node_query(
+                                                                        ast := n.sel,
+                                                                        variable_definitions := variable_definitions,
+                                                                        parent_type := gf_n.type_,
+                                                                        parent_block_name := block_name
+                                                                    )
+                                                                when gf_s.local_columns is not null and gf_s.is_array then
+                                                                    gql.build_connection_query(
+                                                                        ast := n.sel,
+                                                                        variable_definitions := variable_definitions,
+                                                                        parent_type := gf_n.type_,
+                                                                        parent_block_name := block_name
+                                                                    )
                                                                 when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
-                                                                else quote_literal('UNRESOLVED')
+                                                                else gql.exception_unknown_field(gql.name(n.sel), gf_n.type_)
                                                             end
                                                         ),
-                                                        E',\n\t\t\t\t\t\t'
+                                                        E','
                                                     )
                                             )
                                         from
@@ -1179,11 +1192,9 @@ begin
                                             join gql.field gf_n -- node field
                                                 on gf_e.type_ = gf_n.parent_type
                                                 and gf_n.name = 'node'
-                                            join gql.field gf_s -- node selections
+                                            left join gql.field gf_s -- node selections
                                                 on gf_n.type_ = gf_s.parent_type
                                                 and gql.name(n.sel) = gf_s.name
-                                            join gql.type gt_s -- node selection type
-                                                on gf_n.type_ = gt_s.name
                                         where
                                             gql.name(e.sel) = 'node'
                                         group by
@@ -1195,7 +1206,17 @@ begin
                 ),
                 null
             )
-        )[1] as edges_clause
+        )[1] as edges_clause,
+
+        -- Error handling for unknown fields at top level
+        (
+            array_agg(
+                case
+                    when gql.name(root.sel) not in ('pageInfo', 'edges', 'totalCount') then gql.exception_unknown_field(gql.name(root.sel), field_row.type_)
+                    else null::text
+                end
+            )
+        ) as error_handler
 
         from
             jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel)

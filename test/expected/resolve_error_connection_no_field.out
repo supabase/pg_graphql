@@ -1,0 +1,13 @@
+select gql.resolve($$
+{
+  allAccounts {
+    dneField
+    totalCount
+  }
+}
+$$);
+                                      resolve                                       
+------------------------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'dneField' on type 'AccountConnection'"]}
+(1 row)
+
