@@ -1052,219 +1052,213 @@ create or replace function gql.build_connection_query(
     parent_block_name text = null
 )
     returns text
-    language sql
+    language plpgsql
 as $$
-with b(block_name) as (select gql.slug()),
-ent(entity) as (
-    select
-        t.entity
-    from
-        gql.field f
-        join gql.type t
-            on f.type_ = t.name
-    where
-        f.name = gql.name(ast)
-        and f.parent_type = $3
-),
-root(sel) as (select * from jsonb_array_elements(ast -> 'selectionSet' -> 'selections')),
-field_row as (select * from gql.field f where f.name = gql.name(ast) and f.parent_type = $3),
-total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), b.block_name, '__total_count')  from root, b where gql.name(sel) = 'totalCount'),
-args as (
-    select
-        gql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, ent.entity) as first_,
-        gql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, ent.entity) as last_,
-        gql.arg_clause('before', (ast -> 'arguments'), variable_definitions, ent.entity) as before_,
-        gql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, ent.entity) as after_
-    from
-        ent
-),
-page_info(sel, q) as (
-    select
-        root.sel,
-        format('%L,
-            jsonb_build_object(
-                %s
-            )
-        ',
-            gql.alias_or_name(root.sel),
-        (select
-            string_agg(
-                format(
-                    '%L, %s',
-                    gql.alias_or_name(pi.sel),
-                    case gql.name(pi.sel)
-                        when 'startCursor' then format('gql.array_first(array_agg(%I.__cursor))', block_name)
-                        when 'endCursor' then format('gql.array_last(array_agg(%I.__cursor))', block_name)
-                        when 'hasNextPage' then format('gql.array_last(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
-                        when 'hasPreviousPage' then format('gql.array_first(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__first_cursor))', block_name, block_name)
-                        else 'INVALID_FIELD ' || gql.name(pi.sel)::text
-                    end
+declare
+    result text;
+    block_name text = gql.slug();
+    entity regclass = t.entity
+        from
+            gql.field f
+            join gql.type t
+                on f.type_ = t.name
+        where
+            f.name = gql.name(ast)
+            and f.parent_type = $3;
+
+    field_row gql.field = f from gql.field f where f.name = gql.name(ast) and f.parent_type = $3;
+    first_ text = gql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, entity);
+    last_ text = gql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
+    before_ text = gql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
+    after_ text = gql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
+begin
+    with
+    root(sel) as (select * from jsonb_array_elements(ast -> 'selectionSet' -> 'selections')),
+    total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), block_name, '__total_count')  from root where gql.name(sel) = 'totalCount'),
+    page_info(sel, q) as (
+        select
+            root.sel,
+            format('%L,
+                jsonb_build_object(
+                    %s
                 )
-                , E',\n\t\t\t\t'
-            )
-         from
-             jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel)
-        ))
-    from
-        root, b
-    where
-        gql.name(sel) = 'pageInfo'),
-edges(sel, q) as (
+            ',
+                gql.alias_or_name(root.sel),
+            (select
+                string_agg(
+                    format(
+                        '%L, %s',
+                        gql.alias_or_name(pi.sel),
+                        case gql.name(pi.sel)
+                            when 'startCursor' then format('gql.array_first(array_agg(%I.__cursor))', block_name)
+                            when 'endCursor' then format('gql.array_last(array_agg(%I.__cursor))', block_name)
+                            when 'hasNextPage' then format('gql.array_last(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
+                            when 'hasPreviousPage' then format('gql.array_first(array_agg(%I.__cursor)) <> gql.array_first(array_agg(%I.__first_cursor))', block_name, block_name)
+                            else 'INVALID_FIELD ' || gql.name(pi.sel)::text
+                        end
+                    )
+                    , E',\n\t\t\t\t'
+                )
+            from
+                jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel)
+            ))
+        from
+            root
+        where
+            gql.name(sel) = 'pageInfo'),
+    edges(sel, q) as (
+        select
+            root.sel,
+            format('%L, json_agg(-- edges
+                jsonb_build_object(%s) -- maybe cursor
+                -- node
+                %s
+                )
+            ',
+            gql.alias_or_name(root.sel),
+            (select
+                format('%L, %I.%I', gql.alias_or_name(ec.sel), block_name, '__cursor')
+            from
+                jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel) where gql.name(ec.sel) = 'cursor'
+            ),
+            (select
+                format('|| jsonb_build_object(
+                    %L, jsonb_build_object(
+                            %s
+                            )
+                    )',
+                    gql.alias_or_name(e.sel),
+                        string_agg(
+                            format(
+                                '%L, %s',
+                                gql.alias_or_name(n.sel),
+                                case
+                                    when gf_s.name = '__typename' then quote_literal(gt_s.name)
+                                    when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
+                                    when gf_s.local_columns is not null and not gf_s.is_array then gql.build_node_query(
+                                                                                        ast := n.sel,
+                                                                                        variable_definitions := variable_definitions,
+                                                                                        parent_type := gf_n.type_,
+                                                                                        parent_block_name := block_name
+                                                                                    )
+                                    when gf_s.local_columns is not null and gf_s.is_array then gql.build_connection_query(
+                                                                                        ast := n.sel,
+                                                                                        variable_definitions := variable_definitions,
+                                                                                        parent_type := gf_n.type_,
+                                                                                        parent_block_name := block_name
+                                                                                    )
+                                    when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
+                                    else quote_literal('UNRESOLVED')
+                                end
+                            ),
+                            E',\n\t\t\t\t\t\t'
+                        )
+                )
+            from
+                jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') e(sel), -- node (0 or 1)
+                lateral jsonb_array_elements(e.sel -> 'selectionSet' -> 'selections') n(sel) -- node selection
+                join gql.field gf_e -- edge field
+                    on field_row.type_ = gf_e.parent_type
+                    and gf_e.name = 'edges'
+                join gql.field gf_n -- node field
+                    on gf_e.type_ = gf_n.parent_type
+                    and gf_n.name = 'node'
+                join gql.field gf_s -- node selections
+                    on gf_n.type_ = gf_s.parent_type
+                    and gql.name(n.sel) = gf_s.name
+                join gql.type gt_s -- node selection type
+                    on gf_n.type_ = gt_s.name
+            where
+                gql.name(e.sel) = 'node'
+            group by
+                e.sel
+            ))
+        from
+            root
+        where
+            gql.name(sel) = 'edges')
+
     select
-        root.sel,
-        format('%L, json_agg(-- edges
-            jsonb_build_object(%s) -- maybe cursor
-            -- node
+        format('
+    (
+        with xyz as (
+            select
+                count(*) over () __total_count,
+                first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
+                last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
+                %s::text as __cursor,
+                *
+            from
+                %I as %s
+            where
+                true
+                --pagination_clause
+                and %s %s %s
+                -- join clause
+                and %s
+            order by
+                %s %s
+            limit %s
+        )
+        select
+            -- total count
+            jsonb_build_object(
             %s
             )
-        ',
-        gql.alias_or_name(root.sel),
-        (select
-             format('%L, %I.%I', gql.alias_or_name(ec.sel), b.block_name, '__cursor')
-         from
-             jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel) where gql.name(ec.sel) = 'cursor'
-        ),
-        (select
-             format('|| jsonb_build_object(
-                   %L, jsonb_build_object(
-                           %s
-                          )
-                  )',
-                   gql.alias_or_name(e.sel),
-                    string_agg(
-                        format(
-                            '%L, %s',
-                            gql.alias_or_name(n.sel),
-                            case
-                                when gf_s.name = '__typename' then quote_literal(gt_s.name)
-                                when gf_s.column_name is not null then format('%I.%I', b.block_name, gf_s.column_name)
-                                when gf_s.local_columns is not null and not gf_s.is_array then gql.build_node_query(
-                                                                                    ast := n.sel,
-                                                                                    variable_definitions := variable_definitions,
-                                                                                    parent_type := gf_n.type_,
-                                                                                    parent_block_name := b.block_name
-                                                                                )
-                                when gf_s.local_columns is not null and gf_s.is_array then gql.build_connection_query(
-                                                                                    ast := n.sel,
-                                                                                    variable_definitions := variable_definitions,
-                                                                                    parent_type := gf_n.type_,
-                                                                                    parent_block_name := b.block_name
-                                                                                )
-                                when gf_s.name = 'nodeId' then format('%I.%I', b.block_name, '__cursor')
-                                else quote_literal('UNRESOLVED')
-                            end
-                        ),
-                        E',\n\t\t\t\t\t\t'
-                    )
+            -- page info
+            || jsonb_build_object(
+            %s
             )
-         from
-            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') e(sel), -- node (0 or 1)
-            lateral jsonb_array_elements(e.sel -> 'selectionSet' -> 'selections') n(sel) -- node selection
-            join field_row gf_c -- connection field
-                 on true
-             join gql.field gf_e -- edge field
-                 on gf_c.type_ = gf_e.parent_type
-                 and gf_e.name = 'edges'
-            join gql.field gf_n -- node field
-                 on gf_e.type_ = gf_n.parent_type
-                 and gf_n.name = 'node'
-             join gql.field gf_s -- node selections
-                 on gf_n.type_ = gf_s.parent_type
-                 and gql.name(n.sel) = gf_s.name
-             join gql.type gt_s -- node selection type
-                 on gf_n.type_ = gt_s.name
-         where
-             gql.name(e.sel) = 'node'
-         group by
-             e.sel
-        ))
-    from
-        root, b
-    where
-        gql.name(sel) = 'edges')
+            -- edges
+            || jsonb_build_object(
+            %s
+            )
+        from
+        (
+            select
+                *
+            from
+                xyz
+            order by
+                %s asc
+        ) as %s
+    )',
+            -- __first_cursor
+            gql.cursor_encoded_clause(entity, block_name),
+            gql.primary_key_clause(entity, block_name) || ' asc',
+            -- __last_cursor
+            gql.cursor_encoded_clause(entity, block_name),
+            gql.primary_key_clause(entity, block_name) || ' asc',
+            -- __cursor
+            gql.cursor_encoded_clause(entity, block_name),
+            -- from
+            entity,
+            quote_ident(block_name),
+            -- pagination
+            case when coalesce(after_, before_) is null then 'true' else gql.cursor_row_clause(entity, block_name) end,
+            case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
+            case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
+            -- join
+            coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+            -- order
+            gql.primary_key_clause(entity, block_name),
+            -- directions
+            case when before_ is not null then 'desc' else 'asc' end,
+            -- limit
+            coalesce(first_, last_, '10'),
+            -- JSON selects
+            (select coalesce(total_count.q, '') from total_count),
+            (select coalesce(page_info.q, '') from page_info),
+            (select coalesce(edges.q, '') from edges),
+            -- final order by
+            gql.primary_key_clause(entity, 'xyz'),
+            -- block name
+            quote_ident(block_name)
+            )
+        into result;
 
-select
-    format('
-(
-    with xyz as (
-        select
-            count(*) over () __total_count,
-            first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
-            last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
-            %s::text as __cursor,
-            *
-        from
-            %I as %s
-        where
-            true
-            --pagination_clause
-            and %s %s %s
-            -- join clause
-            and %s
-        order by
-            %s %s
-        limit %s
-    )
-    select
-        -- total count
-        jsonb_build_object(
-           %s
-        )
-        -- page info
-        || jsonb_build_object(
-           %s
-        )
-        -- edges
-        || jsonb_build_object(
-           %s
-        )
-    from
-    (
-        select
-            *
-        from
-            xyz
-        order by
-            %s asc
-    ) as %s
-)',
-        -- __first_cursor
-        gql.cursor_encoded_clause(entity, block_name),
-        gql.primary_key_clause(entity, block_name) || ' asc',
-        -- __last_cursor
-        gql.cursor_encoded_clause(entity, block_name),
-        gql.primary_key_clause(entity, block_name) || ' asc',
-        -- __cursor
-        gql.cursor_encoded_clause(entity, block_name),
-        -- from
-        entity,
-        quote_ident(block_name),
-        -- pagination
-        case when coalesce(args.after_, args.before_) is null then 'true' else gql.cursor_row_clause(entity, block_name) end,
-        case when args.after_ is not null then '>' when args.before_ is not null then '<' else '=' end,
-        case when coalesce(args.after_, args.before_) is null then 'true' else coalesce(args.after_, args.before_) end,
-        -- join
-        coalesce(gql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
-        -- order
-        gql.primary_key_clause(entity, block_name),
-        -- directions
-        case when args.before_ is not null then 'desc' else 'asc' end,
-        -- limit
-        coalesce(args.first_, args.last_, '10'),
-        -- JSON selects
-        (select coalesce(total_count.q, '') from total_count),
-        (select coalesce(page_info.q, '') from page_info),
-        (select coalesce(edges.q, '') from edges),
-        -- final order by
-        gql.primary_key_clause(entity, 'xyz'),
-        -- block name
-        quote_ident(block_name)
-          )
-    from
-        b,
-        ent,
-        field_row,
-        args
+    return result;
+end;
 $$;
 
 
