@@ -1071,10 +1071,18 @@ declare
     last_ text = gql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
     before_ text = gql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
     after_ text = gql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
+
+    selections jsonb = (ast -> 'selectionSet' -> 'selections');
 begin
     with
-    root(sel) as (select * from jsonb_array_elements(ast -> 'selectionSet' -> 'selections')),
-    total_count(sel, q) as (select root.sel, format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), block_name, '__total_count')  from root where gql.name(sel) = 'totalCount'),
+    total_count(sel, q) as (
+        select
+            root.sel,
+            format('%L, coalesce(min(%I.%I), 0)', gql.alias_or_name(root.sel), block_name, '__total_count')
+        from jsonb_array_elements(selections) root(sel)
+        where
+            gql.name(sel) = 'totalCount'
+    ),
     page_info(sel, q) as (
         select
             root.sel,
@@ -1103,9 +1111,10 @@ begin
                 jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel)
             ))
         from
-            root
+            jsonb_array_elements(selections) root(sel)
         where
-            gql.name(sel) = 'pageInfo'),
+            gql.name(root.sel) = 'pageInfo'
+    ),
     edges(sel, q) as (
         select
             root.sel,
@@ -1174,9 +1183,9 @@ begin
                 e.sel
             ))
         from
-            root
+            jsonb_array_elements(selections) root(sel)
         where
-            gql.name(sel) = 'edges')
+            gql.name(root.sel) = 'edges')
 
     select
         format('
