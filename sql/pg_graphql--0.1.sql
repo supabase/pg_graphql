@@ -705,10 +705,9 @@ from (
 
             else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
         end,
-        -- todo
-        false as is_not_null,
-        rel.foreign_cardinality = 'MANY' as is_array,
-        case when rel.foreign_cardinality = 'MANY' then false else null end as is_array_not_null,
+        false as is_not_null, -- todo: reference column nullability
+        false as is_array,
+        null as is_array_not_null,
         null description,
         null column_name,
         rel.local_columns,
@@ -992,13 +991,13 @@ begin
                 when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then gql.cursor_encoded_clause(type_.entity, block_name)
-                when nf.local_columns is not null and nf.is_array then gql.build_connection_query(
+                when nf.local_columns is not null and nf_t.meta_kind = 'CONNECTION' then gql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
-                when nf.local_columns is not null then gql.build_node_query(
+                when nf.local_columns is not null and nf_t.meta_kind = 'NODE' then gql.build_node_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     parent_type := field.type_,
@@ -1035,9 +1034,11 @@ begin
     )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
-        left join gql.field nf -- selected fields (node_field_row)
+        left join gql.field nf
             on nf.parent_type = field.type_
             and gql.name(x.sel) = nf.name
+        left join gql.type nf_t
+            on nf.type_ = nf_t.name
     where
         field.name = gql.name(ast)
         and $3 = field.parent_type;
@@ -1162,14 +1163,14 @@ begin
                                                             case
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
-                                                                when gf_s.local_columns is not null and not gf_s.is_array then
+                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'NODE' then
                                                                     gql.build_node_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
-                                                                when gf_s.local_columns is not null and gf_s.is_array then
+                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'CONNECTION' then
                                                                     gql.build_connection_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
@@ -1195,6 +1196,8 @@ begin
                                             left join gql.field gf_s -- node selections
                                                 on gf_n.type_ = gf_s.parent_type
                                                 and gql.name(n.sel) = gf_s.name
+                                            left join gql.type gf_st
+                                                on gf_s.type_ = gf_st.name
                                         where
                                             gql.name(e.sel) = 'node'
                                         group by

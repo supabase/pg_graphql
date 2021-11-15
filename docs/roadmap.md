@@ -5,10 +5,9 @@ pg_graphql aims to implement all of the [GraphQL core specification](https://spe
 - [x] Fragments
 - [x] Variables
 - [x] Named Operations
-
 - [ ] Introspection Schema
 
-At time of writing, the introspection schema is a partial implementation. It is complete enough
+At time of writing, the introspection schema is a partial implementation. It is complete enough to render the GraphiQL explorer.
 
 ### Relay
 - [x] Opaque Cursors
@@ -45,11 +44,7 @@ At time of writing, the introspection schema is a partial implementation. It is 
 
 ### Error Handling
 - [ ] Display parser syntax errors
-- [ ] Useful error on non-existent type
-- [ ] Useful error on non-existent field
-    * [x] resolve Node
-    * [ ] resolve Connection
-
+- [x] Useful error on non-existent field
 
 ### Configuration
 - [ ] Max Query Depth
