@@ -680,6 +680,7 @@ from (
     where
         gt.meta_kind = 'NODE'
         and pa.attnum > 0
+        and not pa.attisdropped
         and pg_catalog.has_column_privilege(current_user, gt.entity, pa.attname, 'SELECT')
     union all
     -- Node.<relationship>
