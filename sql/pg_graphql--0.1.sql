@@ -391,15 +391,15 @@ create type gql.meta_kind as enum (
 
 
 create materialized view gql.entity as
-select
-    oid::regclass as entity
-from
-    pg_class
-where
-    relkind = ANY (ARRAY['r', 'p'])
-    and not relnamespace = ANY (ARRAY['information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace])
-    and pg_catalog.has_schema_privilege(current_user, relnamespace, 'USAGE')
-    and pg_catalog.has_any_column_privilege(oid::regclass, 'SELECT');
+    select
+        oid::regclass as entity
+    from
+        pg_class
+    where
+        relkind = ANY (ARRAY['r', 'p'])
+        and not relnamespace = ANY (ARRAY['information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace])
+        and pg_catalog.has_schema_privilege(current_user, relnamespace, 'USAGE')
+        and pg_catalog.has_any_column_privilege(oid::regclass, 'SELECT');
 
 
 create view gql.relationship as
@@ -438,112 +438,112 @@ create view gql.relationship as
 
 
 create materialized view gql.type as
-select
-    name,
-    type_kind::gql.type_kind,
-    meta_kind::gql.meta_kind,
-    description,
-    null::regclass as entity
-from (
-    values
-    ('ID', 'SCALAR', 'BUILTIN', null),
-    ('Int', 'SCALAR', 'BUILTIN', null),
-    ('Float', 'SCALAR', 'BUILTIN', null),
-    ('String', 'SCALAR', 'BUILTIN', null),
-    ('Boolean', 'SCALAR', 'BUILTIN', null),
-    ('DateTime', 'SCALAR', 'CUSTOM_SCALAR', null),
-    ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
-    ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
-    ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
-    ('Cursor', 'SCALAR', 'CUSTOM_SCALAR', null),
-    ('Query', 'OBJECT', 'QUERY', null),
-    --('Mutation', 'OBJECT', 'MUTATION', null),
-    ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
-    -- Introspection System
-    ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.'),
-    ('__Schema', 'OBJECT', '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
-    ('__Type', 'OBJECT', '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
-    ('__Field', 'OBJECT', '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
-    ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
-    ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
-    ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
-    ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.')
-) as const(name, type_kind, meta_kind, description)
-union all
-select
-    x.*
-from
-    gql.entity ent,
-    lateral (
-        select
-            gql.to_pascal_case(gql.to_table_name(ent.entity)) table_name_pascal_case
-    ) names_,
-    lateral (
+    select
+        name,
+        type_kind::gql.type_kind,
+        meta_kind::gql.meta_kind,
+        description,
+        null::regclass as entity
+    from (
         values
-            (names_.table_name_pascal_case::text, 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, null::text, ent.entity),
-            (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
-            (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity)
-    ) x
-union all
-select
-    gql.to_pascal_case(t.typname), 'ENUM', 'CUSTOM_SCALAR', null, null
-from
-    pg_type t
-where
-    t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace)
-    and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE')
-    and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
+        ('ID', 'SCALAR', 'BUILTIN', null),
+        ('Int', 'SCALAR', 'BUILTIN', null),
+        ('Float', 'SCALAR', 'BUILTIN', null),
+        ('String', 'SCALAR', 'BUILTIN', null),
+        ('Boolean', 'SCALAR', 'BUILTIN', null),
+        ('DateTime', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('Cursor', 'SCALAR', 'CUSTOM_SCALAR', null),
+        ('Query', 'OBJECT', 'QUERY', null),
+        --('Mutation', 'OBJECT', 'MUTATION', null),
+        ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
+        -- Introspection System
+        ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.'),
+        ('__Schema', 'OBJECT', '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
+        ('__Type', 'OBJECT', '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
+        ('__Field', 'OBJECT', '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
+        ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
+        ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
+        ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
+        ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.')
+    ) as const(name, type_kind, meta_kind, description)
+    union all
+    select
+        x.*
+    from
+        gql.entity ent,
+        lateral (
+            select
+                gql.to_pascal_case(gql.to_table_name(ent.entity)) table_name_pascal_case
+        ) names_,
+        lateral (
+            values
+                (names_.table_name_pascal_case::text, 'OBJECT'::gql.type_kind, 'NODE'::gql.meta_kind, null::text, ent.entity),
+                (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
+                (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity)
+        ) x
+    union all
+    select
+        gql.to_pascal_case(t.typname), 'ENUM', 'CUSTOM_SCALAR', null, null
+    from
+        pg_type t
+    where
+        t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace)
+        and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE')
+        and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
 
 
 create materialized view gql.enum_value as
-select
-    type_::text,
-    value::text,
-    description::text
-from (
-    values
-        ('__TypeKind', 'SCALAR', null::text),
-        ('__TypeKind', 'OBJECT', null),
-        ('__TypeKind', 'INTERFACE', null),
-        ('__TypeKind', 'UNION', null),
-        ('__TypeKind', 'ENUM', null),
-        ('__TypeKind', 'INPUT_OBJECT', null),
-        ('__TypeKind', 'LIST', null),
-        ('__TypeKind', 'NON_NULL', null),
-        ('__DirectiveLocation', 'QUERY', 'Location adjacent to a query operation.'),
-        ('__DirectiveLocation', 'MUTATION', 'Location adjacent to a mutation operation.'),
-        ('__DirectiveLocation', 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
-        ('__DirectiveLocation', 'FIELD', 'Location adjacent to a field.'),
-        ('__DirectiveLocation', 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
-        ('__DirectiveLocation', 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
-        ('__DirectiveLocation', 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
-        ('__DirectiveLocation', 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
-        ('__DirectiveLocation', 'SCHEMA', 'Location adjacent to a schema definition.'),
-        ('__DirectiveLocation', 'SCALAR', 'Location adjacent to a scalar definition.'),
-        ('__DirectiveLocation', 'OBJECT', 'Location adjacent to an object type definition.'),
-        ('__DirectiveLocation', 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
-        ('__DirectiveLocation', 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
-        ('__DirectiveLocation', 'INTERFACE', 'Location adjacent to an interface definition.'),
-        ('__DirectiveLocation', 'UNION', 'Location adjacent to a union definition.'),
-        ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
-        ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
-        ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
-        ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.')
-) x(type_, value, description)
-union all
-select
-    gql.to_pascal_case(t.typname),
-    e.enumlabel as value,
-    null::text
-from
-    pg_type t
-    join pg_enum e
-        on t.oid = e.enumtypid
-    join pg_catalog.pg_namespace n
-        on n.oid = t.typnamespace
-where
-    n.nspname not in ('gql', 'information_schema', 'pg_catalog')
-    and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
+    select
+        type_::text,
+        value::text,
+        description::text
+    from (
+        values
+            ('__TypeKind', 'SCALAR', null::text),
+            ('__TypeKind', 'OBJECT', null),
+            ('__TypeKind', 'INTERFACE', null),
+            ('__TypeKind', 'UNION', null),
+            ('__TypeKind', 'ENUM', null),
+            ('__TypeKind', 'INPUT_OBJECT', null),
+            ('__TypeKind', 'LIST', null),
+            ('__TypeKind', 'NON_NULL', null),
+            ('__DirectiveLocation', 'QUERY', 'Location adjacent to a query operation.'),
+            ('__DirectiveLocation', 'MUTATION', 'Location adjacent to a mutation operation.'),
+            ('__DirectiveLocation', 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
+            ('__DirectiveLocation', 'FIELD', 'Location adjacent to a field.'),
+            ('__DirectiveLocation', 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
+            ('__DirectiveLocation', 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
+            ('__DirectiveLocation', 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
+            ('__DirectiveLocation', 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
+            ('__DirectiveLocation', 'SCHEMA', 'Location adjacent to a schema definition.'),
+            ('__DirectiveLocation', 'SCALAR', 'Location adjacent to a scalar definition.'),
+            ('__DirectiveLocation', 'OBJECT', 'Location adjacent to an object type definition.'),
+            ('__DirectiveLocation', 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
+            ('__DirectiveLocation', 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
+            ('__DirectiveLocation', 'INTERFACE', 'Location adjacent to an interface definition.'),
+            ('__DirectiveLocation', 'UNION', 'Location adjacent to a union definition.'),
+            ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
+            ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
+            ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
+            ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.')
+    ) x(type_, value, description)
+    union all
+    select
+        gql.to_pascal_case(t.typname),
+        e.enumlabel as value,
+        null::text
+    from
+        pg_type t
+        join pg_enum e
+            on t.oid = e.enumtypid
+        join pg_catalog.pg_namespace n
+            on n.oid = t.typnamespace
+    where
+        n.nspname not in ('gql', 'information_schema', 'pg_catalog')
+        and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
 
 
 create function gql.sql_type_to_gql_type(sql_type text)
@@ -568,164 +568,164 @@ $$;
 
 
 create materialized view gql.field as
-select
-    parent_type,
-    type_,
-    name,
-    is_not_null,
-    is_array,
-    is_array_not_null,
-    description,
-    null::text as column_name,
-    null::text[] parent_columns,
-    null::text[] local_columns,
-    case
-        when name in ('__type', '__schema') then true
-        else false
-    end as is_hidden_from_schema
-from (
-    values
-        ('__Schema', 'String', 'description', false, false, null, null),
-        ('__Schema', '__Type', 'types', true, true, true, 'A list of all types supported by this server.'),
-        ('__Schema', '__Type', 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
-        ('__Schema', '__Type', 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
-        ('__Schema', '__Type', 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
-        ('__Schema', '__Directive', 'directives', true, true, true, 'A list of all directives supported by this server.'),
-        ('__Directive', 'String', 'name', true, false, null, null),
-        ('__Directive', 'String', 'description', false, false, null, null),
-        ('__Directive', 'Boolean', 'isRepeatable', true, false, null, null),
-        ('__Directive', '__DirectiveLocation', 'locations', true, true, true, null),
-        ('__Directive', '__InputValue', 'args', true, true, true, null),
-        ('__Type', '__TypeKind', 'kind', true, false, null, null),
-        ('__Type', 'String', 'name', false, false, null, null),
-        ('__Type', 'String', 'description', false, false, null, null),
-        ('__Type', 'String', 'specifiedByURL', false, false, null, null),
-        ('__Type', '__Field', 'fields', false, true, true, null),
-        ('__Type', '__Type', 'interfaces', true, true, false, null),
-        ('__Type', '__Type', 'possibleTypes', true, true, false, null),
-        ('__Type', '__EnumValue', 'enumValues', true, true, false, null),
-        ('__Type', '__InputValue', 'inputFields', true, true, false, null),
-        ('__Type', '__Type', 'ofType', false, false, null, null),
-        ('__Field', 'Boolean', 'isDeprecated', true, false, null, null),
-        ('__Field', 'String', 'deprecationReason', false, false, null, null),
-        ('__Field', '__InputValue', 'args', true, true, true, null),
-        ('__Field', '__Type', 'type', true, false, null, null),
-        ('__InputValue', 'String', 'name', true, false, null, null),
-        ('__InputValue', 'String', 'description', false, false, null, null),
-        ('__InputValue', 'String', 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
-        ('__InputValue', 'Boolean', 'isDeprecated', true, false, null, null),
-        ('__InputValue', 'String', 'deprecationReason', false, false, null, null),
-        ('__InputValue', '__Type', 'type', true, false, null, null),
-        ('__EnumValue', 'String', 'name', true, false, null, null),
-        ('__EnumValue', 'String', 'description', false, false, null, null),
-        ('__EnumValue', 'Boolean', 'isDeprecated', true, false, null, null),
-        ('__EnumValue', 'String', 'deprecationReason', false, false, null, null),
-        ('PageInfo', 'Boolean', 'hasPreviousPage', true, false, null, null),
-        ('PageInfo', 'Boolean', 'hasNextPage', true, false, null, null),
-        ('PageInfo', 'String', 'startCursor', true, false, null, null),
-        ('PageInfo', 'String', 'endCursor', true, false, null, null),
-        ('Query', '__Type', '__type', true, false, null, null), -- todo is_hidden_from_schema = true
-        ('Query', '__Schema', '__schema', true, false, null, null) -- todo is_hidden_from_schema = true
-    ) x(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
-    union all
     select
-        fs.*
-    from
-        gql.type conn
-        join gql.type edge
-            on conn.entity = edge.entity
-        join gql.type node
-            on edge.entity = node.entity,
-        lateral (
-            values
-                (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                (edge.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
-                (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
-                (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
-                (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
-                (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
-                (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
-                ('Query', node.name, gql.to_camel_case(gql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
-                ('Query', conn.name, gql.to_camel_case('all_' || gql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
-        ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
-    where
-        conn.meta_kind = 'CONNECTION'
-        and edge.meta_kind = 'EDGE'
-        and node.meta_kind = 'NODE'
-    -- Node
-    -- Node.<column>
-    union all
-    select
-        gt.name parent_type,
-        -- substring removes the underscore prefix from array types
-        gql.sql_type_to_gql_type(regexp_replace(tf.type_str, '\[\]$', '')) as type_,
-        gql.to_camel_case(pa.attname::text) as name,
-        pa.attnotnull as is_not_null,
-        tf.type_str like '%[]' as is_array,
-        pa.attnotnull and tf.type_str like '%[]' as is_array_not_null,
-        null::text description,
-        pa.attname::text as column_name,
-        null::text[],
-        null::text[],
-        false
-    from
-        gql.type gt
-        join pg_attribute pa
-            on gt.entity = pa.attrelid,
-        lateral (
-            select pg_catalog.format_type(atttypid, atttypmod) type_str
-        ) tf
-    where
-        gt.meta_kind = 'NODE'
-        and pa.attnum > 0
-        and not pa.attisdropped
-        and pg_catalog.has_column_privilege(current_user, gt.entity, pa.attname, 'SELECT')
-    union all
-    -- Node.<relationship>
-    -- Node.<connection>
-    select
-        node.name parent_type,
-        conn.name type_,
+        parent_type,
+        type_,
+        name,
+        is_not_null,
+        is_array,
+        is_array_not_null,
+        description,
+        null::text as column_name,
+        null::text[] parent_columns,
+        null::text[] local_columns,
         case
-            when (
-                conn.meta_kind = 'CONNECTION'
-                and rel.foreign_cardinality = 'MANY'
-            ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
+            when name in ('__type', '__schema') then true
+            else false
+        end as is_hidden_from_schema
+    from (
+        values
+            ('__Schema', 'String', 'description', false, false, null, null),
+            ('__Schema', '__Type', 'types', true, true, true, 'A list of all types supported by this server.'),
+            ('__Schema', '__Type', 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
+            ('__Schema', '__Type', 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
+            ('__Schema', '__Type', 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
+            ('__Schema', '__Directive', 'directives', true, true, true, 'A list of all directives supported by this server.'),
+            ('__Directive', 'String', 'name', true, false, null, null),
+            ('__Directive', 'String', 'description', false, false, null, null),
+            ('__Directive', 'Boolean', 'isRepeatable', true, false, null, null),
+            ('__Directive', '__DirectiveLocation', 'locations', true, true, true, null),
+            ('__Directive', '__InputValue', 'args', true, true, true, null),
+            ('__Type', '__TypeKind', 'kind', true, false, null, null),
+            ('__Type', 'String', 'name', false, false, null, null),
+            ('__Type', 'String', 'description', false, false, null, null),
+            ('__Type', 'String', 'specifiedByURL', false, false, null, null),
+            ('__Type', '__Field', 'fields', false, true, true, null),
+            ('__Type', '__Type', 'interfaces', true, true, false, null),
+            ('__Type', '__Type', 'possibleTypes', true, true, false, null),
+            ('__Type', '__EnumValue', 'enumValues', true, true, false, null),
+            ('__Type', '__InputValue', 'inputFields', true, true, false, null),
+            ('__Type', '__Type', 'ofType', false, false, null, null),
+            ('__Field', 'Boolean', 'isDeprecated', true, false, null, null),
+            ('__Field', 'String', 'deprecationReason', false, false, null, null),
+            ('__Field', '__InputValue', 'args', true, true, true, null),
+            ('__Field', '__Type', 'type', true, false, null, null),
+            ('__InputValue', 'String', 'name', true, false, null, null),
+            ('__InputValue', 'String', 'description', false, false, null, null),
+            ('__InputValue', 'String', 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
+            ('__InputValue', 'Boolean', 'isDeprecated', true, false, null, null),
+            ('__InputValue', 'String', 'deprecationReason', false, false, null, null),
+            ('__InputValue', '__Type', 'type', true, false, null, null),
+            ('__EnumValue', 'String', 'name', true, false, null, null),
+            ('__EnumValue', 'String', 'description', false, false, null, null),
+            ('__EnumValue', 'Boolean', 'isDeprecated', true, false, null, null),
+            ('__EnumValue', 'String', 'deprecationReason', false, false, null, null),
+            ('PageInfo', 'Boolean', 'hasPreviousPage', true, false, null, null),
+            ('PageInfo', 'Boolean', 'hasNextPage', true, false, null, null),
+            ('PageInfo', 'String', 'startCursor', true, false, null, null),
+            ('PageInfo', 'String', 'endCursor', true, false, null, null),
+            ('Query', '__Type', '__type', true, false, null, null), -- todo is_hidden_from_schema = true
+            ('Query', '__Schema', '__schema', true, false, null, null) -- todo is_hidden_from_schema = true
+        ) x(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
+        union all
+        select
+            fs.*
+        from
+            gql.type conn
+            join gql.type edge
+                on conn.entity = edge.entity
+            join gql.type node
+                on edge.entity = node.entity,
+            lateral (
+                values
+                    (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                    (edge.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                    (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
+                    (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
+                    (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
+                    (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
+                    (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
+                    (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
+                    (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
+                    ('Query', node.name, gql.to_camel_case(gql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
+                    ('Query', conn.name, gql.to_camel_case('all_' || gql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
+            ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
+        where
+            conn.meta_kind = 'CONNECTION'
+            and edge.meta_kind = 'EDGE'
+            and node.meta_kind = 'NODE'
+        -- Node
+        -- Node.<column>
+        union all
+        select
+            gt.name parent_type,
+            -- substring removes the underscore prefix from array types
+            gql.sql_type_to_gql_type(regexp_replace(tf.type_str, '\[\]$', '')) as type_,
+            gql.to_camel_case(pa.attname::text) as name,
+            pa.attnotnull as is_not_null,
+            tf.type_str like '%[]' as is_array,
+            pa.attnotnull and tf.type_str like '%[]' as is_array_not_null,
+            null::text description,
+            pa.attname::text as column_name,
+            null::text[],
+            null::text[],
+            false
+        from
+            gql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid,
+            lateral (
+                select pg_catalog.format_type(atttypid, atttypmod) type_str
+            ) tf
+        where
+            gt.meta_kind = 'NODE'
+            and pa.attnum > 0
+            and not pa.attisdropped
+            and pg_catalog.has_column_privilege(current_user, gt.entity, pa.attname, 'SELECT')
+        union all
+        -- Node.<relationship>
+        -- Node.<connection>
+        select
+            node.name parent_type,
+            conn.name type_,
+            case
+                when (
+                    conn.meta_kind = 'CONNECTION'
+                    and rel.foreign_cardinality = 'MANY'
+                ) then gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 's'
 
-            -- owner_id -> owner
-            when (
-                conn.meta_kind = 'NODE'
-                and rel.foreign_cardinality = 'ONE'
-                and array_length(rel.local_columns, 1) = 1
-                and rel.local_columns[1] like '%_id'
-            ) then gql.to_camel_case(left(rel.local_columns[1], -3))
+                -- owner_id -> owner
+                when (
+                    conn.meta_kind = 'NODE'
+                    and rel.foreign_cardinality = 'ONE'
+                    and array_length(rel.local_columns, 1) = 1
+                    and rel.local_columns[1] like '%_id'
+                ) then gql.to_camel_case(left(rel.local_columns[1], -3))
 
-            when rel.foreign_cardinality = 'ONE' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
+                when rel.foreign_cardinality = 'ONE' then gql.to_camel_case(gql.to_table_name(rel.foreign_entity))
 
-            else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
-        end,
-        false as is_not_null, -- todo: reference column nullability
-        false as is_array,
-        null as is_array_not_null,
-        null description,
-        null column_name,
-        rel.local_columns,
-        rel.foreign_columns,
-        false
-    from
-        gql.type node
-        join gql.relationship rel
-            on node.entity = rel.local_entity
-        join gql.type conn
-            on conn.entity = rel.foreign_entity
-            and (
-                (conn.meta_kind = 'NODE' and rel.foreign_cardinality = 'ONE')
-                or (conn.meta_kind = 'CONNECTION' and rel.foreign_cardinality = 'MANY')
-            )
-    where
-        node.meta_kind = 'NODE';
+                else gql.to_camel_case(gql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
+            end,
+            false as is_not_null, -- todo: reference column nullability
+            false as is_array,
+            null as is_array_not_null,
+            null description,
+            null column_name,
+            rel.local_columns,
+            rel.foreign_columns,
+            false
+        from
+            gql.type node
+            join gql.relationship rel
+                on node.entity = rel.local_entity
+            join gql.type conn
+                on conn.entity = rel.foreign_entity
+                and (
+                    (conn.meta_kind = 'NODE' and rel.foreign_cardinality = 'ONE')
+                    or (conn.meta_kind = 'CONNECTION' and rel.foreign_cardinality = 'MANY')
+                )
+        where
+            node.meta_kind = 'NODE';
 
 
 -- Arguments
