@@ -12,29 +12,29 @@
 
 ## PostgreSQL Builtins
 
-|PostgreSQL     |GraphQL     |
-|:--------------|:-----------|
-|bool           |Boolean     |
-|float4         |Float       |
-|float8         |Float       |
-|int2           |Int         |
-|int4           |Int         |
-|int8           |Int         |
-|json           |JSON        |
-|jsonb          |JSON        |
-|jsonpath       |String      |
-|numeric        |Float       |
-|date           |DateTime    |
-|daterange      |String      |
-|timestamp      |DateTime    |
-|timestamptz    |DateTime    |
-|uuid           |UUID        |
-|text           |String      |
-|char           |String      |
-|inet           |IPAddress   |
-|cird           |CIDR        |
-|macaddr        |MACAddress  |
-|*other*        |String      |
+|PostgreSQL     |GraphQL        |
+|:--------------|:--------------|
+|bool           |Boolean        |
+|float4         |Float          |
+|float8         |Float          |
+|int2           |Int            |
+|int4           |Int            |
+|int8           |Int            |
+|json           |JSON           |
+|jsonb          |JSON           |
+|jsonpath       |String         |
+|numeric        |Float          |
+|date           |DateTime       |
+|daterange      |String         |
+|timestamp      |DateTime       |
+|timestamptz    |DateTime       |
+|uuid           |UUID           |
+|text           |String         |
+|char           |String         |
+|inet           |InternetAddress|
+|inet           |InternetAddress|
+|macaddr        |MACAddress     |
+|*other*        |String         |
 
 ## ID
 

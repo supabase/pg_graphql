@@ -1,0 +1,139 @@
+/*
+Monitor if the SQL -> GQL type map changes
+*/
+select
+    pt.typname sql_type,
+    gql.sql_type_to_gql_type(pt.typname) as gql_type
+from
+    pg_type pt
+where
+    substring(pt.typname, 1, 1) <> '_'
+    and pt.typname not like '%[]'
+    and pt.typname not like 'pg_%'
+    and pt.typname not like 'view_%'
+    and pt.typname not like 'any%'
+    and pt.typname not like 'sql_%'
+    and pt.typname not like 'foreign_%'
+    and pt.typname not like 'role_%'
+    and pt.typname not like 'account%'
+    and pt.typname not like 'blog%'
+    and pt.typname not like 'collation%'
+    and pt.typname not like 'cardinal%'
+    and pt.typname not like 'reg%' -- e.g. regclass, regrole
+    and pt.typname not like 'table%'
+    and pt.typname not like 'trigger%'
+    and pt.typname not like 'column%'
+    and pt.typname not like 'check%'
+order by
+    gql.sql_type_to_gql_type(pt.typname) = 'String',
+    gql.sql_type_to_gql_type(pt.typname),
+    pt.typname
+             sql_type              |    gql_type     
+-----------------------------------+-----------------
+ bool                              | Boolean
+ date                              | DateTime
+ time                              | DateTime
+ time_stamp                        | DateTime
+ timestamp                         | DateTime
+ timestamptz                       | DateTime
+ timetz                            | DateTime
+ float4                            | Float
+ float8                            | Float
+ numeric                           | Float
+ int2                              | Int
+ int4                              | Int
+ int8                              | Int
+ cidr                              | InternetAddress
+ inet                              | InternetAddress
+ json                              | JSON
+ jsonb                             | JSON
+ jsonpath                          | JSON
+ macaddr                           | MACAddress
+ uuid                              | UUID
+ aclitem                           | String
+ administrable_role_authorizations | String
+ applicable_roles                  | String
+ arg                               | String
+ attributes                        | String
+ bit                               | String
+ box                               | String
+ bpchar                            | String
+ bytea                             | String
+ char                              | String
+ character_data                    | String
+ character_sets                    | String
+ cid                               | String
+ circle                            | String
+ constraint_column_usage           | String
+ constraint_table_usage            | String
+ cstring                           | String
+ data_type_privileges              | String
+ daterange                         | String
+ domain_constraints                | String
+ domain_udt_usage                  | String
+ domains                           | String
+ element_types                     | String
+ enabled_roles                     | String
+ entity                            | String
+ enum_value                        | String
+ event_trigger                     | String
+ fdw_handler                       | String
+ field                             | String
+ gtsvector                         | String
+ index_am_handler                  | String
+ information_schema_catalog_name   | String
+ int2vector                        | String
+ int4range                         | String
+ int8range                         | String
+ internal                          | String
+ interval                          | String
+ key_column_usage                  | String
+ language_handler                  | String
+ line                              | String
+ lseg                              | String
+ macaddr8                          | String
+ meta_kind                         | String
+ money                             | String
+ name                              | String
+ numrange                          | String
+ oid                               | String
+ oidvector                         | String
+ parameters                        | String
+ parse_result                      | String
+ path                              | String
+ point                             | String
+ polygon                           | String
+ record                            | String
+ refcursor                         | String
+ referential_constraints           | String
+ relationship                      | String
+ routine_privileges                | String
+ routines                          | String
+ schemata                          | String
+ sequences                         | String
+ text                              | String
+ tid                               | String
+ transforms                        | String
+ tsm_handler                       | String
+ tsquery                           | String
+ tsrange                           | String
+ tstzrange                         | String
+ tsvector                          | String
+ txid_snapshot                     | String
+ type                              | String
+ type_kind                         | String
+ udt_privileges                    | String
+ unknown                           | String
+ usage_privileges                  | String
+ user_defined_types                | String
+ user_mapping_options              | String
+ user_mappings                     | String
+ varbit                            | String
+ varchar                           | String
+ void                              | String
+ xid                               | String
+ xid8                              | String
+ xml                               | String
+ yes_or_no                         | String
+(105 rows)
+

@@ -551,7 +551,7 @@ create function gql.sql_type_to_gql_type(sql_type text)
     language sql
 as
 $$
-    -- SQL type from information_schema.columns.data_type
+    -- SQL type from pg_catalog.format_type
     select
         case
             when sql_type like 'int_' then 'Int' -- unsafe for int8
@@ -565,10 +565,10 @@ $$
             when sql_type = 'daterange' then 'String'
             when sql_type like 'date%' then 'DateTime'
             when sql_type like 'timestamp%' then 'DateTime'
-            when sql_type = 'inet' then 'Inet'
-            when sql_type = 'cird' then 'Inet'
+            when sql_type like 'time%' then 'DateTime'
+            when sql_type = 'inet' then 'InternetAddress'
+            when sql_type = 'cidr' then 'InternetAddress'
             when sql_type = 'macaddr' then 'MACAddress'
-            when sql_type = 'inet' then 'Inet'
         else 'String'
     end;
 $$;
