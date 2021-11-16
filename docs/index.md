@@ -15,13 +15,32 @@
 
 ---
 
-## Summary
+Query your existing PostgreSQL database with GraphQL
 
+`pg_graphql` inspects your PostgreSQL schema and reflects performant, GraphQL schema that is always up-to-date.
 
-pg_graphql is a PostgreSQL extension adding support for GraphQL.
-
-The extension keeps schema generation, query parsing, statement resolution, and configuration on the database server.
-
+- [x] __Performant__: [+2k requests/second](performance.md)
+- [x] __Always up-to-date__: Reflected from the SQL schema
+- [x] __Pagination__: Relay compliant
+- [x] __Serverless__: Runs in your database with no *additional* server required
+- [x] __Open Source__: Apache License 2.0
 
 !!! warning
-    pg_graphql is pre-alpha software
+    pg_graphql is pre-alpha software under active development
+
+
+### Motivation
+`pg_graphql` provides an SQL schema -> GraphQL schema reflection engine and an associated GraphQL query -> SQL query transpiler.
+
+The extension keeps schema reflection, query parsing, statement resolution, and configuration all within the PostgreSQL server. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.
+
+
+### TL;DR
+
+The SQL schema
+
+```sql
+--8<-- "docs/assets/demo_schema.sql"
+```
+Translates into a GraphQL schema exposing each table as a pageable collection with relationships defined by the foreign keys.
+![GraphiQL](./assets/quickstart_graphiql.png)

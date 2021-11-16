@@ -1,0 +1,93 @@
+scalar Cursor
+scalar DateTime
+scalar JSON
+scalar UUID
+scalar BigInt
+
+type Query {
+  account(nodeId: ID!): Account
+  allAccounts(after: Cursor, before: Cursor, first: Int, last: Int): AccountConnection
+  blog(nodeId: ID!): Blog
+  allBlogs(after: Cursor, before: Cursor, first: Int, last: Int): BlogConnection
+  blogPost(nodeId: ID!): BlogPost
+  allBlogPosts(after: Cursor, before: Cursor, first: Int, last: Int): BlogPostConnection
+}
+
+type Account {
+  nodeId: ID!
+  id: String!
+  email: String!
+  encryptedPassword: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  blogs(after: Cursor, before: Cursor, first: Int, last: Int): BlogConnection
+}
+
+type AccountConnection {
+  edges: [AccountEdge]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AccountEdge {
+  node: Account
+  cursor: String!
+}
+
+type Blog {
+  nodeId: ID!
+  id: String!
+  ownerId: String!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  owner: Account
+  blogPosts(after: Cursor, before: Cursor, first: Int, last: Int): BlogPostConnection
+}
+
+type BlogConnection {
+  edges: [BlogEdge]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BlogEdge {
+  node: Blog
+  cursor: String!
+}
+
+type BlogPost {
+  nodeId: ID!
+  id: UUID!
+  blogId: String!
+  title: String!
+  body: String
+  status: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  blog: Blog
+}
+
+type BlogPostConnection {
+  edges: [BlogPostEdge]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BlogPostEdge {
+  node: BlogPost
+  cursor: String!
+}
+
+enum BlogPostStatus {
+  PENDING
+  RELEASED
+}
+
+type PageInfo {
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+  startCursor: String!
+  endCursor: String!
+}

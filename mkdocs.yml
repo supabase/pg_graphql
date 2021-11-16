@@ -9,9 +9,10 @@ nav:
     - Welcome: 'index.md'
     - Quickstart: 'quickstart.md'
     - API: 'api.md'
-    - Spec: 'spec.md'
-    - Roadmap: 'roadmap.md'
+    - Reflection: 'reflection.md'
+    - Configuration: 'configuration.md'
     - Performance: 'performance.md'
+    - Roadmap: 'roadmap.md'
     - Installation: 'installation.md'
     - Contributing: 'contributing.md'
 

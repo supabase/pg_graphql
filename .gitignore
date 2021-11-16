@@ -9,3 +9,8 @@ regression.*
 *.json
 *.ipynb
 .ipynb_checkpoints/*
+node_modules/
+docs/graphql_lexer/
+perf.txt
+query.txt
+schema.graphql

@@ -554,14 +554,21 @@ $$
     -- SQL type from information_schema.columns.data_type
     select
         case
-            when sql_type like 'int%' then 'Int'
+            when sql_type like 'int_' then 'Int' -- unsafe for int8
             when sql_type like 'bool%' then 'Boolean'
             when sql_type like 'float%' then 'Float'
-            when sql_type like 'numeric%' then 'Float'
+            when sql_type like 'numeric%' then 'Float' -- unsafe
+            when sql_type = 'json' then 'JSON'
+            when sql_type = 'jsonb' then 'JSON'
             when sql_type like 'json%' then 'JSON'
             when sql_type = 'uuid' then 'UUID'
+            when sql_type = 'daterange' then 'String'
             when sql_type like 'date%' then 'DateTime'
             when sql_type like 'timestamp%' then 'DateTime'
+            when sql_type = 'inet' then 'Inet'
+            when sql_type = 'cird' then 'Inet'
+            when sql_type = 'macaddr' then 'MACAddress'
+            when sql_type = 'inet' then 'Inet'
         else 'String'
     end;
 $$;
@@ -1315,9 +1322,12 @@ create or replace function gql."resolve_enumValues"(type_ text, ast jsonb)
     stable
     language sql
 as $$
+    -- todo: remove overselection
     select jsonb_agg(
         jsonb_build_object(
-            'description', value::text,
+            'name', value::text,
+            'description', null::text,
+            'isDeprecated', false,
             'deprecationReason', null
         )
     )
