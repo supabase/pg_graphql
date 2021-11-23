@@ -7,7 +7,7 @@ pg_graphql aims to implement all of the [GraphQL core specification](https://spe
 - [x] Named Operations
 - [ ] Introspection Schema
 
-At time of writing, the introspection schema is a partial implementation. It is complete enough to render the GraphiQL explorer.
+At time of writing, the introspection schema is a partial implementation. It is complete enough to render the GraphiQL explorer & to dump the schema via the Apollo CLI.
 
 ### Relay
 - [x] Opaque Cursors
