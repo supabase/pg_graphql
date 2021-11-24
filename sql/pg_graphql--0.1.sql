@@ -1718,7 +1718,7 @@ declare
 
     q text;
     data_ jsonb;
-    errors_ text[] = '{}';
+    errors_ text[] = case when parsed.error is null then '{}' else array[parsed.error] end;
 
     ---------------------
     -- If not in cache --
@@ -1738,7 +1738,7 @@ declare
     error_message text;
 begin
     -- Build query if not in cache
-    if not gql.prepared_statement_exists(prepared_statement_name) then
+    if errors_ = '{}' and not gql.prepared_statement_exists(prepared_statement_name) then
 
         begin
 

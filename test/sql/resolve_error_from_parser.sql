@@ -1,0 +1,6 @@
+select gql.resolve($$
+{ { {
+    shouldFail
+  }
+}
+$$);
