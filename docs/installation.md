@@ -4,7 +4,7 @@ Tested with PostgreSQL 13.
 
 First, install [libgraphqlparser](https://github.com/graphql/libgraphqlparser)
 
-Then clone the repo and install
+Then clone the repo and install using
 
 ```bash
 git clone https://github.com/supabase/pg_graphql.git
@@ -30,6 +30,6 @@ create extension pg_graphql cascade;
 
 Hosted database vendors do not provide the level of server access required to install `pg_graphql` at this time.
 
-Given that third-party hosted databases are increasingly common, we are exploring replacing `pg_graphql`'s C dependencies with a SQL implementation so it can be installed as a single-file SQL script.
+Given that third-party hosted databases are increasingly common, we are exploring including SQL implementations of `pg_graphql`'s C components so it can be installed as a single-file SQL script.
 
 Stay tuned
