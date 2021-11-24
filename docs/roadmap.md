@@ -43,13 +43,13 @@ At time of writing, the introspection schema is a partial implementation. It is 
 - [ ] User Defined Functions
 
 ### Error Handling
-- [ ] Display parser syntax errors
+- [x] Display parser syntax errors
 - [x] Useful error on non-existent field
 
 ### Configuration
 - [ ] Max Query Depth
-- [ ] Documentation
-    * [ ] Role based schema/table/column exclusion
+- [ ] Document
+    * [x] Role based schema/table/column exclusion
     * [ ] Override Type/Field names
 
 ### Optimizations
