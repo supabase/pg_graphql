@@ -362,6 +362,10 @@
                   <h1>Quickstart</h1>
                 
                 <p>If you are new to the project, start here.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The PostgREST docker image is not currently compatible with ARM devices, including M1 Macs. That issue is being tracked <a href="https://github.com/PostgREST/postgrest/issues/1117">here</a>. If you are on one of those platforms see the <code>examples</code> directory for other ways you can launch a webserver that exposes pg_graphql's <code>gql.resolve</code> function.</p>
+</div>
 <p>The easiest way to try <code>pg_graphql</code> is to run the interactive <a href="https://github.com/graphql/graphiql">GraphiQL IDE</a> demo. The demo environment launches a database, webserver and the GraphiQL IDE/API explorer with a small pre-populated schema.</p>
 <p>Requires:</p>
 <ul>
@@ -380,7 +384,6 @@
 </td></tr></table>
 <p>Finally, access GraphiQL at <code>http://localhost:4000/</code>.</p>
 <p><img alt="GraphiQL" src="../assets/quickstart_graphiql.png" /></p>
-<p>Like what you see? To understand how tables are mapped to the GraphQL schema, check out the <a href="./spec.md">spec</a>.</p>
                 
               
               

@@ -459,7 +459,7 @@
 <p><strong>Source Code</strong>: <a href="https://github.com/supabase/pg_graphql" target="_blank">https://github.com/supabase/pg_graphql</a></p>
 <hr />
 <p>Query your existing PostgreSQL database with GraphQL</p>
-<p><code>pg_graphql</code> inspects your PostgreSQL schema and reflects performant, GraphQL schema that is always up-to-date.</p>
+<p><code>pg_graphql</code> inspects your PostgreSQL schema and reflects a GraphQL schema and resolvers.</p>
 <ul class="task-list">
 <li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Performant</strong>: <a href="performance/">+2k requests/second</a></li>
 <li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Always up-to-date</strong>: Reflected from the SQL schema</li>
@@ -473,7 +473,7 @@
 </div>
 <h3 id="motivation">Motivation</h3>
 <p><code>pg_graphql</code> provides an SQL schema -&gt; GraphQL schema reflection engine and an associated GraphQL query -&gt; SQL query transpiler.</p>
-<p>The extension keeps schema reflection, query parsing, statement resolution, and configuration all within the PostgreSQL server. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.</p>
+<p>The extension keeps schema generation, query parsing, and resolvers all neatly contained on your database. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.</p>
 <h3 id="tldr">TL;DR</h3>
 <p>The SQL schema</p>
 <p><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>

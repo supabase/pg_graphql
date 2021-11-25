@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#example" class="md-skip">
+        <a href="#naming" class="md-skip">
           Skip to content
         </a>
       
@@ -263,12 +263,101 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Reflection
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         Reflection
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#naming" class="md-nav__link">
+    Naming
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-conversion" class="md-nav__link">
+    Type Conversion
+  </a>
+  
+    <nav class="md-nav" aria-label="Type Conversion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id" class="md-nav__link">
+    ID
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-types" class="md-nav__link">
+    Connection Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Connection Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cursor" class="md-nav__link">
+    Cursor
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pageinfo" class="md-nav__link">
+    PageInfo
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgresql-builtins" class="md-nav__link">
+    PostgreSQL Builtins
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -367,8 +456,82 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#naming" class="md-nav__link">
+    Naming
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-conversion" class="md-nav__link">
+    Type Conversion
+  </a>
+  
+    <nav class="md-nav" aria-label="Type Conversion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id" class="md-nav__link">
+    ID
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-types" class="md-nav__link">
+    Connection Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Connection Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cursor" class="md-nav__link">
+    Cursor
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pageinfo" class="md-nav__link">
+    PageInfo
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgresql-builtins" class="md-nav__link">
+    PostgreSQL Builtins
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -385,7 +548,123 @@
                   </a>
                 
                 
-                <h1 id="example">Example</h1>
+                  <h1>Reflection</h1>
+                
+                <p>SQL tables are reflected into GraphQL types with columns and foreign keys represented as fields on those types. Each table's GraphQL types are then registered against the top level <code>Query</code> type enabling selection of a record by its globally unique ID, or paging through all of the rows in a table.</p>
+<h2 id="naming">Naming</h2>
+<p>PostgreSQL tables/columns are are expected to be lowercase with underscores. To follow casing conventions, table and column are converted to pascal case for type name, camel case for field names and pluralized as necessary in the GraphQL schema.</p>
+<p>For example, an <code>account</code> table has GraphQL type name <code>Account</code> and fields on the <code>Query</code> type of <code>account</code> and <code>allAccounts</code>.</p>
+<p>The pluralization logic is extremely basic. Name overrides have not been implemented yet but are comming soon.</p>
+<h2 id="type-conversion">Type Conversion</h2>
+<h3 id="id">ID</h3>
+<p>The "ID" GraphQL type is a globally unique identifer. It is represented as a string and is implemented as a base64 encoded json array of <code>[regclass, pkey_value1, ... pkey_valueN]</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Be careful when adding/removing schemas from the PostgreSQL <code>search_path</code> as these impact the string representation for <code>regclass</code> and will cause the global identifer to change.</p>
+</div>
+<h3 id="connection-types">Connection Types</h3>
+<p>Connection types hande pagination best practices according to the <a href="https://relay.dev/graphql/connections.htm#">relay spec</a>. <code>pg_graphql</code> paginates via keyset pagination to enable consistent retrival times on every page.</p>
+<h4 id="cursor">Cursor</h4>
+<p>See <a href="https://relay.dev/graphql/connections.htm#sec-Cursor">relay documentation</a></p>
+<p>A cursor is custom scalar, represented as an opaque string, that is used for pagination. Its implementation is identical to the ID type but that is an implementation detail and should not be relied upon.</p>
+<h4 id="pageinfo">PageInfo</h4>
+<p>See <a href="https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo">relay documentation</a></p>
+<h3 id="postgresql-builtins">PostgreSQL Builtins</h3>
+<table>
+<thead>
+<tr>
+<th align="left">PostgreSQL</th>
+<th align="left">GraphQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">bool</td>
+<td align="left">Boolean</td>
+</tr>
+<tr>
+<td align="left">float4</td>
+<td align="left">Float</td>
+</tr>
+<tr>
+<td align="left">float8</td>
+<td align="left">Float</td>
+</tr>
+<tr>
+<td align="left">int2</td>
+<td align="left">Int</td>
+</tr>
+<tr>
+<td align="left">int4</td>
+<td align="left">Int</td>
+</tr>
+<tr>
+<td align="left">int8</td>
+<td align="left">Int</td>
+</tr>
+<tr>
+<td align="left">json</td>
+<td align="left">JSON</td>
+</tr>
+<tr>
+<td align="left">jsonb</td>
+<td align="left">JSON</td>
+</tr>
+<tr>
+<td align="left">jsonpath</td>
+<td align="left">String</td>
+</tr>
+<tr>
+<td align="left">numeric</td>
+<td align="left">Float</td>
+</tr>
+<tr>
+<td align="left">date</td>
+<td align="left">DateTime</td>
+</tr>
+<tr>
+<td align="left">daterange</td>
+<td align="left">String</td>
+</tr>
+<tr>
+<td align="left">timestamp</td>
+<td align="left">DateTime</td>
+</tr>
+<tr>
+<td align="left">timestamptz</td>
+<td align="left">DateTime</td>
+</tr>
+<tr>
+<td align="left">uuid</td>
+<td align="left">UUID</td>
+</tr>
+<tr>
+<td align="left">text</td>
+<td align="left">String</td>
+</tr>
+<tr>
+<td align="left">char</td>
+<td align="left">String</td>
+</tr>
+<tr>
+<td align="left">inet</td>
+<td align="left">InternetAddress</td>
+</tr>
+<tr>
+<td align="left">inet</td>
+<td align="left">InternetAddress</td>
+</tr>
+<tr>
+<td align="left">macaddr</td>
+<td align="left">MACAddress</td>
+</tr>
+<tr>
+<td align="left"><em>other</em></td>
+<td align="left">String</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example</h2>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -630,115 +909,6 @@ type<span class="w"> </span>PageInfo<span class="w"> </span><span class="p">{</s
 <span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
-<h1 id="types">Types</h1>
-<h2 id="postgresql-builtins">PostgreSQL Builtins</h2>
-<table>
-<thead>
-<tr>
-<th align="left">PostgreSQL</th>
-<th align="left">GraphQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">bool</td>
-<td align="left">Boolean</td>
-</tr>
-<tr>
-<td align="left">float4</td>
-<td align="left">Float</td>
-</tr>
-<tr>
-<td align="left">float8</td>
-<td align="left">Float</td>
-</tr>
-<tr>
-<td align="left">int2</td>
-<td align="left">Int</td>
-</tr>
-<tr>
-<td align="left">int4</td>
-<td align="left">Int</td>
-</tr>
-<tr>
-<td align="left">int8</td>
-<td align="left">Int</td>
-</tr>
-<tr>
-<td align="left">json</td>
-<td align="left">JSON</td>
-</tr>
-<tr>
-<td align="left">jsonb</td>
-<td align="left">JSON</td>
-</tr>
-<tr>
-<td align="left">jsonpath</td>
-<td align="left">String</td>
-</tr>
-<tr>
-<td align="left">numeric</td>
-<td align="left">Float</td>
-</tr>
-<tr>
-<td align="left">date</td>
-<td align="left">DateTime</td>
-</tr>
-<tr>
-<td align="left">daterange</td>
-<td align="left">String</td>
-</tr>
-<tr>
-<td align="left">timestamp</td>
-<td align="left">DateTime</td>
-</tr>
-<tr>
-<td align="left">timestamptz</td>
-<td align="left">DateTime</td>
-</tr>
-<tr>
-<td align="left">uuid</td>
-<td align="left">UUID</td>
-</tr>
-<tr>
-<td align="left">text</td>
-<td align="left">String</td>
-</tr>
-<tr>
-<td align="left">char</td>
-<td align="left">String</td>
-</tr>
-<tr>
-<td align="left">inet</td>
-<td align="left">InternetAddress</td>
-</tr>
-<tr>
-<td align="left">inet</td>
-<td align="left">InternetAddress</td>
-</tr>
-<tr>
-<td align="left">macaddr</td>
-<td align="left">MACAddress</td>
-</tr>
-<tr>
-<td align="left"><em>other</em></td>
-<td align="left">String</td>
-</tr>
-</tbody>
-</table>
-<h2 id="id">ID</h2>
-<p>The "ID" GraphQL type is a globally unique identifer. It is represented as a string and is implemented as a base64 encoded json array of <code>[regclass, pkey_value1, ... pkey_valueN]</code>.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Be careful when adding/removing schemas from the PostgreSQL <code>search_path</code> as these impact the string representation for <code>regclass</code> and will cause the global identifer to change.</p>
-</div>
-<h2 id="connection-types">Connection Types</h2>
-<p>Connection types hande pagination best practices according to the <a href="https://relay.dev/graphql/connections.htm#">relay spec</a>. <code>pg_graphql</code> paginates via keyset pagination to enable consistent retrival times on every page.</p>
-<h3 id="cursor">Cursor</h3>
-<p>See <a href="https://relay.dev/graphql/connections.htm#sec-Cursor">relay documentation</a></p>
-<p>A cursor is custom scalar, represented as an opaque string, that is used for pagination. Its implementation is identical to the ID type but that is an implementation detail and should not be relied upon.</p>
-<h3 id="pageinfo">PageInfo</h3>
-<p>See <a href="https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo">relay documentation</a></p>
                 
               
               

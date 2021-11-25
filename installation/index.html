@@ -445,7 +445,7 @@
                 <p>Tested with PostgreSQL 13.</p>
 <h2 id="direct-server-access">Direct Server Access</h2>
 <p>First, install <a href="https://github.com/graphql/libgraphqlparser">libgraphqlparser</a></p>
-<p>Then clone the repo and install</p>
+<p>Then clone the repo and install using</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>git clone https://github.com/supabase/pg_graphql.git
@@ -464,7 +464,7 @@ make <span class="o">&amp;&amp;</span> make install
 </td></tr></table>
 <h2 id="hosted-databases-eg-rds-cloud-sql">Hosted Databases e.g. RDS, Cloud SQL</h2>
 <p>Hosted database vendors do not provide the level of server access required to install <code>pg_graphql</code> at this time.</p>
-<p>Given that third-party hosted databases are increasingly common, we are exploring replacing <code>pg_graphql</code>'s C dependencies with a SQL implementation so it can be installed as a single-file SQL script.</p>
+<p>Given that third-party hosted databases are increasingly common, we are exploring including SQL implementations of <code>pg_graphql</code>'s C components so it can be installed as a single-file SQL script.</p>
 <p>Stay tuned</p>
                 
               

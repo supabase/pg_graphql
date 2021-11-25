@@ -68,6 +68,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#tablecolumn-visibility" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -274,9 +279,46 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Configuration
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Configuration
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tablecolumn-visibility" class="md-nav__link">
+    Table/Column Visibility
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#names" class="md-nav__link">
+    Names
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -349,6 +391,45 @@
               </div>
             
             
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tablecolumn-visibility" class="md-nav__link">
+    Table/Column Visibility
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#names" class="md-nav__link">
+    Names
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
@@ -361,11 +442,19 @@
                 
                   <h1>Configuration</h1>
                 
-                <p>Configuration is a planned goal but not currently implemented. Configuration of</p>
+                <h2 id="tablecolumn-visibility">Table/Column Visibility</h2>
+<p>Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking <code>SELECT</code> access from the user/role executing queries removes that entity from the schema.</p>
+<p>For example:
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">revoke</span> <span class="k">all</span> <span class="k">privileges</span> <span class="k">on</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span> <span class="k">from</span> <span class="n">api_user</span><span class="p">;</span>
+</code></pre></div>
+</td></tr></table>
+removes the <code>Account</code> GraphQL type.</p>
+<h2 id="names">Names</h2>
+<p>Name configuration is a planned goal but not currently implemented:</p>
+<p>The ability to:</p>
 <ul>
-<li>type names</li>
-<li>field names</li>
-<li>field visibility</li>
+<li>Override type names</li>
+<li>Override field names</li>
 </ul>
 <p>are planned for future releases</p>
                 
