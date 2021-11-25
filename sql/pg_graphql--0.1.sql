@@ -397,9 +397,8 @@ create materialized view gql.entity as
         pg_class
     where
         relkind = ANY (ARRAY['r', 'p'])
-        and not relnamespace = ANY (ARRAY['information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace])
-        and pg_catalog.has_schema_privilege(current_user, relnamespace, 'USAGE')
-        and pg_catalog.has_any_column_privilege(oid::regclass, 'SELECT');
+        and not relnamespace = ANY (ARRAY['information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace]);
+
 
 
 create view gql.relationship as
@@ -491,7 +490,6 @@ create materialized view gql.type as
         pg_type t
     where
         t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'gql'::regnamespace)
-        and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE')
         and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
 
 
@@ -542,8 +540,7 @@ create materialized view gql.enum_value as
         join pg_catalog.pg_namespace n
             on n.oid = t.typnamespace
     where
-        n.nspname not in ('gql', 'information_schema', 'pg_catalog')
-        and pg_catalog.has_type_privilege(current_user, t.oid, 'USAGE');
+        n.nspname not in ('gql', 'information_schema', 'pg_catalog');
 
 
 create function gql.sql_type_to_gql_type(sql_type text)
@@ -688,7 +685,6 @@ create materialized view gql.field as
             gt.meta_kind = 'NODE'
             and pa.attnum > 0
             and not pa.attisdropped
-            and pg_catalog.has_column_privilege(current_user, gt.entity, pa.attname, 'SELECT')
         union all
         -- Node.<relationship>
         -- Node.<connection>
@@ -817,6 +813,76 @@ create materialized view gql.arg as
         lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
     where
         t.meta_kind = 'CONNECTION';
+
+
+-------------------
+-- Role Security --
+-------------------
+
+create function gql.is_visible(rec regclass)
+    returns bool
+    stable
+    language sql
+as $$
+    select pg_catalog.has_any_column_privilege(current_user, rec, 'SELECT')
+$$;
+
+
+create function gql.is_visible(rec gql.entity)
+    returns bool
+    stable
+    language sql
+as $$
+    select pg_catalog.has_any_column_privilege(current_user, rec.entity, 'SELECT')
+$$;
+
+
+create function gql.is_visible(rec gql.type)
+    returns bool
+    stable
+    language sql
+as $$
+    select (
+        rec.entity is null
+        or pg_catalog.has_any_column_privilege(current_user, rec.entity, 'SELECT')
+    )
+$$;
+
+
+create function gql.is_visible(rec gql.field)
+    returns bool
+    stable
+    language sql
+as $$
+    select
+        case
+            when rec.name = 'nodeId' then true
+            when gt.entity is null then true
+            when rec.column_name is null then true
+            when (
+                rec.column_name is not null
+                and pg_catalog.has_column_privilege(current_user, gt.entity, rec.column_name, 'SELECT')
+            ) then true
+            -- TODO: check if relationships are accessible
+            when rec.local_columns is not null then true
+            else false
+        end
+    from
+        gql.type gt
+    where
+        gt.name = rec.parent_type
+$$;
+
+
+create function gql.is_visible(rec gql.arg)
+    returns bool
+    stable
+    language sql
+as $$
+    -- TODO
+    select true
+$$;
+
 
 -----------------
 -- Schema Cache -
@@ -996,6 +1062,7 @@ begin
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(gql.alias_or_name(x.sel)) || E',\n' ||
             case
+                when not gql.is_visible(nf) then gql.exception_unknown_field(gql.name(x.sel), field.type_)
                 when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then gql.cursor_encoded_clause(type_.entity, block_name)
@@ -1080,6 +1147,8 @@ declare
     last_ text = gql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
     before_ text = gql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
     after_ text = gql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
+
+    ent alias for entity;
 
 begin
     with clauses as (
@@ -1169,6 +1238,7 @@ begin
                                                             '%L, %s',
                                                             gql.alias_or_name(n.sel),
                                                             case
+                                                                when not gql.is_visible(gf_s) then gql.exception_unknown_field(gql.name(n.sel), gf_n.type_)
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
                                                                 when gf_s.local_columns is not null and gf_st.meta_kind = 'NODE' then
@@ -1241,7 +1311,7 @@ begin
                 first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
                 last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
                 %s::text as __cursor,
-                *
+                %s -- all allowed columns
             from
                 %I as %s
             where
@@ -1285,6 +1355,22 @@ begin
             gql.primary_key_clause(entity, block_name) || ' asc',
             -- __cursor
             gql.cursor_encoded_clause(entity, block_name),
+            -- enumerate columns
+            (
+                select
+                    coalesce(
+                        string_agg(format('%I.%I', block_name, column_name), ', '),
+                        '1'
+                    )
+                from
+                    gql.field f
+                    join gql.type t
+                        on f.parent_type = t.name
+                where
+                    f.column_name is not null
+                    and t.entity = ent
+                    and gql.is_visible(f)
+            ),
             -- from
             entity,
             quote_ident(block_name),
@@ -1376,7 +1462,7 @@ begin
                                                             false,
                                                             arg_rec.is_not_null
                     )
-                    else to_jsonb('ERROR: Unknown Field'::text)
+                    else gql.exception_unknown_field(selection_name, arg_rec.type_)::jsonb
                 end
             ),
             'null'::jsonb
@@ -1399,7 +1485,7 @@ as $$
 declare
     field_rec gql.field;
 begin
-    field_rec = gf from gql.field gf where gf.name = $1 and gf.parent_type = $2;
+    field_rec = gf from gql.field gf where gf.name = $1 and gf.parent_type = $2 and gql.is_visible(gf);
 
     return
         coalesce(
@@ -1438,7 +1524,7 @@ begin
                             ga.field_name = field_rec.name
                             and ga.field_parent_type = field_rec.parent_type
                     )
-                    else to_jsonb('ERROR: Unknown Field'::text)
+                    else gql.exception_unknown_field(selection_name, field_rec.type_)::jsonb
                 end
             ),
             'null'::jsonb
@@ -1535,7 +1621,9 @@ begin
             select (coalesce(is_array_not_null, false) or is_array or is_not_null) as has_modifiers
         ) hm
     where
-        gt.name = type_;
+        gt.name = type_
+        -- Backup security check
+        and gql.is_visible(gt);
 end;
 $$;
 
@@ -1552,7 +1640,7 @@ as $$
                 case
                     when selection_name = 'name' then 'Query'
                     when selection_name = 'description' then null
-                    else 'ERROR: Unknown Field'
+                    else gql.exception_unknown_field(selection_name, 'Query')
                 end
             ),
             'null'::jsonb
@@ -1607,7 +1695,11 @@ begin
                     gql.alias_or_name(node_field),
                     jsonb_agg(gql."resolve___Type"(gt.name, node_field) order by gt.name)
                 )
-            from gql.type gt;
+            from
+                gql.type gt
+            where
+                gql.is_visible(gt);
+
 
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
             agg = agg || gql."resolve___Type"(
@@ -1709,7 +1801,8 @@ declare
     ---------------------
     -- Always required --
     ---------------------
-    prepared_statement_name text = gql.sha1(stmt);
+    -- Do not share cache across users
+    prepared_statement_name text = current_user::text || gql.sha1(stmt);
 
     parsed gql.parse_result = gql.parse(stmt);
     ast jsonb = parsed.ast;
@@ -1757,7 +1850,8 @@ begin
                         on field.type_ = type_.name
                 where
                     field.parent_type = 'Query'
-                    and field.name = gql.name(ast_operation);
+                    and field.name = gql.name(ast_operation)
+                    and gql.is_visible("field");
 
             q = case meta_kind
                 when 'CONNECTION' then
@@ -1787,7 +1881,15 @@ begin
                     jsonb_build_object(
                         gql.name(ast_operation),
                         gql."resolve___Type"(
-                            (select name from gql.type where name = gql.argument_value_by_name('name', ast_operation)),
+                            (
+                                select
+                                    name
+                                from
+                                    gql.type type_
+                                where
+                                    name = gql.argument_value_by_name('name', ast_operation)
+                                    and gql.is_visible(type_)
+                            ),
                             ast_operation
                         )
                     )
