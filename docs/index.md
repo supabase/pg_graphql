@@ -17,7 +17,7 @@
 
 Query your existing PostgreSQL database with GraphQL
 
-`pg_graphql` inspects your PostgreSQL schema and reflects a GraphQL schema and resolvers.
+`pg_graphql` inspects your PostgreSQL schema and reflects a GraphQL schema with resolvers.
 
 - [x] __Performant__: [+2k requests/second](performance.md)
 - [x] __Always up-to-date__: Reflected from the SQL schema
