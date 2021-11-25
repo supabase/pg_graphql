@@ -69,4 +69,4 @@ create table blog_post(
 ```
 Translates into a GraphQL schema exposing each table as a pageable collection with relationships defined by the foreign keys.
 
-![GraphiQL](./assets/quickstart_graphiql.png)
+![GraphiQL](./docs/assets/quickstart_graphiql.png)
