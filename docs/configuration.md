@@ -9,7 +9,7 @@ removes the `Account` GraphQL type.
 
 
 ## Names
-Name configuration is a planned goal but not currently implemented:
+Name configuration is a planned goal but not currently implemented.
 
 The ability to:
 
