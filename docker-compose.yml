@@ -27,8 +27,8 @@ services:
 
   rest:
     container_name: pg_graphql_postgrest
-    image: postgrest/postgrest:latest
-    restart: always
+    image: postgrest/postgrest:v8.0.0.20211102
+    restart: unless-stopped
     ports:
       - 3000:3000
     depends_on:
@@ -45,5 +45,4 @@ services:
     ports:
         - 4000:8000
     depends_on:
-      - db
       - rest
