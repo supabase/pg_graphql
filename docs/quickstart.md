@@ -19,8 +19,6 @@ Next, launch the demo with docker-compose.
 ```shell
 docker-compose up
 ```
-!!! important
-    On ARM devices, including M1 Macs, the PostgREST Docker image **requires** >= 4GB of memory **and** 4GB of swap. If you see PostgREST exit repeatedly, adjust your memory and swap space settings within Docker.
 
 Finally, access GraphiQL at `http://localhost:4000/`.
 
