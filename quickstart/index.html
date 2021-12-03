@@ -362,26 +362,26 @@
                   <h1>Quickstart</h1>
                 
                 <p>If you are new to the project, start here.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The PostgREST docker image is not currently compatible with ARM devices, including M1 Macs. That issue is being tracked <a href="https://github.com/PostgREST/postgrest/issues/1117">here</a>. If you are on one of those platforms see the <code>examples</code> directory for other ways you can launch a webserver that exposes pg_graphql's <code>gql.resolve</code> function.</p>
-</div>
 <p>The easiest way to try <code>pg_graphql</code> is to run the interactive <a href="https://github.com/graphql/graphiql">GraphiQL IDE</a> demo. The demo environment launches a database, webserver and the GraphiQL IDE/API explorer with a small pre-populated schema.</p>
 <p>Requires:</p>
 <ul>
 <li>git</li>
 <li>docker-compose</li>
 </ul>
-<p>First, clone the repo
+<p>First, clone the repo</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>git clone https://github.com/supabase/pg_graphql.git
 <span class="nb">cd</span> pg_graphql
 </code></pre></div>
-</td></tr></table></p>
+</td></tr></table>
 <p>Next, launch the demo with docker-compose.</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>docker-compose up
 </code></pre></div>
 </td></tr></table>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>On ARM devices, including M1 Macs, the PostgREST Docker image <strong>requires</strong> &gt;= 4GB of memory <strong>and</strong> 4GB of swap. If you see PostgREST exit repeatedly, adjust your memory and swap space settings within Docker.</p>
+</div>
 <p>Finally, access GraphiQL at <code>http://localhost:4000/</code>.</p>
 <p><img alt="GraphiQL" src="../assets/quickstart_graphiql.png" /></p>
                 
