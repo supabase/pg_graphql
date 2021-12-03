@@ -37,7 +37,7 @@ uvicorn graphql_server:app --host=0.0.0.0 --port=8000
 Then make a request against the GraphQL API endpoint `/rpc/graphql`
 
 ```shell
-curl -X POST http://0.0.0.0:4002/rpc/graphql \
+curl -X POST http://0.0.0.0:8000/rpc/graphql \
   -H 'Content-Type: application/json' -d '{"query": "{ allAccounts(first: 1) { edges { cursor node { email createdAt } } } }"}'
 ```
 
