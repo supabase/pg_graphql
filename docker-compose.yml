@@ -32,7 +32,8 @@ services:
     ports:
       - 3000:3000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       PGRST_DB_URI: postgres://postgres:password@db:5432/gqldb
       PGRST_DB_SCHEMA: public, gql
@@ -45,4 +46,5 @@ services:
     ports:
       - 4000:8000
     depends_on:
-      - rest
+      rest:
+        condition: service_started
