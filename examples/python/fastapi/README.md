@@ -19,6 +19,7 @@ The connection string for the demo database is `DB_URI=postgres://postgres:passw
 
 
 ```python
+cd examples/python/fastapi
 # Create and activate a virtual environment
 python -m venv venv
 source venv/bin/activate
@@ -27,7 +28,7 @@ source venv/bin/activate
 pip install -e .
 
 # Export the database connection string
-export DBI_URI=DB_URI=postgres://postgres:password@0.0.0.0:5404/gqldb
+export DB_URI=postgres://postgres:password@0.0.0.0:5404/gqldb
 
 # Launch the server
 uvicorn graphql_server:app --host=0.0.0.0 --port=8000
@@ -36,7 +37,7 @@ uvicorn graphql_server:app --host=0.0.0.0 --port=8000
 Then make a request against the GraphQL API endpoint `/rpc/graphql`
 
 ```shell
-curl -X POST http://0.0.0.0:4002/rpc/graphql \
+curl -X POST http://0.0.0.0:8000/rpc/graphql \
   -H 'Content-Type: application/json' -d '{"query": "{ allAccounts(first: 1) { edges { cursor node { email createdAt } } } }"}'
 ```
 
