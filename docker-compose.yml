@@ -3,10 +3,10 @@ services:
   db:
     container_name: pg_graphql_db
     build:
-        context: .
-        dockerfile: ./dockerfiles/db/Dockerfile
+      context: .
+      dockerfile: ./dockerfiles/db/Dockerfile
     volumes:
-        - ./dockerfiles/db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+      - ./dockerfiles/db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
     ports:
       - 5404:5432
     command:
@@ -16,7 +16,7 @@ services:
       - -c
       - shared_preload_libraries=pg_stat_statements
     healthcheck:
-      test: ["CMD-SHELL", "PGUSER=postgres", "pg_isready"]
+      test: [ "CMD-SHELL", "PGUSER=postgres", "pg_isready" ]
       interval: 1s
       timeout: 10s
       retries: 5
@@ -41,8 +41,8 @@ services:
   graphiql:
     container_name: graphiql
     build:
-        context: ./dockerfiles/graphiql
+      context: ./dockerfiles/graphiql
     ports:
-        - 4000:8000
+      - 4000:8000
     depends_on:
       - rest
