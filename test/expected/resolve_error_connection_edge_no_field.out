@@ -1,15 +1,20 @@
-select gql.resolve($$
-{
-  allAccounts {
-    totalCount
-    edges {
-        dneField
+begin;
+    create table account(
+        id int primary key
+    );
+    select gql.resolve($$
+    {
+      allAccounts {
+        totalCount
+        edges {
+            dneField
+        }
+      }
     }
-  }
-}
-$$);
+    $$);
                                 resolve                                
 -----------------------------------------------------------------------
  {"data": null, "errors": ["Unknown field 'dneField' on type 'Edge'"]}
 (1 row)
 
+rollback;

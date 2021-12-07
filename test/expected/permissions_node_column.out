@@ -1,4 +1,11 @@
 begin;
+    create table account(
+        id serial primary key,
+        encrypted_password varchar(255) not null
+    );
+    insert into public.account(encrypted_password)
+    values
+        ('hidden_hash');
     -- Superuser
     select gql.resolve($$
     {
@@ -8,9 +15,9 @@ begin;
       }
     }
     $$);
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": {"account": {"id": 1, "encryptedPassword": "asdfasdf"}}, "errors": []}
+                                      resolve                                       
+------------------------------------------------------------------------------------
+ {"data": {"account": {"id": 1, "encryptedPassword": "hidden_hash"}}, "errors": []}
 (1 row)
 
     create role api;
