@@ -1,4 +1,14 @@
 begin;
+
+    create table account(
+        id serial primary key,
+        encrypted_password varchar(255) not null
+    );
+
+    insert into public.account(encrypted_password)
+    values
+        ('hidden_hash');
+
     -- Superuser
     select gql.resolve($$
     {
