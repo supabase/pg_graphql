@@ -1,0 +1,23 @@
+begin;
+    create table public.account_holder(id int);
+    select gql.to_type_name('public.account_holder');
+  to_type_name  
+----------------
+ account_holder
+(1 row)
+
+    set search_path = '';
+    select gql.to_type_name('public.account_holder');
+     to_type_name      
+-----------------------
+ public_account_holder
+(1 row)
+
+    create table public."5ac!C h&"(id int);
+    select gql.to_type_name('public."5ac!C h&"');
+  to_type_name   
+-----------------
+ public_5ac_C_h_
+(1 row)
+
+rollback;

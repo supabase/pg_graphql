@@ -105,6 +105,35 @@ from
     unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
 $$;
 
+create function gql.to_type_name(regclass)
+    returns text
+    language sql
+    immutable
+as
+$$
+    /*
+    - Removes non-[A-z09_] characters
+    - Trims leading and trailing literal quotes
+    - Replaces '.' separator between schema and table name with '_'
+
+    Reference: http://spec.graphql.org/October2021/#sec-Names
+    */
+    select
+        regexp_replace(
+            concat_ws(
+                '_',
+                case
+                    when nullif(split_part($1::text, '.', 2), '') is null then null
+                    else trim('"' from split_part($1::text, '.', 1))
+                end,
+                trim('"' from coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text))
+            ),
+            '[^0-9A-z_]+',
+            '_',
+            'g'
+        )
+$$;
+
 
 
 -------------------
