@@ -22,7 +22,7 @@ begin;
         ((select id from account where email ilike 'a%'), 'A: Blog 3'),
         ((select id from account where email ilike 'b%'), 'B: Blog 4');
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
     {
       allAccounts {
         edges {

@@ -15,7 +15,7 @@ cd pg_graphql
 docker-compose up
 ```
 
-The connection string for the demo database is `DB_URI=postgres://postgres:password@0.0.0.0:5404/gqldb`
+The connection string for the demo database is `DB_URI=postgres://postgres:password@0.0.0.0:5404/graphqldb`
 
 
 ```python
@@ -28,7 +28,7 @@ source venv/bin/activate
 pip install -e .
 
 # Export the database connection string
-export DB_URI=postgres://postgres:password@0.0.0.0:5404/gqldb
+export DB_URI=postgres://postgres:password@0.0.0.0:5404/graphqldb
 
 # Launch the server
 uvicorn graphql_server:app --host=0.0.0.0 --port=8000

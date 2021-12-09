@@ -5,7 +5,7 @@ begin;
     );
 
 
-    select gql.resolve($$
+    select graphql.resolve($$
     {
       allAccounts {
         edges {

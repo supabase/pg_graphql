@@ -1,6 +1,6 @@
-The public API consists of a single function to resolve GraphQL queries. All other entities in the `gql` schema are private.
+The public API consists of a single function to resolve GraphQL queries. All other entities in the `graphql` schema are private.
 
-### gql.resolve
+### graphql.resolve
 
 ##### description
 Resolves a GraphQL query, returning JSONB.
@@ -9,7 +9,7 @@ Resolves a GraphQL query, returning JSONB.
 
 ##### signature
 ```sql
-gql.resolve(
+graphql.resolve(
     -- the graphql query/mutation
     stmt text,
     -- json key/values pairs for variables
@@ -27,17 +27,17 @@ gql.resolve(
 
 ```sql
 -- Setup
-gqldb= create extension pg_graphql cascade;
+graphqldb= create extension pg_graphql cascade;
 CREATE EXTENSION
 
-gqldb= create table book(id int primary key, title text);
+graphqldb= create table book(id int primary key, title text);
 CREATE TABLE
 
-gqldb= insert into book(id, title) values (1, 'book 1');
+graphqldb= insert into book(id, title) values (1, 'book 1');
 INSERT 0 1
 
 -- Example
-gqldb= select gql.resolve($$
+graphqldb= select graphql.resolve($$
 query {
   allBooks {
     edges {

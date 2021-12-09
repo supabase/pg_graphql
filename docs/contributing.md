@@ -28,19 +28,19 @@ nix-shell --run "pg_13_graphql psql"
 Try out the commands below to spin up a database with the extension installed & query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.
 
 ```sql
-gqldb= create extension pg_graphql cascade;
+graphqldb= create extension pg_graphql cascade;
 CREATE EXTENSION
 
-gqldb= create table book(id int primary key, title text);
+graphqldb= create table book(id int primary key, title text);
 CREATE TABLE
 
-gqldb= insert into book(id, title) values (1, 'book 1');
+graphqldb= insert into book(id, title) values (1, 'book 1');
 INSERT 0 1
 ```
 
 Finally, execute some graphql queries against the table.
 ```sql
-gqldb= select gql.resolve($$
+graphqldb= select graphql.resolve($$
 query {
   allBooks {
     edges {

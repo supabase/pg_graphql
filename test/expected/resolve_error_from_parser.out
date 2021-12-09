@@ -1,4 +1,4 @@
-select gql.resolve($$
+select graphql.resolve($$
 { { {
     shouldFail
   }

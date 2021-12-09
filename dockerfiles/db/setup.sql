@@ -8,12 +8,12 @@ alter default privileges in schema public grant all on tables to postgres, anon;
 alter default privileges in schema public grant all on functions to postgres, anon;
 alter default privileges in schema public grant all on sequences to postgres, anon;
 
-grant usage on schema gql to postgres, anon;
-grant all on function gql.resolve to postgres, anon;
+grant usage on schema graphql to postgres, anon;
+grant all on function graphql.resolve to postgres, anon;
 
-alter default privileges in schema gql grant all on tables to postgres, anon;
-alter default privileges in schema gql grant all on functions to postgres, anon;
-alter default privileges in schema gql grant all on sequences to postgres, anon;
+alter default privileges in schema graphql grant all on tables to postgres, anon;
+alter default privileges in schema graphql grant all on functions to postgres, anon;
+alter default privileges in schema graphql grant all on sequences to postgres, anon;
 
 
 -- GraphQL Entrypoint
@@ -21,7 +21,7 @@ create function graphql("operationName" text default null, query text default nu
     returns jsonb
     language sql
 as $$
-    select gql.resolve(query, variables);
+    select graphql.resolve(query, variables);
 $$;
 
 

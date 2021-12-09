@@ -10,7 +10,7 @@ begin;
         ('hidden_hash');
 
     -- Superuser
-    select gql.resolve(
+    select graphql.resolve(
         $$
         {
           allAccounts(first: 1) {
@@ -28,8 +28,8 @@ begin;
 
     create role api;
     -- Grant access to GQL
-    grant usage on schema gql to api;
-    grant all on all tables in schema gql to api;
+    grant usage on schema graphql to api;
+    grant all on all tables in schema graphql to api;
 
     -- Allow access to public.account.id but nothing else
     grant usage on schema public to api;
@@ -40,7 +40,7 @@ begin;
     set role api;
 
     -- Select permitted columns
-    select gql.resolve(
+    select graphql.resolve(
         $$
         {
           allAccounts(first: 1) {
@@ -55,7 +55,7 @@ begin;
     );
 
     -- Attempt select on revoked column
-    select gql.resolve(
+    select graphql.resolve(
         $$
         {
           allAccounts(first: 1) {

@@ -1,5 +1,5 @@
 select jsonb_pretty(
-    (gql.parse($$
+    (graphql.parse($$
 
         query {
           account(id: 1) {

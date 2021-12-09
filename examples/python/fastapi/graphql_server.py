@@ -48,7 +48,7 @@ async def shutdown():
 @app.post("/rpc/graphql", response_model=GraphQLResponse)
 async def graphql(request: GraphQLRequest):
     row = await database.fetch_one(
-        query="select gql.resolve(:query, :variables)",
+        query="select graphql.resolve(:query, :variables)",
         values={"query": request.query, "variables": request.variables},
     )
     # Unwrap Optional[Row] -> Row

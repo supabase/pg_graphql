@@ -21,7 +21,7 @@ begin;
         ((select id from account where email ilike 'a%')),
         ((select id from account where email ilike 'b%'));
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
         {
           allBlogs {
             edges {

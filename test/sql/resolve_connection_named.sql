@@ -8,7 +8,7 @@ begin;
     select * from generate_series(1,5);
 
 
-    select gql.resolve(
+    select graphql.resolve(
         $$
         query FirstNAccounts($first: Int!) {
           allAccounts(first: $first) {

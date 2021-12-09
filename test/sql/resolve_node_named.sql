@@ -9,7 +9,7 @@ begin;
     select * from generate_series(1,5);
 
 
-    select gql.resolve(
+    select graphql.resolve(
         $$
         query GetAccount($nodeId: ID!) {
           account(nodeId: $nodeId) {

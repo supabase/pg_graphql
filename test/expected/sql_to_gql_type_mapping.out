@@ -3,7 +3,7 @@ Monitor if the SQL -> GQL type map changes
 */
 select
     pt.typname sql_type,
-    gql.sql_type_to_gql_type(pt.typname) as gql_type
+    graphql.sql_type_to_graphql_type(pt.typname) as graphql_type
 from
     pg_type pt
 where
@@ -25,10 +25,10 @@ where
     and pt.typname not like 'column%'
     and pt.typname not like 'check%'
 order by
-    gql.sql_type_to_gql_type(pt.typname) = 'String',
-    gql.sql_type_to_gql_type(pt.typname),
+    graphql.sql_type_to_graphql_type(pt.typname) = 'String',
+    graphql.sql_type_to_graphql_type(pt.typname),
     pt.typname
-             sql_type              |    gql_type     
+             sql_type              |  graphql_type   
 -----------------------------------+-----------------
  bool                              | Boolean
  date                              | DateTime

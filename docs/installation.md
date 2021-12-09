@@ -20,7 +20,7 @@ shared_preload_libraries = 'pg_graphql'
 
 and restart the database server.
 
-To enable the extension in PostgreSQL we must execute a `create extension` statement. The extension creates its own schema/namespace named `gql` to avoid naming conflicts.
+To enable the extension in PostgreSQL we must execute a `create extension` statement. The extension creates its own schema/namespace named `graphql` to avoid naming conflicts.
 
 ```psql
 create extension pg_graphql cascade;

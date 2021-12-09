@@ -31,7 +31,7 @@ begin;
 
 
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
     {
       allAccounts {
         edges {

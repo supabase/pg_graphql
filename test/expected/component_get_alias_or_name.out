@@ -1,4 +1,4 @@
-select gql.alias_or_name($$
+select graphql.alias_or_name($$
     {
         "kind": "Field",
         "name": {"kind": "Name", "value": "hello"},
@@ -13,7 +13,7 @@ $$::jsonb);
  hello_alias
 (1 row)
 
-select gql.alias_or_name($$
+select graphql.alias_or_name($$
     {
         "kind": "Field",
         "name": {"kind": "Name", "value": "hello"},

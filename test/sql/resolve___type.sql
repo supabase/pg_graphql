@@ -10,7 +10,7 @@ begin;
 
 
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
         {
           __type(name: "Account") {
             kind

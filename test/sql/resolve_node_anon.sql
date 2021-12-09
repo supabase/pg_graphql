@@ -9,7 +9,7 @@ begin;
     select * from generate_series(1,5);
 
 
-    select gql.resolve($$
+    select graphql.resolve($$
     {
       account(id: "WyJhY2NvdW50IiwgMV0=") {
         id

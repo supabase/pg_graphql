@@ -34,7 +34,7 @@ begin;
 
 
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
             query IntrospectionQuery {
               __schema {
                 queryType {

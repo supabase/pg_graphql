@@ -30,7 +30,7 @@ begin;
 
 
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
         {
           allBlogs {
             edges {

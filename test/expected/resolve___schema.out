@@ -25,7 +25,7 @@ begin;
         updated_at timestamp not null
     );
     select jsonb_pretty(
-        gql.resolve($$
+        graphql.resolve($$
             query IntrospectionQuery {
               __schema {
                 queryType {

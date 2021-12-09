@@ -9,7 +9,7 @@ begin;
     values
         (1, 'A: Blog 1', 'first'),
         (2, 'A: Blog 2', 'second');
-    select gql.resolve($$
+    select graphql.resolve($$
         {
           allBlogs(first: 1) {
             edges {

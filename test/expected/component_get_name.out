@@ -1,4 +1,4 @@
-select gql.name($$
+select graphql.name($$
     {
         "kind": "Field",
         "name": {"kind": "Name", "value": "hello"},
