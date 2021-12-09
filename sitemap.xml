@@ -2,47 +2,47 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://supabase.github.io/pg_graphql/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/api/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/configuration/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/contributing/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/installation/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/performance/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/quickstart/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/reflection/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/roadmap/</loc>
-         <lastmod>2021-12-03</lastmod>
+         <lastmod>2021-12-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

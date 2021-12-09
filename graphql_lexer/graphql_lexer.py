@@ -35,8 +35,8 @@ class GraphQLLexer(RegexLexer):
     """
 
     name = "GraphQL"
-    aliases = ["graphql", "gql"]
-    filenames = ["*.graphql", "*.gql"]
+    aliases = ["graphql", "graphql"]
+    filenames = ["*.graphql", "*.graphql"]
     mimetypes = ["application/graphql"]
 
     def union_callback(self, match):

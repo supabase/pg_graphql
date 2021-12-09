@@ -546,13 +546,13 @@ $ nix-shell --run <span class="s2">&quot;pg_13_graphql make installcheck&quot;</
 <span class="normal">5</span>
 <span class="normal">6</span>
 <span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">gqldb</span><span class="o">=</span> <span class="k">create</span> <span class="n">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="n">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
 <span class="k">CREATE</span> <span class="n">EXTENSION</span>
 
-<span class="n">gqldb</span><span class="o">=</span> <span class="k">create</span> <span class="k">table</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span> <span class="n">title</span> <span class="nb">text</span><span class="p">);</span>
+<span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="k">table</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span> <span class="n">title</span> <span class="nb">text</span><span class="p">);</span>
 <span class="k">CREATE</span> <span class="k">TABLE</span>
 
-<span class="n">gqldb</span><span class="o">=</span> <span class="k">insert</span> <span class="k">into</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;book 1&#39;</span><span class="p">);</span>
+<span class="n">graphqldb</span><span class="o">=</span> <span class="k">insert</span> <span class="k">into</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;book 1&#39;</span><span class="p">);</span>
 <span class="k">INSERT</span> <span class="mi">0</span> <span class="mi">1</span>
 </code></pre></div>
 </td></tr></table>
@@ -571,7 +571,7 @@ $ nix-shell --run <span class="s2">&quot;pg_13_graphql make installcheck&quot;</
 <span class="normal">12</span>
 <span class="normal">13</span>
 <span class="normal">14</span>
-<span class="normal">15</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">gqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">gql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
+<span class="normal">15</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">graphqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
 <span class="n">query</span> <span class="err">{</span>
   <span class="n">allBooks</span> <span class="err">{</span>
     <span class="n">edges</span> <span class="err">{</span>

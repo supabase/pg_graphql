@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#gqlresolve" class="md-skip">
+        <a href="#graphqlresolve" class="md-skip">
           Skip to content
         </a>
       
@@ -273,11 +273,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gqlresolve" class="md-nav__link">
-    gql.resolve
+  <a href="#graphqlresolve" class="md-nav__link">
+    graphql.resolve
   </a>
   
-    <nav class="md-nav" aria-label="gql.resolve">
+    <nav class="md-nav" aria-label="graphql.resolve">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -430,11 +430,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gqlresolve" class="md-nav__link">
-    gql.resolve
+  <a href="#graphqlresolve" class="md-nav__link">
+    graphql.resolve
   </a>
   
-    <nav class="md-nav" aria-label="gql.resolve">
+    <nav class="md-nav" aria-label="graphql.resolve">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -482,8 +482,8 @@
                 
                   <h1>API</h1>
                 
-                <p>The public API consists of a single function to resolve GraphQL queries. All other entities in the <code>gql</code> schema are private.</p>
-<h3 id="gqlresolve">gql.resolve</h3>
+                <p>The public API consists of a single function to resolve GraphQL queries. All other entities in the <code>graphql</code> schema are private.</p>
+<h3 id="graphqlresolve">graphql.resolve</h3>
 <h5 id="description">description</h5>
 <p>Resolves a GraphQL query, returning JSONB.</p>
 <h5 id="signature">signature</h5>
@@ -498,7 +498,7 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">gql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span>
     <span class="c1">-- the graphql query/mutation</span>
     <span class="n">stmt</span> <span class="nb">text</span><span class="p">,</span>
     <span class="c1">-- json key/values pairs for variables</span>
@@ -539,17 +539,17 @@
 <span class="normal">24</span>
 <span class="normal">25</span>
 <span class="normal">26</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Setup</span>
-<span class="n">gqldb</span><span class="o">=</span> <span class="k">create</span> <span class="n">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
+<span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="n">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
 <span class="k">CREATE</span> <span class="n">EXTENSION</span>
 
-<span class="n">gqldb</span><span class="o">=</span> <span class="k">create</span> <span class="k">table</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span> <span class="n">title</span> <span class="nb">text</span><span class="p">);</span>
+<span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="k">table</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span> <span class="n">title</span> <span class="nb">text</span><span class="p">);</span>
 <span class="k">CREATE</span> <span class="k">TABLE</span>
 
-<span class="n">gqldb</span><span class="o">=</span> <span class="k">insert</span> <span class="k">into</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;book 1&#39;</span><span class="p">);</span>
+<span class="n">graphqldb</span><span class="o">=</span> <span class="k">insert</span> <span class="k">into</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;book 1&#39;</span><span class="p">);</span>
 <span class="k">INSERT</span> <span class="mi">0</span> <span class="mi">1</span>
 
 <span class="c1">-- Example</span>
-<span class="n">gqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">gql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
+<span class="n">graphqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
 <span class="n">query</span> <span class="err">{</span>
   <span class="n">allBooks</span> <span class="err">{</span>
     <span class="n">edges</span> <span class="err">{</span>
