@@ -436,7 +436,7 @@ create view graphql.relationship as
     select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
 
 
-create materialized view graphql.type as
+create materialized view graphql._type as
     select
         name,
         type_kind::graphql.type_kind,
@@ -491,6 +491,24 @@ create materialized view graphql.type as
     where
         t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'graphql'::regnamespace)
         and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
+
+
+create view graphql.type as
+    select
+        -- todo: type name transform rules
+        case
+            when t.meta_kind = 'BUILTIN' then t.name
+            else t.name
+        end as name,
+        t.type_kind,
+        t.meta_kind,
+        t.description,
+        t.entity
+    from
+        graphql._type t
+    where
+        t.entity is null
+        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
 
 
 create materialized view graphql.enum_value as
@@ -571,7 +589,7 @@ $$
 $$;
 
 
-create materialized view graphql.field as
+create materialized view graphql._field as
     select
         parent_type,
         type_,
@@ -731,8 +749,42 @@ create materialized view graphql.field as
             node.meta_kind = 'NODE';
 
 
+create view graphql.field as
+    select
+        f.parent_type,
+        f.type_,
+        f.name, -- todo: apply overrides
+        f.is_not_null,
+        f.is_array,
+        f.is_array_not_null,
+        f.description,
+        f.column_name,
+        f.parent_columns,
+        f.local_columns,
+        f.is_hidden_from_schema
+    from
+        graphql._field f
+        join graphql.type t
+            on f.parent_type = t.name
+    where
+        -- Apply visibility rules
+        case
+            when f.name = 'nodeId' then true
+            when t.entity is null then true
+            when f.column_name is null then true
+            when (
+                f.column_name is not null
+                and pg_catalog.has_column_privilege(current_user, t.entity, f.column_name, 'SELECT')
+            ) then true
+            -- TODO: check if relationships are accessible
+            when f.local_columns is not null then true
+            else false
+        end;
+
+
 -- Arguments
 create materialized view graphql.arg as
+    -- TODO Apply visibilit rules
     -- __Field(includeDeprecated)
     -- __enumValue(includeDeprecated)
     -- __InputFields(includeDeprecated)
@@ -815,75 +867,6 @@ create materialized view graphql.arg as
         t.meta_kind = 'CONNECTION';
 
 
--------------------
--- Role Security --
--------------------
-
-create function graphql.is_visible(rec regclass)
-    returns bool
-    stable
-    language sql
-as $$
-    select pg_catalog.has_any_column_privilege(current_user, rec, 'SELECT')
-$$;
-
-
-create function graphql.is_visible(rec graphql.entity)
-    returns bool
-    stable
-    language sql
-as $$
-    select pg_catalog.has_any_column_privilege(current_user, rec.entity, 'SELECT')
-$$;
-
-
-create function graphql.is_visible(rec graphql.type)
-    returns bool
-    stable
-    language sql
-as $$
-    select (
-        rec.entity is null
-        or pg_catalog.has_any_column_privilege(current_user, rec.entity, 'SELECT')
-    )
-$$;
-
-
-create function graphql.is_visible(rec graphql.field)
-    returns bool
-    stable
-    language sql
-as $$
-    select
-        case
-            when rec.name = 'nodeId' then true
-            when gt.entity is null then true
-            when rec.column_name is null then true
-            when (
-                rec.column_name is not null
-                and pg_catalog.has_column_privilege(current_user, gt.entity, rec.column_name, 'SELECT')
-            ) then true
-            -- TODO: check if relationships are accessible
-            when rec.local_columns is not null then true
-            else false
-        end
-    from
-        graphql.type gt
-    where
-        gt.name = rec.parent_type
-$$;
-
-
-create function graphql.is_visible(rec graphql.arg)
-    returns bool
-    stable
-    language sql
-as $$
-    -- TODO
-    select true
-$$;
-
-
 -----------------
 -- Schema Cache -
 -----------------
@@ -897,8 +880,8 @@ begin
     end if;
 
     refresh materialized view graphql.entity with data;
-    refresh materialized view graphql.type with data;
-    refresh materialized view graphql.field with data;
+    refresh materialized view graphql._type with data;
+    refresh materialized view graphql._field with data;
     refresh materialized view graphql.enum_value with data;
     refresh materialized view graphql.arg with data;
 end;
@@ -1062,7 +1045,6 @@ begin
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(graphql.alias_or_name(x.sel)) || E',\n' ||
             case
-                when not graphql.is_visible(nf) then graphql.exception_unknown_field(graphql.name(x.sel), field.type_)
                 when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
@@ -1238,7 +1220,6 @@ begin
                                                             '%L, %s',
                                                             graphql.alias_or_name(n.sel),
                                                             case
-                                                                when not graphql.is_visible(gf_s) then graphql.exception_unknown_field(graphql.name(n.sel), gf_n.type_)
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
                                                                 when gf_s.local_columns is not null and gf_st.meta_kind = 'NODE' then
@@ -1369,7 +1350,6 @@ begin
                 where
                     f.column_name is not null
                     and t.entity = ent
-                    and graphql.is_visible(f)
             ),
             -- from
             entity,
@@ -1485,7 +1465,7 @@ as $$
 declare
     field_rec graphql.field;
 begin
-    field_rec = gf from graphql.field gf where gf.name = $1 and gf.parent_type = $2 and graphql.is_visible(gf);
+    field_rec = gf from graphql.field gf where gf.name = $1 and gf.parent_type = $2;
 
     return
         coalesce(
@@ -1621,9 +1601,7 @@ begin
             select (coalesce(is_array_not_null, false) or is_array or is_not_null) as has_modifiers
         ) hm
     where
-        gt.name = type_
-        -- Backup security check
-        and graphql.is_visible(gt);
+        gt.name = type_;
 end;
 $$;
 
@@ -1696,9 +1674,7 @@ begin
                     jsonb_agg(graphql."resolve___Type"(gt.name, node_field) order by gt.name)
                 )
             from
-                graphql.type gt
-            where
-                graphql.is_visible(gt);
+                graphql.type gt;
 
 
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
@@ -1850,8 +1826,7 @@ begin
                         on field.type_ = type_.name
                 where
                     field.parent_type = 'Query'
-                    and field.name = graphql.name(ast_operation)
-                    and graphql.is_visible("field");
+                    and field.name = graphql.name(ast_operation);
 
             q = case meta_kind
                 when 'CONNECTION' then
@@ -1888,7 +1863,6 @@ begin
                                     graphql.type type_
                                 where
                                     name = graphql.argument_value_by_name('name', ast_operation)
-                                    and graphql.is_visible(type_)
                             ),
                             ast_operation
                         )
@@ -1923,6 +1897,3 @@ begin
     );
 end
 $$;
-
-grant all on schema graphql to postgres;
-grant all on all tables in schema graphql to postgres;

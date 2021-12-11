@@ -8,6 +8,7 @@ regression.*
 *.egg-info/
 *.json
 *.ipynb
+*.swp
 .ipynb_checkpoints/*
 node_modules/
 docs/graphql_lexer/
