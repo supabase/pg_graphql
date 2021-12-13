@@ -386,7 +386,9 @@ create type graphql.meta_kind as enum (
     'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
     'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
     -- Introspection types
-    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION'
+    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION',
+    -- Custom
+    'ORDER_BY'
 );
 
 
@@ -466,7 +468,9 @@ create materialized view graphql._type as
         ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
         ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
         ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
-        ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.')
+        ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.'),
+        -- pg_graphql constant
+        ('OrderBy', 'ENUM', 'ORDER_BY', 'Defines a per-field sorting order')
     ) as const(name, type_kind, meta_kind, description)
     union all
     select
@@ -544,7 +548,12 @@ create materialized view graphql.enum_value as
             ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
             ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
             ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
-            ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.')
+            ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.'),
+            -- pg_graphql Constant
+            ('OrderBy', 'AscNullsFirst', 'Ascending order, nulls first'),
+            ('OrderBy', 'AscNullsLast', 'Ascending order, nulls last'),
+            ('OrderBy', 'DescNullsFirst', 'Descending order, nulls first'),
+            ('OrderBy', 'DescNullsLast', 'Descending order, nulls last')
     ) x(type_, value, description)
     union all
     select
@@ -1129,7 +1138,7 @@ declare
     last_ text = graphql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
     before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
     after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
-
+    order_by text = graphql.arg_clause('orderBy',  (ast -> 'arguments'), variable_definitions, entity);
     ent alias for entity;
 
 begin
