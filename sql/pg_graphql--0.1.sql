@@ -970,6 +970,9 @@ begin
     elsif is_opaque then
         return graphql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
 
+
+    -- Order by
+
     -- Non-special variable
     elsif graphql.is_arg_a_variable(arg) then
         return '$' || graphql.arg_index(name, variable_definitions)::text || '::' || cast_to;
@@ -1009,6 +1012,23 @@ $$
     select '(' || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',') ||')'
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
+
+create or replace function graphql.order_by_clause(order_by_arg jsonb, entity regclass, alias_name text, reverse bool default false)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    select
+        case
+            -- When no order is provided, default to primary key
+            when order_by_arg is null then graphql.primary_key_clause(entity, alias_name) || case when reverse then ' desc' else ' asc' end
+            else graphql.exception_unknown_field('Not', 'Implemented')
+        end;
+$$;
+
+
+
 
 create or replace function graphql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
     returns text
@@ -1133,13 +1153,14 @@ declare
             f.name = graphql.name(ast)
             and f.parent_type = $3;
 
+    ent alias for entity;
     field_row graphql.field = f from graphql.field f where f.name = graphql.name(ast) and f.parent_type = $3;
     first_ text = graphql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, entity);
     last_ text = graphql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
     before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
     after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
-    order_by text = graphql.arg_clause('orderBy',  (ast -> 'arguments'), variable_definitions, entity);
-    ent alias for entity;
+
+    order_by_arg jsonb = graphql.arg_clause('orderBy',  (ast -> 'arguments'), variable_definitions, entity);
 
 begin
     with clauses as (
@@ -1311,7 +1332,7 @@ begin
                 -- join clause
                 and %s
             order by
-                %s %s
+                %s
             limit %s
         )
         select
@@ -1334,15 +1355,15 @@ begin
             from
                 xyz
             order by
-                %s asc
+                %s
         ) as %s
     )',
             -- __first_cursor
             graphql.cursor_encoded_clause(entity, block_name),
-            graphql.primary_key_clause(entity, block_name) || ' asc',
+            graphql.order_by_clause(order_by_arg, entity, block_name, false),
             -- __last_cursor
             graphql.cursor_encoded_clause(entity, block_name),
-            graphql.primary_key_clause(entity, block_name) || ' asc',
+            graphql.order_by_clause(order_by_arg, entity, block_name, false),
             -- __cursor
             graphql.cursor_encoded_clause(entity, block_name),
             -- enumerate columns
@@ -1370,9 +1391,10 @@ begin
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
             -- order
-            graphql.primary_key_clause(entity, block_name),
-            -- directions
-            case when before_ is not null then 'desc' else 'asc' end,
+            case
+                when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true)
+                else graphql.order_by_clause(order_by_arg, entity, block_name, false)
+            end,
             -- limit
             coalesce(first_, last_, '10'),
             -- JSON selects
@@ -1380,7 +1402,8 @@ begin
             coalesce(clauses.page_info_clause, ''),
             coalesce(clauses.edges_clause, ''),
             -- final order by
-            graphql.primary_key_clause(entity, 'xyz'),
+            graphql.order_by_clause(order_by_arg, entity, 'xyz', false),
+            --graphql.primary_key_clause(entity, 'xyz'),
             -- block name
             quote_ident(block_name)
         )
