@@ -857,7 +857,7 @@ create materialized view graphql.arg as
         lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
     where
         t.meta_kind = 'CONNECTION'
-    -- Connection(first, last)
+    -- Connection(before, after)
     union all
     select
         f.name field,
@@ -874,6 +874,25 @@ create materialized view graphql.arg as
         lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
     where
         t.meta_kind = 'CONNECTION';
+/*
+    -- Connection(orderBy)
+    union all
+    select
+        -- TODO add is_array and is_array_elem_not_null
+        'orderBy' field,
+        f.parent_type,
+        f.type_,
+        y.name_ as name,
+        'OrderBy' type_,
+        true as is_not_null,
+        null
+    from
+        graphql.type t
+        inner join graphql.field f
+            on t.name = f.type_,
+    where
+        t.meta_kind = 'CONNECTION';
+*/
 
 
 -----------------
@@ -997,6 +1016,15 @@ begin
 end;
 $$;
 
+create or replace function graphql.exception(message text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=message;
+end;
+$$;
+
 
 -------------
 -- Resolve --
@@ -1015,19 +1043,53 @@ $$;
 
 create or replace function graphql.order_by_clause(order_by_arg jsonb, entity regclass, alias_name text, reverse bool default false)
     returns text
-    language sql
+    language plpgsql
     immutable
     as
 $$
-    select
-        case
-            -- When no order is provided, default to primary key
-            when order_by_arg is null then graphql.primary_key_clause(entity, alias_name) || case when reverse then ' desc' else ' asc' end
-            else graphql.exception_unknown_field('Not', 'Implemented')
-        end;
+declare
+    claues text;
+
+    field_name text;
+    direction_enum text;
+begin
+    -- No order by clause was specified
+    if order_by_arg is null then
+        return graphql.primary_key_clause(entity, alias_name) || case when reverse then ' desc' else ' asc' end;
+    end if;
+
+    -- Disallow variable order by clause because it is incompatible with prepared statements
+    if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
+        return graphql.exception('Ordering clause may not contain variables');
+    elsif (order_by_arg -> 'value' ->> 'kind') <> 'ListValue' then
+        return graphql.exception('Invalid type for order clause');
+    end if;
+
+    return (
+        select
+            string_agg(
+                format(
+                    '%I.%I',
+                    alias_name,
+                    case
+                        when f.column_name is not null then f.column_name
+                        else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
+                    end
+                ),
+                ', '
+                order by oba.ix asc
+            )
+        from
+            jsonb_array_elements(order_by_arg -> 'value' -> 'values' ) with ordinality oba(sel, ix)
+            join graphql.type t
+                on t.entity = $2
+                and t.meta_kind = 'NODE'
+            left join graphql.field f
+                on t.name = f.parent_type
+                and f.name = graphql.name(oba.sel)
+    );
+end;
 $$;
-
-
 
 
 create or replace function graphql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
@@ -1057,6 +1119,7 @@ $$;
 create or replace function graphql.build_node_query(
     ast jsonb,
     variable_definitions jsonb = '[]',
+    variables jsonb = '{}',
     parent_type text = null,
     parent_block_name text = null
 )
@@ -1065,7 +1128,7 @@ create or replace function graphql.build_node_query(
 as $$
 declare
     block_name text = graphql.slug();
-    field graphql.field = gf from graphql.field gf where gf.name = graphql.name(ast) and gf.parent_type = $3;
+    field graphql.field = gf from graphql.field gf where gf.name = graphql.name(ast) and gf.parent_type = $4;
     type_ graphql.type = gt from graphql.type gt where gt.name = field.type_;
     nodeId text = graphql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
     result text;
@@ -1080,12 +1143,14 @@ begin
                 when nf.local_columns is not null and nf_t.meta_kind = 'CONNECTION' then graphql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
+                    variables := variables,
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
                 when nf.local_columns is not null and nf_t.meta_kind = 'NODE' then graphql.build_node_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
+                    variables := variables,
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
@@ -1127,7 +1192,7 @@ begin
             on nf.type_ = nf_t.name
     where
         field.name = graphql.name(ast)
-        and $3 = field.parent_type;
+        and $4 = field.parent_type;
 end;
 $$;
 
@@ -1135,6 +1200,7 @@ $$;
 create or replace function graphql.build_connection_query(
     ast jsonb,
     variable_definitions jsonb = '[]',
+    variables jsonb = '{}',
     parent_type text = null,
     parent_block_name text = null
 )
@@ -1151,10 +1217,10 @@ declare
                 on f.type_ = t.name
         where
             f.name = graphql.name(ast)
-            and f.parent_type = $3;
+            and f.parent_type = $4;
 
     ent alias for entity;
-    field_row graphql.field = f from graphql.field f where f.name = graphql.name(ast) and f.parent_type = $3;
+    field_row graphql.field = f from graphql.field f where f.name = graphql.name(ast) and f.parent_type = $4;
     first_ text = graphql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, entity);
     last_ text = graphql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
     before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
@@ -1256,6 +1322,7 @@ begin
                                                                     graphql.build_node_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
+                                                                        variables := variables,
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
@@ -1263,6 +1330,7 @@ begin
                                                                     graphql.build_connection_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
+                                                                        variables := variables,
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
@@ -1774,7 +1842,7 @@ as $$
 $$;
 
 
-create or replace function graphql.variable_definitioons_sort(variable_definitions jsonb)
+create or replace function graphql.variable_definitions_sort(variable_definitions jsonb)
     returns jsonb
     immutable
     language sql
@@ -1815,7 +1883,7 @@ declare
     parsed graphql.parse_result = graphql.parse(stmt);
     ast jsonb = parsed.ast;
 
-    variable_definitions jsonb = graphql.variable_definitioons_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions');
+    variable_definitions jsonb = graphql.variable_definitions_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions');
 
     q text;
     data_ jsonb;
@@ -1865,6 +1933,7 @@ begin
                     graphql.build_connection_query(
                         ast := ast_operation,
                         variable_definitions := variable_definitions,
+                        variables := variables,
                         parent_type :=  'Query',
                         parent_block_name := null
                     )
@@ -1872,6 +1941,7 @@ begin
                     graphql.build_node_query(
                         ast := ast_operation,
                         variable_definitions := variable_definitions,
+                        variables := variables,
                         parent_type := 'Query',
                         parent_block_name := null
                     )
