@@ -7,7 +7,7 @@ begin;
         select
             graphql.ast_pass_strip_loc((graphql.parse($$
         {
-            accounts (orderBy: [{id: AscNullsLast}, {name: AscNullsLast}] ){
+            accounts (orderBy: [{id: AscNullsLast}, {name: DescNullsFirst}] ){
                 unused
             }
         }

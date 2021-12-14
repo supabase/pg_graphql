@@ -1052,6 +1052,7 @@ declare
 
     field_name text;
     direction_enum text;
+    result text;
 begin
     -- No order by clause was specified
     if order_by_arg is null then
@@ -1065,28 +1066,44 @@ begin
         return graphql.exception('Invalid type for order clause');
     end if;
 
+    --raise exception 'AST %', order_by_arg; --; -> 'value' -> 'values' -> 1;
+
     return (
         select
             string_agg(
                 format(
-                    '%I.%I',
+                    '%I.%I %s',
                     alias_name,
                     case
+                        -- Literals
+                        when sel -> 'fields' -> 0  ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
+                        when f.column_name is null then graphql.exception(f::text || sel::text)
+                        when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
                         when f.column_name is not null then f.column_name
+                        -- TODO handle variable
                         else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
+                    end,
+                    case
+                        -- Literals
+                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsFirst' then 'asc nulls first'
+                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsLast' then 'asc nulls last'
+                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsFirst' then 'desc nulls first'
+                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsLast' then 'desc nulls last'
+                        -- TODO handle variable
+                        else graphql.exception('Invalid ordering enum value')
                     end
                 ),
                 ', '
                 order by oba.ix asc
             )
         from
-            jsonb_array_elements(order_by_arg -> 'value' -> 'values' ) with ordinality oba(sel, ix)
+            jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
             join graphql.type t
                 on t.entity = $2
                 and t.meta_kind = 'NODE'
             left join graphql.field f
                 on t.name = f.parent_type
-                and f.name = graphql.name(oba.sel)
+                and f.name = graphql.name(oba.sel -> 'fields' -> 0)
     );
 end;
 $$;
@@ -1226,7 +1243,7 @@ declare
     before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
     after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
 
-    order_by_arg jsonb = graphql.arg_clause('orderBy',  (ast -> 'arguments'), variable_definitions, entity);
+    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
 
 begin
     with clauses as (
@@ -1471,7 +1488,6 @@ begin
             coalesce(clauses.edges_clause, ''),
             -- final order by
             graphql.order_by_clause(order_by_arg, entity, 'xyz', false),
-            --graphql.primary_key_clause(entity, 'xyz'),
             -- block name
             quote_ident(block_name)
         )
