@@ -813,7 +813,6 @@ create materialized view graphql._field_output as
             and not pa.attisdropped;
 
 
-
 create materialized view graphql._field_arg as
     -- Arguments
     -- __Field(includeDeprecated)
@@ -1747,7 +1746,7 @@ begin
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
                             -- Scalars get null, objects get an empty list. This is a poor implementation
-                            when (gt.meta_kind not in ('INTERFACE', 'BUILTIN', 'CURSOR') and gt.meta_kind::text not like '\_\_%') then '[]'::jsonb
+                            when gt.meta_kind not in ('INTERFACE', 'BUILTIN', 'CURSOR') then '[]'::jsonb
                             else to_jsonb(null::text)
                         end
                     )
