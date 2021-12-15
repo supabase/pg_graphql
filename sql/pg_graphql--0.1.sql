@@ -922,8 +922,8 @@ create materialized view graphql.input_value as
         f.type_,
         'orderBy' as name,
         tt.name type_,
-        false as is_not_null,
-        false as is_array,
+        true as is_not_null,
+        true as is_array,
         false as is_array_not_null,
         null
     from
@@ -1633,7 +1633,6 @@ begin
                     when selection_name = 'description' then to_jsonb(field_rec.description)
                     when selection_name = 'isDeprecated' then to_jsonb(false) -- todo
                     when selection_name = 'deprecationReason' then to_jsonb(null::text) -- todo
-                    when selection_name = 'defaultValue' then to_jsonb(null::text) -- todo: not correct for this type
                     when selection_name = 'type' then graphql."resolve___Type"(
                                                             field_rec.type_,
                                                             x.sel,
@@ -1662,6 +1661,8 @@ begin
                             ga.field_name = field_rec.name
                             and ga.field_parent_type = field_rec.parent_type
                     )
+                    -- INPUT_OBJECT types only
+                    when selection_name = 'defaultValue' then to_jsonb(null::text)
                     else graphql.exception_unknown_field(selection_name, field_rec.type_)::jsonb
                 end
             ),
