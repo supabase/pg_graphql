@@ -388,7 +388,7 @@ create type graphql.meta_kind as enum (
     -- Introspection types
     '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION',
     -- Custom
-    'ORDER_BY'
+    'ORDER_BY_DIRECTION', 'ORDER_BY'
 );
 
 
@@ -470,7 +470,7 @@ create materialized view graphql._type as
         ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
         ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.'),
         -- pg_graphql constant
-        ('OrderBy', 'ENUM', 'ORDER_BY', 'Defines a per-field sorting order')
+        ('OrderByDirection', 'ENUM', 'ORDER_BY_DIRECTION', 'Defines a per-field sorting order')
     ) as const(name, type_kind, meta_kind, description)
     union all
     select
@@ -485,7 +485,8 @@ create materialized view graphql._type as
             values
                 (names_.table_name_pascal_case::text, 'OBJECT'::graphql.type_kind, 'NODE'::graphql.meta_kind, null::text, ent.entity),
                 (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
-                (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity)
+                (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity),
+                (names_.table_name_pascal_case || 'OrderBy', 'INPUT_OBJECT', 'ORDER_BY', null, ent.entity)
         ) x
     union all
     select
@@ -550,10 +551,10 @@ create materialized view graphql.enum_value as
             ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
             ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.'),
             -- pg_graphql Constant
-            ('OrderBy', 'AscNullsFirst', 'Ascending order, nulls first'),
-            ('OrderBy', 'AscNullsLast', 'Ascending order, nulls last'),
-            ('OrderBy', 'DescNullsFirst', 'Descending order, nulls first'),
-            ('OrderBy', 'DescNullsLast', 'Descending order, nulls last')
+            ('OrderByDirection', 'AscNullsFirst', 'Ascending order, nulls first'),
+            ('OrderByDirection', 'AscNullsLast', 'Ascending order, nulls last'),
+            ('OrderByDirection', 'DescNullsFirst', 'Descending order, nulls first'),
+            ('OrderByDirection', 'DescNullsLast', 'Descending order, nulls last')
     ) x(type_, value, description)
     union all
     select
@@ -755,7 +756,29 @@ create materialized view graphql._field as
                     or (conn.meta_kind = 'CONNECTION' and rel.foreign_cardinality = 'MANY')
                 )
         where
-            node.meta_kind = 'NODE';
+            node.meta_kind = 'NODE'
+        -- NodeOrderBy
+        union all
+        select
+            gt.name parent_type,
+            'OrderByDirection' as type_,
+            graphql.to_camel_case(pa.attname::text) as name,
+            false is_not_null,
+            false is_array,
+            null is_array_not_null,
+            null::text description,
+            pa.attname::text as column_name,
+            null::text[],
+            null::text[],
+            false
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'ORDER_BY'
+            and pa.attnum > 0
+            and not pa.attisdropped;
 
 
 create view graphql.field as
@@ -804,6 +827,8 @@ create materialized view graphql.arg as
         'includeDeprecated' as name,
         'Boolean' as type_,
         false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
         'f' as default_value
     from
         graphql.field f
@@ -818,6 +843,8 @@ create materialized view graphql.arg as
         'name' as name,
         'String' type_,
         true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
         null
     from
         graphql.field f
@@ -832,6 +859,8 @@ create materialized view graphql.arg as
         'nodeId' as name,
         'ID' type_,
         true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
         null
     from
         graphql.type t
@@ -849,6 +878,8 @@ create materialized view graphql.arg as
         y.name_ as name,
         'Int' type_,
         false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
         null
     from
         graphql.type t
@@ -866,6 +897,8 @@ create materialized view graphql.arg as
         y.name_ as name,
         'Cursor' type_,
         false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
         null
     from
         graphql.type t
@@ -873,26 +906,28 @@ create materialized view graphql.arg as
             on t.name = f.type_,
         lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
     where
-        t.meta_kind = 'CONNECTION';
-/*
+        t.meta_kind = 'CONNECTION'
     -- Connection(orderBy)
     union all
     select
         -- TODO add is_array and is_array_elem_not_null
-        'orderBy' field,
+        f.name field,
         f.parent_type,
         f.type_,
-        y.name_ as name,
-        'OrderBy' type_,
-        true as is_not_null,
+        'orderBy' as name,
+        tt.name type_,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
         null
     from
         graphql.type t
         inner join graphql.field f
-            on t.name = f.type_,
-    where
-        t.meta_kind = 'CONNECTION';
-*/
+            on t.name = f.type_
+            and t.meta_kind = 'CONNECTION'
+        inner join graphql.type tt
+            on t.entity = tt.entity
+            and tt.meta_kind = 'ORDER_BY';
 
 
 -----------------
@@ -1465,6 +1500,7 @@ begin
                 where
                     f.column_name is not null
                     and t.entity = ent
+                    and t.meta_kind = 'NODE'
             ),
             -- from
             entity,
@@ -1519,7 +1555,6 @@ $$;
 
 
 -- stubs for recursion
-create or replace function graphql.resolve___input_value(arg_id int, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
 create or replace function graphql."resolve___Type"(
     type_ text,
     ast jsonb,
@@ -1554,8 +1589,8 @@ begin
                     when selection_name = 'type' then graphql."resolve___Type"(
                                                             arg_rec.type_,
                                                             x.sel,
-                                                            false,
-                                                            false,
+                                                            arg_rec.is_array_not_null,
+                                                            arg_rec.is_array,
                                                             arg_rec.is_not_null
                     )
                     else graphql.exception_unknown_field(selection_name, arg_rec.type_)::jsonb
@@ -1592,6 +1627,7 @@ begin
                     when selection_name = 'description' then to_jsonb(field_rec.description)
                     when selection_name = 'isDeprecated' then to_jsonb(false) -- todo
                     when selection_name = 'deprecationReason' then to_jsonb(null::text) -- todo
+                    when selection_name = 'defaultValue' then to_jsonb(null::text) -- todo: not correct for this type
                     when selection_name = 'type' then graphql."resolve___Type"(
                                                             field_rec.type_,
                                                             x.sel,
@@ -1675,7 +1711,7 @@ begin
                         where
                             f.parent_type = gt.name
                             and not f.is_hidden_from_schema
-                            and gt.type_kind not in ('SCALAR', 'ENUM')
+                            and gt.type_kind not in ('SCALAR', 'ENUM', 'INPUT_OBJECT')
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
@@ -1686,7 +1722,16 @@ begin
                     )
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
                     when selection_name = 'enumValues' then graphql."resolve_enumValues"(gt.name, x.sel)
-                    when selection_name = 'inputFields' and not has_modifiers then to_jsonb(null::text)
+                    when selection_name = 'inputFields' and not has_modifiers then (
+                        select
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, x.sel))
+                        from
+                            graphql.field f
+                        where
+                            f.parent_type = gt.name
+                            and not f.is_hidden_from_schema
+                            and gt.type_kind = 'INPUT_OBJECT'
+                    )
                     when selection_name = 'ofType' then (
                         case
                             -- NON_NULL(LIST(...))
