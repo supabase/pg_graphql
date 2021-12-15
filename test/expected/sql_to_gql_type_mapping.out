@@ -81,7 +81,6 @@ order by
  gtsvector                         | String
  index_am_handler                  | String
  information_schema_catalog_name   | String
- input_value                       | String
  int2vector                        | String
  int4range                         | String
  int8range                         | String
@@ -135,5 +134,5 @@ order by
  xid8                              | String
  xml                               | String
  yes_or_no                         | String
-(105 rows)
+(104 rows)
 

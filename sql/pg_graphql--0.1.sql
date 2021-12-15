@@ -605,14 +605,18 @@ $$
 $$;
 
 
-create materialized view graphql._field as
+create materialized view graphql._field_output as
     select
         parent_type,
         type_,
         name,
+        -- internal flags
         is_not_null,
         is_array,
         is_array_not_null,
+        false is_arg,
+        null::text as parent_arg_field_name, -- if is_arg, parent_arg_field_name is required
+        null::text as default_value,
         description,
         null::text as column_name,
         null::text[] parent_columns,
@@ -667,7 +671,20 @@ create materialized view graphql._field as
         ) x(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
         union all
         select
-            fs.*
+            fs.parent_type,
+            fs.type_,
+            fs.name,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            false as is_arg,
+            null::text as parent_arg_field_name,
+            null::text as default_value,
+            fs.description,
+            fs.column_name,
+            fs.parent_columns,
+            fs.local_columns,
+            fs.is_hidden_from_schema
         from
             graphql.type conn
             join graphql.type edge
@@ -703,6 +720,9 @@ create materialized view graphql._field as
             pa.attnotnull as is_not_null,
             tf.type_str like '%[]' as is_array,
             pa.attnotnull and tf.type_str like '%[]' as is_array_not_null,
+            false as is_arg,
+            null::text as parent_arg_field_name,
+            null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
             null::text[],
@@ -746,6 +766,9 @@ create materialized view graphql._field as
             false as is_not_null, -- todo: reference column nullability
             false as is_array,
             null as is_array_not_null,
+            false as is_arg,
+            null::text as parent_arg_field_name,
+            null::text as default_value,
             null description,
             null column_name,
             rel.local_columns,
@@ -772,6 +795,9 @@ create materialized view graphql._field as
             false is_not_null,
             false is_array,
             null is_array_not_null,
+            false as is_arg,
+            null::text as parent_arg_field_name,
+            null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
             null::text[],
@@ -787,6 +813,151 @@ create materialized view graphql._field as
             and not pa.attisdropped;
 
 
+
+create materialized view graphql._field_arg as
+    -- Arguments
+    -- __Field(includeDeprecated)
+    -- __enumValue(includeDeprecated)
+    -- __InputFields(includeDeprecated)
+    select
+        f.type_ as parent_type,
+        'Boolean' as type_,
+        'includeDeprecated' as name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name as parent_arg_field_name,
+        'f' as default_value,
+        null as description,
+        null as column_name,
+        null::text[] as parent_columns,
+        null::text[] as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql._field_output f
+    where
+        f.type_ in ('__Field', '__enumValue', '__InputFields')
+    union all
+    -- __type(name)
+    select
+        f.type_ as parent_type,
+        'String' type_,
+        'name' as name,
+        true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql._field_output f
+    where
+        f.name = '__type'
+    union all
+    -- Node(nodeId)
+    select
+        f.type_,
+        'ID' type_,
+        'nodeId' as name,
+        true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql.type t
+        inner join graphql._field_output f
+            on t.name = f.type_
+    where
+        t.meta_kind = 'NODE'
+        and f.parent_type = 'Query'
+    union all
+    -- Connection(first, last)
+    select
+        f.type_,
+        'Int' type_,
+        y.name_ as name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql.type t
+        inner join graphql._field_output f
+            on t.name = f.type_,
+        lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+    where
+        t.meta_kind = 'CONNECTION'
+    -- Connection(before, after)
+    union all
+    select
+        f.type_,
+        'Cursor' type_,
+        y.name_ as name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql.type t
+        inner join graphql._field_output f
+            on t.name = f.type_,
+        lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+    where
+        t.meta_kind = 'CONNECTION'
+    -- Connection(orderBy)
+    union all
+    select
+        f.type_,
+        tt.name type_,
+        'orderBy' as name,
+        true as is_not_null,
+        true as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql.type t
+        inner join graphql._field_output f
+            on t.name = f.type_
+            and t.meta_kind = 'CONNECTION'
+        inner join graphql.type tt
+            on t.entity = tt.entity
+            and tt.meta_kind = 'ORDER_BY';
+
+
 create view graphql.field as
     select
         f.parent_type,
@@ -795,13 +966,20 @@ create view graphql.field as
         f.is_not_null,
         f.is_array,
         f.is_array_not_null,
+        f.is_arg,
+        f.parent_arg_field_name,
+        f.default_value,
         f.description,
         f.column_name,
         f.parent_columns,
         f.local_columns,
         f.is_hidden_from_schema
     from
-        graphql._field f
+        (
+            select * from graphql._field_output
+            union all
+            select * from graphql._field_arg
+        ) f
         join graphql.type t
             on f.parent_type = t.name
     where
@@ -820,120 +998,6 @@ create view graphql.field as
         end;
 
 
--- Arguments
-create materialized view graphql.input_value as
-    -- TODO Apply visibilit rules
-    -- __Field(includeDeprecated)
-    -- __enumValue(includeDeprecated)
-    -- __InputFields(includeDeprecated)
-    select
-        f.name as field_name,
-        f.parent_type as field_parent_type,
-        f.type_ as field_type,
-        'includeDeprecated' as name,
-        'Boolean' as type_,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        'f' as default_value
-    from
-        graphql.field f
-    where
-        f.type_ in ('__Field', '__enumValue', '__InputFields')
-    union all
-    -- __type(name)
-    select
-        f.name,
-        f.parent_type,
-        f.type_,
-        'name' as name,
-        'String' type_,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        null
-    from
-        graphql.field f
-    where
-        f.name = '__type'
-    union all
-    -- Node(nodeId)
-    select
-        f.name,
-        f.parent_type,
-        f.type_,
-        'nodeId' as name,
-        'ID' type_,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        null
-    from
-        graphql.type t
-        inner join graphql.field f
-            on t.name = f.type_
-    where
-        t.meta_kind = 'NODE'
-        and f.parent_type = 'Query'
-    union all
-    -- Connection(first, last)
-    select
-        f.name field,
-        f.parent_type,
-        f.type_,
-        y.name_ as name,
-        'Int' type_,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        null
-    from
-        graphql.type t
-        inner join graphql.field f
-            on t.name = f.type_,
-        lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
-    where
-        t.meta_kind = 'CONNECTION'
-    -- Connection(before, after)
-    union all
-    select
-        f.name field,
-        f.parent_type,
-        f.type_,
-        y.name_ as name,
-        'Cursor' type_,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        null
-    from
-        graphql.type t
-        inner join graphql.field f
-            on t.name = f.type_,
-        lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
-    where
-        t.meta_kind = 'CONNECTION'
-    -- Connection(orderBy)
-    union all
-    select
-        -- TODO add is_array and is_array_elem_not_null
-        f.name field,
-        f.parent_type,
-        f.type_,
-        'orderBy' as name,
-        tt.name type_,
-        true as is_not_null,
-        true as is_array,
-        false as is_array_not_null,
-        null
-    from
-        graphql.type t
-        inner join graphql.field f
-            on t.name = f.type_
-            and t.meta_kind = 'CONNECTION'
-        inner join graphql.type tt
-            on t.entity = tt.entity
-            and tt.meta_kind = 'ORDER_BY';
 
 
 -----------------
@@ -950,9 +1014,9 @@ begin
 
     refresh materialized view graphql.entity with data;
     refresh materialized view graphql._type with data;
-    refresh materialized view graphql._field with data;
+    refresh materialized view graphql._field_output with data;
+    refresh materialized view graphql._field_arg with data;
     refresh materialized view graphql.enum_value with data;
-    refresh materialized view graphql.input_value with data;
 end;
 $$;
 
@@ -1560,61 +1624,7 @@ as $$
 $$;
 
 
--- stubs for recursion
-create or replace function graphql."resolve___Type"(
-    type_ text,
-    ast jsonb,
-    is_array_not_null bool = false,
-    is_array bool = false,
-    is_not_null bool = false
-) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
-
-create or replace function graphql.resolve_field(field text, parent_type text, ast jsonb) returns jsonb language sql as $$ select 'STUB'::text::jsonb $$;
-
-
-create or replace function graphql.resolve___input_value(arg_name text, field_name text, field_type text, field_parent_type text, ast jsonb)
-    returns jsonb
-    stable
-    language plpgsql
-as $$
-declare
-    arg_rec graphql.input_value;
-begin
-    arg_rec = ga from graphql.input_value ga where ga.name = $1 and ga.field_name = $2 and ga.field_type = $3 and ga.field_parent_type = $4;
-
-    return
-        coalesce(
-            jsonb_object_agg(
-                fa.field_alias,
-                case
-                    when selection_name = 'name' then to_jsonb(arg_rec.name)
-                    when selection_name = 'description' then to_jsonb(null::text)
-                    when selection_name = 'isDeprecated' then to_jsonb(false)
-                    when selection_name = 'deprecationReason' then to_jsonb(null::text)
-                    when selection_name = 'defaultValue' then to_jsonb(arg_rec.default_value)
-                    when selection_name = 'type' then graphql."resolve___Type"(
-                                                            arg_rec.type_,
-                                                            x.sel,
-                                                            arg_rec.is_array_not_null,
-                                                            arg_rec.is_array,
-                                                            arg_rec.is_not_null
-                    )
-                    else graphql.exception_unknown_field(selection_name, arg_rec.type_)::jsonb
-                end
-            ),
-            'null'::jsonb
-        )
-    from
-        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
-        lateral (
-            select
-                graphql.alias_or_name(x.sel) field_alias,
-                graphql.name(x.sel) as selection_name
-        ) fa;
-end;
-$$;
-
-create or replace function graphql.resolve_field(field text, parent_type text, ast jsonb)
+create or replace function graphql.resolve_field(field text, parent_type text, parent_arg_field_name text, ast jsonb)
     returns jsonb
     stable
     language plpgsql
@@ -1622,7 +1632,18 @@ as $$
 declare
     field_rec graphql.field;
 begin
-    field_rec = gf from graphql.field gf where gf.name = $1 and gf.parent_type = $2;
+    -- todo can this conflict for input types?
+    field_rec = gf
+        from
+            graphql.field gf
+        where
+            gf.name = $1
+            and gf.parent_type = $2
+            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '');
+    if field_rec is null then
+        raise exception '% % %', $1, $2, $3;
+
+    end if;
 
     return
         coalesce(
@@ -1644,11 +1665,10 @@ begin
                         select
                             coalesce(
                                 jsonb_agg(
-                                    graphql.resolve___input_value(
+                                    graphql.resolve_field(
                                         ga.name,
-                                        field_rec.name,
                                         field_rec.type_,
-                                        field_rec.parent_type,
+                                        field_rec.name,
                                         x.sel
                                     )
                                     order by ga.name
@@ -1656,13 +1676,15 @@ begin
                                 '[]'
                             )
                         from
-                            graphql.input_value ga
+                            graphql.field ga
                         where
-                            ga.field_name = field_rec.name
-                            and ga.field_parent_type = field_rec.parent_type
+                            ga.parent_arg_field_name = field_rec.name
+                            and not ga.is_hidden_from_schema
+                            and ga.is_arg
+                            and ga.parent_type = field_rec.type_ -- todo double check this join
                     )
                     -- INPUT_OBJECT types only
-                    when selection_name = 'defaultValue' then to_jsonb(null::text)
+                    when selection_name = 'defaultValue' then to_jsonb(field_rec.default_value)
                     else graphql.exception_unknown_field(selection_name, field_rec.type_)::jsonb
                 end
             ),
@@ -1712,13 +1734,15 @@ begin
                     )
                     when selection_name = 'fields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, x.sel))
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel))
                         from
                             graphql.field f
                         where
                             f.parent_type = gt.name
                             and not f.is_hidden_from_schema
-                            and gt.type_kind not in ('SCALAR', 'ENUM', 'INPUT_OBJECT')
+                            and gt.type_kind = 'OBJECT'
+                            and not f.is_arg
+                            --and gt.type_kind not in ('SCALAR', 'ENUM', 'INPUT_OBJECT')
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
@@ -1731,7 +1755,7 @@ begin
                     when selection_name = 'enumValues' then graphql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, x.sel))
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel))
                         from
                             graphql.field f
                         where
