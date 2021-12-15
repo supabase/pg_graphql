@@ -53,7 +53,6 @@ order by
  aclitem                           | String
  administrable_role_authorizations | String
  applicable_roles                  | String
- arg                               | String
  attributes                        | String
  bit                               | String
  box                               | String
@@ -82,6 +81,7 @@ order by
  gtsvector                         | String
  index_am_handler                  | String
  information_schema_catalog_name   | String
+ input_value                       | String
  int2vector                        | String
  int4range                         | String
  int8range                         | String

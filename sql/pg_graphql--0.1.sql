@@ -438,7 +438,13 @@ create view graphql.relationship as
     select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
 
 
-create materialized view graphql._type as
+create materialized view graphql._type (
+    name,
+    type_kind,
+    meta_kind,
+    description,
+    entity
+) as
     select
         name,
         type_kind::graphql.type_kind,
@@ -815,7 +821,7 @@ create view graphql.field as
 
 
 -- Arguments
-create materialized view graphql.arg as
+create materialized view graphql.input_value as
     -- TODO Apply visibilit rules
     -- __Field(includeDeprecated)
     -- __enumValue(includeDeprecated)
@@ -946,7 +952,7 @@ begin
     refresh materialized view graphql._type with data;
     refresh materialized view graphql._field with data;
     refresh materialized view graphql.enum_value with data;
-    refresh materialized view graphql.arg with data;
+    refresh materialized view graphql.input_value with data;
 end;
 $$;
 
@@ -1572,9 +1578,9 @@ create or replace function graphql.resolve___input_value(arg_name text, field_na
     language plpgsql
 as $$
 declare
-    arg_rec graphql.arg;
+    arg_rec graphql.input_value;
 begin
-    arg_rec = ga from graphql.arg ga where ga.name = $1 and ga.field_name = $2 and ga.field_type = $3 and ga.field_parent_type = $4;
+    arg_rec = ga from graphql.input_value ga where ga.name = $1 and ga.field_name = $2 and ga.field_type = $3 and ga.field_parent_type = $4;
 
     return
         coalesce(
@@ -1651,7 +1657,7 @@ begin
                                 '[]'
                             )
                         from
-                            graphql.arg ga
+                            graphql.input_value ga
                         where
                             ga.field_name = field_rec.name
                             and ga.field_parent_type = field_rec.parent_type
