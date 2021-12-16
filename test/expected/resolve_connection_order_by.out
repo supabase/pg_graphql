@@ -1,13 +1,161 @@
 begin;
     create table account(
-        id int primary key,
+        _id serial primary key,
+        id int,
         "spiritAnimal" text
     );
     insert into public.account(id, "spiritAnimal")
     values
         (1, 'bat'),
         (2, 'aardvark'),
-        (3, 'aardvark');
+        (3, 'aardvark'),
+        (null, 'cat');
+    -- Single sort
+    -- AscNullsFirst
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              allAccounts(orderBy: [{id: AscNullsFirst}]) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- AscNullsLast
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              allAccounts(orderBy: [{id: AscNullsLast}]) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- DescNullsFirst
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              allAccounts(orderBy: [{id: DescNullsFirst}]) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- DescNullsLast
     select jsonb_pretty(
         graphql.resolve($$
             {
@@ -21,78 +169,305 @@ begin;
             }
         $$)
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "allAccounts": {       +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 3+
-                     }          +
-                 },             +
-                 {              +
-                     "node": {  +
-                         "id": 2+
-                     }          +
-                 },             +
-                 {              +
-                     "node": {  +
-                         "id": 1+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
  }
 (1 row)
 
+    -- Variable: AscNullsFirst
     select jsonb_pretty(
         graphql.resolve($$
-            {
-              allAccounts(orderBy: [{spiritAnimal: AscNullsLast}, {id: AscNullsLast}]) {
-                edges {
-                  node {
-                    id
-                    spiritAnimal
-                  }
-                }
-              }
-            }
-        $$)
+           query AccountsOrdered($direction: OrderByDirection)
+           {
+             allAccounts(orderBy: [{id: $direction}]) {
+               totalCount
+               edges {
+                 node{
+                       id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": "AscNullsFirst"}'
+      )
     );
-                    jsonb_pretty                    
-----------------------------------------------------
- {                                                 +
-     "data": {                                     +
-         "allAccounts": {                          +
-             "edges": [                            +
-                 {                                 +
-                     "node": {                     +
-                         "id": 2,                  +
-                         "spiritAnimal": "aardvark"+
-                     }                             +
-                 },                                +
-                 {                                 +
-                     "node": {                     +
-                         "id": 3,                  +
-                         "spiritAnimal": "aardvark"+
-                     }                             +
-                 },                                +
-                 {                                 +
-                     "node": {                     +
-                         "id": 1,                  +
-                         "spiritAnimal": "bat"     +
-                     }                             +
-                 }                                 +
-             ]                                     +
-         }                                         +
-     },                                            +
-     "errors": [                                   +
-     ]                                             +
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 }                 +
+             ],                    +
+             "totalCount": 4       +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable: AscNullsLast
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: OrderByDirection)
+           {
+             allAccounts(orderBy: [{id: $direction}]) {
+               totalCount
+               edges {
+                 node{
+                       id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": "AscNullsLast"}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ],                    +
+             "totalCount": 4       +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable: DescNullsFirst
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: OrderByDirection)
+           {
+             allAccounts(orderBy: [{id: $direction}]) {
+               totalCount
+               edges {
+                 node{
+                       id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": "DescNullsFirst"}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 }                 +
+             ],                    +
+             "totalCount": 4       +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable: DescNullsLast
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: OrderByDirection)
+           {
+             allAccounts(orderBy: [{id: $direction}]) {
+               totalCount
+               edges {
+                 node{
+                       id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": "DescNullsLast"}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ],                    +
+             "totalCount": 4       +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable: Invalid
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: OrderByDirection)
+           {
+             allAccounts(orderBy: [{id: $direction}]) {
+               totalCount
+               edges {
+                 node{
+                       id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": "InvalidChoice"}'
+      )
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": null,                         +
+     "errors": [                           +
+         "Invalid order by clause variable"+
+     ]                                     +
+ }
+(1 row)
+
+    -- Variable: Missing
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: OrderByDirection)
+           {
+             allAccounts(orderBy: [{id: $direction}]) {
+               totalCount
+               edges {
+                 node{
+                       id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{}'
+      )
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": null,                         +
+     "errors": [                           +
+         "Invalid order by clause variable"+
+     ]                                     +
  }
 (1 row)
 

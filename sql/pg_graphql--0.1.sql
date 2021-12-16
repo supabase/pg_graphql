@@ -1145,7 +1145,7 @@ $$
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
 
-create or replace function graphql.order_by_clause(order_by_arg jsonb, entity regclass, alias_name text, reverse bool default false)
+create or replace function graphql.order_by_clause(order_by_arg jsonb, entity regclass, alias_name text, reverse bool default false, variables jsonb default '{}')
     returns text
     language plpgsql
     immutable
@@ -1154,9 +1154,14 @@ $$
 declare
     claues text;
 
-    field_name text;
+    ix int;
+    field_ast text;
+    col_name text;
+    name_ast text;
+    direction_ast text;
     direction_enum text;
-    result text;
+    direction_value text;
+    clause text;
 begin
     -- No order by clause was specified
     if order_by_arg is null then
@@ -1170,8 +1175,6 @@ begin
         return graphql.exception('Invalid type for order clause');
     end if;
 
-    --raise exception 'AST %', order_by_arg; --; -> 'value' -> 'values' -> 1;
-
     return (
         select
             string_agg(
@@ -1181,10 +1184,8 @@ begin
                     case
                         -- Literals
                         when sel -> 'fields' -> 0  ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
-                        when f.column_name is null then graphql.exception(f::text || sel::text)
                         when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
                         when f.column_name is not null then f.column_name
-                        -- TODO handle variable
                         else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
                     end,
                     case
@@ -1193,7 +1194,18 @@ begin
                         when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsLast' then 'asc nulls last'
                         when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsFirst' then 'desc nulls first'
                         when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsLast' then 'desc nulls last'
-                        -- TODO handle variable
+                        -- Variables
+                        -- prepared statements do not allow dynamic sorting. must populate with literals
+                        when graphql.is_arg_a_variable(sel -> 'fields' -> 0) then (
+                            -- Lookup the variable name in provided variables
+                           case (variables ->> (sel -> 'fields' -> 0 -> 'value' -> 'name' ->> 'value'))
+                                when 'AscNullsFirst' then 'asc nulls first'
+                                when 'AscNullsLast' then 'asc nulls last'
+                                when 'DescNullsFirst' then 'desc nulls first'
+                                when 'DescNullsLast' then 'desc nulls last'
+                                else graphql.exception('Invalid order by clause variable')
+                           end
+                        )
                         else graphql.exception('Invalid ordering enum value')
                     end
                 ),
@@ -1549,10 +1561,10 @@ begin
     )',
             -- __first_cursor
             graphql.cursor_encoded_clause(entity, block_name),
-            graphql.order_by_clause(order_by_arg, entity, block_name, false),
+            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
             -- __last_cursor
             graphql.cursor_encoded_clause(entity, block_name),
-            graphql.order_by_clause(order_by_arg, entity, block_name, false),
+            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
             -- __cursor
             graphql.cursor_encoded_clause(entity, block_name),
             -- enumerate columns
@@ -1582,8 +1594,8 @@ begin
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
             -- order
             case
-                when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false)
+                when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
+                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
             end,
             -- limit
             coalesce(first_, last_, '10'),
@@ -1592,7 +1604,7 @@ begin
             coalesce(clauses.page_info_clause, ''),
             coalesce(clauses.edges_clause, ''),
             -- final order by
-            graphql.order_by_clause(order_by_arg, entity, 'xyz', false),
+            graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
             -- block name
             quote_ident(block_name)
         )
@@ -1959,6 +1971,25 @@ as $$
 $$;
 
 
+create or replace function graphql.cache_key(role regrole, ast jsonb, variable_definitions jsonb, variables jsonb)
+    returns text
+    language sql
+    strict
+    volatile
+as $$
+    select
+        -- Different roles may have different levels of access
+        graphql.sha1(
+            $1::text
+            -- Parsed query hash
+            || graphql.sha1(ast::text)
+            -- Disable cache for non-exact dupes
+            -- todo: build cache key for dynamic column selection/ordering
+            || graphql.sha1(variable_definitions::text || variables::text )
+        )
+$$;
+
+
 create or replace function graphql.resolve(stmt text, variables jsonb = '{}')
     returns jsonb
     volatile
@@ -1968,13 +1999,10 @@ declare
     ---------------------
     -- Always required --
     ---------------------
-    -- Do not share cache across users
-    prepared_statement_name text = current_user::text || graphql.sha1(stmt);
-
     parsed graphql.parse_result = graphql.parse(stmt);
     ast jsonb = parsed.ast;
-
-    variable_definitions jsonb = graphql.variable_definitions_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions');
+    variable_definitions jsonb = coalesce(graphql.variable_definitions_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions'), '[]');
+    prepared_statement_name text = graphql.cache_key(current_user::regrole, ast, variable_definitions, variables);
 
     q text;
     data_ jsonb;
