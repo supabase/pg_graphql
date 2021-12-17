@@ -461,7 +461,7 @@ begin;
  }
 (1 row)
 
-    -- Variable Whole Param: AscNullsFirst 
+    -- Variable Whole Param: AscNullsFirst
     select jsonb_pretty(
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
@@ -563,7 +563,7 @@ begin;
  }
 (1 row)
 
-    -- Variable Whole Param: DescNullsFirst 
+    -- Variable Whole Param: DescNullsFirst
     select jsonb_pretty(
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
@@ -614,7 +614,7 @@ begin;
  }
 (1 row)
 
-    -- Variable Whole Param: DescullsLast 
+    -- Variable Whole Param: DescullsLast
     select jsonb_pretty(
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
