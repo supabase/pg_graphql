@@ -220,37 +220,13 @@ begin;
         variables:= '{"direction": "AscNullsFirst"}'
       )
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "allAccounts": {          +
-             "edges": [            +
-                 {                 +
-                     "node": {     +
-                         "id": null+
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 1   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 2   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 3   +
-                     }             +
-                 }                 +
-             ]                     +
-         }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 
@@ -271,37 +247,13 @@ begin;
         variables:= '{"direction": "AscNullsLast"}'
       )
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "allAccounts": {          +
-             "edges": [            +
-                 {                 +
-                     "node": {     +
-                         "id": 1   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 2   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 3   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": null+
-                     }             +
-                 }                 +
-             ]                     +
-         }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 
@@ -322,37 +274,13 @@ begin;
         variables:= '{"direction": "DescNullsFirst"}'
       )
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "allAccounts": {          +
-             "edges": [            +
-                 {                 +
-                     "node": {     +
-                         "id": null+
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 3   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 2   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 1   +
-                     }             +
-                 }                 +
-             ]                     +
-         }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 
@@ -373,37 +301,13 @@ begin;
         variables:= '{"direction": "DescNullsLast"}'
       )
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "allAccounts": {          +
-             "edges": [            +
-                 {                 +
-                     "node": {     +
-                         "id": 3   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 2   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": 1   +
-                     }             +
-                 },                +
-                 {                 +
-                     "node": {     +
-                         "id": null+
-                     }             +
-                 }                 +
-             ]                     +
-         }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 
@@ -424,13 +328,13 @@ begin;
         variables:= '{"direction": "InvalidChoice"}'
       )
     );
-                      jsonb_pretty                      
---------------------------------------------------------
- {                                                     +
-     "data": null,                                     +
-     "errors": [                                       +
-         "Invalid value for ordering \"InvalidChoice\""+
-     ]                                                 +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 
@@ -451,13 +355,13 @@ begin;
         variables:= '{}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         "Invalid value for ordering \"null\""+
-     ]                                        +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 
@@ -716,6 +620,264 @@ begin;
      "errors": [                              +
          "Invalid value for ordering variable"+
      ]                                        +
+ }
+(1 row)
+
+    -- Variable Entry: {"id": "AscNullsFirst"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "AscNullsFirst"}}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Entry: {"id": "AscNullsLast"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "AscNullsLast"}}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Entry: {"id": "DescNullsFirst"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "DescNullsFirst"}}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Entry: {"id": "DescNullsLast"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "DescNullsLast"}}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Entry: Invalid Missing
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{}'
+      )
+    );
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
+ }
+(1 row)
+
+    -- Variable Entry: Invalid List
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": "[]"}'
+      )
+    );
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid order clause"+
+     ]                         +
  }
 (1 row)
 

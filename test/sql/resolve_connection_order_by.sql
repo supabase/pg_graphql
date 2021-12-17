@@ -296,5 +296,112 @@ begin;
       )
     );
 
+    -- Variable Entry: {"id": "AscNullsFirst"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "AscNullsFirst"}}'
+      )
+    );
+
+    -- Variable Entry: {"id": "AscNullsLast"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "AscNullsLast"}}'
+      )
+    );
+
+    -- Variable Entry: {"id": "DescNullsFirst"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "DescNullsFirst"}}'
+      )
+    );
+
+    -- Variable Entry: {"id": "DescNullsLast"}
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": {"id": "DescNullsLast"}}'
+      )
+    );
+
+    -- Variable Entry: Invalid Missing
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{}'
+      )
+    );
+
+    -- Variable Entry: Invalid List
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($ent: AccountOrderBy!)
+           {
+             allAccounts(orderBy: [$ent]) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ent": "[]"}'
+      )
+    );
 
 rollback;

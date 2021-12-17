@@ -1,4 +1,4 @@
-select graphql.alias_or_name($$
+select graphql.alias_or_name_literal($$
     {
         "kind": "Field",
         "name": {"kind": "Name", "value": "hello"},
@@ -8,12 +8,12 @@ select graphql.alias_or_name($$
         "selectionSet": null
     }
 $$::jsonb);
- alias_or_name 
----------------
+ alias_or_name_literal 
+-----------------------
  hello_alias
 (1 row)
 
-select graphql.alias_or_name($$
+select graphql.alias_or_name_literal($$
     {
         "kind": "Field",
         "name": {"kind": "Name", "value": "hello"},
@@ -23,8 +23,8 @@ select graphql.alias_or_name($$
         "selectionSet": null
     }
 $$::jsonb);
- alias_or_name 
----------------
+ alias_or_name_literal 
+-----------------------
  hello
 (1 row)
 

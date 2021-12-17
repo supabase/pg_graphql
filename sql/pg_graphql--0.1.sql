@@ -248,7 +248,7 @@ $$;
 
 
 
-create or replace function graphql.name(ast jsonb)
+create or replace function graphql.name_literal(ast jsonb)
     returns text
     immutable
     language sql
@@ -257,7 +257,7 @@ as $$
 $$;
 
 
-create or replace function graphql.value(ast jsonb)
+create or replace function graphql.value_literal(ast jsonb)
     returns text
     immutable
     language sql
@@ -266,7 +266,7 @@ as $$
 $$;
 
 
-create or replace function graphql.alias_or_name(field jsonb)
+create or replace function graphql.alias_or_name_literal(field jsonb)
     returns text
     language sql
     immutable
@@ -282,7 +282,7 @@ create or replace function graphql.is_variable(field jsonb)
     strict
     language sql
 as $$
-    select (field -> 'value' ->> 'kind') = 'Variable'
+    select (field ->> 'kind') = 'Variable'
 $$;
 
 
@@ -1069,7 +1069,7 @@ as $$
     from
         jsonb_array_elements(arguments) ar(elem)
     where
-        graphql.name(elem) = $1
+        graphql.name_literal(elem) = $1
 $$;
 
 
@@ -1084,7 +1084,7 @@ as $$
     from
         jsonb_array_elements(variable_definitions) with ordinality ar(elem, idx)
     where
-        graphql.name(elem -> 'variable') = $1
+        graphql.name_literal(elem -> 'variable') = $1
 $$;
 
 create or replace function graphql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass)
@@ -1108,7 +1108,7 @@ begin
     if arg is null then
         return null;
 
-    elsif graphql.is_variable(arg) and is_opaque then
+    elsif graphql.is_variable(arg -> 'value') and is_opaque then
         return graphql.cursor_clause_for_variable(entity, graphql.arg_index(name, variable_definitions));
 
     elsif is_opaque then
@@ -1118,7 +1118,7 @@ begin
     -- Order by
 
     -- Non-special variable
-    elsif graphql.is_variable(arg) then
+    elsif graphql.is_variable(arg -> 'value') then
         return '$' || graphql.arg_index(name, variable_definitions)::text || '::' || cast_to;
 
     -- Non-special literal
@@ -1249,38 +1249,82 @@ begin
 
     elsif (order_by_arg -> 'value' ->> 'kind') = 'ListValue' then
         return (
+            with obs as (
+                select
+                    *
+                from
+                    jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
+            ),
+            norm as (
+                -- Literal
+                select
+                    ext.field_name,
+                    ext.direction_val,
+                    obs.ix,
+                    case
+                        when field_name is null then graphql.exception('Invalid order clause')
+                        when direction_val is null then graphql.exception('Invalid order clause')
+                        else null
+                    end as errors
+                from
+                    obs,
+                    lateral (
+                        select
+                            graphql.name_literal(sel -> 'fields' -> 0) field_name,
+                            graphql.value_literal(sel -> 'fields' -> 0) direction_val
+                    ) ext
+                where
+                    not graphql.is_variable(obs.sel)
+                union all
+                -- Variable
+                select
+                    v.field_name,
+                    v.direction_val,
+                    obs.ix,
+                    case
+                        when v.field_name is null then graphql.exception('Invalid order clause')
+                        when v.direction_val is null then graphql.exception('Invalid order clause')
+                        else null
+                    end as errors
+                from
+                    obs,
+                    lateral (
+                        select
+                            field_name,
+                            direction_val
+                        from
+                            jsonb_each_text(
+                                case jsonb_typeof(variables -> graphql.name_literal(obs.sel))
+                                    when 'object' then variables -> graphql.name_literal(obs.sel)
+                                    else graphql.exception('Invalid order clause')::jsonb
+                                end
+                            ) jv(field_name, direction_val)
+                        ) v
+                where
+                    graphql.is_variable(obs.sel)
+            )
             select
                 string_agg(
                     format(
                         '%I.%I %s',
                         alias_name,
                         case
-                            -- Literals
-                            when field_ast ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
-                            when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
                             when f.column_name is not null then f.column_name
-                            else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
+                            else graphql.exception('Invalid order clause')
                         end,
-                        case graphql.is_variable(field_ast)
-                            when true then graphql.order_by_enum_to_clause(variables ->> (graphql.name(field_ast -> 'value')))
-                            else graphql.order_by_enum_to_clause(graphql.value(field_ast))
-                        end
+                        graphql.order_by_enum_to_clause(norm.direction_val)
                     ),
                     ', '
-                    order by oba.ix asc
+                    order by norm.ix asc
                 )
             from
-                jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix),
-                lateral (
-                    select
-                        oba.sel -> 'fields' -> 0 as field_ast
-                ) x
+                norm
                 join graphql.type t
                     on t.entity = $2
                     and t.meta_kind = 'NODE'
                 left join graphql.field f
                     on t.name = f.parent_type
-                    and f.name = graphql.name(field_ast)
+                    and f.name = norm.field_name
         );
 
     else
@@ -1326,14 +1370,14 @@ create or replace function graphql.build_node_query(
 as $$
 declare
     block_name text = graphql.slug();
-    field graphql.field = gf from graphql.field gf where gf.name = graphql.name(ast) and gf.parent_type = $4;
+    field graphql.field = gf from graphql.field gf where gf.name = graphql.name_literal(ast) and gf.parent_type = $4;
     type_ graphql.type = gt from graphql.type gt where gt.name = field.type_;
     nodeId text = graphql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
     result text;
 begin
     return
         E'(\nselect\njsonb_build_object(\n'
-        || string_agg(quote_literal(graphql.alias_or_name(x.sel)) || E',\n' ||
+        || string_agg(quote_literal(graphql.alias_or_name_literal(x.sel)) || E',\n' ||
             case
                 when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(type_.name)
@@ -1352,7 +1396,7 @@ begin
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
-                else graphql.exception_unknown_field(graphql.name(x.sel), field.type_)
+                else graphql.exception_unknown_field(graphql.name_literal(x.sel), field.type_)
             end,
             E',\n'
         )
@@ -1385,11 +1429,11 @@ begin
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
         left join graphql.field nf
             on nf.parent_type = field.type_
-            and graphql.name(x.sel) = nf.name
+            and graphql.name_literal(x.sel) = nf.name
         left join graphql.type nf_t
             on nf.type_ = nf_t.name
     where
-        field.name = graphql.name(ast)
+        field.name = graphql.name_literal(ast)
         and $4 = field.parent_type;
 end;
 $$;
@@ -1414,11 +1458,11 @@ declare
             join graphql.type t
                 on f.type_ = t.name
         where
-            f.name = graphql.name(ast)
+            f.name = graphql.name_literal(ast)
             and f.parent_type = $4;
 
     ent alias for entity;
-    field_row graphql.field = f from graphql.field f where f.name = graphql.name(ast) and f.parent_type = $4;
+    field_row graphql.field = f from graphql.field f where f.name = graphql.name_literal(ast) and f.parent_type = $4;
     first_ text = graphql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, entity);
     last_ text = graphql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
     before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
@@ -1433,10 +1477,10 @@ begin
                 array_remove(
                     array_agg(
                         case
-                            when graphql.name(root.sel) = 'totalCount' then
+                            when graphql.name_literal(root.sel) = 'totalCount' then
                                 format(
                                     '%L, coalesce(min(%I.%I), 0)',
-                                    graphql.alias_or_name(root.sel),
+                                    graphql.alias_or_name_literal(root.sel),
                                     block_name,
                                     '__total_count'
                                 )
@@ -1451,22 +1495,22 @@ begin
                 array_remove(
                     array_agg(
                         case
-                            when graphql.name(root.sel) = 'pageInfo' then
+                            when graphql.name_literal(root.sel) = 'pageInfo' then
                                 format(
                                     '%L, jsonb_build_object(%s)',
-                                    graphql.alias_or_name(root.sel),
+                                    graphql.alias_or_name_literal(root.sel),
                                     (
                                         select
                                             string_agg(
                                                 format(
                                                     '%L, %s',
-                                                    graphql.alias_or_name(pi.sel),
-                                                    case graphql.name(pi.sel)
+                                                    graphql.alias_or_name_literal(pi.sel),
+                                                    case graphql.name_literal(pi.sel)
                                                         when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                                                         when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
                                                         when 'hasNextPage' then format('graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
                                                         when 'hasPreviousPage' then format('graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor))', block_name, block_name)
-                                                        else graphql.exception_unknown_field(graphql.name(pi.sel), 'PageInfo')
+                                                        else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
 
                                                     end
                                                 )
@@ -1488,31 +1532,31 @@ begin
                 array_remove(
                     array_agg(
                         case
-                            when graphql.name(root.sel) = 'edges' then
+                            when graphql.name_literal(root.sel) = 'edges' then
                                 format(
                                     '%L, json_agg(jsonb_build_object(%s) %s)',
-                                    graphql.alias_or_name(root.sel),
+                                    graphql.alias_or_name_literal(root.sel),
                                     (
                                         select
                                             case
-                                                when graphql.name(ec.sel) = 'cursor' then format('%L, %I.%I', graphql.alias_or_name(ec.sel), block_name, '__cursor')
-                                                else graphql.exception_unknown_field(graphql.name(ec.sel), 'Edge') -- TODO: incomplete type info
+                                                when graphql.name_literal(ec.sel) = 'cursor' then format('%L, %I.%I', graphql.alias_or_name_literal(ec.sel), block_name, '__cursor')
+                                                else graphql.exception_unknown_field(graphql.name_literal(ec.sel), 'Edge') -- TODO: incomplete type info
                                             end
                                         from
                                             jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel)
                                         where
-                                            graphql.name(root.sel) = 'edges'
-                                            and graphql.name(ec.sel) <> 'node'
+                                            graphql.name_literal(root.sel) = 'edges'
+                                            and graphql.name_literal(ec.sel) <> 'node'
                                     ),
                                     (
                                         select
                                             format(
                                                 '|| jsonb_build_object(%L, jsonb_build_object(%s))',
-                                                graphql.alias_or_name(e.sel),
+                                                graphql.alias_or_name_literal(e.sel),
                                                     string_agg(
                                                         format(
                                                             '%L, %s',
-                                                            graphql.alias_or_name(n.sel),
+                                                            graphql.alias_or_name_literal(n.sel),
                                                             case
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
@@ -1533,7 +1577,7 @@ begin
                                                                         parent_block_name := block_name
                                                                     )
                                                                 when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
-                                                                else graphql.exception_unknown_field(graphql.name(n.sel), gf_n.type_)
+                                                                else graphql.exception_unknown_field(graphql.name_literal(n.sel), gf_n.type_)
                                                             end
                                                         ),
                                                         E','
@@ -1550,11 +1594,11 @@ begin
                                                 and gf_n.name = 'node'
                                             left join graphql.field gf_s -- node selections
                                                 on gf_n.type_ = gf_s.parent_type
-                                                and graphql.name(n.sel) = gf_s.name
+                                                and graphql.name_literal(n.sel) = gf_s.name
                                             left join graphql.type gf_st
                                                 on gf_s.type_ = gf_st.name
                                         where
-                                            graphql.name(e.sel) = 'node'
+                                            graphql.name_literal(e.sel) = 'node'
                                         group by
                                             e.sel
                                 )
@@ -1570,7 +1614,7 @@ begin
         (
             array_agg(
                 case
-                    when graphql.name(root.sel) not in ('pageInfo', 'edges', 'totalCount') then graphql.exception_unknown_field(graphql.name(root.sel), field_row.type_)
+                    when graphql.name_literal(root.sel) not in ('pageInfo', 'edges', 'totalCount') then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
                     else null::text
                 end
             )
@@ -1770,8 +1814,8 @@ begin
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
         lateral (
             select
-                graphql.alias_or_name(x.sel) field_alias,
-                graphql.name(x.sel) as selection_name
+                graphql.alias_or_name_literal(x.sel) field_alias,
+                graphql.name_literal(x.sel) as selection_name
         ) fa;
 end;
 $$;
@@ -1862,8 +1906,8 @@ begin
             on true,
         lateral (
             select
-                graphql.alias_or_name(x.sel) field_alias,
-                graphql.name(x.sel) as selection_name
+                graphql.alias_or_name_literal(x.sel) field_alias,
+                graphql.name_literal(x.sel) as selection_name
         ) fa,
         lateral (
             select (coalesce(is_array_not_null, false) or is_array or is_not_null) as has_modifiers
@@ -1896,8 +1940,8 @@ as $$
         lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
         lateral (
             select
-                graphql.alias_or_name(x.sel) field_alias,
-                graphql.name(x.sel) as selection_name
+                graphql.alias_or_name_literal(x.sel) field_alias,
+                graphql.name_literal(x.sel) as selection_name
         ) fa
 $$;
 
@@ -1919,26 +1963,26 @@ begin
     --field_rec = "field" from graphql.field where parent_type = '__Schema' and name = field_name;
 
     for node_field in select * from jsonb_array_elements(node_fields) loop
-        node_field_rec = "field" from graphql.field where parent_type = '__Schema' and name = graphql.name(node_field);
+        node_field_rec = "field" from graphql.field where parent_type = '__Schema' and name = graphql.name_literal(node_field);
 
-        if graphql.name(node_field) = 'description' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name(node_field), node_field_rec.description);
+        if graphql.name_literal(node_field) = 'description' then
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), node_field_rec.description);
         elsif node_field_rec.type_ = '__Directive' then
             -- TODO
-            agg = agg || jsonb_build_object(graphql.alias_or_name(node_field), '[]'::jsonb);
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), '[]'::jsonb);
 
         elsif node_field_rec.name = 'queryType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name(node_field), graphql."resolve_queryType"(node_field));
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql."resolve_queryType"(node_field));
 
         elsif node_field_rec.name = 'mutationType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name(node_field), 'null'::jsonb);
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), 'null'::jsonb);
 
         elsif node_field_rec.name = 'subscriptionType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name(node_field), null);
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
 
         elsif node_field_rec.name = 'types' then
             agg = agg || jsonb_build_object(
-                    graphql.alias_or_name(node_field),
+                    graphql.alias_or_name_literal(node_field),
                     jsonb_agg(graphql."resolve___Type"(gt.name, node_field) order by gt.name)
                 )
             from
@@ -1955,11 +1999,11 @@ begin
             );
 
         else
-            raise 'Invalid field for type __Schema: "%"', graphql.name(node_field);
+            raise 'Invalid field for type __Schema: "%"', graphql.name_literal(node_field);
         end if;
     end loop;
 
-    return jsonb_build_object(graphql.alias_or_name(ast), agg);
+    return jsonb_build_object(graphql.alias_or_name_literal(ast), agg);
 end
 $$;
 
@@ -2006,7 +2050,7 @@ as $$
     from
         jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
         left join jsonb_each_text(variables) var(key_, val)
-            on graphql.name(def -> 'variable') = var.key_
+            on graphql.name_literal(def -> 'variable') = var.key_
 $$;
 
 
@@ -2121,7 +2165,7 @@ begin
                         on field.type_ = type_.name
                 where
                     field.parent_type = 'Query'
-                    and field.name = graphql.name(ast_operation);
+                    and field.name = graphql.name_literal(ast_operation);
 
             q = case meta_kind
                 when 'CONNECTION' then
@@ -2151,7 +2195,7 @@ begin
                     )
                 when '__TYPE' then
                     jsonb_build_object(
-                        graphql.name(ast_operation),
+                        graphql.name_literal(ast_operation),
                         graphql."resolve___Type"(
                             (
                                 select
@@ -2183,7 +2227,7 @@ begin
         -- Call prepared statement respecting passed values and variable definition defaults
         execute graphql.prepared_statement_execute_clause(prepared_statement_name, variable_definitions, variables) into data_;
         data_ = jsonb_build_object(
-            graphql.name(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
+            graphql.name_literal(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
             data_
         );
     end if;

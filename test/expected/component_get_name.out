@@ -1,4 +1,4 @@
-select graphql.name($$
+select graphql.name_literal($$
     {
         "kind": "Field",
         "name": {"kind": "Name", "value": "hello"},
@@ -8,8 +8,8 @@ select graphql.name($$
         "selectionSet": null
     }
 $$::jsonb)
- name  
--------
+ name_literal 
+--------------
  hello
 (1 row)
 
