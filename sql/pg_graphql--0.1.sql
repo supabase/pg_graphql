@@ -257,6 +257,15 @@ as $$
 $$;
 
 
+create or replace function graphql.value(ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select ast -> 'value' ->> 'value';
+$$;
+
+
 create or replace function graphql.alias_or_name(field jsonb)
     returns text
     language sql
@@ -1157,7 +1166,31 @@ $$
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
 
-create or replace function graphql.order_by_clause(order_by_arg jsonb, entity regclass, alias_name text, reverse bool default false, variables jsonb default '{}')
+
+create or replace function graphql.order_by_enum_to_clause(order_by_enum_val text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    select
+        case order_by_enum_val
+            when 'AscNullsFirst' then 'asc nulls first'
+            when 'AscNullsLast' then 'asc nulls last'
+            when 'DescNullsFirst' then 'desc nulls first'
+            when 'DescNullsLast' then 'desc nulls last'
+            else graphql.exception(format('Invalid value for ordering "%s"', coalesce(order_by_enum_val, 'null')))
+        end
+$$;
+
+
+create or replace function graphql.order_by_clause(
+    order_by_arg jsonb,
+    entity regclass,
+    alias_name text,
+    reverse bool default false,
+    variables jsonb default '{}'
+)
     returns text
     language plpgsql
     immutable
@@ -1193,13 +1226,7 @@ begin
                     when f.column_name is not null then f.column_name
                     else graphql.exception_unknown_field(x.key_, t.name)
                 end,
-                case val_
-                    when 'AscNullsFirst' then 'asc nulls first'
-                    when 'AscNullsLast' then 'asc nulls last'
-                    when 'DescNullsFirst' then 'desc nulls first'
-                    when 'DescNullsLast' then 'desc nulls last'
-                    else graphql.exception('Invalid order by clause variable')
-                end
+                graphql.order_by_enum_to_clause(val_)
             ),
             ', '
         )
@@ -1229,33 +1256,14 @@ begin
                         alias_name,
                         case
                             -- Literals
-                            when sel -> 'fields' -> 0  ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
+                            when field_ast ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
                             when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
                             when f.column_name is not null then f.column_name
                             else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
                         end,
                         case graphql.is_variable(field_ast)
-                            -- Literals
-                            when false then (
-                                case field_ast -> 'value' ->> 'value'
-                                    when 'AscNullsFirst' then 'asc nulls first'
-                                    when 'AscNullsLast' then 'asc nulls last'
-                                    when 'DescNullsFirst' then 'desc nulls first'
-                                    when 'DescNullsLast' then 'desc nulls last'
-                                    else graphql.exception('Invalid ordering enum value')
-                                end
-                            )
-                            -- Variables
-                            else (
-                                -- Lookup the variable name in provided variables
-                               case (variables ->> (sel -> 'fields' -> 0 -> 'value' -> 'name' ->> 'value'))
-                                    when 'AscNullsFirst' then 'asc nulls first'
-                                    when 'AscNullsLast' then 'asc nulls last'
-                                    when 'DescNullsFirst' then 'desc nulls first'
-                                    when 'DescNullsLast' then 'desc nulls last'
-                                    else graphql.exception('Invalid order by clause variable')
-                               end
-                            )
+                            when true then graphql.order_by_enum_to_clause(variables ->> (graphql.name(field_ast -> 'value')))
+                            else graphql.order_by_enum_to_clause(graphql.value(field_ast))
                         end
                     ),
                     ', '

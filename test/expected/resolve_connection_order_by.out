@@ -424,13 +424,13 @@ begin;
         variables:= '{"direction": "InvalidChoice"}'
       )
     );
-                jsonb_pretty                
---------------------------------------------
- {                                         +
-     "data": null,                         +
-     "errors": [                           +
-         "Invalid order by clause variable"+
-     ]                                     +
+                      jsonb_pretty                      
+--------------------------------------------------------
+ {                                                     +
+     "data": null,                                     +
+     "errors": [                                       +
+         "Invalid value for ordering \"InvalidChoice\""+
+     ]                                                 +
  }
 (1 row)
 
@@ -451,13 +451,13 @@ begin;
         variables:= '{}'
       )
     );
-                jsonb_pretty                
---------------------------------------------
- {                                         +
-     "data": null,                         +
-     "errors": [                           +
-         "Invalid order by clause variable"+
-     ]                                     +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         "Invalid value for ordering \"null\""+
+     ]                                        +
  }
 (1 row)
 
