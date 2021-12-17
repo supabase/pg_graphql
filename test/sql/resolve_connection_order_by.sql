@@ -185,4 +185,116 @@ begin;
       )
     );
 
+    -- Variable Whole Param: AscNullsFirst
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "AscNullsFirst"}]}'
+      )
+    );
+
+    -- Variable Whole Param: AscNullsLast
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "AscNullsLast"}]}'
+      )
+    );
+
+
+    -- Variable Whole Param: DescNullsFirst
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "DescNullsFirst"}]}'
+      )
+    );
+
+
+    -- Variable Whole Param: DescullsLast
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "DescNullsLast"}]}'
+      )
+    );
+
+
+    -- Variable Whole Param: Invalid, null
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": null}'
+      )
+    );
+
+    -- Variable Whole Param: Invalid, empty list
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": []}'
+      )
+    );
+
+
 rollback;

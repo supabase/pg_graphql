@@ -1153,6 +1153,7 @@ create or replace function graphql.order_by_clause(order_by_arg jsonb, entity re
 $$
 declare
     claues text;
+    variable_value jsonb;
 begin
     -- No order by clause was specified
     if order_by_arg is null then
@@ -1162,7 +1163,50 @@ begin
 
     -- Disallow variable order by clause because it is incompatible with prepared statements
     if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
-        return graphql.exception('Ordering clause may not contain variables');
+
+        -- Expect [{"fieldName", "DescNullsFirst"}]
+        variable_value = variables -> (order_by_arg -> 'value' -> 'name' ->> 'value');
+
+        if jsonb_typeof(variable_value) <> 'array' or jsonb_array_length(variable_value) = 0 then
+            return graphql.exception('Invalid value for ordering variable');
+        end if;
+
+        -- name of the variable
+        return string_agg(
+            format(
+                '%I.%I %s',
+                alias_name,
+                case
+                    when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
+                    when f.column_name is not null then f.column_name
+                    else graphql.exception_unknown_field(x.key_, t.name)
+                end,
+                case val_
+                    when 'AscNullsFirst' then 'asc nulls first'
+                    when 'AscNullsLast' then 'asc nulls last'
+                    when 'DescNullsFirst' then 'desc nulls first'
+                    when 'DescNullsLast' then 'desc nulls last'
+                    else graphql.exception('Invalid order by clause variable')
+                end
+            ),
+            ', '
+        )
+        from
+            jsonb_array_elements(variable_value) jae(obj),
+            lateral (
+                select
+                    jet.key_,
+                    jet.val_
+                from
+                    jsonb_each_text( jae.obj )  jet(key_, val_)
+            ) x
+            join graphql.type t
+                on t.entity = $2
+                and t.meta_kind = 'NODE'
+            left join graphql.field f
+                on t.name = f.parent_type
+                and f.name = x.key_;
+
 
     elsif (order_by_arg -> 'value' ->> 'kind') = 'ListValue' then
         return (

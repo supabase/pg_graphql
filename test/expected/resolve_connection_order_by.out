@@ -461,4 +461,262 @@ begin;
  }
 (1 row)
 
+    -- Variable Whole Param: AscNullsFirst 
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "AscNullsFirst"}]}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Whole Param: AscNullsLast
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "AscNullsLast"}]}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Whole Param: DescNullsFirst 
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "DescNullsFirst"}]}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Whole Param: DescullsLast 
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": [{"id": "DescNullsLast"}]}'
+      )
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "allAccounts": {          +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+    -- Variable Whole Param: Invalid, null
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": null}'
+      )
+    );
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         "Invalid value for ordering variable"+
+     ]                                        +
+ }
+(1 row)
+
+    -- Variable Whole Param: Invalid, empty list
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             allAccounts(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": []}'
+      )
+    );
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         "Invalid value for ordering variable"+
+     ]                                        +
+ }
+(1 row)
+
 rollback;
