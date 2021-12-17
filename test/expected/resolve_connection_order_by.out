@@ -209,10 +209,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -247,8 +246,7 @@ begin;
                          "id": 3   +
                      }             +
                  }                 +
-             ],                    +
-             "totalCount": 4       +
+             ]                     +
          }                         +
      },                            +
      "errors": [                   +
@@ -262,10 +260,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -300,8 +297,7 @@ begin;
                          "id": null+
                      }             +
                  }                 +
-             ],                    +
-             "totalCount": 4       +
+             ]                     +
          }                         +
      },                            +
      "errors": [                   +
@@ -315,10 +311,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -353,8 +348,7 @@ begin;
                          "id": 1   +
                      }             +
                  }                 +
-             ],                    +
-             "totalCount": 4       +
+             ]                     +
          }                         +
      },                            +
      "errors": [                   +
@@ -368,10 +362,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -406,8 +399,7 @@ begin;
                          "id": null+
                      }             +
                  }                 +
-             ],                    +
-             "totalCount": 4       +
+             ]                     +
          }                         +
      },                            +
      "errors": [                   +
@@ -421,10 +413,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -449,10 +440,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }

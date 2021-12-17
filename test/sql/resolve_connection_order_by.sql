@@ -83,10 +83,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -102,10 +101,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -121,10 +119,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -140,10 +137,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -159,10 +155,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }
@@ -178,10 +173,9 @@ begin;
            query AccountsOrdered($direction: OrderByDirection)
            {
              allAccounts(orderBy: [{id: $direction}]) {
-               totalCount
                edges {
                  node{
-                       id
+                   id
                  }
                }
              }

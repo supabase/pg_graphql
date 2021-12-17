@@ -1153,74 +1153,68 @@ create or replace function graphql.order_by_clause(order_by_arg jsonb, entity re
 $$
 declare
     claues text;
-
-    ix int;
-    field_ast text;
-    col_name text;
-    name_ast text;
-    direction_ast text;
-    direction_enum text;
-    direction_value text;
-    clause text;
 begin
     -- No order by clause was specified
     if order_by_arg is null then
         return graphql.primary_key_clause(entity, alias_name) || case when reverse then ' desc' else ' asc' end;
+        -- todo handle no primary key
     end if;
 
     -- Disallow variable order by clause because it is incompatible with prepared statements
     if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
         return graphql.exception('Ordering clause may not contain variables');
-    elsif (order_by_arg -> 'value' ->> 'kind') <> 'ListValue' then
+
+    elsif (order_by_arg -> 'value' ->> 'kind') = 'ListValue' then
+        return (
+            select
+                string_agg(
+                    format(
+                        '%I.%I %s',
+                        alias_name,
+                        case
+                            -- Literals
+                            when sel -> 'fields' -> 0  ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
+                            when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
+                            when f.column_name is not null then f.column_name
+                            else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
+                        end,
+                        case
+                            -- Literals
+                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsFirst' then 'asc nulls first'
+                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsLast' then 'asc nulls last'
+                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsFirst' then 'desc nulls first'
+                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsLast' then 'desc nulls last'
+                            -- Variables
+                            -- prepared statements do not allow dynamic sorting. must populate with literals
+                            when graphql.is_arg_a_variable(sel -> 'fields' -> 0) then (
+                                -- Lookup the variable name in provided variables
+                               case (variables ->> (sel -> 'fields' -> 0 -> 'value' -> 'name' ->> 'value'))
+                                    when 'AscNullsFirst' then 'asc nulls first'
+                                    when 'AscNullsLast' then 'asc nulls last'
+                                    when 'DescNullsFirst' then 'desc nulls first'
+                                    when 'DescNullsLast' then 'desc nulls last'
+                                    else graphql.exception('Invalid order by clause variable')
+                               end
+                            )
+                            else graphql.exception('Invalid ordering enum value')
+                        end
+                    ),
+                    ', '
+                    order by oba.ix asc
+                )
+            from
+                jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
+                join graphql.type t
+                    on t.entity = $2
+                    and t.meta_kind = 'NODE'
+                left join graphql.field f
+                    on t.name = f.parent_type
+                    and f.name = graphql.name(oba.sel -> 'fields' -> 0)
+        );
+
+    else
         return graphql.exception('Invalid type for order clause');
     end if;
-
-    return (
-        select
-            string_agg(
-                format(
-                    '%I.%I %s',
-                    alias_name,
-                    case
-                        -- Literals
-                        when sel -> 'fields' -> 0  ->> 'kind' <> 'ObjectField' then graphql.exception('Invalid list entry for order clause')
-                        when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
-                        when f.column_name is not null then f.column_name
-                        else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
-                    end,
-                    case
-                        -- Literals
-                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsFirst' then 'asc nulls first'
-                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsLast' then 'asc nulls last'
-                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsFirst' then 'desc nulls first'
-                        when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsLast' then 'desc nulls last'
-                        -- Variables
-                        -- prepared statements do not allow dynamic sorting. must populate with literals
-                        when graphql.is_arg_a_variable(sel -> 'fields' -> 0) then (
-                            -- Lookup the variable name in provided variables
-                           case (variables ->> (sel -> 'fields' -> 0 -> 'value' -> 'name' ->> 'value'))
-                                when 'AscNullsFirst' then 'asc nulls first'
-                                when 'AscNullsLast' then 'asc nulls last'
-                                when 'DescNullsFirst' then 'desc nulls first'
-                                when 'DescNullsLast' then 'desc nulls last'
-                                else graphql.exception('Invalid order by clause variable')
-                           end
-                        )
-                        else graphql.exception('Invalid ordering enum value')
-                    end
-                ),
-                ', '
-                order by oba.ix asc
-            )
-        from
-            jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
-            join graphql.type t
-                on t.entity = $2
-                and t.meta_kind = 'NODE'
-            left join graphql.field f
-                on t.name = f.parent_type
-                and f.name = graphql.name(oba.sel -> 'fields' -> 0)
-    );
 end;
 $$;
 
@@ -1971,10 +1965,9 @@ as $$
 $$;
 
 
-create or replace function graphql.cache_key(role regrole, ast jsonb, variable_definitions jsonb, variables jsonb)
+create or replace function graphql.cache_key(role regrole, ast jsonb, variables jsonb)
     returns text
     language sql
-    strict
     volatile
 as $$
     select
@@ -1982,10 +1975,21 @@ as $$
         graphql.sha1(
             $1::text
             -- Parsed query hash
-            || graphql.sha1(ast::text)
-            -- Disable cache for non-exact dupes
-            -- todo: build cache key for dynamic column selection/ordering
-            || graphql.sha1(variable_definitions::text || variables::text )
+            || ast::text
+            || coalesce(
+                (
+                    select
+                        jsonb_object_agg(x.key_, x.val_)
+                    from
+                        jsonb_each_text(variables) x(key_, val_)
+                    where
+                        -- Only include keys where the values can not be passed
+                        -- in a prepared statement
+                        -- False positives are low impact
+                        x.val_ similar to '%AscNullsFirst%|%AscNullsLast%|%DescNullsFirst%|%DescNullsLast%'
+                )::text,
+                ''
+            )
         )
 $$;
 
@@ -2002,7 +2006,8 @@ declare
     parsed graphql.parse_result = graphql.parse(stmt);
     ast jsonb = parsed.ast;
     variable_definitions jsonb = coalesce(graphql.variable_definitions_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions'), '[]');
-    prepared_statement_name text = graphql.cache_key(current_user::regrole, ast, variable_definitions, variables);
+
+    prepared_statement_name text = graphql.cache_key(current_user::regrole, ast, variables);
 
     q text;
     data_ jsonb;
