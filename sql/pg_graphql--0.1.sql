@@ -267,6 +267,26 @@ as $$
 $$;
 
 
+create or replace function graphql.is_variable(field jsonb)
+    returns boolean
+    immutable
+    strict
+    language sql
+as $$
+    select (field -> 'value' ->> 'kind') = 'Variable'
+$$;
+
+
+create or replace function graphql.is_literal(field jsonb)
+    returns boolean
+    immutable
+    strict
+    language sql
+as $$
+    select not graphql.is_variable(field)
+$$;
+
+
 ------------
 -- CURSOR --
 ------------
@@ -1043,14 +1063,6 @@ as $$
         graphql.name(elem) = $1
 $$;
 
-create or replace function graphql.is_arg_a_variable(argument jsonb)
-    returns boolean
-    immutable
-    strict
-    language sql
-as $$
-    select (argument -> 'value' ->> 'kind') = 'Variable'
-$$;
 
 create or replace function graphql.arg_index(arg_name text, variable_definitions jsonb)
     returns int
@@ -1087,7 +1099,7 @@ begin
     if arg is null then
         return null;
 
-    elsif graphql.is_arg_a_variable(arg) and is_opaque then
+    elsif graphql.is_variable(arg) and is_opaque then
         return graphql.cursor_clause_for_variable(entity, graphql.arg_index(name, variable_definitions));
 
     elsif is_opaque then
@@ -1097,7 +1109,7 @@ begin
     -- Order by
 
     -- Non-special variable
-    elsif graphql.is_arg_a_variable(arg) then
+    elsif graphql.is_variable(arg) then
         return '$' || graphql.arg_index(name, variable_definitions)::text || '::' || cast_to;
 
     -- Non-special literal
@@ -1222,15 +1234,19 @@ begin
                             when f.column_name is not null then f.column_name
                             else graphql.exception_unknown_field(graphql.name(oba.sel), t.name)
                         end,
-                        case
+                        case graphql.is_variable(field_ast)
                             -- Literals
-                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsFirst' then 'asc nulls first'
-                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'AscNullsLast' then 'asc nulls last'
-                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsFirst' then 'desc nulls first'
-                            when sel -> 'fields' -> 0 -> 'value' ->> 'value' = 'DescNullsLast' then 'desc nulls last'
+                            when false then (
+                                case field_ast -> 'value' ->> 'value'
+                                    when 'AscNullsFirst' then 'asc nulls first'
+                                    when 'AscNullsLast' then 'asc nulls last'
+                                    when 'DescNullsFirst' then 'desc nulls first'
+                                    when 'DescNullsLast' then 'desc nulls last'
+                                    else graphql.exception('Invalid ordering enum value')
+                                end
+                            )
                             -- Variables
-                            -- prepared statements do not allow dynamic sorting. must populate with literals
-                            when graphql.is_arg_a_variable(sel -> 'fields' -> 0) then (
+                            else (
                                 -- Lookup the variable name in provided variables
                                case (variables ->> (sel -> 'fields' -> 0 -> 'value' -> 'name' ->> 'value'))
                                     when 'AscNullsFirst' then 'asc nulls first'
@@ -1240,20 +1256,23 @@ begin
                                     else graphql.exception('Invalid order by clause variable')
                                end
                             )
-                            else graphql.exception('Invalid ordering enum value')
                         end
                     ),
                     ', '
                     order by oba.ix asc
                 )
             from
-                jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
+                jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix),
+                lateral (
+                    select
+                        oba.sel -> 'fields' -> 0 as field_ast
+                ) x
                 join graphql.type t
                     on t.entity = $2
                     and t.meta_kind = 'NODE'
                 left join graphql.field f
                     on t.name = f.parent_type
-                    and f.name = graphql.name(oba.sel -> 'fields' -> 0)
+                    and f.name = graphql.name(field_ast)
         );
 
     else
