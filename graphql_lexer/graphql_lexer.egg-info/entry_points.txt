@@ -1,4 +1,0 @@
-
-    [pygments.lexers]
-    graphqllexer = graphql_lexer:GraphQLLexer
-    

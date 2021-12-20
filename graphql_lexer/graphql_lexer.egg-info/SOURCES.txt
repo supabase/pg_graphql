@@ -1,6 +1,0 @@
-setup.py
-graphql_lexer.egg-info/PKG-INFO
-graphql_lexer.egg-info/SOURCES.txt
-graphql_lexer.egg-info/dependency_links.txt
-graphql_lexer.egg-info/entry_points.txt
-graphql_lexer.egg-info/top_level.txt
