@@ -4,7 +4,7 @@ On an a machine with:
 - 4 CPUs
 - 16GB of RAM
 - PostgreSQL 13 (docker)
-- Postgrest +8.* (docker, operating as webserver)
+- Postgrest +8 (docker, operating as webserver)
 
 pg_graphql served a simple query at an average rate of +2200 req/second.
 
@@ -56,7 +56,7 @@ Percentage of the requests served within a certain time (ms)
  100%     39 (longest request)
 ```
 
-To reproduce this result, start the demo described in the [quickstart guide](docs/quickstart.md) and apache bench on a sample query.
+To reproduce this result, start the demo described in the [quickstart guide](quickstart.md) and apache bench on a sample query.
 
 i.e.
 
