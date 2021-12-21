@@ -11,7 +11,8 @@ RUN apt-get update \
     && rm -rf "/var/lib/apt/lists/*"
 
 RUN export LIBGRAPHQLPARSER_VERSION="v0.7.0" \
-    && git clone -b "${LIBGRAPHQLPARSER_VERSION}" https://github.com/graphql/libgraphqlparser \
+    export LIBGRAPHQLPARSER_REPO="git@github.com:graphql/libgraphqlparser.git" \
+    && git clone -b "${LIBGRAPHQLPARSER_VERSION}" --depth 1 "${LIBGRAPHQLPARSER_REPO}" \
     && cd libgraphqlparser \
     && cmake . \
     && make install
