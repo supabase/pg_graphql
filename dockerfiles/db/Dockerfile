@@ -1,22 +1,20 @@
 FROM postgres:13 as build
 
-RUN \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    build-essential \
-    ca-certificates \
-    cmake \
-    git \
-    postgresql-server-dev-13 \
-    python2 \
-    && \
-  rm -rf "/var/lib/apt/lists/*"
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      build-essential \
+      ca-certificates \
+      cmake \
+      git \
+      postgresql-server-dev-13 \
+      python2 \
+    && rm -rf "/var/lib/apt/lists/*"
 
-RUN \
-  git clone https://github.com/graphql/libgraphqlparser.git && \
-  cd libgraphqlparser && \
-  cmake . && \
-  make install
+RUN LIBGRAPHQLPARSER_VERSION="v0.7.0" \
+    git clone -b ${LIBGRAPHQLPARSER_VERSION} https://github.com/graphql/libgraphqlparser \
+    && cd libgraphqlparser \
+    && cmake . \
+    && make install
 
 COPY . pg_graphql
 WORKDIR /pg_graphql
