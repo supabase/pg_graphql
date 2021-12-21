@@ -417,7 +417,7 @@ create type graphql.meta_kind as enum (
     -- Introspection types
     '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION',
     -- Custom
-    'ORDER_BY_DIRECTION', 'ORDER_BY'
+    'ORDER_BY_DIRECTION', 'ORDER_BY', 'FILTER_FIELD', 'FILTER_ENTITY'
 );
 
 
@@ -505,7 +505,16 @@ create materialized view graphql._type (
         ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
         ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.'),
         -- pg_graphql constant
-        ('OrderByDirection', 'ENUM', 'ORDER_BY_DIRECTION', 'Defines a per-field sorting order')
+        ('OrderByDirection', 'ENUM', 'ORDER_BY_DIRECTION', 'Defines a per-field sorting order'),
+        -- Type filters
+        ('IntFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Int"'),
+        ('FloatFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Float"'),
+        ('StringFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "String"'),
+        ('BooleanFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Boolean"'),
+        ('DateTimeFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "DateTime"'),
+        ('BigIntFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "BigInt"'),
+        ('UUIDFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "UUID"'),
+        ('JSONFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "JSON"')
     ) as const(name, type_kind, meta_kind, description)
     union all
     select
@@ -521,7 +530,8 @@ create materialized view graphql._type (
                 (names_.table_name_pascal_case::text, 'OBJECT'::graphql.type_kind, 'NODE'::graphql.meta_kind, null::text, ent.entity),
                 (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
                 (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity),
-                (names_.table_name_pascal_case || 'OrderBy', 'INPUT_OBJECT', 'ORDER_BY', null, ent.entity)
+                (names_.table_name_pascal_case || 'OrderBy', 'INPUT_OBJECT', 'ORDER_BY', null, ent.entity),
+                (names_.table_name_pascal_case || 'Filter', 'INPUT_OBJECT', 'FILTER_ENTITY', null, ent.entity)
         ) x
     union all
     select
@@ -614,7 +624,7 @@ $$
     -- SQL type from pg_catalog.format_type
     select
         case
-            when sql_type like 'int_' then 'Int' -- unsafe for int8
+            when sql_type like 'int%' then 'Int' -- unsafe for int8
             when sql_type like 'bool%' then 'Boolean'
             when sql_type like 'float%' then 'Float'
             when sql_type like 'numeric%' then 'Float' -- unsafe
@@ -626,9 +636,9 @@ $$
             when sql_type like 'date%' then 'DateTime'
             when sql_type like 'timestamp%' then 'DateTime'
             when sql_type like 'time%' then 'DateTime'
-            when sql_type = 'inet' then 'InternetAddress'
-            when sql_type = 'cidr' then 'InternetAddress'
-            when sql_type = 'macaddr' then 'MACAddress'
+            --when sql_type = 'inet' then 'InternetAddress'
+            --when sql_type = 'cidr' then 'InternetAddress'
+            --when sql_type = 'macaddr' then 'MACAddress'
         else 'String'
     end;
 $$;
@@ -839,8 +849,58 @@ create materialized view graphql._field_output as
         where
             gt.meta_kind = 'ORDER_BY'
             and pa.attnum > 0
-            and not pa.attisdropped;
+            and not pa.attisdropped
 
+        -- <Type>Filter.eq
+        union all
+        select distinct
+            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) || 'Filter' as parent_type,
+            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) type_,
+            'eq' as name,
+            false,
+            false,
+            null::bool,
+            false,
+            null::text,
+            null::text,
+            null::text,
+            null::text,
+            null::text[],
+            null::text[],
+            false
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'FILTER_ENTITY'
+            and pa.attnum > 0
+            and not pa.attisdropped
+        -- EntityFilter(column eq)
+        union all
+        select distinct
+            gt.name parent_type,
+            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) || 'Filter' as type_,
+            graphql.to_camel_case(pa.attname::text) as name,
+            false is_not_null,
+            false is_array,
+            null::bool is_array_not_null,
+            false as is_arg,
+            null::text as parent_arg_field_name,
+            null::text as default_value,
+            null::text description,
+            pa.attname::text as column_name,
+            null::text[],
+            null::text[],
+            false
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'FILTER_ENTITY'
+            and pa.attnum > 0
+            and not pa.attisdropped;
 
 create materialized view graphql._field_arg as
     -- Arguments
@@ -983,8 +1043,32 @@ create materialized view graphql._field_arg as
             and t.meta_kind = 'CONNECTION'
         inner join graphql.type tt
             on t.entity = tt.entity
-            and tt.meta_kind = 'ORDER_BY';
-
+            and tt.meta_kind = 'ORDER_BY'
+    -- Connection(filter)
+    union all
+    select
+        f.type_,
+        tt.name type_,
+        'filter' as name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql.type t
+        inner join graphql._field_output f
+            on t.name = f.type_
+            and t.meta_kind = 'CONNECTION'
+        inner join graphql.type tt
+            on t.entity = tt.entity
+            and tt.meta_kind = 'FILTER_ENTITY';
 
 create view graphql.field as
     select
@@ -1986,8 +2070,11 @@ begin
                     jsonb_agg(graphql."resolve___Type"(gt.name, node_field) order by gt.name)
                 )
             from
-                graphql.type gt;
-
+                graphql.type gt
+                -- Filter out object types with no fields
+                join (select distinct parent_type from graphql.field) gf
+                    on gt.name = gf.parent_type
+                    or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT');
 
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
             agg = agg || graphql."resolve___Type"(
