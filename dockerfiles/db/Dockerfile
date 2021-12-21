@@ -10,8 +10,9 @@ RUN apt-get update \
       python2 \
     && rm -rf "/var/lib/apt/lists/*"
 
-RUN export LIBGRAPHQLPARSER_VERSION="v0.7.0" \
-    export LIBGRAPHQLPARSER_REPO="git@github.com:graphql/libgraphqlparser.git" \
+RUN export \
+      LIBGRAPHQLPARSER_VERSION="v0.7.0" \
+      LIBGRAPHQLPARSER_REPO="https://github.com/graphql/libgraphqlparser" \
     && git clone -b "${LIBGRAPHQLPARSER_VERSION}" --depth 1 "${LIBGRAPHQLPARSER_REPO}" \
     && cd libgraphqlparser \
     && cmake . \
