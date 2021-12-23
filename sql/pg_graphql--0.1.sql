@@ -1553,6 +1553,7 @@ declare
     after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
 
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
+    filter_arg jsonb = graphql.get_arg_by_name('filter',  (ast -> 'arguments'));
 
 begin
     with clauses as (
@@ -1725,6 +1726,8 @@ begin
                 and %s %s %s
                 -- join clause
                 and %s
+                -- where clause
+                and %s
             order by
                 %s
             limit %s
@@ -1785,6 +1788,8 @@ begin
             case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+            -- where
+            'true',
             -- order
             case
                 when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
@@ -2065,16 +2070,24 @@ begin
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
 
         elsif node_field_rec.name = 'types' then
-            agg = agg || jsonb_build_object(
-                    graphql.alias_or_name_literal(node_field),
-                    jsonb_agg(graphql."resolve___Type"(gt.name, node_field) order by gt.name)
+            agg = agg || (
+                with uq as (
+                    select
+                        distinct gt.name
+                    from
+                        graphql.type gt
+                        -- Filter out object types with no fields
+                        join (select distinct parent_type from graphql.field) gf
+                            on gt.name = gf.parent_type
+                            or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT')
                 )
-            from
-                graphql.type gt
-                -- Filter out object types with no fields
-                join (select distinct parent_type from graphql.field) gf
-                    on gt.name = gf.parent_type
-                    or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT');
+                select
+                    jsonb_build_object(
+                        graphql.alias_or_name_literal(node_field),
+                        jsonb_agg(graphql."resolve___Type"(uq.name, node_field) order by uq.name)
+                    )
+                from uq
+            );
 
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
             agg = agg || graphql."resolve___Type"(
