@@ -2198,10 +2198,12 @@ as $$
                     from
                         jsonb_each_text(variables) x(key_, val_)
                     where
-                        -- Only include keys where the values can not be passed
-                        -- in a prepared statement
+                        -- Only include keys where the values can not be passed in a prepared statement
                         -- False positives are low impact
+                        -- orderBy arg
                         x.val_ similar to '%AscNullsFirst%|%AscNullsLast%|%DescNullsFirst%|%DescNullsLast%'
+                        -- filter arg
+                        or x.val_ similar to '%{"eq": %|%{"neq": %|%{"gt": %|%{"gte": %|%{"lt": %|%{"lte": %'
                 )::text,
                 ''
             )
