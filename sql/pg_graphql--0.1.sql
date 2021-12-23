@@ -1417,6 +1417,86 @@ begin
 end;
 $$;
 
+create or replace function graphql.where_clause(
+    filter_arg jsonb,
+    entity regclass,
+    alias_name text,
+    variables jsonb default '{}'
+)
+    returns text
+    language plpgsql
+    immutable
+    as
+$$
+declare
+    clause text;
+    variable_value jsonb;
+
+    sel jsonb;
+    ix smallint;
+
+    field_name text;
+    column_name text;
+    field_value_obj jsonb;
+    field_comparator text;
+    field_value text;
+
+begin
+    -- No filter specified
+    if filter_arg is null then
+        return 'true';
+
+    -- Disallow variable order by clause because it is incompatible with prepared statements
+    elsif (filter_arg -> 'value' ->> 'kind') = 'Variable' then
+        return graphql.exception('Variable filter not (yet) supported');
+
+    elsif (filter_arg -> 'value' ->> 'kind') <> 'ObjectValue' then
+        return graphql.exception('Invalid filter argument');
+    end if;
+
+    --raise exception '%s', filter_arg;
+    clause = '';
+
+    for sel, ix in select sel_, ix_ from jsonb_array_elements( filter_arg -> 'value' -> 'fields') with ordinality oba(sel_, ix_) loop
+
+        if graphql.is_variable(sel) then
+            return graphql.exception('Invalid filter clause');
+        end if;
+
+        if graphql.is_variable(sel -> 'value') then
+            return graphql.exception('Invalid filter clause-1');
+        end if;
+
+        field_name = graphql.name_literal(sel);
+        field_value = graphql.value_literal(sel);
+
+        column_name = (
+            select
+                f.column_name
+            from
+                graphql.type t
+                left join graphql.field f
+                    on t.name = f.parent_type
+            where
+                t.entity = $2
+                and t.meta_kind = 'NODE'
+                and f.name = field_name
+        );
+
+        -- TODO: add support for all variable types
+        -- TODO: add support for multiple filters (missing AND)
+        -- use an array and join before returning
+
+        clause = clause || format('%I.%I = %L', alias_name, column_name, field_value);
+
+    end loop;
+
+    return clause;
+end;
+$$;
+
+
+
 
 create or replace function graphql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
     returns text
@@ -1789,7 +1869,7 @@ begin
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
             -- where
-            'true',
+            graphql.where_clause(filter_arg, entity, block_name, variables),
             -- order
             case
                 when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
