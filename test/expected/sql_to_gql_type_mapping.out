@@ -28,8 +28,8 @@ order by
     graphql.sql_type_to_graphql_type(pt.typname) = 'String',
     graphql.sql_type_to_graphql_type(pt.typname),
     pt.typname
-             sql_type              |  graphql_type   
------------------------------------+-----------------
+             sql_type              | graphql_type 
+-----------------------------------+--------------
  bool                              | Boolean
  date                              | DateTime
  time                              | DateTime
@@ -41,14 +41,16 @@ order by
  float8                            | Float
  numeric                           | Float
  int2                              | Int
+ int2vector                        | Int
  int4                              | Int
+ int4range                         | Int
  int8                              | Int
- cidr                              | InternetAddress
- inet                              | InternetAddress
+ int8range                         | Int
+ internal                          | Int
+ interval                          | Int
  json                              | JSON
  jsonb                             | JSON
  jsonpath                          | JSON
- macaddr                           | MACAddress
  uuid                              | UUID
  aclitem                           | String
  administrable_role_authorizations | String
@@ -62,6 +64,7 @@ order by
  character_data                    | String
  character_sets                    | String
  cid                               | String
+ cidr                              | String
  circle                            | String
  constraint_column_usage           | String
  constraint_table_usage            | String
@@ -80,16 +83,13 @@ order by
  field                             | String
  gtsvector                         | String
  index_am_handler                  | String
+ inet                              | String
  information_schema_catalog_name   | String
- int2vector                        | String
- int4range                         | String
- int8range                         | String
- internal                          | String
- interval                          | String
  key_column_usage                  | String
  language_handler                  | String
  line                              | String
  lseg                              | String
+ macaddr                           | String
  macaddr8                          | String
  meta_kind                         | String
  money                             | String

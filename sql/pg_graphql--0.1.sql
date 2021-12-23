@@ -1553,7 +1553,7 @@ declare
     after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
 
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
-    filter_arg jsonb = graphql.get_arg_by_name('filter',  (ast -> 'arguments'));
+    filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
 
 begin
     with clauses as (
