@@ -658,6 +658,7 @@ create materialized view graphql._field_output as
         null::text as default_value,
         description,
         null::text as column_name,
+        null::regtype as column_type,
         null::text[] parent_columns,
         null::text[] local_columns,
         case
@@ -721,6 +722,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             fs.description,
             fs.column_name,
+            null::regtype as column_type,
             fs.parent_columns,
             fs.local_columns,
             fs.is_hidden_from_schema
@@ -764,6 +766,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
+            pa.atttypid::regtype as column_type,
             null::text[],
             null::text[],
             false
@@ -810,6 +813,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null description,
             null column_name,
+            null::regtype as column_type,
             rel.local_columns,
             rel.foreign_columns,
             false
@@ -839,6 +843,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
+            null::regtype as column_type,
             null::text[],
             null::text[],
             false
@@ -865,6 +870,7 @@ create materialized view graphql._field_output as
             null::text,
             null::text,
             null::text,
+            null::regtype as column_type,
             null::text[],
             null::text[],
             false
@@ -890,6 +896,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
+            null::regtype as column_type,
             null::text[],
             null::text[],
             false
@@ -919,6 +926,7 @@ create materialized view graphql._field_arg as
         'f' as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null::text[] as parent_columns,
         null::text[] as local_columns,
         false as is_hidden_from_schema
@@ -940,6 +948,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -961,6 +970,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -985,6 +995,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -1009,6 +1020,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -1033,6 +1045,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -1058,6 +1071,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -1083,6 +1097,7 @@ create view graphql.field as
         f.default_value,
         f.description,
         f.column_name,
+        f.column_type,
         f.parent_columns,
         f.local_columns,
         f.is_hidden_from_schema
