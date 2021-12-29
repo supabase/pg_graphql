@@ -57,5 +57,22 @@ begin;
     );
 
 
+    -- Variable: value
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: AccountFilter)
+           {
+             allAccounts(filter: {id: {eq: $filt}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"filt": 2}'
+      )
+    );
 
 rollback;

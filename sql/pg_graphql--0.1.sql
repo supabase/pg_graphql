@@ -1436,7 +1436,8 @@ create or replace function graphql.where_clause(
     filter_arg jsonb,
     entity regclass,
     alias_name text,
-    variables jsonb default '{}'
+    variables jsonb default '{}',
+    variable_definitions jsonb default '{}'
 )
     returns text
     language plpgsql
@@ -1458,6 +1459,8 @@ declare
     op_name text;
     field_value text;
 
+    format_str text;
+
 begin
     -- No filter specified
     if filter_arg is null then
@@ -1473,6 +1476,9 @@ begin
 
     for sel, ix in select sel_, ix_ from jsonb_array_elements( filter_arg -> 'value' -> 'fields') with ordinality oba(sel_, ix_) loop
 
+        format_str = null;
+        field_value = null;
+
         if graphql.is_variable(sel) then
             return graphql.exception('Invalid filter clause');
         end if;
@@ -1482,6 +1488,18 @@ begin
         end if;
 
         field_name = graphql.name_literal(sel);
+
+        select
+            into column_name, column_type
+            f.column_name, f.column_type
+        from
+            graphql.type t
+            left join graphql.field f
+                on t.name = f.parent_type
+        where
+            t.entity = $2
+            and t.meta_kind = 'NODE'
+            and f.name = field_name;
 
         if sel -> 'value' ->> 'kind' = 'ObjectValue' then
             /* {
@@ -1501,29 +1519,32 @@ begin
             end if;
 
             -- "2"
-            field_value = graphql.value_literal(field_value_obj);
+            --raise notice '%', field_value_obj::text;
+
+            if (field_value_obj -> 'value' ->> 'kind') = 'Variable' then
+                format_str = '%I.%I %s %s::%s';
+                field_value = format(
+                    '$%s',
+                    graphql.arg_index(
+                        -- name of argument
+                        (field_value_obj -> 'value' -> 'name' ->> 'value'),
+                        variable_definitions
+                    )
+                );
+            else
+                format_str = '%I.%I %s %L::%s';
+                field_value = graphql.value_literal(field_value_obj);
+            end if;
+
             -- "eq"
             op_name = graphql.name_literal(field_value_obj);
-
         else
             return graphql.exception('variables not supported');
         end if;
 
 
-        select
-            into column_name, column_type
-            f.column_name, f.column_type
-        from
-            graphql.type t
-            left join graphql.field f
-                on t.name = f.parent_type
-        where
-            t.entity = $2
-            and t.meta_kind = 'NODE'
-            and f.name = field_name;
-
         clause_arr = clause_arr || format(
-            '%I.%I %s %L::%s',
+            format_str,
             alias_name,
             column_name,
             case op_name
@@ -1914,7 +1935,7 @@ begin
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
             -- where
-            graphql.where_clause(filter_arg, entity, block_name, variables),
+            graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
             case
                 when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
