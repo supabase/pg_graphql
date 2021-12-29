@@ -95,7 +95,8 @@ begin;
                      "node": {                              +
                          "id": 3,                           +
                          "blogs": {                         +
-                             "edges": null,                 +
+                             "edges": [                     +
+                             ],                             +
                              "totalCount": 0                +
                          },                                 +
                          "email": "cat@x.com"               +
@@ -105,7 +106,8 @@ begin;
                      "node": {                              +
                          "id": 4,                           +
                          "blogs": {                         +
-                             "edges": null,                 +
+                             "edges": [                     +
+                             ],                             +
                              "totalCount": 0                +
                          },                                 +
                          "email": "dog@x.com"               +
@@ -115,7 +117,8 @@ begin;
                      "node": {                              +
                          "id": 5,                           +
                          "blogs": {                         +
-                             "edges": null,                 +
+                             "edges": [                     +
+                             ],                             +
                              "totalCount": 0                +
                          },                                 +
                          "email": "elephant@x.com"          +

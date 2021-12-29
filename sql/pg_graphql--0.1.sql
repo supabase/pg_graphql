@@ -739,7 +739,7 @@ create materialized view graphql._field_output as
                     (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
                     (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
                     (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
-                    (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
+                    (conn.name, edge.name, 'edges', true, true, true, null, null, null, null, false),
                     (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
                     (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
                     (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
@@ -1444,7 +1444,7 @@ create or replace function graphql.where_clause(
     as
 $$
 declare
-    clause text;
+    clause_arr text[] = '{}';
     variable_value jsonb;
 
     sel jsonb;
@@ -1452,8 +1452,10 @@ declare
 
     field_name text;
     column_name text;
+    column_type regtype;
+
     field_value_obj jsonb;
-    field_comparator text;
+    op_name text;
     field_value text;
 
 begin
@@ -1469,9 +1471,6 @@ begin
         return graphql.exception('Invalid filter argument');
     end if;
 
-    --raise exception '%s', filter_arg;
-    clause = '';
-
     for sel, ix in select sel_, ix_ from jsonb_array_elements( filter_arg -> 'value' -> 'fields') with ordinality oba(sel_, ix_) loop
 
         if graphql.is_variable(sel) then
@@ -1483,30 +1482,61 @@ begin
         end if;
 
         field_name = graphql.name_literal(sel);
-        field_value = graphql.value_literal(sel);
 
-        column_name = (
-            select
-                f.column_name
-            from
-                graphql.type t
-                left join graphql.field f
-                    on t.name = f.parent_type
-            where
-                t.entity = $2
-                and t.meta_kind = 'NODE'
-                and f.name = field_name
+        if sel -> 'value' ->> 'kind' = 'ObjectValue' then
+            /* {
+                "kind": "ObjectValue",
+                "fields": [
+                    {
+                        "kind": "ObjectField",
+                        "name": {"kind": "Name", "value": "eq"},
+                        "value": {"kind": "IntValue", "value": "2"}
+                    }
+                ]
+            } */
+            field_value_obj = sel -> 'value' -> 'fields' -> 0;
+
+            if field_value_obj ->> 'kind' <> 'ObjectField' then
+                return graphql.exception('Invalid filter clause-2');
+            end if;
+
+            -- "2"
+            field_value = graphql.value_literal(field_value_obj);
+            -- "eq"
+            op_name = graphql.name_literal(field_value_obj);
+
+        else
+            return graphql.exception('variables not supported');
+        end if;
+
+
+        select
+            into column_name, column_type
+            f.column_name, f.column_type
+        from
+            graphql.type t
+            left join graphql.field f
+                on t.name = f.parent_type
+        where
+            t.entity = $2
+            and t.meta_kind = 'NODE'
+            and f.name = field_name;
+
+        clause_arr = clause_arr || format(
+            '%I.%I %s %L::%s',
+            alias_name,
+            column_name,
+            case op_name
+                when 'eq' then '='
+                else graphql.exception('Invalid filter clause, unknown operation')
+            end,
+            field_value,
+            column_type
         );
-
-        -- TODO: add support for all variable types
-        -- TODO: add support for multiple filters (missing AND)
-        -- use an array and join before returning
-
-        clause = clause || format('%I.%I = %L', alias_name, column_name, field_value);
 
     end loop;
 
-    return clause;
+    return array_to_string(clause_arr, ' and ');
 end;
 $$;
 
@@ -1714,7 +1744,7 @@ begin
                         case
                             when graphql.name_literal(root.sel) = 'edges' then
                                 format(
-                                    '%L, json_agg(jsonb_build_object(%s) %s)',
+                                    '%L, coalesce(jsonb_agg(jsonb_build_object(%s) %s), jsonb_build_array())',
                                     graphql.alias_or_name_literal(root.sel),
                                     (
                                         select
