@@ -2394,10 +2394,60 @@ as $$
 $$;
 
 
+create or replace function graphql.cache_key_variable_component(variables jsonb = '{}')
+    returns text
+    language sql
+    immutable
+as $$
+/*
+Some GraphQL variables are not compatible with prepared statement
+For example, the order by clause can be passed via a variable, but
+SQL prepared statements can dynamically sort by column name or direction
+based on a parameter.
+
+This function returns a string that can be included in the cache key for
+a query to ensure separate prepared statements for each e.g. column order + direction
+and filtered column names
+
+While false positives are possible, the cost of false positives is low
+*/
+    with doc as (
+        select
+            *
+        from
+            graphql.jsonb_unnest_recursive_with_jsonpath(variables)
+    ),
+    filter_clause as (
+        select
+            jpath::text as x
+        from
+            doc
+        where
+            jpath::text similar to '%."eq"|%."neq"'
+    ),
+    order_clause as (
+        select
+            jpath::text || '=' || obj as x
+        from
+            doc
+        where
+            obj #>> '{}' in ('AscNullsFirst', 'AscNullsLast', 'DescNullsFirst', 'DescNullsLast')
+    )
+    select
+        coalesce(string_agg(x, ','), '')
+    from
+        (
+            select x from filter_clause
+            union all
+            select x from order_clause
+        ) y(x)
+$$;
+
+
 create or replace function graphql.cache_key(role regrole, ast jsonb, variables jsonb)
     returns text
     language sql
-    volatile
+    immutable
 as $$
     select
         -- Different roles may have different levels of access
@@ -2405,22 +2455,7 @@ as $$
             $1::text
             -- Parsed query hash
             || ast::text
-            || coalesce(
-                (
-                    select
-                        jsonb_object_agg(x.key_, x.val_)
-                    from
-                        jsonb_each_text(variables) x(key_, val_)
-                    where
-                        -- Only include keys where the values can not be passed in a prepared statement
-                        -- False positives are low impact
-                        -- orderBy arg
-                        x.val_ similar to '%AscNullsFirst%|%AscNullsLast%|%DescNullsFirst%|%DescNullsLast%'
-                        -- filter arg
-                        or x.val_ similar to '%{"eq": %|%{"neq": %|%{"gt": %|%{"gte": %|%{"lt": %|%{"lte": %'
-                )::text,
-                ''
-            )
+            || graphql.cache_key_variable_component(variables)
         )
 $$;
 

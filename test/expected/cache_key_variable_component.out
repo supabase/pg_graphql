@@ -1,0 +1,57 @@
+-- Confirm no match returns string, not null
+select graphql.cache_key_variable_component('{}') = '';
+ ?column? 
+----------
+ t
+(1 row)
+
+-- No matches
+select graphql.cache_key_variable_component('{}');
+ cache_key_variable_component 
+------------------------------
+ 
+(1 row)
+
+select graphql.cache_key_variable_component('{"x": 1}');
+ cache_key_variable_component 
+------------------------------
+ 
+(1 row)
+
+select graphql.cache_key_variable_component('{"x": "1"}');
+ cache_key_variable_component 
+------------------------------
+ 
+(1 row)
+
+-- Matches
+select graphql.cache_key_variable_component('{"id": {"eq": 1}}');
+ cache_key_variable_component 
+------------------------------
+ $."id"."eq"
+(1 row)
+
+select graphql.cache_key_variable_component('{"orderByVal": "DescNullsFirst"}');
+  cache_key_variable_component   
+---------------------------------
+ $."orderByVal"="DescNullsFirst"
+(1 row)
+
+select graphql.cache_key_variable_component('{"orderByObj": [{"email": "AscNullsFirst"}]}');
+       cache_key_variable_component        
+-------------------------------------------
+ $."orderByObj"[0]."email"="AscNullsFirst"
+(1 row)
+
+select graphql.cache_key_variable_component('{
+    "id": {"eq": 1},
+    "orderByVal": "DescNullsFirst",
+    "orderByObj": [
+        {"email": "AscNullsFirst"}
+    ]
+}');
+                             cache_key_variable_component                              
+---------------------------------------------------------------------------------------
+ $."id"."eq",$."orderByObj"[0]."email"="AscNullsFirst",$."orderByVal"="DescNullsFirst"
+(1 row)
+
