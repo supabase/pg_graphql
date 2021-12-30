@@ -102,4 +102,40 @@ begin;
  }
 (1 row)
 
+    -- Variable: value
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: AccountFilter)
+           {
+             allAccounts(filter: {id: {eq: $filt}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"filt": 2}'
+      )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "allAccounts": {       +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
 rollback;
