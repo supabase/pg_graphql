@@ -4,6 +4,7 @@
 // clang-format on
 #include "graphqlparser/c/GraphQLParser.h"
 #include "graphqlparser/c/GraphQLAstToJSON.h"
+#include "graphqlparser/c/GraphQLAstNode.h"
 #include "tcop/utility.h"
 #include "miscadmin.h"
 #include "utils/varlena.h"
@@ -56,11 +57,13 @@ parse(PG_FUNCTION_ARGS) {
 		values[0] = (char *) graphql_ast_to_json(node);
 	}
 	values[1] = (char *) error;
-	//graphql_error_free(error);
-	//graphql_node_free(node);
 
 	// convert values into a heap allocated tuple with the description we defined
 	rettuple = BuildTupleFromCStrings(TupleDescGetAttInMetadata(tupdesc), values);
+
+    // clean up memory
+	graphql_error_free(error);
+	graphql_node_free(node);
 
 	// return the heap tuple as datum
     PG_RETURN_DATUM( HeapTupleGetDatum( rettuple ) );
