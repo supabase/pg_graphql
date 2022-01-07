@@ -2463,6 +2463,7 @@ $$;
 create or replace function graphql.resolve(stmt text, variables jsonb = '{}')
     returns jsonb
     volatile
+    strict
     language plpgsql
 as $$
 declare

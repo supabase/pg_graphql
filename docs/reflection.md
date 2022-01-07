@@ -17,7 +17,7 @@ The "ID" GraphQL type is a globally unique identifer. It is represented as a str
 
 
 !!! warning
-	Be careful when adding/removing schemas from the PostgreSQL `search_path` as these impact the string representation for `regclass` and will cause the global identifer to change.
+    Be careful when adding/removing schemas from the PostgreSQL `search_path` as these impact the string representation for `regclass` and will cause the global identifer to change.
 
 ### Connection Types
 
