@@ -1490,7 +1490,22 @@ begin
                     null
                 )
             )[1] as total_count_clause,
-
+            (
+                array_remove(
+                    array_agg(
+                        case
+                            when graphql.name_literal(root.sel) = '__typename' then
+                                format(
+                                    '%L, %L',
+                                    graphql.alias_or_name_literal(root.sel),
+                                    field_row.type_
+                                )
+                            else null::text
+                        end
+                    ),
+                    null
+                )
+            )[1] as typename_clause,
             (
                 array_remove(
                     array_agg(
@@ -1506,6 +1521,7 @@ begin
                                                     '%L, %s',
                                                     graphql.alias_or_name_literal(pi.sel),
                                                     case graphql.name_literal(pi.sel)
+                                                        when '__typename' then (select quote_literal(name) from graphql._type where meta_kind = 'PAGE_INFO')
                                                         when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                                                         when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
                                                         when 'hasNextPage' then format('graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
@@ -1534,16 +1550,26 @@ begin
                         case
                             when graphql.name_literal(root.sel) = 'edges' then
                                 format(
-                                    '%L, json_agg(jsonb_build_object(%s) %s)',
+                                    '%L, json_agg(%s %s)',
                                     graphql.alias_or_name_literal(root.sel),
                                     (
                                         select
-                                            case
-                                                when graphql.name_literal(ec.sel) = 'cursor' then format('%L, %I.%I', graphql.alias_or_name_literal(ec.sel), block_name, '__cursor')
-                                                else graphql.exception_unknown_field(graphql.name_literal(ec.sel), 'Edge') -- TODO: incomplete type info
-                                            end
+                                            coalesce(
+                                                string_agg(
+                                                    case graphql.name_literal(ec.sel)
+                                                        when 'cursor' then format('jsonb_build_object(%L, %I.%I)', graphql.alias_or_name_literal(ec.sel), block_name, '__cursor')
+                                                        when '__typename' then format('jsonb_build_object(%L, %L)', graphql.alias_or_name_literal(ec.sel), gf_e.type_)
+                                                        else graphql.exception_unknown_field(graphql.name_literal(ec.sel), gf_e.type_)
+                                                    end,
+                                                    '||'
+                                                ),
+                                                'jsonb_build_object()'
+                                            )
                                         from
                                             jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel)
+                                            join graphql.field gf_e -- edge field
+                                                on gf_e.parent_type = field_row.type_
+                                                and gf_e.name = 'edges'
                                         where
                                             graphql.name_literal(root.sel) = 'edges'
                                             and graphql.name_literal(ec.sel) <> 'node'
@@ -1614,7 +1640,7 @@ begin
         (
             array_agg(
                 case
-                    when graphql.name_literal(root.sel) not in ('pageInfo', 'edges', 'totalCount') then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
+                    when graphql.name_literal(root.sel) not in ('pageInfo', 'edges', 'totalCount', '__typename') then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
                     else null::text
                 end
             )
@@ -1655,6 +1681,10 @@ begin
             %s
             )
             -- edges
+            || jsonb_build_object(
+            %s
+            )
+            -- __typename
             || jsonb_build_object(
             %s
             )
@@ -1712,6 +1742,7 @@ begin
             coalesce(clauses.total_count_clause, ''),
             coalesce(clauses.page_info_clause, ''),
             coalesce(clauses.edges_clause, ''),
+            coalesce(clauses.typename_clause, ''),
             -- final order by
             graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
             -- block name
