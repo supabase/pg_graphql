@@ -1,0 +1,62 @@
+begin;
+    create table account(
+        id int primary key
+    );
+    insert into public.account(id)
+    values
+        (1);
+    select jsonb_pretty(
+        graphql.resolve($$
+    {
+      allAccounts {
+        __typename
+        pageInfo {
+          __typename
+        }
+        edges {
+          __typename
+          node {
+            __typename
+          }
+        }
+      }
+    }
+        $$)
+    );
+                  jsonb_pretty                   
+-------------------------------------------------
+ {                                              +
+     "data": {                                  +
+         "allAccounts": {                       +
+             "edges": [                         +
+                 {                              +
+                     "node": {                  +
+                         "__typename": "Account"+
+                     },                         +
+                     "__typename": "AccountEdge"+
+                 }                              +
+             ],                                 +
+             "pageInfo": {                      +
+                 "__typename": "PageInfo"       +
+             },                                 +
+             "__typename": "AccountConnection"  +
+         }                                      +
+     },                                         +
+     "errors": [                                +
+     ]                                          +
+ }
+(1 row)
+
+    select graphql.resolve($$
+    {
+      account(id: "WyJhY2NvdW50IiwgMV0=") {
+        __typename
+      }
+    }
+    $$);
+                            resolve                             
+----------------------------------------------------------------
+ {"data": {"account": {"__typename": "Account"}}, "errors": []}
+(1 row)
+
+rollback;
