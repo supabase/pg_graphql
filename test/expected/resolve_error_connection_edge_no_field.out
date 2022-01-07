@@ -12,9 +12,9 @@ begin;
       }
     }
     $$);
-                                resolve                                
------------------------------------------------------------------------
- {"data": null, "errors": ["Unknown field 'dneField' on type 'Edge'"]}
+                                   resolve                                    
+------------------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'dneField' on type 'AccountEdge'"]}
 (1 row)
 
 rollback;
