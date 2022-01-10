@@ -231,7 +231,7 @@ begin;
              }
            }
         $$,
-        variables:= '{"afilt": {"id": {"eq": 2}, "isVerified": "false"} }'
+        variables:= '{"afilt": {"id": {"eq": 2}, "isVerified": {"eq": true}} }'
       )
     );
           jsonb_pretty           
@@ -268,25 +268,104 @@ begin;
              }
            }
         $$,
-        variables:= '{"afilt": {"id": {"eq": 2}, "isVerified": "true"} }'
+        variables:= '{"afilt": {"id": {"eq": 2}, "isVerified": {"eq": false}} }'
       )
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "allAccounts": {       +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 2+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+       jsonb_pretty       
+--------------------------
+ {                       +
+     "data": {           +
+         "allAccounts": {+
+             "edges": [  +
+             ]           +
+         }               +
+     },                  +
+     "errors": [         +
+     ]                   +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: AccountFilter, invalid field name
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"dne_id": 2} }'
+      )
+    );
+       jsonb_pretty       
+--------------------------
+ {                       +
+     "data": null,       +
+     "errors": [         +
+         "Invalid filter"+
+     ]                   +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: AccountFilter, invalid IntFilter
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"id": 2} }'
+      )
+    );
+       jsonb_pretty       
+--------------------------
+ {                       +
+     "data": null,       +
+     "errors": [         +
+         "Invalid filter"+
+     ]                   +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: AccountFilter, invalid data type
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"id": {"eq": true}} }'
+      )
+    );
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": null,                                        +
+     "errors": [                                          +
+         "invalid input syntax for type integer: \"true\""+
+     ]                                                    +
  }
 (1 row)
 
