@@ -10,6 +10,7 @@ begin;
         (2, true),
         (3, false);
 
+    savepoint a;
 
     -- Filter by Int
     select jsonb_pretty(
@@ -25,6 +26,7 @@ begin;
             }
         $$)
     );
+    rollback to savepoint a;
 
     -- Filter by Int and bool. has match
     select jsonb_pretty(
@@ -40,6 +42,7 @@ begin;
             }
         $$)
     );
+    rollback to savepoint a;
 
     -- Filter by Int and bool. no match
     select jsonb_pretty(
@@ -55,12 +58,13 @@ begin;
             }
         $$)
     );
+    rollback to savepoint a;
 
 
-    -- Variable: value
+    -- Variable: Int
     select jsonb_pretty(
         graphql.resolve($$
-           query AccountsFiltered($filt: AccountFilter)
+           query AccountsFiltered($filt: Int!)
            {
              allAccounts(filter: {id: {eq: $filt}}) {
                edges {
@@ -71,8 +75,47 @@ begin;
              }
            }
         $$,
-        variables:= '{"filt": 2}'
+        variables:= '{"filt": 1}'
       )
     );
+    rollback to savepoint a;
+
+    -- Variable: IntFilter
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($ifilt: IntFilter!)
+           {
+             allAccounts(filter: {id: $ifilt}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ifilt": {"eq": 3}}'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"ifilt": {"id": {"eq": 1}} }'
+      )
+    );
+    rollback to savepoint a;
 
 rollback;
