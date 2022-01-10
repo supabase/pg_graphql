@@ -99,7 +99,7 @@ begin;
     );
     rollback to savepoint a;
 
-    -- Variable: AccountFilter
+    -- Variable: AccountFilter, single col
     select jsonb_pretty(
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
@@ -113,7 +113,102 @@ begin;
              }
            }
         $$,
-        variables:= '{"ifilt": {"id": {"eq": 1}} }'
+        variables:= '{"afilt": {"id": {"eq": 2}} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter, multi col match
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"id": {"eq": 2}, "isVerified": {"eq": true}} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter, multi col no match
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"id": {"eq": 2}, "isVerified": {"eq": false}} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter, invalid field name
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"dne_id": 2} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter, invalid IntFilter
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"id": 2} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter, invalid data type
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             allAccounts(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": {"id": {"eq": true}} }'
       )
     );
     rollback to savepoint a;

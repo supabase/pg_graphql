@@ -6,6 +6,8 @@ select
     graphql.sql_type_to_graphql_type(pt.typname) as graphql_type
 from
     pg_type pt
+    join pg_namespace pn
+        on pt.typnamespace = pn.oid
 where
     substring(pt.typname, 1, 1) <> '_'
     and pt.typname not like '%[]'
@@ -24,6 +26,7 @@ where
     and pt.typname not like 'trigger%'
     and pt.typname not like 'column%'
     and pt.typname not like 'check%'
+    and pn.nspname <> 'graphql'
 order by
     graphql.sql_type_to_graphql_type(pt.typname) = 'String',
     graphql.sql_type_to_graphql_type(pt.typname),
@@ -76,11 +79,8 @@ order by
  domains                           | String
  element_types                     | String
  enabled_roles                     | String
- entity                            | String
- enum_value                        | String
  event_trigger                     | String
  fdw_handler                       | String
- field                             | String
  gtsvector                         | String
  index_am_handler                  | String
  inet                              | String
@@ -91,21 +91,18 @@ order by
  lseg                              | String
  macaddr                           | String
  macaddr8                          | String
- meta_kind                         | String
  money                             | String
  name                              | String
  numrange                          | String
  oid                               | String
  oidvector                         | String
  parameters                        | String
- parse_result                      | String
  path                              | String
  point                             | String
  polygon                           | String
  record                            | String
  refcursor                         | String
  referential_constraints           | String
- relationship                      | String
  routine_privileges                | String
  routines                          | String
  schemata                          | String
@@ -119,8 +116,6 @@ order by
  tstzrange                         | String
  tsvector                          | String
  txid_snapshot                     | String
- type                              | String
- type_kind                         | String
  udt_privileges                    | String
  unknown                           | String
  usage_privileges                  | String
@@ -134,5 +129,5 @@ order by
  xid8                              | String
  xml                               | String
  yes_or_no                         | String
-(104 rows)
+(96 rows)
 

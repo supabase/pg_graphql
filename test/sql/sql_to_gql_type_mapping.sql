@@ -6,6 +6,8 @@ select
     graphql.sql_type_to_graphql_type(pt.typname) as graphql_type
 from
     pg_type pt
+    join pg_namespace pn
+        on pt.typnamespace = pn.oid
 where
     substring(pt.typname, 1, 1) <> '_'
     and pt.typname not like '%[]'
@@ -24,6 +26,7 @@ where
     and pt.typname not like 'trigger%'
     and pt.typname not like 'column%'
     and pt.typname not like 'check%'
+    and pn.nspname <> 'graphql'
 order by
     graphql.sql_type_to_graphql_type(pt.typname) = 'String',
     graphql.sql_type_to_graphql_type(pt.typname),
