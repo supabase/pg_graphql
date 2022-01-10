@@ -29,6 +29,74 @@ as $$
     end;
 $$;
 
+
+create or replace function graphql.jsonb_unnest_recursive_with_jsonpath(obj jsonb)
+    returns table(jpath jsonpath, obj jsonb)
+     language sql
+as $$
+/*
+Recursively unrolls a jsonb object and arrays to scalars
+
+    select
+        *
+    from
+        graphql.jsonb_keys_recursive('{"id": [1, 2]}'::jsonb)
+
+
+    | jpath   |       obj      |
+    |---------|----------------|
+    | $       | {"id": [1, 2]} |
+    | $.id    | [1, 2]         |
+    | $.id[0] | 1              |
+    | $.id[1] | 2              |
+
+*/
+    with recursive _tree as (
+        select
+            obj,
+            '$' as path_
+
+        union all
+        (
+            with typed_values as (
+                select
+                    jsonb_typeof(obj) as typeof,
+                    obj,
+                    path_
+                from
+                    _tree
+            )
+            select
+                v.val_,
+                path_ || '.' || key_
+            from
+                typed_values,
+                lateral jsonb_each(obj) v(key_, val_)
+            where
+                typeof = 'object'
+
+            union all
+
+            select
+                elem,
+                path_ || '[' || (elem_ix - 1 )::text || ']'
+            from
+                typed_values,
+                lateral jsonb_array_elements(obj) with ordinality z(elem, elem_ix)
+            where
+                typeof = 'array'
+      )
+    )
+
+    select
+        path_::jsonpath,
+        obj
+    from
+        _tree
+    order by
+        path_::text;
+$$;
+
 -----------
 -- Array --
 -----------
@@ -417,7 +485,7 @@ create type graphql.meta_kind as enum (
     -- Introspection types
     '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION',
     -- Custom
-    'ORDER_BY_DIRECTION', 'ORDER_BY'
+    'ORDER_BY_DIRECTION', 'ORDER_BY', 'FILTER_FIELD', 'FILTER_ENTITY'
 );
 
 
@@ -505,7 +573,16 @@ create materialized view graphql._type (
         ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
         ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.'),
         -- pg_graphql constant
-        ('OrderByDirection', 'ENUM', 'ORDER_BY_DIRECTION', 'Defines a per-field sorting order')
+        ('OrderByDirection', 'ENUM', 'ORDER_BY_DIRECTION', 'Defines a per-field sorting order'),
+        -- Type filters
+        ('IntFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Int"'),
+        ('FloatFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Float"'),
+        ('StringFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "String"'),
+        ('BooleanFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Boolean"'),
+        ('DateTimeFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "DateTime"'),
+        ('BigIntFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "BigInt"'),
+        ('UUIDFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "UUID"'),
+        ('JSONFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "JSON"')
     ) as const(name, type_kind, meta_kind, description)
     union all
     select
@@ -521,7 +598,8 @@ create materialized view graphql._type (
                 (names_.table_name_pascal_case::text, 'OBJECT'::graphql.type_kind, 'NODE'::graphql.meta_kind, null::text, ent.entity),
                 (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
                 (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity),
-                (names_.table_name_pascal_case || 'OrderBy', 'INPUT_OBJECT', 'ORDER_BY', null, ent.entity)
+                (names_.table_name_pascal_case || 'OrderBy', 'INPUT_OBJECT', 'ORDER_BY', null, ent.entity),
+                (names_.table_name_pascal_case || 'Filter', 'INPUT_OBJECT', 'FILTER_ENTITY', null, ent.entity)
         ) x
     union all
     select
@@ -614,7 +692,7 @@ $$
     -- SQL type from pg_catalog.format_type
     select
         case
-            when sql_type like 'int_' then 'Int' -- unsafe for int8
+            when sql_type like 'int%' then 'Int' -- unsafe for int8
             when sql_type like 'bool%' then 'Boolean'
             when sql_type like 'float%' then 'Float'
             when sql_type like 'numeric%' then 'Float' -- unsafe
@@ -626,9 +704,9 @@ $$
             when sql_type like 'date%' then 'DateTime'
             when sql_type like 'timestamp%' then 'DateTime'
             when sql_type like 'time%' then 'DateTime'
-            when sql_type = 'inet' then 'InternetAddress'
-            when sql_type = 'cidr' then 'InternetAddress'
-            when sql_type = 'macaddr' then 'MACAddress'
+            --when sql_type = 'inet' then 'InternetAddress'
+            --when sql_type = 'cidr' then 'InternetAddress'
+            --when sql_type = 'macaddr' then 'MACAddress'
         else 'String'
     end;
 $$;
@@ -648,6 +726,7 @@ create materialized view graphql._field_output as
         null::text as default_value,
         description,
         null::text as column_name,
+        null::regtype as column_type,
         null::text[] parent_columns,
         null::text[] local_columns,
         case
@@ -711,6 +790,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             fs.description,
             fs.column_name,
+            null::regtype as column_type,
             fs.parent_columns,
             fs.local_columns,
             fs.is_hidden_from_schema
@@ -727,7 +807,7 @@ create materialized view graphql._field_output as
                     (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
                     (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
                     (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
-                    (conn.name, edge.name, 'edges', false, true, false, null, null, null, null, false),
+                    (conn.name, edge.name, 'edges', true, true, true, null, null, null, null, false),
                     (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
                     (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
                     (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
@@ -754,6 +834,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
+            pa.atttypid::regtype as column_type,
             null::text[],
             null::text[],
             false
@@ -800,6 +881,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null description,
             null column_name,
+            null::regtype as column_type,
             rel.local_columns,
             rel.foreign_columns,
             false
@@ -829,6 +911,7 @@ create materialized view graphql._field_output as
             null::text as default_value,
             null::text description,
             pa.attname::text as column_name,
+            null::regtype as column_type,
             null::text[],
             null::text[],
             false
@@ -839,8 +922,60 @@ create materialized view graphql._field_output as
         where
             gt.meta_kind = 'ORDER_BY'
             and pa.attnum > 0
-            and not pa.attisdropped;
+            and not pa.attisdropped
 
+        -- <Type>Filter.eq
+        union all
+        select distinct
+            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) || 'Filter' as parent_type,
+            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) type_,
+            'eq' as name,
+            false,
+            false,
+            null::bool,
+            false,
+            null::text,
+            null::text,
+            null::text,
+            null::text,
+            null::regtype as column_type,
+            null::text[],
+            null::text[],
+            false
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'FILTER_ENTITY'
+            and pa.attnum > 0
+            and not pa.attisdropped
+        -- EntityFilter(column eq)
+        union all
+        select distinct
+            gt.name parent_type,
+            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) || 'Filter' as type_,
+            graphql.to_camel_case(pa.attname::text) as name,
+            false is_not_null,
+            false is_array,
+            null::bool is_array_not_null,
+            false as is_arg,
+            null::text as parent_arg_field_name,
+            null::text as default_value,
+            null::text description,
+            pa.attname::text as column_name,
+            null::regtype as column_type,
+            null::text[],
+            null::text[],
+            false
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'FILTER_ENTITY'
+            and pa.attnum > 0
+            and not pa.attisdropped;
 
 create materialized view graphql._field_arg as
     -- Arguments
@@ -859,6 +994,7 @@ create materialized view graphql._field_arg as
         'f' as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null::text[] as parent_columns,
         null::text[] as local_columns,
         false as is_hidden_from_schema
@@ -880,6 +1016,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -901,6 +1038,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -925,6 +1063,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -949,6 +1088,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -973,6 +1113,7 @@ create materialized view graphql._field_arg as
         null as default_value,
         null as description,
         null as column_name,
+        null::regtype as column_type,
         null as parent_columns,
         null as local_columns,
         false as is_hidden_from_schema
@@ -983,8 +1124,33 @@ create materialized view graphql._field_arg as
             and t.meta_kind = 'CONNECTION'
         inner join graphql.type tt
             on t.entity = tt.entity
-            and tt.meta_kind = 'ORDER_BY';
-
+            and tt.meta_kind = 'ORDER_BY'
+    -- Connection(filter)
+    union all
+    select
+        f.type_,
+        tt.name type_,
+        'filter' as name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.name parent_arg_field_name,
+        null as default_value,
+        null as description,
+        null as column_name,
+        null::regtype as column_type,
+        null as parent_columns,
+        null as local_columns,
+        false as is_hidden_from_schema
+    from
+        graphql.type t
+        inner join graphql._field_output f
+            on t.name = f.type_
+            and t.meta_kind = 'CONNECTION'
+        inner join graphql.type tt
+            on t.entity = tt.entity
+            and tt.meta_kind = 'FILTER_ENTITY';
 
 create view graphql.field as
     select
@@ -999,6 +1165,7 @@ create view graphql.field as
         f.default_value,
         f.description,
         f.column_name,
+        f.column_type,
         f.parent_columns,
         f.local_columns,
         f.is_hidden_from_schema
@@ -1334,6 +1501,261 @@ end;
 $$;
 
 
+create type graphql.comparison_op as enum ('=');
+
+create or replace function graphql.text_to_comparison_op(text)
+    returns graphql.comparison_op
+    language sql
+    immutable
+    as
+$$
+    select
+        case $1
+            when 'eq' then '='
+            else graphql.exception('Invalid comaprison operator')
+        end::graphql.comparison_op
+$$;
+
+
+create or replace function graphql.where_clause(
+    filter_arg jsonb,
+    entity regclass,
+    alias_name text,
+    variables jsonb default '{}',
+    variable_definitions jsonb default '{}'
+)
+    returns text
+    language plpgsql
+    immutable
+    as
+$$
+declare
+    clause_arr text[] = '{}';
+    variable_name text;
+    variable_ix int;
+    variable_value jsonb;
+    variable_part jsonb;
+
+    sel jsonb;
+    ix smallint;
+
+    field_name text;
+    column_name text;
+    column_type regtype;
+
+    field_value_obj jsonb;
+    op_name text;
+    field_value text;
+
+    format_str text;
+
+    -- Collect allowed comparison columns
+    column_fields graphql.field[] = array_agg(f)
+        from
+            graphql.type t
+            left join graphql.field f
+                on t.name = f.parent_type
+        where
+            t.entity = $2
+            and t.meta_kind = 'NODE'
+            and f.column_name is not null;
+begin
+
+
+    -- No filter specified
+    if filter_arg is null then
+        return 'true';
+
+
+    elsif (filter_arg -> 'value' ->> 'kind') not in ('ObjectValue', 'Variable') then
+        return graphql.exception('Invalid filter argument');
+
+    -- Disallow variable order by clause because it is incompatible with prepared statements
+    elsif (filter_arg -> 'value' ->> 'kind') = 'Variable' then
+        -- Variable is <Table>Filter
+        -- "{"id": {"eq": 1}, ...}"
+
+        variable_name = graphql.name_literal(filter_arg -> 'value');
+
+        variable_ix = graphql.arg_index(
+            -- name of argument
+            variable_name,
+            variable_definitions
+        );
+        field_value = format('$%s', variable_ix);
+
+        -- "{"id": {"eq": 1}}"
+        variable_value = variables -> variable_name;
+
+        if jsonb_typeof(variable_value) <> 'object' then
+            return graphql.exception('Invalid filter argument');
+        end if;
+
+        for field_name, column_name, column_type, variable_part in
+            select
+                f.name,
+                f.column_name,
+                f.column_type,
+                je.v -- {"eq": 1}
+            from
+                jsonb_each(variable_value) je(k, v)
+                left join unnest(column_fields) f
+                    on je.k = f.name
+            loop
+
+            -- Sanity checks
+            if column_name is null or jsonb_typeof(variable_part) <> 'object' then
+                -- Attempting to filter on field that does not exist
+                return graphql.exception('Invalid filter');
+            end if;
+
+            op_name = k from jsonb_object_keys(variable_part) x(k) limit 1;
+
+            clause_arr = clause_arr || format(
+                '%I.%I %s (%s::jsonb -> '
+                    || format('%L ->> %L', field_name, op_name)
+                    || ')::%s',
+                alias_name,
+                column_name,
+                graphql.text_to_comparison_op(op_name),
+                field_value,
+                column_type
+            );
+
+        end loop;
+
+
+
+    elsif (filter_arg -> 'value' ->> 'kind') = 'ObjectValue' then
+
+        for sel, ix in
+            select
+                sel_, ix_
+            from
+                jsonb_array_elements( filter_arg -> 'value' -> 'fields') with ordinality oba(sel_, ix_)
+            loop
+
+            -- Must populate in every loop
+            format_str = null;
+            field_value = null;
+            field_name = graphql.name_literal(sel);
+
+            select
+                into column_name, column_type
+                f.column_name, f.column_type
+            from
+                unnest(column_fields) f
+            where
+                f.name = field_name;
+
+            if column_name is null then
+                -- Attempting to filter on field that does not exist
+                return graphql.exception('Invalid filter');
+            end if;
+
+
+            if graphql.is_variable(sel -> 'value') then
+                -- Variable is <Type>Filter
+                -- variables:= '{"ifilt": {"eq": 3}}'
+
+                -- perform graphql.exception(sel ->> 'value');
+                -- {"kind": "Variable", "name": {"kind": "Name", "value": "ifilt"}}"
+
+                -- variable name
+                -- variables -> (sel -> 'value' -> 'name' ->> 'value')
+
+
+                -- variables:= '{"ifilt": {"eq": 3}}'
+                variable_name = (sel -> 'value' -> 'name' ->> 'value');
+                variable_ix = graphql.arg_index(
+                    -- name of argument
+                    variable_name,
+                    variable_definitions
+                );
+                variable_value = variables -> variable_name;
+
+
+                -- Sanity checks: '{"eq": 3}'
+                if jsonb_typeof(variable_value) <> 'object' then
+                    return graphql.exception('Invalid filter variable value');
+
+                elsif (select count(1) <> 1 from jsonb_object_keys(variable_value)) then
+                    return graphql.exception('Invalid filter variable value');
+
+                end if;
+
+                -- "eq"
+                op_name = k from jsonb_object_keys(variable_value) x(k) limit 1;
+                field_value = format('$%s', variable_ix);
+
+                select
+                    '%I.%I %s (%s::jsonb ->> ' || format('%L', op_name) || ')::%s'
+                from
+                    jsonb_each(variable_value)
+                limit
+                    1
+                into format_str;
+
+            elsif sel -> 'value' ->> 'kind' <> 'ObjectValue' then
+                return graphql.exception('Invalid filter');
+
+            else
+                    /* {
+                        "kind": "ObjectValue",
+                        "fields": [
+                            {
+                                "kind": "ObjectField",
+                                "name": {"kind": "Name", "value": "eq"},
+                                "value": {"kind": "IntValue", "value": "2"}
+                            }
+                        ]
+                    } */
+
+                    field_value_obj = sel -> 'value' -> 'fields' -> 0;
+
+                    if field_value_obj ->> 'kind' <> 'ObjectField' then
+                        return graphql.exception('Invalid filter clause-2');
+
+                    elsif (field_value_obj -> 'value' ->> 'kind') = 'Variable' then
+                        format_str = '%I.%I %s %s::%s';
+                        field_value = format(
+                            '$%s',
+                            graphql.arg_index(
+                                -- name of argument
+                                (field_value_obj -> 'value' -> 'name' ->> 'value'),
+                                variable_definitions
+                            )
+                        );
+
+                    else
+                        format_str = '%I.%I %s %L::%s';
+                        field_value = graphql.value_literal(field_value_obj);
+
+                    end if;
+
+                    -- "eq"
+                    op_name = graphql.name_literal(field_value_obj);
+            end if;
+
+            clause_arr = clause_arr || format(
+                format_str,
+                alias_name,
+                column_name,
+                graphql.text_to_comparison_op(op_name),
+                field_value,
+                column_type
+            );
+
+        end loop;
+    end if;
+
+    return array_to_string(clause_arr, ' and ');
+end;
+$$;
+
+
+
+
 create or replace function graphql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
     returns text
     language sql
@@ -1469,6 +1891,7 @@ declare
     after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
 
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
+    filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
 
 begin
     with clauses as (
@@ -1550,7 +1973,7 @@ begin
                         case
                             when graphql.name_literal(root.sel) = 'edges' then
                                 format(
-                                    '%L, json_agg(%s %s)',
+                                    '%L, coalesce(jsonb_agg(%s %s), jsonb_build_array())',
                                     graphql.alias_or_name_literal(root.sel),
                                     (
                                         select
@@ -1667,6 +2090,8 @@ begin
                 and %s %s %s
                 -- join clause
                 and %s
+                -- where clause
+                and %s
             order by
                 %s
             limit %s
@@ -1731,6 +2156,8 @@ begin
             case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+            -- where
+            graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
             case
                 when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
@@ -2012,13 +2439,24 @@ begin
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
 
         elsif node_field_rec.name = 'types' then
-            agg = agg || jsonb_build_object(
-                    graphql.alias_or_name_literal(node_field),
-                    jsonb_agg(graphql."resolve___Type"(gt.name, node_field) order by gt.name)
+            agg = agg || (
+                with uq as (
+                    select
+                        distinct gt.name
+                    from
+                        graphql.type gt
+                        -- Filter out object types with no fields
+                        join (select distinct parent_type from graphql.field) gf
+                            on gt.name = gf.parent_type
+                            or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT')
                 )
-            from
-                graphql.type gt;
-
+                select
+                    jsonb_build_object(
+                        graphql.alias_or_name_literal(node_field),
+                        jsonb_agg(graphql."resolve___Type"(uq.name, node_field) order by uq.name)
+                    )
+                from uq
+            );
 
         elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
             agg = agg || graphql."resolve___Type"(
@@ -2111,10 +2549,60 @@ as $$
 $$;
 
 
+create or replace function graphql.cache_key_variable_component(variables jsonb = '{}')
+    returns text
+    language sql
+    immutable
+as $$
+/*
+Some GraphQL variables are not compatible with prepared statement
+For example, the order by clause can be passed via a variable, but
+SQL prepared statements can dynamically sort by column name or direction
+based on a parameter.
+
+This function returns a string that can be included in the cache key for
+a query to ensure separate prepared statements for each e.g. column order + direction
+and filtered column names
+
+While false positives are possible, the cost of false positives is low
+*/
+    with doc as (
+        select
+            *
+        from
+            graphql.jsonb_unnest_recursive_with_jsonpath(variables)
+    ),
+    filter_clause as (
+        select
+            jpath::text as x
+        from
+            doc
+        where
+            jpath::text similar to '%."eq"|%."neq"'
+    ),
+    order_clause as (
+        select
+            jpath::text || '=' || obj as x
+        from
+            doc
+        where
+            obj #>> '{}' in ('AscNullsFirst', 'AscNullsLast', 'DescNullsFirst', 'DescNullsLast')
+    )
+    select
+        coalesce(string_agg(x, ','), '')
+    from
+        (
+            select x from filter_clause
+            union all
+            select x from order_clause
+        ) y(x)
+$$;
+
+
 create or replace function graphql.cache_key(role regrole, ast jsonb, variables jsonb)
     returns text
     language sql
-    volatile
+    immutable
 as $$
     select
         -- Different roles may have different levels of access
@@ -2122,20 +2610,7 @@ as $$
             $1::text
             -- Parsed query hash
             || ast::text
-            || coalesce(
-                (
-                    select
-                        jsonb_object_agg(x.key_, x.val_)
-                    from
-                        jsonb_each_text(variables) x(key_, val_)
-                    where
-                        -- Only include keys where the values can not be passed
-                        -- in a prepared statement
-                        -- False positives are low impact
-                        x.val_ similar to '%AscNullsFirst%|%AscNullsLast%|%DescNullsFirst%|%DescNullsLast%'
-                )::text,
-                ''
-            )
+            || graphql.cache_key_variable_component(variables)
         )
 $$;
 
@@ -2256,12 +2731,18 @@ begin
     end if;
 
     if errors_ = '{}' and data_ is null then
-        -- Call prepared statement respecting passed values and variable definition defaults
-        execute graphql.prepared_statement_execute_clause(prepared_statement_name, variable_definitions, variables) into data_;
-        data_ = jsonb_build_object(
-            graphql.name_literal(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
-            data_
-        );
+        begin
+            -- Call prepared statement respecting passed values and variable definition defaults
+            execute graphql.prepared_statement_execute_clause(prepared_statement_name, variable_definitions, variables) into data_;
+            data_ = jsonb_build_object(
+                graphql.name_literal(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
+                data_
+            );
+        exception when others then
+            -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql
+            get stacked diagnostics error_message = MESSAGE_TEXT;
+            errors_ = errors_ || error_message;
+        end;
     end if;
 
     return jsonb_build_object(
