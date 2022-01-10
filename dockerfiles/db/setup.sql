@@ -21,7 +21,7 @@ create function graphql("operationName" text default null, query text default nu
     returns jsonb
     language sql
 as $$
-    select graphql.resolve(query, variables);
+    select graphql.resolve(query, coalesce(variables, '{}'));
 $$;
 
 
