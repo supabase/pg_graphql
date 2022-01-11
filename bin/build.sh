@@ -3,9 +3,27 @@ cat \
     src/sql/array/*.sql \
     src/sql/hash/*.sql \
     src/sql/jsonb/*.sql \
+    src/sql/random/*.sql \
     src/sql/pg/*.sql \
     src/sql/dialect/*.sql \
     src/sql/ast/*.sql \
     src/sql/cursor/*.sql \
-    src/sql/main.sql \
+    src/sql/reflection/types/*.sql \
+    src/sql/reflection/sql_type_to_graphql_type.sql \
+    src/sql/reflection/entity.sql \
+    src/sql/reflection/relationship.sql \
+    src/sql/reflection/enum_value.sql \
+    src/sql/reflection/type.sql \
+    src/sql/reflection/field.sql \
+    src/sql/reflection/rebuild_schema.sql \
+    src/sql/exception/*.sql \
+    src/sql/resolve/argument/*.sql \
+    src/sql/resolve/clause/*.sql \
+    src/sql/resolve/clause/order_by/*.sql \
+    src/sql/resolve/clause/filter/types/*.sql \
+    src/sql/resolve/clause/filter/*.sql \
+    src/sql/resolve/transpile/*.sql \
+    src/sql/resolve/introspection/*.sql \
+    src/sql/resolve/cache/*.sql \
+    src/sql/resolve/*.sql \
     > pg_graphql--0.1.0.sql;
