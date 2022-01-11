@@ -20,6 +20,7 @@ RUN export \
 
 COPY . pg_graphql
 WORKDIR /pg_graphql
+RUN ./bin/build.sh
 RUN make install
 
 FROM postgres:13 as main

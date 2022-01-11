@@ -1,4 +1,16 @@
 create schema if not exists graphql;
+create or replace function graphql.jsonb_coalesce(val jsonb, default_ jsonb)
+    returns jsonb
+    strict
+    immutable
+    language sql
+as $$
+    select case
+        when jsonb_typeof(val) = 'null' then default_
+        else val
+    end;
+$$;
+
 
 
 -------------
@@ -17,19 +29,6 @@ $$;
 -----------
 -- JSONB --
 -----------
-create or replace function graphql.jsonb_coalesce(val jsonb, default_ jsonb)
-    returns jsonb
-    strict
-    immutable
-    language sql
-as $$
-    select case
-        when jsonb_typeof(val) = 'null' then default_
-        else val
-    end;
-$$;
-
-
 create or replace function graphql.jsonb_unnest_recursive_with_jsonpath(obj jsonb)
     returns table(jpath jsonpath, obj jsonb)
      language sql
