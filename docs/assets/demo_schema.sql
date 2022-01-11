@@ -26,5 +26,3 @@ create table blog_post(
     created_at timestamp not null,
     updated_at timestamp not null
 );
-
-

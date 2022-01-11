@@ -1,4 +1,33 @@
 create schema if not exists graphql;
+create or replace function graphql.array_first(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- First element of an array
+    select arr[1];
+$$;
+-----------
+-- Array --
+-----------
+create or replace function graphql.array_last(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- Last element of an array
+    select arr[array_length(arr, 1)];
+$$;
+create or replace function graphql.sha1(text)
+    returns text
+    strict
+    immutable
+    language sql
+as $$
+    select encode(digest($1, 'sha1'), 'hex')
+$$;
 create or replace function graphql.jsonb_coalesce(val jsonb, default_ jsonb)
     returns jsonb
     strict
@@ -10,25 +39,6 @@ as $$
         else val
     end;
 $$;
-
-
-
--------------
--- Hashing --
--------------
-create or replace function graphql.sha1(text)
-    returns text
-    strict
-    immutable
-    language sql
-as $$
-    select encode(digest($1, 'sha1'), 'hex')
-$$;
-
-
------------
--- JSONB --
------------
 create or replace function graphql.jsonb_unnest_recursive_with_jsonpath(obj jsonb)
     returns table(jpath jsonpath, obj jsonb)
      language sql
@@ -95,88 +105,6 @@ Recursively unrolls a jsonb object and arrays to scalars
     order by
         path_::text;
 $$;
-
------------
--- Array --
------------
-create or replace function graphql.array_first(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- First element of an array
-    select arr[1];
-$$;
-
-create or replace function graphql.array_last(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- Last element of an array
-    select arr[array_length(arr, 1)];
-$$;
-
-
--------------------------
--- Entity Manipulation --
--------------------------
-create function graphql.to_regclass(schema_ text, name_ text)
-    returns regclass
-    language sql
-    immutable
-as
-$$ select (quote_ident(schema_) || '.' || quote_ident(name_))::regclass; $$;
-
-
-create function graphql.to_table_name(regclass)
-    returns text
-    language sql
-    immutable
-as
-$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
-
-
--------------------
--- String Casing --
--------------------
-
-create function graphql.to_pascal_case(text)
-    returns text
-    language sql
-    immutable
-as
-$$
-select
-    string_agg(initcap(part), '')
-from
-    unnest(string_to_array($1, '_')) x(part)
-$$;
-
-
-create function graphql.to_camel_case(text)
-    returns text
-    language sql
-    immutable
-as
-$$
-select
-    string_agg(
-        case
-            when part_ix = 1 then part
-            else initcap(part)
-        end, '')
-from
-    unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
-$$;
-
-
-
--------------------
--- Introspection --
--------------------
 create or replace function graphql.primary_key_columns(entity regclass)
     returns text[]
     language sql
@@ -194,8 +122,6 @@ $$
         pg_index.indrelid = entity
         and pg_index.indisprimary
 $$;
-
-
 create or replace function graphql.primary_key_types(entity regclass)
     returns regtype[]
     language sql
@@ -213,44 +139,44 @@ $$
         pg_index.indrelid = entity
         and pg_index.indisprimary
 $$;
-
-
-----------------------
--- AST Manipulation --
-----------------------
-
-create type graphql.parse_result AS (
-    ast text,
-    error text
-);
-
-
-create function graphql.parse(text)
-    returns graphql.parse_result
-    language c
+create function graphql.to_regclass(schema_ text, name_ text)
+    returns regclass
+    language sql
     immutable
-as 'pg_graphql', 'parse';
-
-
-
-create function graphql.ast_pass_strip_loc(body jsonb)
-returns jsonb
-language sql
-immutable
-as $$
-/*
-Remove a 'loc' key from a jsonb object by name
-*/
+as
+$$ select (quote_ident(schema_) || '.' || quote_ident(name_))::regclass; $$;
+create function graphql.to_table_name(regclass)
+    returns text
+    language sql
+    immutable
+as
+$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
+create function graphql.to_camel_case(text)
+    returns text
+    language sql
+    immutable
+as
+$$
 select
-    regexp_replace(
-        body::text,
-        '"loc":\s*\{\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*},\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*}\s*},'::text,
-        '',
-        'g'
-    )::jsonb
+    string_agg(
+        case
+            when part_ix = 1 then part
+            else initcap(part)
+        end, '')
+from
+    unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
 $$;
-
-
+create function graphql.to_pascal_case(text)
+    returns text
+    language sql
+    immutable
+as
+$$
+select
+    string_agg(initcap(part), '')
+from
+    unnest(string_to_array($1, '_')) x(part)
+$$;
 create or replace function graphql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
     returns jsonb
     language sql
@@ -312,9 +238,35 @@ Recursively replace fragment spreads with the fragment definition's selection se
                 ast
         end;
 $$;
+create function graphql.ast_pass_strip_loc(body jsonb)
+returns jsonb
+language sql
+immutable
+as $$
+/*
+Remove a 'loc' key from a jsonb object by name
+*/
+select
+    regexp_replace(
+        body::text,
+        '"loc":\s*\{\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*},\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*}\s*},'::text,
+        '',
+        'g'
+    )::jsonb
+$$;
+create type graphql.parse_result AS (
+    ast text,
+    error text
+);
 
-
-
+create function graphql.parse(text)
+    returns graphql.parse_result
+    language c
+    immutable
+as 'pg_graphql', 'parse';
+----------------------
+-- AST Manipulation --
+----------------------
 create or replace function graphql.name_literal(ast jsonb)
     returns text
     immutable

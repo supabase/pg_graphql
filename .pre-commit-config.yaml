@@ -13,6 +13,8 @@ repos:
     hooks:
     -   id: trailing-whitespace
         exclude: ^test/expected
+    -   id: end-of-file-fixer
+        exclude: ^test/expected
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-added-large-files
@@ -26,5 +28,3 @@ repos:
     -   id: remove-tabs
         name: Tabs-to-Spaces
         exclude: ^test/expected
-
-

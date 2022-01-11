@@ -10,4 +10,3 @@ stdenv.mkDerivation {
   buildInputs = [ python2 ];
   inherit cmake;
 }
-
