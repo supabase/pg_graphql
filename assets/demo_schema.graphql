@@ -1,30 +1,63 @@
+scalar BigInt
 scalar Cursor
 scalar DateTime
 scalar JSON
 scalar UUID
-scalar BigInt
 
 type Query {
   account(nodeId: ID!): Account
-  allAccounts(after: Cursor, before: Cursor, first: Int, last: Int): AccountConnection
+
+  allAccounts(
+    after: Cursor,
+    before: Cursor,
+    filter: AccountFilter,
+    first: Int,
+    last: Int,
+    orderBy: [AccountOrderBy!]
+  ): AccountConnection
+
   blog(nodeId: ID!): Blog
-  allBlogs(after: Cursor, before: Cursor, first: Int, last: Int): BlogConnection
+
+  allBlogs(
+    after: Cursor,
+    before: Cursor,
+    filter: BlogFilter,
+    first: Int,
+    last: Int,
+    orderBy: [BlogOrderBy!]
+  ): BlogConnection
+
   blogPost(nodeId: ID!): BlogPost
-  allBlogPosts(after: Cursor, before: Cursor, first: Int, last: Int): BlogPostConnection
+
+  allBlogPosts(
+    after: Cursor,
+    before: Cursor,
+    filter: BlogPostFilter,
+    first: Int,
+    last: Int,
+    orderBy: [BlogPostOrderBy!]
+  ): BlogPostConnection
 }
 
 type Account {
   nodeId: ID!
-  id: String!
+  id: Int!
   email: String!
   encryptedPassword: String!
   createdAt: DateTime!
   updatedAt: DateTime!
-  blogs(after: Cursor, before: Cursor, first: Int, last: Int): BlogConnection
+  blogs(
+    after: Cursor,
+    before: Cursor,
+    filter: BlogFilter,
+    first: Int,
+    last: Int,
+    orderBy: [BlogOrderBy!]
+  ): BlogConnection
 }
 
 type AccountConnection {
-  edges: [AccountEdge]
+  edges: [AccountEdge!]!
   pageInfo: PageInfo!
   totalCount: Int!
 }
@@ -34,20 +67,43 @@ type AccountEdge {
   cursor: String!
 }
 
+input AccountFilter {
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+  id: IntFilter
+  email: StringFilter
+  encryptedPassword: StringFilter
+}
+
+input AccountOrderBy {
+  id: OrderByDirection
+  email: OrderByDirection
+  encryptedPassword: OrderByDirection
+  createdAt: OrderByDirection
+  updatedAt: OrderByDirection
+}
+
 type Blog {
   nodeId: ID!
-  id: String!
-  ownerId: String!
+  id: Int!
+  ownerId: Int!
   name: String!
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
   owner: Account
-  blogPosts(after: Cursor, before: Cursor, first: Int, last: Int): BlogPostConnection
+  blogPosts(
+    after: Cursor,
+    before: Cursor,
+    filter: BlogPostFilter,
+    first: Int,
+    last: Int,
+    orderBy: [BlogPostOrderBy!]
+  ): BlogPostConnection
 }
 
 type BlogConnection {
-  edges: [BlogEdge]
+  edges: [BlogEdge!]!
   pageInfo: PageInfo!
   totalCount: Int!
 }
@@ -57,20 +113,43 @@ type BlogEdge {
   cursor: String!
 }
 
+input BlogFilter {
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+  id: IntFilter
+  ownerId: IntFilter
+  description: StringFilter
+  name: StringFilter
+}
+
+input BlogOrderBy {
+  id: OrderByDirection
+  ownerId: OrderByDirection
+  name: OrderByDirection
+  description: OrderByDirection
+  createdAt: OrderByDirection
+  updatedAt: OrderByDirection
+}
+
+enum BlogPostStatus {
+  PENDING
+  RELEASED
+}
+
 type BlogPost {
   nodeId: ID!
   id: UUID!
-  blogId: String!
+  blogId: Int!
   title: String!
   body: String
   status: String!
   createdAt: DateTime!
   updatedAt: DateTime!
-  blog: Blog
+  blog(nodeId: ID!): Blog
 }
 
 type BlogPostConnection {
-  edges: [BlogPostEdge]
+  edges: [BlogPostEdge!]!
   pageInfo: PageInfo!
   totalCount: Int!
 }
@@ -80,9 +159,24 @@ type BlogPostEdge {
   cursor: String!
 }
 
-enum BlogPostStatus {
-  PENDING
-  RELEASED
+input BlogPostFilter {
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+  blogId: IntFilter
+  body: StringFilter
+  status: StringFilter
+  title: StringFilter
+  id: UUIDFilter
+}
+
+input BlogPostOrderBy {
+  id: OrderByDirection
+  blogId: OrderByDirection
+  title: OrderByDirection
+  body: OrderByDirection
+  status: OrderByDirection
+  createdAt: OrderByDirection
+  updatedAt: OrderByDirection
 }
 
 type PageInfo {
@@ -90,4 +184,40 @@ type PageInfo {
   hasNextPage: Boolean!
   startCursor: String!
   endCursor: String!
+}
+
+"""Defines a per-field sorting order"""
+enum OrderByDirection {
+  AscNullsFirst
+  AscNullsLast
+  DescNullsFirst
+  DescNullsLast
+}
+
+"""
+Boolean expression comparing fields on type "DateTime"
+"""
+input DateTimeFilter {
+  eq: DateTime
+}
+
+"""
+Boolean expression comparing fields on type "Int"
+"""
+input IntFilter {
+  eq: Int
+}
+
+"""
+Boolean expression comparing fields on type "String"
+"""
+input StringFilter {
+  eq: String
+}
+
+"""
+Boolean expression comparing fields on type "UUID"
+"""
+input UUIDFilter {
+  eq: UUID
 }
