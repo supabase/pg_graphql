@@ -6,5 +6,6 @@ cat \
     src/sql/pg/*.sql \
     src/sql/dialect/*.sql \
     src/sql/ast/*.sql \
+    src/sql/cursor/*.sql \
     src/sql/main.sql \
     > pg_graphql--0.1.0.sql;

@@ -25,5 +25,3 @@ begin;
 
 
 rollback;
-
-
