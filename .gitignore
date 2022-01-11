@@ -5,6 +5,7 @@ ex/
 venv/
 site/
 regression.*
+.DS_Store
 *.egg-info/
 *.json
 *.ipynb
