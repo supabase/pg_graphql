@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -e
 export PGC_WORKDIR=$(cd $(dirname $0) && pwd)
 . "$PGC_WORKDIR/common"
