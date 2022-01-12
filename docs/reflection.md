@@ -70,5 +70,3 @@ See [relay documentation](https://relay.dev/graphql/connections.htm#sec-undefine
 ```graphql
 --8<-- "docs/assets/demo_schema.graphql"
 ```
-
-

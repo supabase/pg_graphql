@@ -1,0 +1,30 @@
+set -e
+export PGC_WORKDIR=$(cd $(dirname $0) && pwd)
+. "$PGC_WORKDIR/common"
+
+cli_help() {
+    cli_name=${0##*/}
+    echo "$cli_name
+pg_graphql development CLI
+Version: $PG_GRAPHQL_VERSION
+
+Usage: $cli_name [command]
+
+Commands:
+    build     Build SQL source
+    test      Run test suite (req nix-shell)
+    demo      Start GraphiQL demo environment (req docker-compose)
+    *         Help
+"
+}
+
+case "$1" in
+    build)
+        "$PGC_WORKDIR/commands/build" "$2";;
+    test)
+        "$PGC_WORKDIR/commands/test" "$2";;
+    demo)
+        "$PGC_WORKDIR/commands/demo" "$2";;
+    *)
+        cli_help;;
+esac

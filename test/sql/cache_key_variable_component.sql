@@ -22,4 +22,3 @@ select graphql.cache_key_variable_component('{
         {"email": "AscNullsFirst"}
     ]
 }');
-

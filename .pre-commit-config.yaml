@@ -1,8 +1,19 @@
 repos:
+
+-   repo: local
+    hooks:
+    -   id: inline-pylint-with-bash
+        name: build
+        entry: bash -c './bin/pgc build'
+        language: system
+        pass_filenames: false
+
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
     -   id: trailing-whitespace
+        exclude: ^test/expected
+    -   id: end-of-file-fixer
         exclude: ^test/expected
     -   id: check-yaml
     -   id: check-merge-conflict

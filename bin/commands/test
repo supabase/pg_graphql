@@ -1,0 +1,15 @@
+set -e
+. "$PGC_WORKDIR/common"
+
+cli_log "Test starting"
+
+cli_help() {
+  echo "Command: test
+Usage:
+  test"
+  exit 1
+}
+
+nix-shell --run "pg_13_graphql make installcheck"
+
+cli_log "Test complete"

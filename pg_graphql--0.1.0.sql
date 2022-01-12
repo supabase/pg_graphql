@@ -1,9 +1,22 @@
 create schema if not exists graphql;
-
-
--------------
--- Hashing --
--------------
+create or replace function graphql.array_first(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- First element of an array
+    select arr[1];
+$$;
+create or replace function graphql.array_last(arr anyarray)
+    returns anyelement
+    language sql
+    immutable
+as
+$$
+    -- Last element of an array
+    select arr[array_length(arr, 1)];
+$$;
 create or replace function graphql.sha1(text)
     returns text
     strict
@@ -12,11 +25,6 @@ create or replace function graphql.sha1(text)
 as $$
     select encode(digest($1, 'sha1'), 'hex')
 $$;
-
-
------------
--- JSONB --
------------
 create or replace function graphql.jsonb_coalesce(val jsonb, default_ jsonb)
     returns jsonb
     strict
@@ -28,8 +36,6 @@ as $$
         else val
     end;
 $$;
-
-
 create or replace function graphql.jsonb_unnest_recursive_with_jsonpath(obj jsonb)
     returns table(jpath jsonpath, obj jsonb)
      language sql
@@ -96,88 +102,13 @@ Recursively unrolls a jsonb object and arrays to scalars
     order by
         path_::text;
 $$;
-
------------
--- Array --
------------
-create or replace function graphql.array_first(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- First element of an array
-    select arr[1];
-$$;
-
-create or replace function graphql.array_last(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- Last element of an array
-    select arr[array_length(arr, 1)];
-$$;
-
-
--------------------------
--- Entity Manipulation --
--------------------------
-create function graphql.to_regclass(schema_ text, name_ text)
-    returns regclass
-    language sql
-    immutable
-as
-$$ select (quote_ident(schema_) || '.' || quote_ident(name_))::regclass; $$;
-
-
-create function graphql.to_table_name(regclass)
+create or replace function graphql.slug()
     returns text
     language sql
-    immutable
-as
-$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
-
-
--------------------
--- String Casing --
--------------------
-
-create function graphql.to_pascal_case(text)
-    returns text
-    language sql
-    immutable
-as
-$$
-select
-    string_agg(initcap(part), '')
-from
-    unnest(string_to_array($1, '_')) x(part)
+    volatile
+as $$
+    select substr(md5(random()::text), 0, 12);
 $$;
-
-
-create function graphql.to_camel_case(text)
-    returns text
-    language sql
-    immutable
-as
-$$
-select
-    string_agg(
-        case
-            when part_ix = 1 then part
-            else initcap(part)
-        end, '')
-from
-    unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
-$$;
-
-
-
--------------------
--- Introspection --
--------------------
 create or replace function graphql.primary_key_columns(entity regclass)
     returns text[]
     language sql
@@ -195,8 +126,6 @@ $$
         pg_index.indrelid = entity
         and pg_index.indisprimary
 $$;
-
-
 create or replace function graphql.primary_key_types(entity regclass)
     returns regtype[]
     language sql
@@ -214,44 +143,52 @@ $$
         pg_index.indrelid = entity
         and pg_index.indisprimary
 $$;
-
-
-----------------------
--- AST Manipulation --
-----------------------
-
-create type graphql.parse_result AS (
-    ast text,
-    error text
-);
-
-
-create function graphql.parse(text)
-    returns graphql.parse_result
-    language c
+create function graphql.to_regclass(schema_ text, name_ text)
+    returns regclass
+    language sql
     immutable
-as 'pg_graphql', 'parse';
-
-
-
-create function graphql.ast_pass_strip_loc(body jsonb)
-returns jsonb
-language sql
-immutable
-as $$
-/*
-Remove a 'loc' key from a jsonb object by name
-*/
+as
+$$ select (quote_ident(schema_) || '.' || quote_ident(name_))::regclass; $$;
+create function graphql.to_table_name(regclass)
+    returns text
+    language sql
+    immutable
+as
+$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
+create function graphql.to_camel_case(text)
+    returns text
+    language sql
+    immutable
+as
+$$
 select
-    regexp_replace(
-        body::text,
-        '"loc":\s*\{\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*},\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*}\s*},'::text,
-        '',
-        'g'
-    )::jsonb
+    string_agg(
+        case
+            when part_ix = 1 then part
+            else initcap(part)
+        end, '')
+from
+    unnest(string_to_array($1, '_')) with ordinality x(part, part_ix)
 $$;
-
-
+create function graphql.to_pascal_case(text)
+    returns text
+    language sql
+    immutable
+as
+$$
+select
+    string_agg(initcap(part), '')
+from
+    unnest(string_to_array($1, '_')) x(part)
+$$;
+create or replace function graphql.alias_or_name_literal(field jsonb)
+    returns text
+    language sql
+    immutable
+    strict
+as $$
+    select coalesce(field -> 'alias' ->> 'value', field -> 'name' ->> 'value')
+$$;
 create or replace function graphql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
     returns jsonb
     language sql
@@ -313,47 +250,22 @@ Recursively replace fragment spreads with the fragment definition's selection se
                 ast
         end;
 $$;
-
-
-
-create or replace function graphql.name_literal(ast jsonb)
-    returns text
-    immutable
-    language sql
+create function graphql.ast_pass_strip_loc(body jsonb)
+returns jsonb
+language sql
+immutable
 as $$
-    select ast -> 'name' ->> 'value';
+/*
+Remove a 'loc' key from a jsonb object by name
+*/
+select
+    regexp_replace(
+        body::text,
+        '"loc":\s*\{\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*},\s*("end"|"start")\s*:\s*\{\s*("line"|"column")\s*:\s*\d+,\s*("line"|"column")\s*:\s*\d+\s*}\s*},'::text,
+        '',
+        'g'
+    )::jsonb
 $$;
-
-
-create or replace function graphql.value_literal(ast jsonb)
-    returns text
-    immutable
-    language sql
-as $$
-    select ast -> 'value' ->> 'value';
-$$;
-
-
-create or replace function graphql.alias_or_name_literal(field jsonb)
-    returns text
-    language sql
-    immutable
-    strict
-as $$
-    select coalesce(field -> 'alias' ->> 'value', field -> 'name' ->> 'value')
-$$;
-
-
-create or replace function graphql.is_variable(field jsonb)
-    returns boolean
-    immutable
-    strict
-    language sql
-as $$
-    select (field ->> 'kind') = 'Variable'
-$$;
-
-
 create or replace function graphql.is_literal(field jsonb)
     returns boolean
     immutable
@@ -362,13 +274,68 @@ create or replace function graphql.is_literal(field jsonb)
 as $$
     select not graphql.is_variable(field)
 $$;
+create or replace function graphql.is_variable(field jsonb)
+    returns boolean
+    immutable
+    strict
+    language sql
+as $$
+    select (field ->> 'kind') = 'Variable'
+$$;
+create or replace function graphql.name_literal(ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select ast -> 'name' ->> 'value';
+$$;
+create type graphql.parse_result AS (
+    ast text,
+    error text
+);
 
-
-------------
--- CURSOR --
-------------
--- base64 encoded utf-8 jsonb array of [schema_name, table_name, pkey_val1, pkey_val2 ...]
-
+create function graphql.parse(text)
+    returns graphql.parse_result
+    language c
+    immutable
+as 'pg_graphql', 'parse';
+create or replace function graphql.value_literal(ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select ast -> 'value' ->> 'value';
+$$;
+create or replace function graphql.cursor_clause_for_literal(cursor_ text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    -- SQL string
+    -- Example:
+    --        select graphql.cursor_clause_for_literal('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
+    --        row('public','account','2')
+    -- Note:
+    --         Type casts are not necessary because the values are visible to the planner allowing coercion
+    select 'row(' || string_agg(quote_literal(x), ',') || ')'
+    from jsonb_array_elements_text(convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb) y(x)
+$$;
+create or replace function graphql.cursor_clause_for_variable(entity regclass, variable_idx int)
+    returns text
+    language sql
+    immutable
+    strict
+as $$
+    -- SQL string to decode a cursor and convert it to a record for equality or pagination
+    -- Example:
+    --        select graphql.cursor_clause_for_variable('public.account', 1)
+    --        row(graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::integer)
+    select
+        'row(' || string_agg(format('(graphql.cursor_decode($%s) ->> %s)::%s', variable_idx, ctype.idx-1, ctype.val), ', ') || ')'
+    from
+        unnest(array['text'::regtype] || graphql.primary_key_types(entity)) with ordinality ctype(val, idx);
+$$;
 create or replace function graphql.cursor_decode(cursor_ text)
     returns jsonb
     language sql
@@ -381,8 +348,6 @@ as $$
     --        ["public", "account", 1]
     select convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb
 $$;
-
-
 create or replace function graphql.cursor_encode(contents jsonb)
     returns text
     language sql
@@ -395,28 +360,6 @@ as $$
     --        'WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd'
     select encode(convert_to(contents::text, 'utf-8'), 'base64')
 $$;
-
-
-
-create or replace function graphql.cursor_row_clause(entity regclass, alias_name text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    -- SQL string returning decoded cursor for an aliased table
-    -- Example:
-    --        select graphql.cursor_row_clause('public.account', 'abcxyz')
-    --        row('public', 'account', abcxyz.id)
-    select
-        'row('
-        || format('%L::text,', quote_ident(entity::text))
-        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
-        ||')'
-    from unnest(graphql.primary_key_columns(entity)) pk(x)
-$$;
-
-
 create or replace function graphql.cursor_encoded_clause(entity regclass, alias_name text)
     returns text
     language sql
@@ -434,51 +377,24 @@ $$
         ||'))'
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
-
-
-create or replace function graphql.cursor_clause_for_variable(entity regclass, variable_idx int)
-    returns text
-    language sql
-    immutable
-    strict
-as $$
-    -- SQL string to decode a cursor and convert it to a record for equality or pagination
-    -- Example:
-    --        select graphql.cursor_clause_for_variable('public.account', 1)
-    --        row(graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::integer)
-    select
-        'row(' || string_agg(format('(graphql.cursor_decode($%s) ->> %s)::%s', variable_idx, ctype.idx-1, ctype.val), ', ') || ')'
-    from
-        unnest(array['text'::regtype] || graphql.primary_key_types(entity)) with ordinality ctype(val, idx);
-$$;
-
-create or replace function graphql.cursor_clause_for_literal(cursor_ text)
+create or replace function graphql.cursor_row_clause(entity regclass, alias_name text)
     returns text
     language sql
     immutable
     as
 $$
-    -- SQL string
+    -- SQL string returning decoded cursor for an aliased table
     -- Example:
-    --        select graphql.cursor_clause_for_literal('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
-    --        row('public','account','2')
-    -- Note:
-    --         Type casts are not necessary because the values are visible to the planner allowing coercion
-    select 'row(' || string_agg(quote_literal(x), ',') || ')'
-    from jsonb_array_elements_text(convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb) y(x)
+    --        select graphql.cursor_row_clause('public.account', 'abcxyz')
+    --        row('public', 'account', abcxyz.id)
+    select
+        'row('
+        || format('%L::text,', quote_ident(entity::text))
+        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
+        ||')'
+    from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
-
---------------------------
--- Table/View/Type Defs --
---------------------------
-
 create type graphql.cardinality as enum ('ONE', 'MANY');
-
-
--- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
-create type graphql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
-
-
 create type graphql.meta_kind as enum (
     'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
     'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
@@ -487,8 +403,34 @@ create type graphql.meta_kind as enum (
     -- Custom
     'ORDER_BY_DIRECTION', 'ORDER_BY', 'FILTER_FIELD', 'FILTER_ENTITY'
 );
-
-
+-- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
+create type graphql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+create function graphql.sql_type_to_graphql_type(sql_type text)
+    returns text
+    language sql
+as
+$$
+    -- SQL type from pg_catalog.format_type
+    select
+        case
+            when sql_type like 'int%' then 'Int' -- unsafe for int8
+            when sql_type like 'bool%' then 'Boolean'
+            when sql_type like 'float%' then 'Float'
+            when sql_type like 'numeric%' then 'Float' -- unsafe
+            when sql_type = 'json' then 'JSON'
+            when sql_type = 'jsonb' then 'JSON'
+            when sql_type like 'json%' then 'JSON'
+            when sql_type = 'uuid' then 'UUID'
+            when sql_type = 'daterange' then 'String'
+            when sql_type like 'date%' then 'DateTime'
+            when sql_type like 'timestamp%' then 'DateTime'
+            when sql_type like 'time%' then 'DateTime'
+            --when sql_type = 'inet' then 'InternetAddress'
+            --when sql_type = 'cidr' then 'InternetAddress'
+            --when sql_type = 'macaddr' then 'MACAddress'
+        else 'String'
+    end;
+$$;
 create materialized view graphql.entity as
     select
         oid::regclass as entity
@@ -496,10 +438,11 @@ create materialized view graphql.entity as
         pg_class
     where
         relkind = ANY (ARRAY['r', 'p'])
-        and not relnamespace = ANY (ARRAY['information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'graphql'::regnamespace]);
-
-
-
+        and not relnamespace = ANY (ARRAY[
+            'information_schema'::regnamespace,
+            'pg_catalog'::regnamespace,
+            'graphql'::regnamespace
+        ]);
 create view graphql.relationship as
     with rels as materialized (
         select
@@ -533,8 +476,59 @@ create view graphql.relationship as
     select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
     union all
     select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
-
-
+create materialized view graphql.enum_value as
+    select
+        type_::text,
+        value::text,
+        description::text
+    from (
+        values
+            ('__TypeKind', 'SCALAR', null::text),
+            ('__TypeKind', 'OBJECT', null),
+            ('__TypeKind', 'INTERFACE', null),
+            ('__TypeKind', 'UNION', null),
+            ('__TypeKind', 'ENUM', null),
+            ('__TypeKind', 'INPUT_OBJECT', null),
+            ('__TypeKind', 'LIST', null),
+            ('__TypeKind', 'NON_NULL', null),
+            ('__DirectiveLocation', 'QUERY', 'Location adjacent to a query operation.'),
+            ('__DirectiveLocation', 'MUTATION', 'Location adjacent to a mutation operation.'),
+            ('__DirectiveLocation', 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
+            ('__DirectiveLocation', 'FIELD', 'Location adjacent to a field.'),
+            ('__DirectiveLocation', 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
+            ('__DirectiveLocation', 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
+            ('__DirectiveLocation', 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
+            ('__DirectiveLocation', 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
+            ('__DirectiveLocation', 'SCHEMA', 'Location adjacent to a schema definition.'),
+            ('__DirectiveLocation', 'SCALAR', 'Location adjacent to a scalar definition.'),
+            ('__DirectiveLocation', 'OBJECT', 'Location adjacent to an object type definition.'),
+            ('__DirectiveLocation', 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
+            ('__DirectiveLocation', 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
+            ('__DirectiveLocation', 'INTERFACE', 'Location adjacent to an interface definition.'),
+            ('__DirectiveLocation', 'UNION', 'Location adjacent to a union definition.'),
+            ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
+            ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
+            ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
+            ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.'),
+            -- pg_graphql Constant
+            ('OrderByDirection', 'AscNullsFirst', 'Ascending order, nulls first'),
+            ('OrderByDirection', 'AscNullsLast', 'Ascending order, nulls last'),
+            ('OrderByDirection', 'DescNullsFirst', 'Descending order, nulls first'),
+            ('OrderByDirection', 'DescNullsLast', 'Descending order, nulls last')
+    ) x(type_, value, description)
+    union all
+    select
+        graphql.to_pascal_case(t.typname),
+        e.enumlabel as value,
+        null::text
+    from
+        pg_type t
+        join pg_enum e
+            on t.oid = e.enumtypid
+        join pg_catalog.pg_namespace n
+            on n.oid = t.typnamespace
+    where
+        n.nspname not in ('graphql', 'information_schema', 'pg_catalog');
 create materialized view graphql._type (
     name,
     type_kind,
@@ -627,91 +621,6 @@ create view graphql.type as
     where
         t.entity is null
         or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
-
-
-create materialized view graphql.enum_value as
-    select
-        type_::text,
-        value::text,
-        description::text
-    from (
-        values
-            ('__TypeKind', 'SCALAR', null::text),
-            ('__TypeKind', 'OBJECT', null),
-            ('__TypeKind', 'INTERFACE', null),
-            ('__TypeKind', 'UNION', null),
-            ('__TypeKind', 'ENUM', null),
-            ('__TypeKind', 'INPUT_OBJECT', null),
-            ('__TypeKind', 'LIST', null),
-            ('__TypeKind', 'NON_NULL', null),
-            ('__DirectiveLocation', 'QUERY', 'Location adjacent to a query operation.'),
-            ('__DirectiveLocation', 'MUTATION', 'Location adjacent to a mutation operation.'),
-            ('__DirectiveLocation', 'SUBSCRIPTION', 'Location adjacent to a subscription operation.'),
-            ('__DirectiveLocation', 'FIELD', 'Location adjacent to a field.'),
-            ('__DirectiveLocation', 'FRAGMENT_DEFINITION', 'Location adjacent to a fragment definition.'),
-            ('__DirectiveLocation', 'FRAGMENT_SPREAD', 'Location adjacent to a fragment spread.'),
-            ('__DirectiveLocation', 'INLINE_FRAGMENT', 'Location adjacent to an inline fragment.'),
-            ('__DirectiveLocation', 'VARIABLE_DEFINITION', 'Location adjacent to a variable definition.'),
-            ('__DirectiveLocation', 'SCHEMA', 'Location adjacent to a schema definition.'),
-            ('__DirectiveLocation', 'SCALAR', 'Location adjacent to a scalar definition.'),
-            ('__DirectiveLocation', 'OBJECT', 'Location adjacent to an object type definition.'),
-            ('__DirectiveLocation', 'FIELD_DEFINITION', 'Location adjacent to a field definition.'),
-            ('__DirectiveLocation', 'ARGUMENT_DEFINITION', 'Location adjacent to an argument definition.'),
-            ('__DirectiveLocation', 'INTERFACE', 'Location adjacent to an interface definition.'),
-            ('__DirectiveLocation', 'UNION', 'Location adjacent to a union definition.'),
-            ('__DirectiveLocation', 'ENUM', 'Location adjacent to an enum definition.'),
-            ('__DirectiveLocation', 'ENUM_VALUE', 'Location adjacent to an enum value definition.'),
-            ('__DirectiveLocation', 'INPUT_OBJECT', 'Location adjacent to an input object type definition.'),
-            ('__DirectiveLocation', 'INPUT_FIELD_DEFINITION', 'Location adjacent to an input object field definition.'),
-            -- pg_graphql Constant
-            ('OrderByDirection', 'AscNullsFirst', 'Ascending order, nulls first'),
-            ('OrderByDirection', 'AscNullsLast', 'Ascending order, nulls last'),
-            ('OrderByDirection', 'DescNullsFirst', 'Descending order, nulls first'),
-            ('OrderByDirection', 'DescNullsLast', 'Descending order, nulls last')
-    ) x(type_, value, description)
-    union all
-    select
-        graphql.to_pascal_case(t.typname),
-        e.enumlabel as value,
-        null::text
-    from
-        pg_type t
-        join pg_enum e
-            on t.oid = e.enumtypid
-        join pg_catalog.pg_namespace n
-            on n.oid = t.typnamespace
-    where
-        n.nspname not in ('graphql', 'information_schema', 'pg_catalog');
-
-
-create function graphql.sql_type_to_graphql_type(sql_type text)
-    returns text
-    language sql
-as
-$$
-    -- SQL type from pg_catalog.format_type
-    select
-        case
-            when sql_type like 'int%' then 'Int' -- unsafe for int8
-            when sql_type like 'bool%' then 'Boolean'
-            when sql_type like 'float%' then 'Float'
-            when sql_type like 'numeric%' then 'Float' -- unsafe
-            when sql_type = 'json' then 'JSON'
-            when sql_type = 'jsonb' then 'JSON'
-            when sql_type like 'json%' then 'JSON'
-            when sql_type = 'uuid' then 'UUID'
-            when sql_type = 'daterange' then 'String'
-            when sql_type like 'date%' then 'DateTime'
-            when sql_type like 'timestamp%' then 'DateTime'
-            when sql_type like 'time%' then 'DateTime'
-            --when sql_type = 'inet' then 'InternetAddress'
-            --when sql_type = 'cidr' then 'InternetAddress'
-            --when sql_type = 'macaddr' then 'MACAddress'
-        else 'String'
-    end;
-$$;
-
-
 create materialized view graphql._field_output as
     select
         parent_type,
@@ -1191,14 +1100,6 @@ create view graphql.field as
             when f.local_columns is not null then true
             else false
         end;
-
-
-
-
------------------
--- Schema Cache -
------------------
-
 create or replace function graphql.rebuild_schema() returns event_trigger
   language plpgsql
 as $$
@@ -1219,27 +1120,22 @@ $$;
 create event trigger graphql_watch
     on ddl_command_end
     execute procedure graphql.rebuild_schema();
-
-
----------------
--- Arguments --
----------------
-
-create or replace function graphql.get_arg_by_name(name text, arguments jsonb)
-    returns jsonb
-    immutable
-    strict
-    language sql
+create or replace function graphql.exception(message text)
+    returns text
+    language plpgsql
 as $$
-    select
-        ar.elem
-    from
-        jsonb_array_elements(arguments) ar(elem)
-    where
-        graphql.name_literal(elem) = $1
+begin
+    raise exception using errcode='22000', message=message;
+end;
 $$;
-
-
+create or replace function graphql.exception_unknown_field(field_name text, type_name text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
+end;
+$$;
 create or replace function graphql.arg_index(arg_name text, variable_definitions jsonb)
     returns int
     immutable
@@ -1253,7 +1149,19 @@ as $$
     where
         graphql.name_literal(elem -> 'variable') = $1
 $$;
-
+create or replace function graphql.get_arg_by_name(name text, arguments jsonb)
+    returns jsonb
+    immutable
+    strict
+    language sql
+as $$
+    select
+        ar.elem
+    from
+        jsonb_array_elements(arguments) ar(elem)
+    where
+        graphql.name_literal(elem) = $1
+$$;
 create or replace function graphql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass)
     returns text
     immutable
@@ -1294,35 +1202,19 @@ begin
     end if;
 end
 $$;
-
-----------------
--- Exceptions --
-----------------
-
-create or replace function graphql.exception_unknown_field(field_name text, type_name text)
+create or replace function graphql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
     returns text
-    language plpgsql
-as $$
-begin
-    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
-end;
+    language sql
+    immutable
+    as
+$$
+    select string_agg(quote_ident(local_alias_name) || '.' || quote_ident(x) || ' = ' || quote_ident(parent_alias_name) || '.' || quote_ident(y), ' and ')
+    from
+        unnest(local_columns) with ordinality local_(x, ix),
+        unnest(parent_columns) with ordinality parent_(y, iy)
+    where
+        ix = iy
 $$;
-
-create or replace function graphql.exception(message text)
-    returns text
-    language plpgsql
-as $$
-begin
-    raise exception using errcode='22000', message=message;
-end;
-$$;
-
-
--------------
--- Resolve --
--------------
-
-
 create or replace function graphql.primary_key_clause(entity regclass, alias_name text)
     returns text
     language sql
@@ -1332,25 +1224,6 @@ $$
     select '(' || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',') ||')'
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
-
-
-create or replace function graphql.order_by_enum_to_clause(order_by_enum_val text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    select
-        case order_by_enum_val
-            when 'AscNullsFirst' then 'asc nulls first'
-            when 'AscNullsLast' then 'asc nulls last'
-            when 'DescNullsFirst' then 'desc nulls first'
-            when 'DescNullsLast' then 'desc nulls last'
-            else graphql.exception(format('Invalid value for ordering "%s"', coalesce(order_by_enum_val, 'null')))
-        end
-$$;
-
-
 create or replace function graphql.order_by_clause(
     order_by_arg jsonb,
     entity regclass,
@@ -1499,10 +1372,22 @@ begin
     end if;
 end;
 $$;
-
-
+create or replace function graphql.order_by_enum_to_clause(order_by_enum_val text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    select
+        case order_by_enum_val
+            when 'AscNullsFirst' then 'asc nulls first'
+            when 'AscNullsLast' then 'asc nulls last'
+            when 'DescNullsFirst' then 'desc nulls first'
+            when 'DescNullsLast' then 'desc nulls last'
+            else graphql.exception(format('Invalid value for ordering "%s"', coalesce(order_by_enum_val, 'null')))
+        end
+$$;
 create type graphql.comparison_op as enum ('=');
-
 create or replace function graphql.text_to_comparison_op(text)
     returns graphql.comparison_op
     language sql
@@ -1515,8 +1400,6 @@ $$
             else graphql.exception('Invalid comaprison operator')
         end::graphql.comparison_op
 $$;
-
-
 create or replace function graphql.where_clause(
     filter_arg jsonb,
     entity regclass,
@@ -1752,115 +1635,6 @@ begin
     return array_to_string(clause_arr, ' and ');
 end;
 $$;
-
-
-
-
-create or replace function graphql.join_clause(local_columns text[], local_alias_name text, parent_columns text[], parent_alias_name text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    select string_agg(quote_ident(local_alias_name) || '.' || quote_ident(x) || ' = ' || quote_ident(parent_alias_name) || '.' || quote_ident(y), ' and ')
-    from
-        unnest(local_columns) with ordinality local_(x, ix),
-        unnest(parent_columns) with ordinality parent_(y, iy)
-    where
-        ix = iy
-$$;
-
-
-create or replace function graphql.slug()
-    returns text
-    language sql
-    volatile
-as $$
-    select substr(md5(random()::text), 0, 12);
-$$;
-
-
-create or replace function graphql.build_node_query(
-    ast jsonb,
-    variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null,
-    parent_block_name text = null
-)
-    returns text
-    language plpgsql
-as $$
-declare
-    block_name text = graphql.slug();
-    field graphql.field = gf from graphql.field gf where gf.name = graphql.name_literal(ast) and gf.parent_type = $4;
-    type_ graphql.type = gt from graphql.type gt where gt.name = field.type_;
-    nodeId text = graphql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
-    result text;
-begin
-    return
-        E'(\nselect\njsonb_build_object(\n'
-        || string_agg(quote_literal(graphql.alias_or_name_literal(x.sel)) || E',\n' ||
-            case
-                when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
-                when nf.name = '__typename' then quote_literal(type_.name)
-                when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
-                when nf.local_columns is not null and nf_t.meta_kind = 'CONNECTION' then graphql.build_connection_query(
-                    ast := x.sel,
-                    variable_definitions := variable_definitions,
-                    variables := variables,
-                    parent_type := field.type_,
-                    parent_block_name := block_name
-                )
-                when nf.local_columns is not null and nf_t.meta_kind = 'NODE' then graphql.build_node_query(
-                    ast := x.sel,
-                    variable_definitions := variable_definitions,
-                    variables := variables,
-                    parent_type := field.type_,
-                    parent_block_name := block_name
-                )
-                else graphql.exception_unknown_field(graphql.name_literal(x.sel), field.type_)
-            end,
-            E',\n'
-        )
-        || ')'
-        || format('
-    from
-        %I as %s
-    where
-        true
-        -- join clause
-        and %s
-        -- filter clause
-        and %s = %s
-    limit 1
-)
-',
-    type_.entity,
-    quote_ident(block_name),
-    coalesce(graphql.join_clause(field.local_columns, block_name, field.parent_columns, parent_block_name), 'true'),
-    case
-        when nodeId is null then 'true'
-        else graphql.cursor_row_clause(type_.entity, block_name)
-    end,
-    case
-        when nodeId is null then 'true'
-        else nodeId
-    end
-    )
-    from
-        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
-        left join graphql.field nf
-            on nf.parent_type = field.type_
-            and graphql.name_literal(x.sel) = nf.name
-        left join graphql.type nf_t
-            on nf.type_ = nf_t.name
-    where
-        field.name = graphql.name_literal(ast)
-        and $4 = field.parent_type;
-end;
-$$;
-
-
 create or replace function graphql.build_connection_query(
     ast jsonb,
     variable_definitions jsonb = '[]',
@@ -2181,8 +1955,85 @@ begin
     return result;
 end;
 $$;
-
-
+create or replace function graphql.build_node_query(
+    ast jsonb,
+    variable_definitions jsonb = '[]',
+    variables jsonb = '{}',
+    parent_type text = null,
+    parent_block_name text = null
+)
+    returns text
+    language plpgsql
+as $$
+declare
+    block_name text = graphql.slug();
+    field graphql.field = gf from graphql.field gf where gf.name = graphql.name_literal(ast) and gf.parent_type = $4;
+    type_ graphql.type = gt from graphql.type gt where gt.name = field.type_;
+    nodeId text = graphql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
+    result text;
+begin
+    return
+        E'(\nselect\njsonb_build_object(\n'
+        || string_agg(quote_literal(graphql.alias_or_name_literal(x.sel)) || E',\n' ||
+            case
+                when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
+                when nf.name = '__typename' then quote_literal(type_.name)
+                when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
+                when nf.local_columns is not null and nf_t.meta_kind = 'CONNECTION' then graphql.build_connection_query(
+                    ast := x.sel,
+                    variable_definitions := variable_definitions,
+                    variables := variables,
+                    parent_type := field.type_,
+                    parent_block_name := block_name
+                )
+                when nf.local_columns is not null and nf_t.meta_kind = 'NODE' then graphql.build_node_query(
+                    ast := x.sel,
+                    variable_definitions := variable_definitions,
+                    variables := variables,
+                    parent_type := field.type_,
+                    parent_block_name := block_name
+                )
+                else graphql.exception_unknown_field(graphql.name_literal(x.sel), field.type_)
+            end,
+            E',\n'
+        )
+        || ')'
+        || format('
+    from
+        %I as %s
+    where
+        true
+        -- join clause
+        and %s
+        -- filter clause
+        and %s = %s
+    limit 1
+)
+',
+    type_.entity,
+    quote_ident(block_name),
+    coalesce(graphql.join_clause(field.local_columns, block_name, field.parent_columns, parent_block_name), 'true'),
+    case
+        when nodeId is null then 'true'
+        else graphql.cursor_row_clause(type_.entity, block_name)
+    end,
+    case
+        when nodeId is null then 'true'
+        else nodeId
+    end
+    )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
+        left join graphql.field nf
+            on nf.parent_type = field.type_
+            and graphql.name_literal(x.sel) = nf.name
+        left join graphql.type nf_t
+            on nf.type_ = nf_t.name
+    where
+        field.name = graphql.name_literal(ast)
+        and $4 = field.parent_type;
+end;
+$$;
 create or replace function graphql."resolve_enumValues"(type_ text, ast jsonb)
     returns jsonb
     stable
@@ -2200,8 +2051,6 @@ as $$
     from
         graphql.enum_value ev where ev.type_ = $1;
 $$;
-
-
 create or replace function graphql.resolve_field(field text, parent_type text, parent_arg_field_name text, ast jsonb)
     returns jsonb
     stable
@@ -2277,10 +2126,103 @@ begin
         ) fa;
 end;
 $$;
+create or replace function graphql."resolve_queryType"(ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' then 'Query'
+                    when selection_name = 'description' then null
+                    else graphql.exception_unknown_field(selection_name, 'Query')
+                end
+            ),
+            'null'::jsonb
+        )
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                graphql.alias_or_name_literal(x.sel) field_alias,
+                graphql.name_literal(x.sel) as selection_name
+        ) fa
+$$;
+create or replace function graphql."resolve___Schema"(
+    ast jsonb,
+    variable_definitions jsonb = '[]'
+)
+    returns jsonb
+    stable
+    language plpgsql
+    as $$
+declare
+    node_fields jsonb = jsonb_path_query(ast, '$.selectionSet.selections');
+    node_field jsonb;
+    node_field_rec graphql.field;
+    agg jsonb = '{}';
+begin
+    --field_rec = "field" from graphql.field where parent_type = '__Schema' and name = field_name;
 
+    for node_field in select * from jsonb_array_elements(node_fields) loop
+        node_field_rec = "field" from graphql.field where parent_type = '__Schema' and name = graphql.name_literal(node_field);
 
+        if graphql.name_literal(node_field) = 'description' then
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), node_field_rec.description);
+        elsif node_field_rec.type_ = '__Directive' then
+            -- TODO
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), '[]'::jsonb);
 
+        elsif node_field_rec.name = 'queryType' then
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql."resolve_queryType"(node_field));
 
+        elsif node_field_rec.name = 'mutationType' then
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), 'null'::jsonb);
+
+        elsif node_field_rec.name = 'subscriptionType' then
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
+
+        elsif node_field_rec.name = 'types' then
+            agg = agg || (
+                with uq as (
+                    select
+                        distinct gt.name
+                    from
+                        graphql.type gt
+                        -- Filter out object types with no fields
+                        join (select distinct parent_type from graphql.field) gf
+                            on gt.name = gf.parent_type
+                            or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT')
+                )
+                select
+                    jsonb_build_object(
+                        graphql.alias_or_name_literal(node_field),
+                        jsonb_agg(graphql."resolve___Type"(uq.name, node_field) order by uq.name)
+                    )
+                from uq
+            );
+
+        elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
+            agg = agg || graphql."resolve___Type"(
+                node_field_rec.type_,
+                node_field,
+                node_field_rec.is_array_not_null,
+                node_field_rec.is_array,
+                node_field_rec.is_not_null
+            );
+
+        else
+            raise 'Invalid field for type __Schema: "%"', graphql.name_literal(node_field);
+        end if;
+    end loop;
+
+    return jsonb_build_object(graphql.alias_or_name_literal(ast), agg);
+end
+$$;
 create or replace function graphql."resolve___Type"(
     type_ text,
     ast jsonb,
@@ -2374,181 +2316,20 @@ begin
         gt.name = type_;
 end;
 $$;
-
-
-create or replace function graphql."resolve_queryType"(ast jsonb)
-    returns jsonb
-    stable
+create or replace function graphql.cache_key(role regrole, ast jsonb, variables jsonb)
+    returns text
     language sql
+    immutable
 as $$
     select
-        coalesce(
-            jsonb_object_agg(
-                fa.field_alias,
-                case
-                    when selection_name = 'name' then 'Query'
-                    when selection_name = 'description' then null
-                    else graphql.exception_unknown_field(selection_name, 'Query')
-                end
-            ),
-            'null'::jsonb
+        -- Different roles may have different levels of access
+        graphql.sha1(
+            $1::text
+            -- Parsed query hash
+            || ast::text
+            || graphql.cache_key_variable_component(variables)
         )
-    from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
-        lateral (
-            select
-                graphql.alias_or_name_literal(x.sel) field_alias,
-                graphql.name_literal(x.sel) as selection_name
-        ) fa
 $$;
-
-
-create or replace function graphql."resolve___Schema"(
-    ast jsonb,
-    variable_definitions jsonb = '[]'
-)
-    returns jsonb
-    stable
-    language plpgsql
-    as $$
-declare
-    node_fields jsonb = jsonb_path_query(ast, '$.selectionSet.selections');
-    node_field jsonb;
-    node_field_rec graphql.field;
-    agg jsonb = '{}';
-begin
-    --field_rec = "field" from graphql.field where parent_type = '__Schema' and name = field_name;
-
-    for node_field in select * from jsonb_array_elements(node_fields) loop
-        node_field_rec = "field" from graphql.field where parent_type = '__Schema' and name = graphql.name_literal(node_field);
-
-        if graphql.name_literal(node_field) = 'description' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), node_field_rec.description);
-        elsif node_field_rec.type_ = '__Directive' then
-            -- TODO
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), '[]'::jsonb);
-
-        elsif node_field_rec.name = 'queryType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql."resolve_queryType"(node_field));
-
-        elsif node_field_rec.name = 'mutationType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), 'null'::jsonb);
-
-        elsif node_field_rec.name = 'subscriptionType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
-
-        elsif node_field_rec.name = 'types' then
-            agg = agg || (
-                with uq as (
-                    select
-                        distinct gt.name
-                    from
-                        graphql.type gt
-                        -- Filter out object types with no fields
-                        join (select distinct parent_type from graphql.field) gf
-                            on gt.name = gf.parent_type
-                            or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT')
-                )
-                select
-                    jsonb_build_object(
-                        graphql.alias_or_name_literal(node_field),
-                        jsonb_agg(graphql."resolve___Type"(uq.name, node_field) order by uq.name)
-                    )
-                from uq
-            );
-
-        elsif node_field_rec.type_ = '__Type' and not node_field_rec.is_array then
-            agg = agg || graphql."resolve___Type"(
-                node_field_rec.type_,
-                node_field,
-                node_field_rec.is_array_not_null,
-                node_field_rec.is_array,
-                node_field_rec.is_not_null
-            );
-
-        else
-            raise 'Invalid field for type __Schema: "%"', graphql.name_literal(node_field);
-        end if;
-    end loop;
-
-    return jsonb_build_object(graphql.alias_or_name_literal(ast), agg);
-end
-$$;
-
-
-create or replace function graphql.argument_value_by_name(name text, ast jsonb)
-    returns text
-    immutable
-    language sql
-as $$
-    select jsonb_path_query_first(ast, ('$.arguments[*] ? (@.name.value == "' || name ||'")')::jsonpath) -> 'value' ->> 'value';
-$$;
-
-
-create or replace function graphql.prepared_statement_create_clause(statement_name text, variable_definitions jsonb, query_ text)
-    returns text
-    immutable
-    language sql
-as $$
-    -- Create Prepared Statement
-    select format(
-        'prepare %I %s as %s',
-        statement_name,
-        case jsonb_array_length(variable_definitions)
-            when 0 then ''
-            else (select '(' || string_agg('text', ', ') || ')' from jsonb_array_elements(variable_definitions) jae(vd))
-        end,
-        query_
-    )
-$$;
-
-create or replace function graphql.prepared_statement_execute_clause(statement_name text, variable_definitions jsonb, variables jsonb)
-    returns text
-    immutable
-    language sql
-as $$
-   select
-        case count(1)
-            when 0 then format('execute %I', statement_name)
-            else
-                format('execute %I (', statement_name)
-                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
-                || ')'
-        end
-    from
-        jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
-        left join jsonb_each_text(variables) var(key_, val)
-            on graphql.name_literal(def -> 'variable') = var.key_
-$$;
-
-
-create or replace function graphql.variable_definitions_sort(variable_definitions jsonb)
-    returns jsonb
-    immutable
-    language sql
-as $$
-  -- Deterministically sort variable definitions
-  select
-        jsonb_agg(jae.f order by jae.f -> 'variable' -> 'name' ->> 'value' asc)
-    from
-        jsonb_array_elements(
-            case jsonb_typeof(variable_definitions)
-                when 'array' then variable_definitions
-                else to_jsonb('{}'::text[])
-            end
-        ) jae(f)
-$$;
-
-create or replace function graphql.prepared_statement_exists(statement_name text)
-    returns boolean
-    language sql
-    stable
-as $$
-    select exists(select 1 from pg_prepared_statements where name = statement_name)
-$$;
-
-
 create or replace function graphql.cache_key_variable_component(variables jsonb = '{}')
     returns text
     language sql
@@ -2597,24 +2378,54 @@ While false positives are possible, the cost of false positives is low
             select x from order_clause
         ) y(x)
 $$;
-
-
-create or replace function graphql.cache_key(role regrole, ast jsonb, variables jsonb)
+create or replace function graphql.prepared_statement_create_clause(statement_name text, variable_definitions jsonb, query_ text)
     returns text
-    language sql
     immutable
+    language sql
 as $$
-    select
-        -- Different roles may have different levels of access
-        graphql.sha1(
-            $1::text
-            -- Parsed query hash
-            || ast::text
-            || graphql.cache_key_variable_component(variables)
-        )
+    -- Create Prepared Statement
+    select format(
+        'prepare %I %s as %s',
+        statement_name,
+        case jsonb_array_length(variable_definitions)
+            when 0 then ''
+            else (select '(' || string_agg('text', ', ') || ')' from jsonb_array_elements(variable_definitions) jae(vd))
+        end,
+        query_
+    )
 $$;
-
-
+create or replace function graphql.prepared_statement_execute_clause(statement_name text, variable_definitions jsonb, variables jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+   select
+        case count(1)
+            when 0 then format('execute %I', statement_name)
+            else
+                format('execute %I (', statement_name)
+                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
+                || ')'
+        end
+    from
+        jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
+        left join jsonb_each_text(variables) var(key_, val)
+            on graphql.name_literal(def -> 'variable') = var.key_
+$$;
+create or replace function graphql.prepared_statement_exists(statement_name text)
+    returns boolean
+    language sql
+    stable
+as $$
+    select exists(select 1 from pg_prepared_statements where name = statement_name)
+$$;
+create or replace function graphql.argument_value_by_name(name text, ast jsonb)
+    returns text
+    immutable
+    language sql
+as $$
+    select jsonb_path_query_first(ast, ('$.arguments[*] ? (@.name.value == "' || name ||'")')::jsonpath) -> 'value' ->> 'value';
+$$;
 create or replace function graphql.resolve(stmt text, variables jsonb = '{}')
     returns jsonb
     volatile
@@ -2750,4 +2561,20 @@ begin
         'errors', to_jsonb(errors_)
     );
 end
+$$;
+create or replace function graphql.variable_definitions_sort(variable_definitions jsonb)
+    returns jsonb
+    immutable
+    language sql
+as $$
+  -- Deterministically sort variable definitions
+  select
+        jsonb_agg(jae.f order by jae.f -> 'variable' -> 'name' ->> 'value' asc)
+    from
+        jsonb_array_elements(
+            case jsonb_typeof(variable_definitions)
+                when 'array' then variable_definitions
+                else to_jsonb('{}'::text[])
+            end
+        ) jae(f)
 $$;
