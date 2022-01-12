@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -e
+. "$PGC_WORKDIR/common"
+
+
+cli_help() {
+  echo "Command: demo
+Usage:
+  demo"
+  exit 1
+}
+
+cli_log "Demo starting"
+
+./bin/pgc build
+docker-compose down -v
+docker ps -a | grep "pg_graphql" | awk '{print $1}' | xargs docker rm
+docker images | grep "pg_graphql" | awk '{print $1}' | xargs docker rmi
+docker-compose up
+
+cli_log "Demo complete"

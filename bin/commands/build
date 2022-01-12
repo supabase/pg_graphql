@@ -1,3 +1,17 @@
+#!/usr/bin/env bash
+set -e
+. "$PGC_WORKDIR/common"
+
+
+cli_help() {
+  echo "Command: build
+Usage:
+  build"
+  exit 1
+}
+
+cli_log "Build starting"
+
 cat \
     src/sql/init.sql \
     src/sql/array/*.sql \
@@ -26,4 +40,6 @@ cat \
     src/sql/resolve/introspection/*.sql \
     src/sql/resolve/cache/*.sql \
     src/sql/resolve/*.sql \
-    > pg_graphql--0.1.0.sql;
+    > pg_graphql--$PG_GRAPHQL_VERSION.sql;
+
+cli_log "Build complete"

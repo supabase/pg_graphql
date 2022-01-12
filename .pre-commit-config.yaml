@@ -4,7 +4,7 @@ repos:
     hooks:
     -   id: inline-pylint-with-bash
         name: build
-        entry: bash -c './bin/build.sh'
+        entry: bash -c './bin/pgc build'
         language: system
         pass_filenames: false
 

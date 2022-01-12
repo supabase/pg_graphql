@@ -1,6 +1,3 @@
------------
--- Array --
------------
 create or replace function graphql.array_last(arr anyarray)
     returns anyelement
     language sql
