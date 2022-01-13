@@ -7,7 +7,7 @@ begin
     end if;
 
     refresh materialized view graphql.entity with data;
-    refresh materialized view graphql._type with data;
+    perform graphql.rebuild_types();
     refresh materialized view graphql._field_output with data;
     refresh materialized view graphql._field_arg with data;
     refresh materialized view graphql.enum_value with data;

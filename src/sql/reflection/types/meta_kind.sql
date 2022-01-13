@@ -1,8 +1,47 @@
 create type graphql.meta_kind as enum (
-    'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
-    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
+-- Constant
+
     -- Introspection types
-    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION',
-    -- Custom
-    'ORDER_BY_DIRECTION', 'ORDER_BY', 'FILTER_FIELD', 'FILTER_ENTITY'
+    '__Schema',
+    '__Type',
+    '__TypeKind',
+    '__Field',
+    '__InputValue',
+    '__EnumValue',
+    '__Directive',
+    '__DirectiveLocation',
+
+    -- Builtin Scalar
+    'ID',
+    'Float',
+    'String',
+    'Int',
+    'Boolean',
+    'DateTime',
+    'BigInt',
+    'UUID',
+    'JSON',
+
+    -- Custom Scalar
+    'OrderByDirection',
+    'PageInfo',
+    'Cursor',
+    'Query',
+    'Mutation',
+
+-- Multi-possible
+    'Interface',
+
+-- Entity derrived
+    'Node',
+    'Edge',
+    'Connection',
+    'OrderBy',
+    'FilterEntity',
+
+-- GraphQL Type Derived
+    'FilterType',
+
+-- Enum Derived
+    'Enum'
 );

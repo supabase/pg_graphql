@@ -101,9 +101,9 @@ create materialized view graphql._field_output as
                     ('Query', conn.name, graphql.to_camel_case('all_' || graphql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
             ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
         where
-            conn.meta_kind = 'CONNECTION'
-            and edge.meta_kind = 'EDGE'
-            and node.meta_kind = 'NODE'
+            conn.meta_kind = 'Connection'
+            and edge.meta_kind = 'Edge'
+            and node.meta_kind = 'Node'
         -- Node
         -- Node.<column>
         union all
@@ -132,7 +132,7 @@ create materialized view graphql._field_output as
                 select pg_catalog.format_type(atttypid, atttypmod) type_str
             ) tf
         where
-            gt.meta_kind = 'NODE'
+            gt.meta_kind = 'Node'
             and pa.attnum > 0
             and not pa.attisdropped
         union all
@@ -143,13 +143,13 @@ create materialized view graphql._field_output as
             conn.name type_,
             case
                 when (
-                    conn.meta_kind = 'CONNECTION'
+                    conn.meta_kind = 'Connection'
                     and rel.foreign_cardinality = 'MANY'
                 ) then graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity)) || 's'
 
                 -- owner_id -> owner
                 when (
-                    conn.meta_kind = 'NODE'
+                    conn.meta_kind = 'Node'
                     and rel.foreign_cardinality = 'ONE'
                     and array_length(rel.local_columns, 1) = 1
                     and rel.local_columns[1] like '%_id'
@@ -178,11 +178,11 @@ create materialized view graphql._field_output as
             join graphql.type conn
                 on conn.entity = rel.foreign_entity
                 and (
-                    (conn.meta_kind = 'NODE' and rel.foreign_cardinality = 'ONE')
-                    or (conn.meta_kind = 'CONNECTION' and rel.foreign_cardinality = 'MANY')
+                    (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE')
+                    or (conn.meta_kind = 'Connection' and rel.foreign_cardinality = 'MANY')
                 )
         where
-            node.meta_kind = 'NODE'
+            node.meta_kind = 'Node'
         -- NodeOrderBy
         union all
         select
@@ -206,7 +206,7 @@ create materialized view graphql._field_output as
             join pg_attribute pa
                 on gt.entity = pa.attrelid
         where
-            gt.meta_kind = 'ORDER_BY'
+            gt.meta_kind = 'OrderBy'
             and pa.attnum > 0
             and not pa.attisdropped
 
@@ -233,7 +233,7 @@ create materialized view graphql._field_output as
             join pg_attribute pa
                 on gt.entity = pa.attrelid
         where
-            gt.meta_kind = 'FILTER_ENTITY'
+            gt.meta_kind = 'FilterEntity'
             and pa.attnum > 0
             and not pa.attisdropped
         -- EntityFilter(column eq)
@@ -259,7 +259,7 @@ create materialized view graphql._field_output as
             join pg_attribute pa
                 on gt.entity = pa.attrelid
         where
-            gt.meta_kind = 'FILTER_ENTITY'
+            gt.meta_kind = 'FilterEntity'
             and pa.attnum > 0
             and not pa.attisdropped;
 
@@ -333,7 +333,7 @@ create materialized view graphql._field_arg as
         inner join graphql._field_output f
             on t.name = f.type_
     where
-        t.meta_kind = 'NODE'
+        t.meta_kind = 'Node'
         and f.parent_type = 'Query'
     union all
     -- Connection(first, last)
@@ -359,7 +359,7 @@ create materialized view graphql._field_arg as
             on t.name = f.type_,
         lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
     where
-        t.meta_kind = 'CONNECTION'
+        t.meta_kind = 'Connection'
     -- Connection(before, after)
     union all
     select
@@ -384,7 +384,7 @@ create materialized view graphql._field_arg as
             on t.name = f.type_,
         lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
     where
-        t.meta_kind = 'CONNECTION'
+        t.meta_kind = 'Connection'
     -- Connection(orderBy)
     union all
     select
@@ -407,10 +407,10 @@ create materialized view graphql._field_arg as
         graphql.type t
         inner join graphql._field_output f
             on t.name = f.type_
-            and t.meta_kind = 'CONNECTION'
+            and t.meta_kind = 'Connection'
         inner join graphql.type tt
             on t.entity = tt.entity
-            and tt.meta_kind = 'ORDER_BY'
+            and tt.meta_kind = 'OrderBy'
     -- Connection(filter)
     union all
     select
@@ -433,10 +433,10 @@ create materialized view graphql._field_arg as
         graphql.type t
         inner join graphql._field_output f
             on t.name = f.type_
-            and t.meta_kind = 'CONNECTION'
+            and t.meta_kind = 'Connection'
         inner join graphql.type tt
             on t.entity = tt.entity
-            and tt.meta_kind = 'FILTER_ENTITY';
+            and tt.meta_kind = 'FilterEntity';
 
 create view graphql.field as
     select

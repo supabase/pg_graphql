@@ -24,3 +24,12 @@ $$
         else 'String'
     end;
 $$;
+
+
+create function graphql.sql_type_to_graphql_type(regtype)
+    returns text
+    language sql
+as
+$$
+    select graphql.sql_type_to_graphql_type(pg_catalog.format_type($1, null))
+$$;

@@ -38,7 +38,7 @@ declare
                 on t.name = f.parent_type
         where
             t.entity = $2
-            and t.meta_kind = 'NODE'
+            and t.meta_kind = 'Node'
             and f.column_name is not null;
 begin
 

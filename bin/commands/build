@@ -20,16 +20,19 @@ cat \
     src/sql/pg/*.sql \
     src/sql/dialect/*.sql \
     src/sql/ast/*.sql \
+    src/sql/exception/*.sql \
     src/sql/cursor/*.sql \
     src/sql/reflection/types/*.sql \
-    src/sql/reflection/sql_type_to_graphql_type.sql \
     src/sql/reflection/entity.sql \
+    src/sql/reflection/tables/*.sql \
+    src/sql/reflection/sql_type_to_graphql_type.sql \
     src/sql/reflection/relationship.sql \
-    src/sql/reflection/enum_value.sql \
+    src/sql/reflection/type_name.sql \
     src/sql/reflection/type.sql \
+    src/sql/reflection/enum_value.sql \
     src/sql/reflection/field.sql \
+    src/sql/reflection/rebuild_types.sql \
     src/sql/reflection/rebuild_schema.sql \
-    src/sql/exception/*.sql \
     src/sql/resolve/argument/*.sql \
     src/sql/resolve/clause/*.sql \
     src/sql/resolve/clause/order_by/*.sql \
