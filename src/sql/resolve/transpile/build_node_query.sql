@@ -22,14 +22,14 @@ begin
                 when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
-                when nf.local_columns is not null and nf_t.meta_kind = 'CONNECTION' then graphql.build_connection_query(
+                when nf.local_columns is not null and nf_t.meta_kind = 'Connection' then graphql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     variables := variables,
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
-                when nf.local_columns is not null and nf_t.meta_kind = 'NODE' then graphql.build_node_query(
+                when nf.local_columns is not null and nf_t.meta_kind = 'Node' then graphql.build_node_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     variables := variables,

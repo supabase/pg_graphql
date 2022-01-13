@@ -81,7 +81,7 @@ begin
                                                     '%L, %s',
                                                     graphql.alias_or_name_literal(pi.sel),
                                                     case graphql.name_literal(pi.sel)
-                                                        when '__typename' then (select quote_literal(name) from graphql._type where meta_kind = 'PAGE_INFO')
+                                                        when '__typename' then (select quote_literal(name) from graphql.type where meta_kind = 'PageInfo')
                                                         when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                                                         when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
                                                         when 'hasNextPage' then format('graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
@@ -146,7 +146,7 @@ begin
                                                             case
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
-                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'NODE' then
+                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'Node' then
                                                                     graphql.build_node_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
@@ -154,7 +154,7 @@ begin
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
-                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'CONNECTION' then
+                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'Connection' then
                                                                     graphql.build_connection_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
@@ -282,7 +282,7 @@ begin
                 where
                     f.column_name is not null
                     and t.entity = ent
-                    and t.meta_kind = 'NODE'
+                    and t.meta_kind = 'Node'
             ),
             -- from
             entity,

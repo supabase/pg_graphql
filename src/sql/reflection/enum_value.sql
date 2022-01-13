@@ -40,14 +40,12 @@ create materialized view graphql.enum_value as
     ) x(type_, value, description)
     union all
     select
-        graphql.to_pascal_case(t.typname),
+        ty.name,
         e.enumlabel as value,
         null::text
     from
-        pg_type t
+        graphql.type ty
         join pg_enum e
-            on t.oid = e.enumtypid
-        join pg_catalog.pg_namespace n
-            on n.oid = t.typnamespace
+            on ty.enum = e.enumtypid
     where
-        n.nspname not in ('graphql', 'information_schema', 'pg_catalog');
+        ty.enum is not null;

@@ -143,6 +143,12 @@ $$
         pg_index.indrelid = entity
         and pg_index.indisprimary
 $$;
+create function graphql.to_type_name(regtype)
+    returns text
+    language sql
+    immutable
+as
+$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
 create function graphql.to_regclass(schema_ text, name_ text)
     returns regclass
     language sql
@@ -306,6 +312,22 @@ create or replace function graphql.value_literal(ast jsonb)
 as $$
     select ast -> 'value' ->> 'value';
 $$;
+create or replace function graphql.exception(message text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=message;
+end;
+$$;
+create or replace function graphql.exception_unknown_field(field_name text, type_name text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
+end;
+$$;
 create or replace function graphql.cursor_clause_for_literal(cursor_ text)
     returns text
     language sql
@@ -396,15 +418,87 @@ $$
 $$;
 create type graphql.cardinality as enum ('ONE', 'MANY');
 create type graphql.meta_kind as enum (
-    'NODE', 'EDGE', 'CONNECTION', 'CUSTOM_SCALAR', 'PAGE_INFO',
-    'CURSOR', 'QUERY', 'MUTATION', 'BUILTIN', 'INTERFACE',
+-- Constant
+
     -- Introspection types
-    '__SCHEMA', '__TYPE', '__TYPE_KIND', '__FIELD', '__INPUT_VALUE', '__ENUM_VALUE', '__DIRECTIVE', '__DIRECTIVE_LOCATION',
-    -- Custom
-    'ORDER_BY_DIRECTION', 'ORDER_BY', 'FILTER_FIELD', 'FILTER_ENTITY'
+    '__Schema',
+    '__Type',
+    '__TypeKind',
+    '__Field',
+    '__InputValue',
+    '__EnumValue',
+    '__Directive',
+    '__DirectiveLocation',
+
+    -- Builtin Scalar
+    'ID',
+    'Float',
+    'String',
+    'Int',
+    'Boolean',
+    'DateTime',
+    'BigInt',
+    'UUID',
+    'JSON',
+
+    -- Custom Scalar
+    'OrderByDirection',
+    'PageInfo',
+    'Cursor',
+    'Query',
+    'Mutation',
+
+-- Multi-possible
+    'Interface',
+
+-- Entity derrived
+    'Node',
+    'Edge',
+    'Connection',
+    'OrderBy',
+    'FilterEntity',
+
+-- GraphQL Type Derived
+    'FilterType',
+
+-- Enum Derived
+    'Enum'
 );
 -- https://github.com/graphql/graphql-js/blob/main/src/type/introspection.ts#L197
-create type graphql.type_kind as enum ('SCALAR', 'OBJECT', 'INTERFACE', 'UNION', 'ENUM', 'INPUT_OBJECT', 'LIST', 'NON_NULL');
+create type graphql.type_kind as enum (
+    'SCALAR',
+    'OBJECT',
+    'INTERFACE',
+    'UNION',
+    'ENUM',
+    'INPUT_OBJECT',
+    'LIST',
+    'NON_NULL'
+);
+create materialized view graphql.entity as
+    select
+        oid::regclass as entity
+    from
+        pg_class
+    where
+        relkind = ANY (ARRAY['r', 'p'])
+        and not relnamespace = ANY (ARRAY[
+            'information_schema'::regnamespace,
+            'pg_catalog'::regnamespace,
+            'graphql'::regnamespace
+        ]);
+create table graphql.__type (
+    id serial primary key,
+    type_kind graphql.type_kind not null,
+    meta_kind graphql.meta_kind not null,
+    is_builtin bool not null default false,
+    entity regclass,
+    graphql_type text,
+    enum regtype,
+    description text,
+    unique (meta_kind, entity),
+    check (entity is null or graphql_type is null)
+);
 create function graphql.sql_type_to_graphql_type(sql_type text)
     returns text
     language sql
@@ -431,18 +525,15 @@ $$
         else 'String'
     end;
 $$;
-create materialized view graphql.entity as
-    select
-        oid::regclass as entity
-    from
-        pg_class
-    where
-        relkind = ANY (ARRAY['r', 'p'])
-        and not relnamespace = ANY (ARRAY[
-            'information_schema'::regnamespace,
-            'pg_catalog'::regnamespace,
-            'graphql'::regnamespace
-        ]);
+
+
+create function graphql.sql_type_to_graphql_type(regtype)
+    returns text
+    language sql
+as
+$$
+    select graphql.sql_type_to_graphql_type(pg_catalog.format_type($1, null))
+$$;
 create view graphql.relationship as
     with rels as materialized (
         select
@@ -476,6 +567,66 @@ create view graphql.relationship as
     select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
     union all
     select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
+create or replace function graphql.inflect_type_default(text)
+    returns text
+    language sql
+    immutable
+as $$
+    select replace(initcap($1), '_', '');
+$$;
+
+
+create function graphql.type_name(rec graphql.__type, dialect text = 'default')
+    returns text
+    language sql
+    immutable
+as $$
+    select
+        case
+            when (rec).is_builtin then rec.meta_kind::text
+            when dialect = 'default' then
+                case rec.meta_kind
+                    when 'Node'         then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    when 'Edge'         then format('%sEdge',       graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'Connection'   then format('%sConnection', graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'OrderBy'      then format('%sOrderBy',    graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'FilterEntity' then format('%sFilter',     graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'FilterType'   then format('%sFilter',     rec.graphql_type)
+                    when 'OrderByDirection' then rec.meta_kind::text
+                    when 'PageInfo'     then rec.meta_kind::text
+                    when 'Cursor'       then rec.meta_kind::text
+                    when 'Query'        then rec.meta_kind::text
+                    when 'Mutation'     then rec.meta_kind::text
+                    when 'Enum'         then graphql.inflect_type_default(graphql.to_type_name(rec.enum))
+                    else                graphql.exception('could not determine type name')
+                end
+            else graphql.exception('unknown dialect')
+        end
+$$;
+
+
+create index ix_graphql_type_name_dialect_default on graphql.__type(
+    graphql.type_name(rec := __type, dialect := 'default'::text)
+);
+create view graphql.type as
+    with d(dialect) as (
+        select
+            -- do not inline this call as it has a significant performance impact
+            --coalesce(current_setting('graphql.dialect', true), 'default')
+            'default'
+    )
+    select
+       graphql.type_name(
+            rec := t,
+            dialect := d.dialect
+       ) as name,
+       t.*
+    from
+        graphql.__type t,
+        d
+    where
+        t.entity is null
+        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
 create materialized view graphql.enum_value as
     select
         type_::text,
@@ -518,109 +669,15 @@ create materialized view graphql.enum_value as
     ) x(type_, value, description)
     union all
     select
-        graphql.to_pascal_case(t.typname),
+        ty.name,
         e.enumlabel as value,
         null::text
     from
-        pg_type t
+        graphql.type ty
         join pg_enum e
-            on t.oid = e.enumtypid
-        join pg_catalog.pg_namespace n
-            on n.oid = t.typnamespace
+            on ty.enum = e.enumtypid
     where
-        n.nspname not in ('graphql', 'information_schema', 'pg_catalog');
-create materialized view graphql._type (
-    name,
-    type_kind,
-    meta_kind,
-    description,
-    entity
-) as
-    select
-        name,
-        type_kind::graphql.type_kind,
-        meta_kind::graphql.meta_kind,
-        description,
-        null::regclass as entity
-    from (
-        values
-        ('ID', 'SCALAR', 'BUILTIN', null),
-        ('Int', 'SCALAR', 'BUILTIN', null),
-        ('Float', 'SCALAR', 'BUILTIN', null),
-        ('String', 'SCALAR', 'BUILTIN', null),
-        ('Boolean', 'SCALAR', 'BUILTIN', null),
-        ('DateTime', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('BigInt', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('UUID', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('JSON', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('Cursor', 'SCALAR', 'CUSTOM_SCALAR', null),
-        ('Query', 'OBJECT', 'QUERY', null),
-        --('Mutation', 'OBJECT', 'MUTATION', null),
-        ('PageInfo', 'OBJECT', 'PAGE_INFO', null),
-        -- Introspection System
-        ('__TypeKind', 'ENUM', '__TYPE_KIND', 'An enum describing what kind of type a given `__Type` is.'),
-        ('__Schema', 'OBJECT', '__SCHEMA', 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
-        ('__Type', 'OBJECT', '__TYPE', 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
-        ('__Field', 'OBJECT', '__FIELD', 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
-        ('__InputValue', 'OBJECT', '__INPUT_VALUE', 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
-        ('__EnumValue', 'OBJECT', '__ENUM_VALUE', 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
-        ('__DirectiveLocation', 'ENUM', '__DIRECTIVE_LOCATION', 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
-        ('__Directive', 'OBJECT', '__DIRECTIVE', 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.'),
-        -- pg_graphql constant
-        ('OrderByDirection', 'ENUM', 'ORDER_BY_DIRECTION', 'Defines a per-field sorting order'),
-        -- Type filters
-        ('IntFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Int"'),
-        ('FloatFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Float"'),
-        ('StringFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "String"'),
-        ('BooleanFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "Boolean"'),
-        ('DateTimeFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "DateTime"'),
-        ('BigIntFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "BigInt"'),
-        ('UUIDFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "UUID"'),
-        ('JSONFilter', 'INPUT_OBJECT', 'FILTER_FIELD', 'Boolean expression comparing fields on type "JSON"')
-    ) as const(name, type_kind, meta_kind, description)
-    union all
-    select
-        x.*
-    from
-        graphql.entity ent,
-        lateral (
-            select
-                graphql.to_pascal_case(graphql.to_table_name(ent.entity)) table_name_pascal_case
-        ) names_,
-        lateral (
-            values
-                (names_.table_name_pascal_case::text, 'OBJECT'::graphql.type_kind, 'NODE'::graphql.meta_kind, null::text, ent.entity),
-                (names_.table_name_pascal_case || 'Edge', 'OBJECT', 'EDGE', null, ent.entity),
-                (names_.table_name_pascal_case || 'Connection', 'OBJECT', 'CONNECTION', null, ent.entity),
-                (names_.table_name_pascal_case || 'OrderBy', 'INPUT_OBJECT', 'ORDER_BY', null, ent.entity),
-                (names_.table_name_pascal_case || 'Filter', 'INPUT_OBJECT', 'FILTER_ENTITY', null, ent.entity)
-        ) x
-    union all
-    select
-        graphql.to_pascal_case(t.typname), 'ENUM', 'CUSTOM_SCALAR', null, null
-    from
-        pg_type t
-    where
-        t.typnamespace not in ('information_schema'::regnamespace, 'pg_catalog'::regnamespace, 'graphql'::regnamespace)
-        and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
-
-
-create view graphql.type as
-    select
-        -- todo: type name transform rules
-        case
-            when t.meta_kind = 'BUILTIN' then t.name
-            else t.name
-        end as name,
-        t.type_kind,
-        t.meta_kind,
-        t.description,
-        t.entity
-    from
-        graphql._type t
-    where
-        t.entity is null
-        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
+        ty.enum is not null;
 create materialized view graphql._field_output as
     select
         parent_type,
@@ -724,9 +781,9 @@ create materialized view graphql._field_output as
                     ('Query', conn.name, graphql.to_camel_case('all_' || graphql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
             ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
         where
-            conn.meta_kind = 'CONNECTION'
-            and edge.meta_kind = 'EDGE'
-            and node.meta_kind = 'NODE'
+            conn.meta_kind = 'Connection'
+            and edge.meta_kind = 'Edge'
+            and node.meta_kind = 'Node'
         -- Node
         -- Node.<column>
         union all
@@ -755,7 +812,7 @@ create materialized view graphql._field_output as
                 select pg_catalog.format_type(atttypid, atttypmod) type_str
             ) tf
         where
-            gt.meta_kind = 'NODE'
+            gt.meta_kind = 'Node'
             and pa.attnum > 0
             and not pa.attisdropped
         union all
@@ -766,13 +823,13 @@ create materialized view graphql._field_output as
             conn.name type_,
             case
                 when (
-                    conn.meta_kind = 'CONNECTION'
+                    conn.meta_kind = 'Connection'
                     and rel.foreign_cardinality = 'MANY'
                 ) then graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity)) || 's'
 
                 -- owner_id -> owner
                 when (
-                    conn.meta_kind = 'NODE'
+                    conn.meta_kind = 'Node'
                     and rel.foreign_cardinality = 'ONE'
                     and array_length(rel.local_columns, 1) = 1
                     and rel.local_columns[1] like '%_id'
@@ -801,11 +858,11 @@ create materialized view graphql._field_output as
             join graphql.type conn
                 on conn.entity = rel.foreign_entity
                 and (
-                    (conn.meta_kind = 'NODE' and rel.foreign_cardinality = 'ONE')
-                    or (conn.meta_kind = 'CONNECTION' and rel.foreign_cardinality = 'MANY')
+                    (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE')
+                    or (conn.meta_kind = 'Connection' and rel.foreign_cardinality = 'MANY')
                 )
         where
-            node.meta_kind = 'NODE'
+            node.meta_kind = 'Node'
         -- NodeOrderBy
         union all
         select
@@ -829,7 +886,7 @@ create materialized view graphql._field_output as
             join pg_attribute pa
                 on gt.entity = pa.attrelid
         where
-            gt.meta_kind = 'ORDER_BY'
+            gt.meta_kind = 'OrderBy'
             and pa.attnum > 0
             and not pa.attisdropped
 
@@ -856,7 +913,7 @@ create materialized view graphql._field_output as
             join pg_attribute pa
                 on gt.entity = pa.attrelid
         where
-            gt.meta_kind = 'FILTER_ENTITY'
+            gt.meta_kind = 'FilterEntity'
             and pa.attnum > 0
             and not pa.attisdropped
         -- EntityFilter(column eq)
@@ -882,7 +939,7 @@ create materialized view graphql._field_output as
             join pg_attribute pa
                 on gt.entity = pa.attrelid
         where
-            gt.meta_kind = 'FILTER_ENTITY'
+            gt.meta_kind = 'FilterEntity'
             and pa.attnum > 0
             and not pa.attisdropped;
 
@@ -956,7 +1013,7 @@ create materialized view graphql._field_arg as
         inner join graphql._field_output f
             on t.name = f.type_
     where
-        t.meta_kind = 'NODE'
+        t.meta_kind = 'Node'
         and f.parent_type = 'Query'
     union all
     -- Connection(first, last)
@@ -982,7 +1039,7 @@ create materialized view graphql._field_arg as
             on t.name = f.type_,
         lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
     where
-        t.meta_kind = 'CONNECTION'
+        t.meta_kind = 'Connection'
     -- Connection(before, after)
     union all
     select
@@ -1007,7 +1064,7 @@ create materialized view graphql._field_arg as
             on t.name = f.type_,
         lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
     where
-        t.meta_kind = 'CONNECTION'
+        t.meta_kind = 'Connection'
     -- Connection(orderBy)
     union all
     select
@@ -1030,10 +1087,10 @@ create materialized view graphql._field_arg as
         graphql.type t
         inner join graphql._field_output f
             on t.name = f.type_
-            and t.meta_kind = 'CONNECTION'
+            and t.meta_kind = 'Connection'
         inner join graphql.type tt
             on t.entity = tt.entity
-            and tt.meta_kind = 'ORDER_BY'
+            and tt.meta_kind = 'OrderBy'
     -- Connection(filter)
     union all
     select
@@ -1056,10 +1113,10 @@ create materialized view graphql._field_arg as
         graphql.type t
         inner join graphql._field_output f
             on t.name = f.type_
-            and t.meta_kind = 'CONNECTION'
+            and t.meta_kind = 'Connection'
         inner join graphql.type tt
             on t.entity = tt.entity
-            and tt.meta_kind = 'FILTER_ENTITY';
+            and tt.meta_kind = 'FilterEntity';
 
 create view graphql.field as
     select
@@ -1100,6 +1157,90 @@ create view graphql.field as
             when f.local_columns is not null then true
             else false
         end;
+create or replace function graphql.rebuild_types()
+    returns void
+    language plpgsql
+    as
+$$
+begin
+    truncate table graphql.__type;
+
+    insert into graphql.__type(type_kind, meta_kind, is_builtin, description)
+        select
+            type_kind::graphql.type_kind,
+            meta_kind::graphql.meta_kind,
+            true::bool,
+            null::text
+        from (
+            values
+            ('ID',       'SCALAR', true, null),
+            ('Int',      'SCALAR', true, null),
+            ('Float',    'SCALAR', true, null),
+            ('String',   'SCALAR', true, null),
+            ('Boolean',  'SCALAR', true, null),
+            ('DateTime', 'SCALAR', true, null),
+            ('BigInt',   'SCALAR', true, null),
+            ('UUID',     'SCALAR', true, null),
+            ('JSON',     'SCALAR', true, null),
+            ('Cursor',   'SCALAR', false, null),
+            ('Query',    'OBJECT', false, null),
+            --('Mutation', 'OBJECT', 'MUTATION', null),
+            ('PageInfo',  'OBJECT', false, null),
+            -- Introspection System
+            ('__TypeKind', 'ENUM', true, 'An enum describing what kind of type a given `__Type` is.'),
+            ('__Schema', 'OBJECT', true, 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.'),
+            ('__Type', 'OBJECT', true, 'The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.'),
+            ('__Field', 'OBJECT', true, 'Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.'),
+            ('__InputValue', 'OBJECT', true, 'Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.'),
+            ('__EnumValue', 'OBJECT', true, 'One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.'),
+            ('__DirectiveLocation', 'ENUM', true, 'A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.'),
+            ('__Directive', 'OBJECT', true, 'A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.'),
+            -- pg_graphql constant
+            ('OrderByDirection', 'ENUM', false, 'Defines a per-field sorting order')
+       ) x(meta_kind, type_kind, is_builtin, description);
+
+
+    insert into graphql.__type(type_kind, meta_kind, description, graphql_type)
+       values
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Int"',      'Int'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    'Float'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "String"',   'String'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Boolean"',  'Boolean'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "DateTime"', 'DateTime'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "BigInt"',   'BigInt'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "UUID"',     'UUID'),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     'JSON');
+
+
+    insert into graphql.__type(type_kind, meta_kind, description, entity)
+        select
+           x.*
+        from
+            graphql.entity ent,
+            lateral (
+                values
+                    ('OBJECT'::graphql.type_kind, 'Node'::graphql.meta_kind, null::text, ent.entity),
+                    ('OBJECT',                    'Edge',                     null,       ent.entity),
+                    ('OBJECT',                    'Connection',               null,       ent.entity),
+                    ('INPUT_OBJECT',              'OrderBy',                  null,       ent.entity),
+                    ('INPUT_OBJECT',              'FilterEntity',             null,       ent.entity)
+            ) x(type_kind, meta_kind, description, entity);
+
+
+    insert into graphql.__type(type_kind, meta_kind, description, enum)
+        select
+           'ENUM', 'Enum', null, t.oid::regtype
+        from
+            pg_type t
+        where
+            t.typnamespace not in (
+                'information_schema'::regnamespace,
+                'pg_catalog'::regnamespace,
+                'graphql'::regnamespace
+            )
+            and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
+end;
+$$;
 create or replace function graphql.rebuild_schema() returns event_trigger
   language plpgsql
 as $$
@@ -1109,7 +1250,7 @@ begin
     end if;
 
     refresh materialized view graphql.entity with data;
-    refresh materialized view graphql._type with data;
+    perform graphql.rebuild_types();
     refresh materialized view graphql._field_output with data;
     refresh materialized view graphql._field_arg with data;
     refresh materialized view graphql.enum_value with data;
@@ -1120,22 +1261,6 @@ $$;
 create event trigger graphql_watch
     on ddl_command_end
     execute procedure graphql.rebuild_schema();
-create or replace function graphql.exception(message text)
-    returns text
-    language plpgsql
-as $$
-begin
-    raise exception using errcode='22000', message=message;
-end;
-$$;
-create or replace function graphql.exception_unknown_field(field_name text, type_name text)
-    returns text
-    language plpgsql
-as $$
-begin
-    raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
-end;
-$$;
 create or replace function graphql.arg_index(arg_name text, variable_definitions jsonb)
     returns int
     immutable
@@ -1281,7 +1406,7 @@ begin
             ) x
             join graphql.type t
                 on t.entity = $2
-                and t.meta_kind = 'NODE'
+                and t.meta_kind = 'Node'
             left join graphql.field f
                 on t.name = f.parent_type
                 and f.name = x.key_;
@@ -1361,7 +1486,7 @@ begin
                 norm
                 join graphql.type t
                     on t.entity = $2
-                    and t.meta_kind = 'NODE'
+                    and t.meta_kind = 'Node'
                 left join graphql.field f
                     on t.name = f.parent_type
                     and f.name = norm.field_name
@@ -1440,7 +1565,7 @@ declare
                 on t.name = f.parent_type
         where
             t.entity = $2
-            and t.meta_kind = 'NODE'
+            and t.meta_kind = 'Node'
             and f.column_name is not null;
 begin
 
@@ -1718,7 +1843,7 @@ begin
                                                     '%L, %s',
                                                     graphql.alias_or_name_literal(pi.sel),
                                                     case graphql.name_literal(pi.sel)
-                                                        when '__typename' then (select quote_literal(name) from graphql._type where meta_kind = 'PAGE_INFO')
+                                                        when '__typename' then (select quote_literal(name) from graphql.type where meta_kind = 'PageInfo')
                                                         when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                                                         when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
                                                         when 'hasNextPage' then format('graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
@@ -1783,7 +1908,7 @@ begin
                                                             case
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
-                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'NODE' then
+                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'Node' then
                                                                     graphql.build_node_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
@@ -1791,7 +1916,7 @@ begin
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
-                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'CONNECTION' then
+                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'Connection' then
                                                                     graphql.build_connection_query(
                                                                         ast := n.sel,
                                                                         variable_definitions := variable_definitions,
@@ -1919,7 +2044,7 @@ begin
                 where
                     f.column_name is not null
                     and t.entity = ent
-                    and t.meta_kind = 'NODE'
+                    and t.meta_kind = 'Node'
             ),
             -- from
             entity,
@@ -1979,14 +2104,14 @@ begin
                 when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
-                when nf.local_columns is not null and nf_t.meta_kind = 'CONNECTION' then graphql.build_connection_query(
+                when nf.local_columns is not null and nf_t.meta_kind = 'Connection' then graphql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     variables := variables,
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
-                when nf.local_columns is not null and nf_t.meta_kind = 'NODE' then graphql.build_node_query(
+                when nf.local_columns is not null and nf_t.meta_kind = 'Node' then graphql.build_node_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     variables := variables,
@@ -2267,8 +2392,11 @@ begin
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
                             -- Scalars get null, objects get an empty list. This is a poor implementation
-                            when gt.meta_kind not in ('INTERFACE', 'BUILTIN', 'CURSOR') then '[]'::jsonb
-                            else to_jsonb(null::text)
+                            -- when gt.meta_kind not in ('Interface', 'BUILTIN', 'CURSOR') then '[]'::jsonb
+                            when gt.type_kind = 'SCALAR' then to_jsonb(null::text)
+                            when gt.type_kind = 'INTERFACE' then to_jsonb(null::text)
+                            when gt.meta_kind = 'Cursor' then to_jsonb(null::text)
+                            else '[]'::jsonb
                         end
                     )
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
@@ -2486,7 +2614,7 @@ begin
                     and field.name = graphql.name_literal(ast_operation);
 
             q = case meta_kind
-                when 'CONNECTION' then
+                when 'Connection' then
                     graphql.build_connection_query(
                         ast := ast_operation,
                         variable_definitions := variable_definitions,
@@ -2494,7 +2622,7 @@ begin
                         parent_type :=  'Query',
                         parent_block_name := null
                     )
-                when 'NODE' then
+                when 'Node' then
                     graphql.build_node_query(
                         ast := ast_operation,
                         variable_definitions := variable_definitions,
@@ -2506,12 +2634,12 @@ begin
             end;
 
             data_ = case meta_kind
-                when '__SCHEMA' then
+                when '__Schema' then
                     graphql."resolve___Schema"(
                         ast := ast_operation,
                         variable_definitions := variable_definitions
                     )
-                when '__TYPE' then
+                when '__Type' then
                     jsonb_build_object(
                         graphql.name_literal(ast_operation),
                         graphql."resolve___Type"(

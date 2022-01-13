@@ -55,7 +55,7 @@ begin
             ) x
             join graphql.type t
                 on t.entity = $2
-                and t.meta_kind = 'NODE'
+                and t.meta_kind = 'Node'
             left join graphql.field f
                 on t.name = f.parent_type
                 and f.name = x.key_;
@@ -135,7 +135,7 @@ begin
                 norm
                 join graphql.type t
                     on t.entity = $2
-                    and t.meta_kind = 'NODE'
+                    and t.meta_kind = 'Node'
                 left join graphql.field f
                     on t.name = f.parent_type
                     and f.name = norm.field_name

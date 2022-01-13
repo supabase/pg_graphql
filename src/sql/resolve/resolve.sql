@@ -58,7 +58,7 @@ begin
                     and field.name = graphql.name_literal(ast_operation);
 
             q = case meta_kind
-                when 'CONNECTION' then
+                when 'Connection' then
                     graphql.build_connection_query(
                         ast := ast_operation,
                         variable_definitions := variable_definitions,
@@ -66,7 +66,7 @@ begin
                         parent_type :=  'Query',
                         parent_block_name := null
                     )
-                when 'NODE' then
+                when 'Node' then
                     graphql.build_node_query(
                         ast := ast_operation,
                         variable_definitions := variable_definitions,
@@ -78,12 +78,12 @@ begin
             end;
 
             data_ = case meta_kind
-                when '__SCHEMA' then
+                when '__Schema' then
                     graphql."resolve___Schema"(
                         ast := ast_operation,
                         variable_definitions := variable_definitions
                     )
-                when '__TYPE' then
+                when '__Type' then
                     jsonb_build_object(
                         graphql.name_literal(ast_operation),
                         graphql."resolve___Type"(

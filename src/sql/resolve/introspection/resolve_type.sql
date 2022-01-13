@@ -42,8 +42,11 @@ begin
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case
                             -- Scalars get null, objects get an empty list. This is a poor implementation
-                            when gt.meta_kind not in ('INTERFACE', 'BUILTIN', 'CURSOR') then '[]'::jsonb
-                            else to_jsonb(null::text)
+                            -- when gt.meta_kind not in ('Interface', 'BUILTIN', 'CURSOR') then '[]'::jsonb
+                            when gt.type_kind = 'SCALAR' then to_jsonb(null::text)
+                            when gt.type_kind = 'INTERFACE' then to_jsonb(null::text)
+                            when gt.meta_kind = 'Cursor' then to_jsonb(null::text)
+                            else '[]'::jsonb
                         end
                     )
                     when selection_name = 'possibleTypes' and not has_modifiers then to_jsonb(null::text)
