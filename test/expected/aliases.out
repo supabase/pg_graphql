@@ -13,36 +13,58 @@ begin;
     );
     insert into blog(owner_id, name)
     values
-        ((select id from account where email ilike 'a%'), 'A: Blog 1'),
-        ((select id from account where email ilike 'a%'), 'A: Blog 2'),
-        ((select id from account where email ilike 'a%'), 'A: Blog 3'),
-        ((select id from account where email ilike 'b%'), 'B: Blog 4');
-ERROR:  null value in column "owner_id" of relation "blog" violates not-null constraint
-DETAIL:  Failing row contains (4, null, B: Blog 4).
-	-- Connection: alias all field types and operation
+        (1, 'A: Blog 1');
+    -- Connection: alias all field types and operation
     select jsonb_pretty(
         graphql.resolve($$
-	{
-	  aA: allAccounts(first: 1) {
-		tc: totalCount
-		pi: pageInfo {
-		  hnp: hasNextPage
-		}
-		e: edges {
-		  c: cursor
-		  n: node{
-			id_: id
-			ni: nodeId
-			b: blogs {
-			  tc2: totalCount
-			}
-		  }
-		}
-	  }
-	}
+    {
+      aA: allAccounts(first: 1) {
+        tc: totalCount
+        pi: pageInfo {
+          hnp: hasNextPage
+        }
+        e: edges {
+          c: cursor
+          n: node{
+            id_: id
+            ni: nodeId
+            b: blogs {
+              tc2: totalCount
+            }
+          }
+        }
+      }
+    }
         $$)
     );
-ERROR:  current transaction is aborted, commands ignored until end of transaction block
+                     jsonb_pretty                      
+-------------------------------------------------------
+ {                                                    +
+     "data": {                                        +
+         "aA": {                                      +
+             "e": [                                   +
+                 {                                    +
+                     "c": "WyJhY2NvdW50IiwgMV0=",     +
+                     "n": {                           +
+                         "b": {                       +
+                             "tc2": 1                 +
+                         },                           +
+                         "ni": "WyJhY2NvdW50IiwgMV0=",+
+                         "id_": 1                     +
+                     }                                +
+                 }                                    +
+             ],                                       +
+             "pi": {                                  +
+                 "hnp": false                         +
+             },                                       +
+             "tc": 1                                  +
+         }                                            +
+     },                                               +
+     "errors": [                                      +
+     ]                                                +
+ }
+(1 row)
+
     select graphql.resolve($$
     {
       acc: account(id: "WyJhY2NvdW50IiwgMV0=") {
@@ -51,7 +73,11 @@ ERROR:  current transaction is aborted, commands ignored until end of transactio
       }
     }
     $$);
-ERROR:  current transaction is aborted, commands ignored until end of transaction block
+                                 resolve                                  
+--------------------------------------------------------------------------
+ {"data": {"acc": {"N": "WyJhY2NvdW50IiwgMV0=", "id_": 1}}, "errors": []}
+(1 row)
+
     select graphql.resolve($$
     query Introspec {
       s: __schema {
@@ -61,5 +87,9 @@ ERROR:  current transaction is aborted, commands ignored until end of transactio
       }
     }
     $$);
-ERROR:  current transaction is aborted, commands ignored until end of transaction block
+                       resolve                        
+------------------------------------------------------
+ {"data": {"s": {"q": {"n": "Query"}}}, "errors": []}
+(1 row)
+
 rollback;

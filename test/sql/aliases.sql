@@ -20,10 +20,7 @@ begin;
 
     insert into blog(owner_id, name)
     values
-        ((select id from account where email ilike 'a%'), 'A: Blog 1'),
-        ((select id from account where email ilike 'a%'), 'A: Blog 2'),
-        ((select id from account where email ilike 'a%'), 'A: Blog 3'),
-        ((select id from account where email ilike 'b%'), 'B: Blog 4');
+        (1, 'A: Blog 1');
 
     -- Connection: alias all field types and operation
     select jsonb_pretty(
