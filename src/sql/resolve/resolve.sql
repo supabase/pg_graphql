@@ -118,7 +118,7 @@ begin
             -- Call prepared statement respecting passed values and variable definition defaults
             execute graphql.prepared_statement_execute_clause(prepared_statement_name, variable_definitions, variables) into data_;
             data_ = jsonb_build_object(
-                graphql.name_literal(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
+                graphql.alias_or_name_literal(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0),
                 data_
             );
         exception when others then
