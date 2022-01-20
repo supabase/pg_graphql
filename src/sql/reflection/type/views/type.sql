@@ -12,7 +12,7 @@ create view graphql.type as
        ) as name,
        t.*
     from
-        graphql.__type t,
+        graphql._type t,
         d
     where
         t.entity is null

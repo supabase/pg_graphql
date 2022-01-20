@@ -26,6 +26,7 @@ create type graphql.meta_kind as enum (
     'OrderByDirection',
     'PageInfo',
     'Cursor',
+
     'Query',
     'Mutation',
 

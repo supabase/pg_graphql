@@ -1,4 +1,4 @@
-create table graphql.__type (
+create table graphql._type (
     id serial primary key,
     type_kind graphql.type_kind not null,
     meta_kind graphql.meta_kind not null,

@@ -7,7 +7,7 @@ as $$
 $$;
 
 
-create function graphql.type_name(rec graphql.__type, dialect text = 'default')
+create function graphql.type_name(rec graphql._type, dialect text = 'default')
     returns text
     language sql
     immutable
@@ -36,6 +36,6 @@ as $$
 $$;
 
 
-create index ix_graphql_type_name_dialect_default on graphql.__type(
-    graphql.type_name(rec := __type, dialect := 'default'::text)
+create index ix_graphql_type_name_dialect_default on graphql._type(
+    graphql.type_name(rec := _type, dialect := 'default'::text)
 );

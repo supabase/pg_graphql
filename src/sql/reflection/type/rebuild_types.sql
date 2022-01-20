@@ -4,9 +4,10 @@ create or replace function graphql.rebuild_types()
     as
 $$
 begin
-    truncate table graphql.__type;
+    truncate table graphql._type cascade;
+    alter sequence graphql._type_id_seq restart with 1;
 
-    insert into graphql.__type(type_kind, meta_kind, is_builtin, description)
+    insert into graphql._type(type_kind, meta_kind, is_builtin, description)
         select
             type_kind::graphql.type_kind,
             meta_kind::graphql.meta_kind,
@@ -41,7 +42,7 @@ begin
        ) x(meta_kind, type_kind, is_builtin, description);
 
 
-    insert into graphql.__type(type_kind, meta_kind, description, graphql_type)
+    insert into graphql._type(type_kind, meta_kind, description, graphql_type)
        values
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Int"',      'Int'),
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    'Float'),
@@ -53,7 +54,7 @@ begin
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     'JSON');
 
 
-    insert into graphql.__type(type_kind, meta_kind, description, entity)
+    insert into graphql._type(type_kind, meta_kind, description, entity)
         select
            x.*
         from
@@ -68,7 +69,7 @@ begin
             ) x(type_kind, meta_kind, description, entity);
 
 
-    insert into graphql.__type(type_kind, meta_kind, description, enum)
+    insert into graphql._type(type_kind, meta_kind, description, enum)
         select
            'ENUM', 'Enum', null, t.oid::regtype
         from
