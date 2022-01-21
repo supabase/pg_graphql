@@ -42,16 +42,16 @@ begin
        ) x(meta_kind, type_kind, is_builtin, description);
 
 
-    insert into graphql._type(type_kind, meta_kind, description, graphql_type)
+    insert into graphql._type(type_kind, meta_kind, description, graphql_type_id)
        values
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Int"',      'Int'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    'Float'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "String"',   'String'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Boolean"',  'Boolean'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "DateTime"', 'DateTime'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "BigInt"',   'BigInt'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "UUID"',     'UUID'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     'JSON');
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Int"',      graphql.type_id('Int')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    graphql.type_id('Float')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "String"',   graphql.type_id('String')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Boolean"',  graphql.type_id('Boolean')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "DateTime"', graphql.type_id('DateTime')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "BigInt"',   graphql.type_id('BigInt')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "UUID"',     graphql.type_id('UUID')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     graphql.type_id('JSON'));
 
 
     insert into graphql._type(type_kind, meta_kind, description, entity)

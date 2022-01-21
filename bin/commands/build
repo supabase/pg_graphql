@@ -24,7 +24,6 @@ cat \
     src/sql/cursor/*.sql \
     src/sql/reflection/type/types/*.sql \
     src/sql/reflection/type/tables/*.sql \
-    src/sql/reflection/type/type_name.sql \
     src/sql/reflection/type/views/*.sql \
     src/sql/reflection/type/entity.sql \
     src/sql/reflection/type/sql_type_to_graphql_type.sql \
@@ -32,7 +31,6 @@ cat \
     src/sql/reflection/type/rebuild_types.sql \
     src/sql/reflection/field/relationship.sql \
     src/sql/reflection/field/field.sql \
-    src/sql/reflection/*.sql \
     src/sql/resolve/argument/*.sql \
     src/sql/resolve/clause/*.sql \
     src/sql/resolve/clause/order_by/*.sql \
@@ -42,6 +40,7 @@ cat \
     src/sql/resolve/introspection/*.sql \
     src/sql/resolve/cache/*.sql \
     src/sql/resolve/*.sql \
+    src/sql/reflection/rebuild_schema.sql \
     > pg_graphql--$PG_GRAPHQL_VERSION.sql;
 
 cli_log "Build complete"
