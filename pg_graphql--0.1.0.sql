@@ -680,7 +680,6 @@ create or replace function graphql.rebuild_types()
     as
 $$
 begin
-    truncate table graphql._type cascade;
     alter sequence graphql._type_id_seq restart with 1;
 
     insert into graphql._type(type_kind, meta_kind, is_builtin, description)
@@ -802,7 +801,7 @@ create type graphql.field_meta_kind as enum (
 create table graphql._field (
     id serial primary key,
     parent_type_id int references graphql._type(id),
-    type_id  int not null references graphql._type(id),
+    type_id  int not null references graphql._type(id) on delete cascade,
     constant_name text,
     -- internal flags
     is_not_null boolean not null,
@@ -810,8 +809,8 @@ create table graphql._field (
     is_array_not_null boolean,
     is_arg boolean default false,
     is_hidden_from_schema boolean default false,
-    -- TODO: this is a problem
-    parent_arg_field_id int references graphql._field(id), -- if is_arg, parent_arg_field_name is required
+    -- if is_arg, parent_arg_field_name is required
+    parent_arg_field_id int references graphql._field(id) on delete cascade,
     default_value text,
     description text,
     column_name text,
@@ -872,7 +871,6 @@ create function graphql.rebuild_fields()
     language plpgsql
 as $$
 begin
-    truncate table graphql._field cascade;
     alter sequence graphql._field_id_seq restart with 1;
 
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
@@ -887,7 +885,6 @@ begin
         (graphql.type_id('__Directive'),  graphql.type_id('String'),              'description',       false, false, null, false,  null),
         (graphql.type_id('__Directive'),  graphql.type_id('Boolean'),             'isRepeatable',      true,  false, null, false,  null),
         (graphql.type_id('__Directive'),  graphql.type_id('__DirectiveLocation'), 'locations',         true,  true,  true, false,  null),
-        (graphql.type_id('__Directive'),  graphql.type_id('__InputValue'),        'args',              true,  true,  true, false,  null),
         (graphql.type_id('__Type'),       graphql.type_id('__TypeKind'),          'kind',              true,  false, null, false,  null),
         (graphql.type_id('__Type'),       graphql.type_id('String'),              'name',              false, false, null, false,  null),
         (graphql.type_id('__Type'),       graphql.type_id('String'),              'description',       false, false, null, false,  null),
@@ -900,7 +897,6 @@ begin
         (graphql.type_id('__Type'),       graphql.type_id('__Type'),              'ofType',            false, false, null, false,  null),
         (graphql.type_id('__Field'),      graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
         (graphql.type_id('__Field'),      graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null),
-        (graphql.type_id('__Field'),      graphql.type_id('__InputValue'),        'args',              true,  true,  true, false,  null),
         (graphql.type_id('__Field'),      graphql.type_id('__Type'),              'type',              true,  false, null, false,  null),
         (graphql.type_id('__InputValue'), graphql.type_id('String'),              'name',              true,  false, null, false,  null),
         (graphql.type_id('__InputValue'), graphql.type_id('String'),              'description',       false, false, null, false,  null),
@@ -1118,7 +1114,6 @@ begin
 
 
     -- Arguments
-
     -- __Field(includeDeprecated)
     -- __enumValue(includeDeprecated)
     -- __InputFields(includeDeprecated)
@@ -1140,6 +1135,7 @@ begin
             on f.type_id = t.id
     where
         t.meta_kind in ('__Field', '__EnumValue', '__InputValue', '__Directive');
+
 
     -- __type(name)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -2236,15 +2232,24 @@ create or replace function graphql.resolve_field(field text, parent_type text, p
 as $$
 declare
     field_rec graphql.field;
+    field_recs graphql.field[];
 begin
     -- todo can this conflict for input types?
-    field_rec = gf
+    field_recs = array_agg(gf)
         from
             graphql.field gf
         where
             gf.name = $1
             and gf.parent_type = $2
-            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '');
+            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '')
+            limit 1;
+
+    if array_length(field_recs, 1) > 1 then
+        raise exception '% % %', $1, $2, $3;
+    end if;
+
+    field_rec = graphql.array_first(field_recs);
+
     if field_rec is null then
         raise exception '% % %', $1, $2, $3;
 
@@ -2432,7 +2437,7 @@ begin
                     )
                     when selection_name = 'fields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel))
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel) order by f.name)
                         from
                             graphql.field f
                         where
@@ -2456,7 +2461,7 @@ begin
                     when selection_name = 'enumValues' then graphql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel))
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel) order by f.name)
                         from
                             graphql.field f
                         where
@@ -2764,6 +2769,8 @@ create or replace function graphql.rebuild_schema()
     language plpgsql
 as $$
 begin
+    truncate table graphql._field;
+    delete from graphql._type;
     refresh materialized view graphql.entity with data;
     perform graphql.rebuild_types();
     perform graphql.rebuild_fields();

@@ -3,6 +3,8 @@ create or replace function graphql.rebuild_schema()
     language plpgsql
 as $$
 begin
+    truncate table graphql._field;
+    delete from graphql._type;
     refresh materialized view graphql.entity with data;
     perform graphql.rebuild_types();
     perform graphql.rebuild_fields();

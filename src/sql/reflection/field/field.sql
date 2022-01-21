@@ -8,7 +8,7 @@ create type graphql.field_meta_kind as enum (
 create table graphql._field (
     id serial primary key,
     parent_type_id int references graphql._type(id),
-    type_id  int not null references graphql._type(id),
+    type_id  int not null references graphql._type(id) on delete cascade,
     constant_name text,
     -- internal flags
     is_not_null boolean not null,
@@ -16,8 +16,8 @@ create table graphql._field (
     is_array_not_null boolean,
     is_arg boolean default false,
     is_hidden_from_schema boolean default false,
-    -- TODO: this is a problem
-    parent_arg_field_id int references graphql._field(id), -- if is_arg, parent_arg_field_name is required
+    -- if is_arg, parent_arg_field_name is required
+    parent_arg_field_id int references graphql._field(id) on delete cascade,
     default_value text,
     description text,
     column_name text,
@@ -78,7 +78,6 @@ create function graphql.rebuild_fields()
     language plpgsql
 as $$
 begin
-    truncate table graphql._field cascade;
     alter sequence graphql._field_id_seq restart with 1;
 
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
@@ -93,7 +92,6 @@ begin
         (graphql.type_id('__Directive'),  graphql.type_id('String'),              'description',       false, false, null, false,  null),
         (graphql.type_id('__Directive'),  graphql.type_id('Boolean'),             'isRepeatable',      true,  false, null, false,  null),
         (graphql.type_id('__Directive'),  graphql.type_id('__DirectiveLocation'), 'locations',         true,  true,  true, false,  null),
-        (graphql.type_id('__Directive'),  graphql.type_id('__InputValue'),        'args',              true,  true,  true, false,  null),
         (graphql.type_id('__Type'),       graphql.type_id('__TypeKind'),          'kind',              true,  false, null, false,  null),
         (graphql.type_id('__Type'),       graphql.type_id('String'),              'name',              false, false, null, false,  null),
         (graphql.type_id('__Type'),       graphql.type_id('String'),              'description',       false, false, null, false,  null),
@@ -106,7 +104,6 @@ begin
         (graphql.type_id('__Type'),       graphql.type_id('__Type'),              'ofType',            false, false, null, false,  null),
         (graphql.type_id('__Field'),      graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
         (graphql.type_id('__Field'),      graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null),
-        (graphql.type_id('__Field'),      graphql.type_id('__InputValue'),        'args',              true,  true,  true, false,  null),
         (graphql.type_id('__Field'),      graphql.type_id('__Type'),              'type',              true,  false, null, false,  null),
         (graphql.type_id('__InputValue'), graphql.type_id('String'),              'name',              true,  false, null, false,  null),
         (graphql.type_id('__InputValue'), graphql.type_id('String'),              'description',       false, false, null, false,  null),
@@ -324,7 +321,6 @@ begin
 
 
     -- Arguments
-
     -- __Field(includeDeprecated)
     -- __enumValue(includeDeprecated)
     -- __InputFields(includeDeprecated)
@@ -346,6 +342,7 @@ begin
             on f.type_id = t.id
     where
         t.meta_kind in ('__Field', '__EnumValue', '__InputValue', '__Directive');
+
 
     -- __type(name)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)

@@ -6,47 +6,47 @@ begin;
         (rec).meta_kind,
         (rec).is_builtin,
         (rec).entity,
-        (rec).graphql_type,
+        (rec).graphql_type_id,
         graphql.type_name(rec) type_name
     from
-        graphql.__type rec;
-  type_kind   |      meta_kind      | is_builtin | entity  | graphql_type |      type_name      
---------------+---------------------+------------+---------+--------------+---------------------
- SCALAR       | ID                  | t          |         |              | ID
- SCALAR       | Int                 | t          |         |              | Int
- SCALAR       | Float               | t          |         |              | Float
- SCALAR       | String              | t          |         |              | String
- SCALAR       | Boolean             | t          |         |              | Boolean
- SCALAR       | DateTime            | t          |         |              | DateTime
- SCALAR       | BigInt              | t          |         |              | BigInt
- SCALAR       | UUID                | t          |         |              | UUID
- SCALAR       | JSON                | t          |         |              | JSON
- SCALAR       | Cursor              | t          |         |              | Cursor
- OBJECT       | Query               | t          |         |              | Query
- OBJECT       | PageInfo            | t          |         |              | PageInfo
- ENUM         | __TypeKind          | t          |         |              | __TypeKind
- OBJECT       | __Schema            | t          |         |              | __Schema
- OBJECT       | __Type              | t          |         |              | __Type
- OBJECT       | __Field             | t          |         |              | __Field
- OBJECT       | __InputValue        | t          |         |              | __InputValue
- OBJECT       | __EnumValue         | t          |         |              | __EnumValue
- ENUM         | __DirectiveLocation | t          |         |              | __DirectiveLocation
- OBJECT       | __Directive         | t          |         |              | __Directive
- ENUM         | OrderByDirection    | t          |         |              | OrderByDirection
- INPUT_OBJECT | FilterType          | f          |         | Int          | IntFilter
- INPUT_OBJECT | FilterType          | f          |         | Float        | FloatFilter
- INPUT_OBJECT | FilterType          | f          |         | String       | StringFilter
- INPUT_OBJECT | FilterType          | f          |         | Boolean      | BooleanFilter
- INPUT_OBJECT | FilterType          | f          |         | DateTime     | DateTimeFilter
- INPUT_OBJECT | FilterType          | f          |         | BigInt       | BigIntFilter
- INPUT_OBJECT | FilterType          | f          |         | UUID         | UUIDFilter
- INPUT_OBJECT | FilterType          | f          |         | JSON         | JSONFilter
- OBJECT       | Node                | f          | account |              | Account
- OBJECT       | Edge                | f          | account |              | AccountEdge
- OBJECT       | Connection          | f          | account |              | AccountConnection
- INPUT_OBJECT | OrderBy             | f          | account |              | AccountOrderBy
- INPUT_OBJECT | FilterEntity        | f          | account |              | AccountFilter
- ENUM         | Enum                | f          |         |              | PostStatus
+        graphql._type rec;
+  type_kind   |      meta_kind      | is_builtin | entity  | graphql_type_id |      type_name      
+--------------+---------------------+------------+---------+-----------------+---------------------
+ SCALAR       | ID                  | t          |         |                 | ID
+ SCALAR       | Int                 | t          |         |                 | Int
+ SCALAR       | Float               | t          |         |                 | Float
+ SCALAR       | String              | t          |         |                 | String
+ SCALAR       | Boolean             | t          |         |                 | Boolean
+ SCALAR       | DateTime            | t          |         |                 | DateTime
+ SCALAR       | BigInt              | t          |         |                 | BigInt
+ SCALAR       | UUID                | t          |         |                 | UUID
+ SCALAR       | JSON                | t          |         |                 | JSON
+ SCALAR       | Cursor              | t          |         |                 | Cursor
+ OBJECT       | Query               | t          |         |                 | Query
+ OBJECT       | PageInfo            | t          |         |                 | PageInfo
+ ENUM         | __TypeKind          | t          |         |                 | __TypeKind
+ OBJECT       | __Schema            | t          |         |                 | __Schema
+ OBJECT       | __Type              | t          |         |                 | __Type
+ OBJECT       | __Field             | t          |         |                 | __Field
+ OBJECT       | __InputValue        | t          |         |                 | __InputValue
+ OBJECT       | __EnumValue         | t          |         |                 | __EnumValue
+ ENUM         | __DirectiveLocation | t          |         |                 | __DirectiveLocation
+ OBJECT       | __Directive         | t          |         |                 | __Directive
+ ENUM         | OrderByDirection    | t          |         |                 | OrderByDirection
+ INPUT_OBJECT | FilterType          | f          |         |               2 | IntFilter
+ INPUT_OBJECT | FilterType          | f          |         |               3 | FloatFilter
+ INPUT_OBJECT | FilterType          | f          |         |               4 | StringFilter
+ INPUT_OBJECT | FilterType          | f          |         |               5 | BooleanFilter
+ INPUT_OBJECT | FilterType          | f          |         |               6 | DateTimeFilter
+ INPUT_OBJECT | FilterType          | f          |         |               7 | BigIntFilter
+ INPUT_OBJECT | FilterType          | f          |         |               8 | UUIDFilter
+ INPUT_OBJECT | FilterType          | f          |         |               9 | JSONFilter
+ OBJECT       | Node                | f          | account |                 | Account
+ OBJECT       | Edge                | f          | account |                 | AccountEdge
+ OBJECT       | Connection          | f          | account |                 | AccountConnection
+ INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
+ INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
+ ENUM         | Enum                | f          |         |                 | PostStatus
 (35 rows)
 
 rollback;

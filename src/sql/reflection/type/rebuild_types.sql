@@ -4,7 +4,6 @@ create or replace function graphql.rebuild_types()
     as
 $$
 begin
-    truncate table graphql._type cascade;
     alter sequence graphql._type_id_seq restart with 1;
 
     insert into graphql._type(type_kind, meta_kind, is_builtin, description)

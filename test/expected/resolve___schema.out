@@ -78,6 +78,10 @@ begin;
                      "name": "BigInt"             +
                  },                               +
                  {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BigIntFilter"       +
+                 },                               +
+                 {                                +
                      "kind": "OBJECT",            +
                      "name": "Blog"               +
                  },                               +
@@ -126,6 +130,10 @@ begin;
                      "name": "Boolean"            +
                  },                               +
                  {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BooleanFilter"      +
+                 },                               +
+                 {                                +
                      "kind": "SCALAR",            +
                      "name": "Cursor"             +
                  },                               +
@@ -142,6 +150,10 @@ begin;
                      "name": "Float"              +
                  },                               +
                  {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "FloatFilter"        +
+                 },                               +
+                 {                                +
                      "kind": "SCALAR",            +
                      "name": "ID"                 +
                  },                               +
@@ -156,6 +168,10 @@ begin;
                  {                                +
                      "kind": "SCALAR",            +
                      "name": "JSON"               +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "JSONFilter"         +
                  },                               +
                  {                                +
                      "kind": "ENUM",              +

@@ -7,9 +7,9 @@ begin;
         (rec).meta_kind,
         (rec).is_builtin,
         (rec).entity,
-        (rec).graphql_type,
+        (rec).graphql_type_id,
         graphql.type_name(rec) type_name
     from
-        graphql.__type rec;
+        graphql._type rec;
 
 rollback;

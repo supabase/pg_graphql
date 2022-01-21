@@ -5,15 +5,24 @@ create or replace function graphql.resolve_field(field text, parent_type text, p
 as $$
 declare
     field_rec graphql.field;
+    field_recs graphql.field[];
 begin
     -- todo can this conflict for input types?
-    field_rec = gf
+    field_recs = array_agg(gf)
         from
             graphql.field gf
         where
             gf.name = $1
             and gf.parent_type = $2
-            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '');
+            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '')
+            limit 1;
+
+    if array_length(field_recs, 1) > 1 then
+        raise exception '% % %', $1, $2, $3;
+    end if;
+
+    field_rec = graphql.array_first(field_recs);
+
     if field_rec is null then
         raise exception '% % %', $1, $2, $3;
 
