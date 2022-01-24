@@ -14,6 +14,7 @@ create table graphql._field (
     parent_type_id int references graphql._type(id),
     type_id  int not null references graphql._type(id) on delete cascade,
     meta_kind graphql.field_meta_kind default 'Constant',
+    name text not null,
     constant_name text,
 
     -- args if is_arg, parent_arg_field_name is required
@@ -41,18 +42,22 @@ create table graphql._field (
     check (meta_kind = 'Constant' and constant_name is not null or meta_kind <> 'Constant')
 );
 
+create index ix_graphql_field_name on graphql._field(name);
 
-create or replace function graphql.field_name(rec graphql._field, dialect text = 'default')
+
+create or replace function graphql.field_name(rec graphql._field)
     returns text
     immutable
     strict
     language sql
 as $$
-    -- TODO
     select
         case
             when rec.meta_kind = 'Constant' then rec.constant_name
-            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.to_camel_case(rec.column_name)
+            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then coalesce(
+                graphql.comment_directive_name(rec.entity, rec.column_name),
+                graphql.to_camel_case(rec.column_name)
+            )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
             when rec.meta_kind = 'Relationship.toMany' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
@@ -62,9 +67,20 @@ as $$
         end
 $$;
 
-create index ix_graphql_field_name_dialect_default on graphql._field(
-    graphql.field_name(rec := _field, dialect := 'default'::text)
-);
+
+create function graphql.set_field_name()
+    returns trigger
+    language plpgsql
+as $$
+begin
+    new.name = graphql.field_name(new);
+    return new;
+end;
+$$;
+
+create trigger on_insert_set_name
+    before insert on graphql._field
+    for each row execute procedure graphql.set_field_name();
 
 
 create or replace function graphql.type_id(type_name text)
@@ -479,19 +495,21 @@ create view graphql.field as
         f.id,
         t_parent.name parent_type,
         t_self.name type_,
-        graphql.field_name(f, 'default') as name,
+        f.name,
         f.is_not_null,
         f.is_array,
         f.is_array_not_null,
         f.is_arg,
-        graphql.field_name(f_arg_parent, 'default') as parent_arg_field_name,
+        f_arg_parent.name as parent_arg_field_name,
         f.default_value,
         f.description,
+        f.entity,
         f.column_name,
         f.column_type,
         f.foreign_columns,
         f.local_columns,
-        f.is_hidden_from_schema
+        f.is_hidden_from_schema,
+        f.meta_kind
     from
         graphql._field f
         join graphql.type t_parent
