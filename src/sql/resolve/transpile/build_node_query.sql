@@ -55,7 +55,7 @@ begin
 ',
     type_.entity,
     quote_ident(block_name),
-    coalesce(graphql.join_clause(field.local_columns, block_name, field.parent_columns, parent_block_name), 'true'),
+    coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
     case
         when nodeId is null then 'true'
         else graphql.cursor_row_clause(type_.entity, block_name)

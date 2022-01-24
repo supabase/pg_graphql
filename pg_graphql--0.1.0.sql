@@ -792,50 +792,66 @@ create view graphql.relationship as
     union all
     select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
 create type graphql.field_meta_kind as enum (
-    'PageInfo.hasNextPage',
-    'PageInfo.hasPreviousPage',
-    'PageInfo.startCursor',
-    'PageInfo.endCursor'
+    'Constant',
+    'Query.one',
+    'Query.collection',
+    'Column',
+    'Relationship.toMany',
+    'Relationship.toOne',
+    'OrderBy.Column',
+    'Filter.Column'
 );
 
 create table graphql._field (
     id serial primary key,
     parent_type_id int references graphql._type(id),
     type_id  int not null references graphql._type(id) on delete cascade,
+    meta_kind graphql.field_meta_kind default 'Constant',
     constant_name text,
+
+    -- args if is_arg, parent_arg_field_name is required
+    parent_arg_field_id int references graphql._field(id) on delete cascade,
+    default_value text,
+
+    -- columns
+    entity regclass,
+    column_name text,
+    column_type regtype,
+
+    -- relationships
+    local_columns text[],
+    foreign_columns text[],
+    foreign_entity regclass,
+
     -- internal flags
     is_not_null boolean not null,
     is_array boolean not null,
     is_array_not_null boolean,
     is_arg boolean default false,
     is_hidden_from_schema boolean default false,
-    -- if is_arg, parent_arg_field_name is required
-    parent_arg_field_id int references graphql._field(id) on delete cascade,
-    default_value text,
     description text,
-    column_name text,
-    column_type regtype,
 
-    -- relationships
-    parent_columns text[],
-    local_columns text[],
-
-    -- identifiers
-    meta_kind graphql.field_meta_kind
+    check (meta_kind = 'Constant' and constant_name is not null or meta_kind <> 'Constant')
 );
 
 
 create or replace function graphql.field_name(rec graphql._field, dialect text = 'default')
     returns text
     immutable
+    strict
     language sql
 as $$
     -- TODO
     select
         case
+            when rec.meta_kind = 'Constant' then rec.constant_name
+            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.to_camel_case(rec.column_name)
+            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
+            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
+            when rec.meta_kind = 'Relationship.toMany' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
+            when rec.meta_kind = 'Relationship.toOne' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
             when rec.constant_name is not null then rec.constant_name
-            when rec.meta_kind is not null then split_part(rec.meta_kind::text, '.', 2)
-            else null --todo error
+            else graphql.exception(format('could not determine field name, %s', $1))
         end
 $$;
 
@@ -925,18 +941,20 @@ begin
         t.meta_kind = 'Query';
 
 
-    insert into graphql._field(parent_type_id, type_id, meta_kind, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     values
         -- TODO parent type lookup from metakind
-        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'PageInfo.hasPreviousPage', true, false, null, false, null),
-        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'PageInfo.hasNextPage',     true, false, null, false, null),
-        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'PageInfo.startCursor',     true, false, null, false, null),
-        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'PageInfo.endCursor',       true, false, null, false, null);
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'hasPreviousPage', true, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'hasNextPage',     true, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'startCursor',     true, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'endCursor',       true, false, null, false, null);
 
 
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
 
         select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            conn.entity,
             fs.parent_type_id,
             fs.type_id,
             fs.constant_name,
@@ -954,32 +972,32 @@ begin
             lateral (
                 values
                     -- TODO replace constant names
-                    (node.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
-                    (edge.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
-                    (conn.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
-                    (edge.id, node.id,                      'node',       false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
-                    (edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
-                    (conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
-                    (conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
-                    (node.id, graphql.type_id('ID'),       'nodeId',     true,  false, null, null, null, null, null, false),
-                    (conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
-                    (graphql.type_id('Query'::graphql.meta_kind), node.id,    graphql.to_camel_case(graphql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
-                    (graphql.type_id('Query'::graphql.meta_kind), conn.id,       graphql.to_camel_case('all_' || graphql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
-            ) fs(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
+                    ('Constant', node.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
+                    ('Constant', edge.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
+                    ('Constant', conn.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
+                    ('Constant', edge.id, node.id,                     'node',       false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
+                    ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
+                    ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
+                    ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
+                    ('Constant', node.id, graphql.type_id('ID'),       'nodeId',     true,  false, null, null, null, null, null, false),
+                    ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
+                    ('Query.one',        graphql.type_id('Query'::graphql.meta_kind), node.id, null, false, false, null, null, null, null, null, false),
+                    ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null, null, null, null, null, false)
+            ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, foreign_columns, local_columns, is_hidden_from_schema)
         where
             conn.meta_kind = 'Connection'
             and edge.meta_kind = 'Edge'
             and node.meta_kind = 'Node';
 
 
-        -- Node
-        -- Node.<column>
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, column_type, is_hidden_from_schema)
+    -- Node
+    -- Node.<column>
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, column_name, column_type, is_hidden_from_schema)
         select
+            'Column' as meta_kind,
+            gt.entity,
             gt.id parent_type_id,
             graphql.type_id(pa.atttypid::regtype) as type_id,
-            -- TODO
-            graphql.to_camel_case(pa.attname::text) as constant_name,
             pa.attnotnull as is_not_null,
             graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
             pa.attnotnull and graphql.sql_type_is_array(pa.atttypid::regtype) as is_array_not_null,
@@ -997,36 +1015,20 @@ begin
             and not pa.attisdropped;
 
 
-
-        -- Node.<relationship>
-        -- Node.<connection>
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, parent_columns, local_columns)
+    -- Node.<relationship>
+    -- Node.<connection>
+    insert into graphql._field(parent_type_id, type_id, entity, foreign_entity, meta_kind, is_not_null, is_array, is_array_not_null, description, foreign_columns, local_columns)
         select
             node.id parent_type_id,
             conn.id type_id,
-
-            -- todo
+            node.entity,
+            rel.foreign_entity,
             case
-                when (
-                    conn.meta_kind = 'Connection'
-                    and rel.foreign_cardinality = 'MANY'
-                ) then graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity)) || 's'
-
-                -- owner_id -> owner
-                when (
-                    conn.meta_kind = 'Node'
-                    and rel.foreign_cardinality = 'ONE'
-                    and array_length(rel.local_columns, 1) = 1
-                    and rel.local_columns[1] like '%_id'
-                ) then graphql.to_camel_case(left(rel.local_columns[1], -3))
-
-                when rel.foreign_cardinality = 'ONE' then graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity))
-
-                else graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
-            end as constant_name,
-
-            -- todo: reference column nullability
-            false as is_not_null,
+                when (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE') then 'Relationship.toOne'
+                when (conn.meta_kind = 'Connection' and rel.foreign_cardinality = 'MANY') then 'Relationship.toMany'
+                else null
+            end::graphql.field_meta_kind meta_kind,
+            false as is_not_null, -- todo: reference column nullability
             false as is_array,
             null as is_array_not_null,
             null::text as description,
@@ -1046,19 +1048,18 @@ begin
             node.meta_kind = 'Node';
 
 
-        -- NodeOrderBy
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, column_name, column_type, description)
+    -- NodeOrderBy
+    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, column_name, column_type, entity, description)
         select
+            'OrderBy.Column' meta_kind,
             gt.id parent_type,
             graphql.type_id('OrderByDirection'::graphql.meta_kind) as type_id,
-            -- todo
-            graphql.to_camel_case(pa.attname::text) as constant_name,
             false is_not_null,
             false is_array,
             null is_array_not_null,
-            -- todo why is this here?
             pa.attname::text as column_name,
             pa.atttypid::regtype as column_type,
+            gt.entity,
             null::text description
         from
             graphql.type gt
@@ -1070,7 +1071,7 @@ begin
             and not pa.attisdropped;
 
 
-        -- IntFilter {eq: ...}
+    -- IntFilter {eq: ...}
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, description)
         select
             gt.id as parent_type_id,
@@ -1084,21 +1085,16 @@ begin
         where
             gt.meta_kind = 'FilterType';
 
-        -- AccountFilter(column eq)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, column_name, description)
+    -- AccountFilter(column eq)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, column_name, entity, description)
         select distinct
-            -- Account Filter
+            'Filter.Column'::graphql.field_meta_kind as meta_kind,
             gt.id parent_type_id,
-
             gt_scalar.id type_id,
-
-            -- todo
-            graphql.to_camel_case(pa.attname::text) as constant_name,
-
             false is_not_null,
             false is_array,
             pa.attname::text as column_name,
-            -- todo populate?
+            gt.entity,
             null::text description
         from
             graphql.type gt
@@ -1273,6 +1269,7 @@ $$;
 
 create view graphql.field as
     select
+        f.id,
         t_parent.name parent_type,
         t_self.name type_,
         graphql.field_name(f, 'default') as name,
@@ -1285,7 +1282,7 @@ create view graphql.field as
         f.description,
         f.column_name,
         f.column_type,
-        f.parent_columns,
+        f.foreign_columns,
         f.local_columns,
         f.is_hidden_from_schema
     from
@@ -2103,7 +2100,7 @@ begin
             case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
             case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
             -- join
-            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
@@ -2186,7 +2183,7 @@ begin
 ',
     type_.entity,
     quote_ident(block_name),
-    coalesce(graphql.join_clause(field.local_columns, block_name, field.parent_columns, parent_block_name), 'true'),
+    coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
     case
         when nodeId is null then 'true'
         else graphql.cursor_row_clause(type_.entity, block_name)

@@ -27,7 +27,7 @@ begin;
             edges {
               node {
                 ownerId
-                owner {
+                account {
                   id
                 }
               }
@@ -44,7 +44,7 @@ begin;
              "edges": [              +
                  {                   +
                      "node": {       +
-                         "owner": {  +
+                         "account": {+
                              "id": 1 +
                          },          +
                          "ownerId": 1+
@@ -52,7 +52,7 @@ begin;
                  },                  +
                  {                   +
                      "node": {       +
-                         "owner": {  +
+                         "account": {+
                              "id": 1 +
                          },          +
                          "ownerId": 1+
@@ -60,7 +60,7 @@ begin;
                  },                  +
                  {                   +
                      "node": {       +
-                         "owner": {  +
+                         "account": {+
                              "id": 1 +
                          },          +
                          "ownerId": 1+
@@ -68,7 +68,7 @@ begin;
                  },                  +
                  {                   +
                      "node": {       +
-                         "owner": {  +
+                         "account": {+
                              "id": 2 +
                          },          +
                          "ownerId": 2+
