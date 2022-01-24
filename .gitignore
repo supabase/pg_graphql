@@ -10,6 +10,7 @@ regression.*
 *.json
 *.ipynb
 *.swp
+*.diff
 .ipynb_checkpoints/*
 node_modules/
 docs/graphql_lexer/
