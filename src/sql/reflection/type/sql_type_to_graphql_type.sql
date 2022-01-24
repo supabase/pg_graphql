@@ -26,10 +26,33 @@ $$
 $$;
 
 
-create function graphql.sql_type_to_graphql_type(regtype)
-    returns text
+
+
+create function graphql.type_id(regtype)
+    returns int
+    immutable
     language sql
 as
 $$
-    select graphql.sql_type_to_graphql_type(pg_catalog.format_type($1, null))
+    select
+        graphql.type_id(
+            graphql.sql_type_to_graphql_type(
+                -- strip trailing [] for array types
+                regexp_replace(
+                    pg_catalog.format_type($1, null),
+                    '\[\]$',
+                    ''
+                )
+            )
+        )
+$$;
+
+
+create function graphql.sql_type_is_array(regtype)
+    returns boolean
+    immutable
+    language sql
+as
+$$
+    select pg_catalog.format_type($1, null) like '%[]'
 $$;

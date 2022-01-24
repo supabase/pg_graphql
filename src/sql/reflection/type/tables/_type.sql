@@ -1,3 +1,17 @@
+create table graphql._type (
+    id serial primary key,
+    type_kind graphql.type_kind not null,
+    meta_kind graphql.meta_kind not null,
+    is_builtin bool not null default false,
+    entity regclass,
+    graphql_type_id int references graphql._type(id),
+    enum regtype,
+    description text,
+    unique (meta_kind, entity),
+    check (entity is null or graphql_type_id is null)
+);
+
+
 create or replace function graphql.inflect_type_default(text)
     returns text
     language sql
@@ -7,10 +21,10 @@ as $$
 $$;
 
 
-create function graphql.type_name(rec graphql.__type, dialect text = 'default')
+create function graphql.type_name(rec graphql._type, dialect text = 'default')
     returns text
-    language sql
     immutable
+    language sql
 as $$
     select
         case
@@ -22,7 +36,7 @@ as $$
                     when 'Connection'   then format('%sConnection', graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
                     when 'OrderBy'      then format('%sOrderBy',    graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
                     when 'FilterEntity' then format('%sFilter',     graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'FilterType'   then format('%sFilter',     rec.graphql_type)
+                    when 'FilterType'   then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
                     when 'OrderByDirection' then rec.meta_kind::text
                     when 'PageInfo'     then rec.meta_kind::text
                     when 'Cursor'       then rec.meta_kind::text
@@ -35,7 +49,21 @@ as $$
         end
 $$;
 
+create function graphql.type_name(type_id int, dialect text = 'default')
+    returns text
+    immutable
+    language sql
+as $$
+    select
+        graphql.type_name(rec, $2)
+    from
+        graphql._type rec
+    where
+        id = $1;
+$$;
 
-create index ix_graphql_type_name_dialect_default on graphql.__type(
-    graphql.type_name(rec := __type, dialect := 'default'::text)
+
+
+create index ix_graphql_type_name_dialect_default on graphql._type(
+    graphql.type_name(rec := _type, dialect := 'default'::text)
 );

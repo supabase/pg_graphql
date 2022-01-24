@@ -26,10 +26,7 @@ begin;
              "kind": "OBJECT",                  +
              "fields": [                        +
                  {                              +
-                     "name": "nodeId"           +
-                 },                             +
-                 {                              +
-                     "name": "id"               +
+                     "name": "createdAt"        +
                  },                             +
                  {                              +
                      "name": "email"            +
@@ -38,7 +35,10 @@ begin;
                      "name": "encryptedPassword"+
                  },                             +
                  {                              +
-                     "name": "createdAt"        +
+                     "name": "id"               +
+                 },                             +
+                 {                              +
+                     "name": "nodeId"           +
                  },                             +
                  {                              +
                      "name": "updatedAt"        +

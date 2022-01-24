@@ -292,7 +292,7 @@ begin
             case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
             case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
             -- join
-            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order

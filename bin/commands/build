@@ -22,17 +22,15 @@ cat \
     src/sql/ast/*.sql \
     src/sql/exception/*.sql \
     src/sql/cursor/*.sql \
-    src/sql/reflection/types/*.sql \
-    src/sql/reflection/entity.sql \
-    src/sql/reflection/tables/*.sql \
-    src/sql/reflection/sql_type_to_graphql_type.sql \
-    src/sql/reflection/relationship.sql \
-    src/sql/reflection/type_name.sql \
-    src/sql/reflection/type.sql \
-    src/sql/reflection/enum_value.sql \
-    src/sql/reflection/field.sql \
-    src/sql/reflection/rebuild_types.sql \
-    src/sql/reflection/rebuild_schema.sql \
+    src/sql/reflection/type/types/*.sql \
+    src/sql/reflection/type/tables/*.sql \
+    src/sql/reflection/type/views/*.sql \
+    src/sql/reflection/type/entity.sql \
+    src/sql/reflection/type/sql_type_to_graphql_type.sql \
+    src/sql/reflection/type/enum_value.sql \
+    src/sql/reflection/type/rebuild_types.sql \
+    src/sql/reflection/field/relationship.sql \
+    src/sql/reflection/field/field.sql \
     src/sql/resolve/argument/*.sql \
     src/sql/resolve/clause/*.sql \
     src/sql/resolve/clause/order_by/*.sql \
@@ -42,6 +40,7 @@ cat \
     src/sql/resolve/introspection/*.sql \
     src/sql/resolve/cache/*.sql \
     src/sql/resolve/*.sql \
+    src/sql/reflection/rebuild_schema.sql \
     > pg_graphql--$PG_GRAPHQL_VERSION.sql;
 
 cli_log "Build complete"

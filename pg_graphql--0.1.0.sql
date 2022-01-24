@@ -434,6 +434,7 @@ create type graphql.meta_kind as enum (
     'OrderByDirection',
     'PageInfo',
     'Cursor',
+
     'Query',
     'Mutation',
 
@@ -464,6 +465,94 @@ create type graphql.type_kind as enum (
     'LIST',
     'NON_NULL'
 );
+create table graphql._type (
+    id serial primary key,
+    type_kind graphql.type_kind not null,
+    meta_kind graphql.meta_kind not null,
+    is_builtin bool not null default false,
+    entity regclass,
+    graphql_type_id int references graphql._type(id),
+    enum regtype,
+    description text,
+    unique (meta_kind, entity),
+    check (entity is null or graphql_type_id is null)
+);
+
+
+create or replace function graphql.inflect_type_default(text)
+    returns text
+    language sql
+    immutable
+as $$
+    select replace(initcap($1), '_', '');
+$$;
+
+
+create function graphql.type_name(rec graphql._type, dialect text = 'default')
+    returns text
+    immutable
+    language sql
+as $$
+    select
+        case
+            when (rec).is_builtin then rec.meta_kind::text
+            when dialect = 'default' then
+                case rec.meta_kind
+                    when 'Node'         then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    when 'Edge'         then format('%sEdge',       graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'Connection'   then format('%sConnection', graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'OrderBy'      then format('%sOrderBy',    graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'FilterEntity' then format('%sFilter',     graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
+                    when 'FilterType'   then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
+                    when 'OrderByDirection' then rec.meta_kind::text
+                    when 'PageInfo'     then rec.meta_kind::text
+                    when 'Cursor'       then rec.meta_kind::text
+                    when 'Query'        then rec.meta_kind::text
+                    when 'Mutation'     then rec.meta_kind::text
+                    when 'Enum'         then graphql.inflect_type_default(graphql.to_type_name(rec.enum))
+                    else                graphql.exception('could not determine type name')
+                end
+            else graphql.exception('unknown dialect')
+        end
+$$;
+
+create function graphql.type_name(type_id int, dialect text = 'default')
+    returns text
+    immutable
+    language sql
+as $$
+    select
+        graphql.type_name(rec, $2)
+    from
+        graphql._type rec
+    where
+        id = $1;
+$$;
+
+
+
+create index ix_graphql_type_name_dialect_default on graphql._type(
+    graphql.type_name(rec := _type, dialect := 'default'::text)
+);
+create view graphql.type as
+    with d(dialect) as (
+        select
+            -- do not inline this call as it has a significant performance impact
+            --coalesce(current_setting('graphql.dialect', true), 'default')
+            'default'
+    )
+    select
+       graphql.type_name(
+            rec := t,
+            dialect := d.dialect
+       ) as name,
+       t.*
+    from
+        graphql._type t,
+        d
+    where
+        t.entity is null
+        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
 create materialized view graphql.entity as
     select
         oid::regclass as entity
@@ -476,18 +565,6 @@ create materialized view graphql.entity as
             'pg_catalog'::regnamespace,
             'graphql'::regnamespace
         ]);
-create table graphql.__type (
-    id serial primary key,
-    type_kind graphql.type_kind not null,
-    meta_kind graphql.meta_kind not null,
-    is_builtin bool not null default false,
-    entity regclass,
-    graphql_type text,
-    enum regtype,
-    description text,
-    unique (meta_kind, entity),
-    check (entity is null or graphql_type is null)
-);
 create function graphql.sql_type_to_graphql_type(sql_type text)
     returns text
     language sql
@@ -516,106 +593,36 @@ $$
 $$;
 
 
-create function graphql.sql_type_to_graphql_type(regtype)
-    returns text
+
+
+create function graphql.type_id(regtype)
+    returns int
+    immutable
     language sql
 as
 $$
-    select graphql.sql_type_to_graphql_type(pg_catalog.format_type($1, null))
-$$;
-create view graphql.relationship as
-    with rels as materialized (
-        select
-            const.conname as constraint_name,
-            e.entity as local_entity,
-            array_agg(local_.attname::text order by l.col_ix asc) as local_columns,
-            'MANY'::graphql.cardinality as local_cardinality,
-            const.confrelid::regclass as foreign_entity,
-            array_agg(ref_.attname::text order by r.col_ix asc) as foreign_columns,
-            'ONE'::graphql.cardinality as foreign_cardinality
-        from
-            graphql.entity e
-            join pg_constraint const
-                on const.conrelid = e.entity
-            join pg_attribute local_
-                on const.conrelid = local_.attrelid
-                and local_.attnum = any(const.conkey)
-            join pg_attribute ref_
-                on const.confrelid = ref_.attrelid
-                and ref_.attnum = any(const.confkey),
-            unnest(const.conkey) with ordinality l(col, col_ix)
-            join unnest(const.confkey) with ordinality r(col, col_ix)
-                on l.col_ix = r.col_ix
-        where
-            const.contype = 'f'
-        group by
-            e.entity,
-            const.conname,
-            const.confrelid
-    )
-    select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
-    union all
-    select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
-create or replace function graphql.inflect_type_default(text)
-    returns text
-    language sql
-    immutable
-as $$
-    select replace(initcap($1), '_', '');
-$$;
-
-
-create function graphql.type_name(rec graphql.__type, dialect text = 'default')
-    returns text
-    language sql
-    immutable
-as $$
     select
-        case
-            when (rec).is_builtin then rec.meta_kind::text
-            when dialect = 'default' then
-                case rec.meta_kind
-                    when 'Node'         then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
-                    when 'Edge'         then format('%sEdge',       graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'Connection'   then format('%sConnection', graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'OrderBy'      then format('%sOrderBy',    graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'FilterEntity' then format('%sFilter',     graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'FilterType'   then format('%sFilter',     rec.graphql_type)
-                    when 'OrderByDirection' then rec.meta_kind::text
-                    when 'PageInfo'     then rec.meta_kind::text
-                    when 'Cursor'       then rec.meta_kind::text
-                    when 'Query'        then rec.meta_kind::text
-                    when 'Mutation'     then rec.meta_kind::text
-                    when 'Enum'         then graphql.inflect_type_default(graphql.to_type_name(rec.enum))
-                    else                graphql.exception('could not determine type name')
-                end
-            else graphql.exception('unknown dialect')
-        end
+        graphql.type_id(
+            graphql.sql_type_to_graphql_type(
+                -- strip trailing [] for array types
+                regexp_replace(
+                    pg_catalog.format_type($1, null),
+                    '\[\]$',
+                    ''
+                )
+            )
+        )
 $$;
 
 
-create index ix_graphql_type_name_dialect_default on graphql.__type(
-    graphql.type_name(rec := __type, dialect := 'default'::text)
-);
-create view graphql.type as
-    with d(dialect) as (
-        select
-            -- do not inline this call as it has a significant performance impact
-            --coalesce(current_setting('graphql.dialect', true), 'default')
-            'default'
-    )
-    select
-       graphql.type_name(
-            rec := t,
-            dialect := d.dialect
-       ) as name,
-       t.*
-    from
-        graphql.__type t,
-        d
-    where
-        t.entity is null
-        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
+create function graphql.sql_type_is_array(regtype)
+    returns boolean
+    immutable
+    language sql
+as
+$$
+    select pg_catalog.format_type($1, null) like '%[]'
+$$;
 create materialized view graphql.enum_value as
     select
         type_::text,
@@ -667,494 +674,15 @@ create materialized view graphql.enum_value as
             on ty.enum = e.enumtypid
     where
         ty.enum is not null;
-create materialized view graphql._field_output as
-    select
-        parent_type,
-        type_,
-        name,
-        -- internal flags
-        is_not_null,
-        is_array,
-        is_array_not_null,
-        false is_arg,
-        null::text as parent_arg_field_name, -- if is_arg, parent_arg_field_name is required
-        null::text as default_value,
-        description,
-        null::text as column_name,
-        null::regtype as column_type,
-        null::text[] parent_columns,
-        null::text[] local_columns,
-        case
-            when name in ('__type', '__schema') then true
-            else false
-        end as is_hidden_from_schema
-    from (
-        values
-            ('__Schema', 'String', 'description', false, false, null, null),
-            ('__Schema', '__Type', 'types', true, true, true, 'A list of all types supported by this server.'),
-            ('__Schema', '__Type', 'queryType', true, false, null, 'The type that query operations will be rooted at.'),
-            ('__Schema', '__Type', 'mutationType', false, false, null, 'If this server supports mutation, the type that mutation operations will be rooted at.'),
-            ('__Schema', '__Type', 'subscriptionType', false, false, null, 'If this server support subscription, the type that subscription operations will be rooted at.'),
-            ('__Schema', '__Directive', 'directives', true, true, true, 'A list of all directives supported by this server.'),
-            ('__Directive', 'String', 'name', true, false, null, null),
-            ('__Directive', 'String', 'description', false, false, null, null),
-            ('__Directive', 'Boolean', 'isRepeatable', true, false, null, null),
-            ('__Directive', '__DirectiveLocation', 'locations', true, true, true, null),
-            ('__Directive', '__InputValue', 'args', true, true, true, null),
-            ('__Type', '__TypeKind', 'kind', true, false, null, null),
-            ('__Type', 'String', 'name', false, false, null, null),
-            ('__Type', 'String', 'description', false, false, null, null),
-            ('__Type', 'String', 'specifiedByURL', false, false, null, null),
-            ('__Type', '__Field', 'fields', false, true, true, null),
-            ('__Type', '__Type', 'interfaces', true, true, false, null),
-            ('__Type', '__Type', 'possibleTypes', true, true, false, null),
-            ('__Type', '__EnumValue', 'enumValues', true, true, false, null),
-            ('__Type', '__InputValue', 'inputFields', true, true, false, null),
-            ('__Type', '__Type', 'ofType', false, false, null, null),
-            ('__Field', 'Boolean', 'isDeprecated', true, false, null, null),
-            ('__Field', 'String', 'deprecationReason', false, false, null, null),
-            ('__Field', '__InputValue', 'args', true, true, true, null),
-            ('__Field', '__Type', 'type', true, false, null, null),
-            ('__InputValue', 'String', 'name', true, false, null, null),
-            ('__InputValue', 'String', 'description', false, false, null, null),
-            ('__InputValue', 'String', 'defaultValue', false, false, null, 'A GraphQL-formatted string representing the default value for this input value.'),
-            ('__InputValue', 'Boolean', 'isDeprecated', true, false, null, null),
-            ('__InputValue', 'String', 'deprecationReason', false, false, null, null),
-            ('__InputValue', '__Type', 'type', true, false, null, null),
-            ('__EnumValue', 'String', 'name', true, false, null, null),
-            ('__EnumValue', 'String', 'description', false, false, null, null),
-            ('__EnumValue', 'Boolean', 'isDeprecated', true, false, null, null),
-            ('__EnumValue', 'String', 'deprecationReason', false, false, null, null),
-            ('PageInfo', 'Boolean', 'hasPreviousPage', true, false, null, null),
-            ('PageInfo', 'Boolean', 'hasNextPage', true, false, null, null),
-            ('PageInfo', 'String', 'startCursor', true, false, null, null),
-            ('PageInfo', 'String', 'endCursor', true, false, null, null),
-            ('Query', '__Type', '__type', true, false, null, null), -- todo is_hidden_from_schema = true
-            ('Query', '__Schema', '__schema', true, false, null, null) -- todo is_hidden_from_schema = true
-        ) x(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description)
-        union all
-        select
-            fs.parent_type,
-            fs.type_,
-            fs.name,
-            fs.is_not_null,
-            fs.is_array,
-            fs.is_array_not_null,
-            false as is_arg,
-            null::text as parent_arg_field_name,
-            null::text as default_value,
-            fs.description,
-            fs.column_name,
-            null::regtype as column_type,
-            fs.parent_columns,
-            fs.local_columns,
-            fs.is_hidden_from_schema
-        from
-            graphql.type conn
-            join graphql.type edge
-                on conn.entity = edge.entity
-            join graphql.type node
-                on edge.entity = node.entity,
-            lateral (
-                values
-                    (node.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                    (edge.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                    (conn.name, 'String', '__typename', true, false, null, null, null, null, null, true),
-                    (edge.name, node.name, 'node', false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
-                    (edge.name, 'String', 'cursor', true, false, null, null, null, null, null, false),
-                    (conn.name, edge.name, 'edges', true, true, true, null, null, null, null, false),
-                    (conn.name, 'PageInfo', 'pageInfo', true, false, null, null, null, null, null, false),
-                    (conn.name, 'Int', 'totalCount', true, false, null, null, null, null, null, false),
-                    (node.name, 'ID', 'nodeId', true, false, null, null, null, null, null, false),
-                    ('Query', node.name, graphql.to_camel_case(graphql.to_table_name(node.entity)), false, false, null, null, null, null, null, false),
-                    ('Query', conn.name, graphql.to_camel_case('all_' || graphql.to_table_name(conn.entity) || 's'), false, false, null, null, null, null, null, false)
-            ) fs(parent_type, type_, name, is_not_null, is_array, is_array_not_null, description, column_name, parent_columns, local_columns, is_hidden_from_schema)
-        where
-            conn.meta_kind = 'Connection'
-            and edge.meta_kind = 'Edge'
-            and node.meta_kind = 'Node'
-        -- Node
-        -- Node.<column>
-        union all
-        select
-            gt.name parent_type,
-            -- substring removes the underscore prefix from array types
-            graphql.sql_type_to_graphql_type(regexp_replace(tf.type_str, '\[\]$', '')) as type_,
-            graphql.to_camel_case(pa.attname::text) as name,
-            pa.attnotnull as is_not_null,
-            tf.type_str like '%[]' as is_array,
-            pa.attnotnull and tf.type_str like '%[]' as is_array_not_null,
-            false as is_arg,
-            null::text as parent_arg_field_name,
-            null::text as default_value,
-            null::text description,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
-            null::text[],
-            null::text[],
-            false
-        from
-            graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid,
-            lateral (
-                select pg_catalog.format_type(atttypid, atttypmod) type_str
-            ) tf
-        where
-            gt.meta_kind = 'Node'
-            and pa.attnum > 0
-            and not pa.attisdropped
-        union all
-        -- Node.<relationship>
-        -- Node.<connection>
-        select
-            node.name parent_type,
-            conn.name type_,
-            case
-                when (
-                    conn.meta_kind = 'Connection'
-                    and rel.foreign_cardinality = 'MANY'
-                ) then graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity)) || 's'
-
-                -- owner_id -> owner
-                when (
-                    conn.meta_kind = 'Node'
-                    and rel.foreign_cardinality = 'ONE'
-                    and array_length(rel.local_columns, 1) = 1
-                    and rel.local_columns[1] like '%_id'
-                ) then graphql.to_camel_case(left(rel.local_columns[1], -3))
-
-                when rel.foreign_cardinality = 'ONE' then graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity))
-
-                else graphql.to_camel_case(graphql.to_table_name(rel.foreign_entity)) || 'RequiresNameOverride'
-            end,
-            false as is_not_null, -- todo: reference column nullability
-            false as is_array,
-            null as is_array_not_null,
-            false as is_arg,
-            null::text as parent_arg_field_name,
-            null::text as default_value,
-            null description,
-            null column_name,
-            null::regtype as column_type,
-            rel.local_columns,
-            rel.foreign_columns,
-            false
-        from
-            graphql.type node
-            join graphql.relationship rel
-                on node.entity = rel.local_entity
-            join graphql.type conn
-                on conn.entity = rel.foreign_entity
-                and (
-                    (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE')
-                    or (conn.meta_kind = 'Connection' and rel.foreign_cardinality = 'MANY')
-                )
-        where
-            node.meta_kind = 'Node'
-        -- NodeOrderBy
-        union all
-        select
-            gt.name parent_type,
-            'OrderByDirection' as type_,
-            graphql.to_camel_case(pa.attname::text) as name,
-            false is_not_null,
-            false is_array,
-            null is_array_not_null,
-            false as is_arg,
-            null::text as parent_arg_field_name,
-            null::text as default_value,
-            null::text description,
-            pa.attname::text as column_name,
-            null::regtype as column_type,
-            null::text[],
-            null::text[],
-            false
-        from
-            graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
-        where
-            gt.meta_kind = 'OrderBy'
-            and pa.attnum > 0
-            and not pa.attisdropped
-
-        -- <Type>Filter.eq
-        union all
-        select distinct
-            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) || 'Filter' as parent_type,
-            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) type_,
-            'eq' as name,
-            false,
-            false,
-            null::bool,
-            false,
-            null::text,
-            null::text,
-            null::text,
-            null::text,
-            null::regtype as column_type,
-            null::text[],
-            null::text[],
-            false
-        from
-            graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
-        where
-            gt.meta_kind = 'FilterEntity'
-            and pa.attnum > 0
-            and not pa.attisdropped
-        -- EntityFilter(column eq)
-        union all
-        select distinct
-            gt.name parent_type,
-            graphql.sql_type_to_graphql_type(regexp_replace(pg_catalog.format_type(pa.atttypid, pa.atttypmod), '\[\]$', '')) || 'Filter' as type_,
-            graphql.to_camel_case(pa.attname::text) as name,
-            false is_not_null,
-            false is_array,
-            null::bool is_array_not_null,
-            false as is_arg,
-            null::text as parent_arg_field_name,
-            null::text as default_value,
-            null::text description,
-            pa.attname::text as column_name,
-            null::regtype as column_type,
-            null::text[],
-            null::text[],
-            false
-        from
-            graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
-        where
-            gt.meta_kind = 'FilterEntity'
-            and pa.attnum > 0
-            and not pa.attisdropped;
-
-create materialized view graphql._field_arg as
-    -- Arguments
-    -- __Field(includeDeprecated)
-    -- __enumValue(includeDeprecated)
-    -- __InputFields(includeDeprecated)
-    select
-        f.type_ as parent_type,
-        'Boolean' as type_,
-        'includeDeprecated' as name,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name as parent_arg_field_name,
-        'f' as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null::text[] as parent_columns,
-        null::text[] as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql._field_output f
-    where
-        f.type_ in ('__Field', '__enumValue', '__InputFields')
-    union all
-    -- __type(name)
-    select
-        f.type_ as parent_type,
-        'String' type_,
-        'name' as name,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name parent_arg_field_name,
-        null as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null as parent_columns,
-        null as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql._field_output f
-    where
-        f.name = '__type'
-    union all
-    -- Node(nodeId)
-    select
-        f.type_,
-        'ID' type_,
-        'nodeId' as name,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name parent_arg_field_name,
-        null as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null as parent_columns,
-        null as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql.type t
-        inner join graphql._field_output f
-            on t.name = f.type_
-    where
-        t.meta_kind = 'Node'
-        and f.parent_type = 'Query'
-    union all
-    -- Connection(first, last)
-    select
-        f.type_,
-        'Int' type_,
-        y.name_ as name,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name parent_arg_field_name,
-        null as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null as parent_columns,
-        null as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql.type t
-        inner join graphql._field_output f
-            on t.name = f.type_,
-        lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
-    where
-        t.meta_kind = 'Connection'
-    -- Connection(before, after)
-    union all
-    select
-        f.type_,
-        'Cursor' type_,
-        y.name_ as name,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name parent_arg_field_name,
-        null as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null as parent_columns,
-        null as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql.type t
-        inner join graphql._field_output f
-            on t.name = f.type_,
-        lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
-    where
-        t.meta_kind = 'Connection'
-    -- Connection(orderBy)
-    union all
-    select
-        f.type_,
-        tt.name type_,
-        'orderBy' as name,
-        true as is_not_null,
-        true as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name parent_arg_field_name,
-        null as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null as parent_columns,
-        null as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql.type t
-        inner join graphql._field_output f
-            on t.name = f.type_
-            and t.meta_kind = 'Connection'
-        inner join graphql.type tt
-            on t.entity = tt.entity
-            and tt.meta_kind = 'OrderBy'
-    -- Connection(filter)
-    union all
-    select
-        f.type_,
-        tt.name type_,
-        'filter' as name,
-        false as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.name parent_arg_field_name,
-        null as default_value,
-        null as description,
-        null as column_name,
-        null::regtype as column_type,
-        null as parent_columns,
-        null as local_columns,
-        false as is_hidden_from_schema
-    from
-        graphql.type t
-        inner join graphql._field_output f
-            on t.name = f.type_
-            and t.meta_kind = 'Connection'
-        inner join graphql.type tt
-            on t.entity = tt.entity
-            and tt.meta_kind = 'FilterEntity';
-
-create view graphql.field as
-    select
-        f.parent_type,
-        f.type_,
-        f.name, -- todo: apply overrides
-        f.is_not_null,
-        f.is_array,
-        f.is_array_not_null,
-        f.is_arg,
-        f.parent_arg_field_name,
-        f.default_value,
-        f.description,
-        f.column_name,
-        f.column_type,
-        f.parent_columns,
-        f.local_columns,
-        f.is_hidden_from_schema
-    from
-        (
-            select * from graphql._field_output
-            union all
-            select * from graphql._field_arg
-        ) f
-        join graphql.type t
-            on f.parent_type = t.name
-    where
-        -- Apply visibility rules
-        case
-            when f.name = 'nodeId' then true
-            when t.entity is null then true
-            when f.column_name is null then true
-            when (
-                f.column_name is not null
-                and pg_catalog.has_column_privilege(current_user, t.entity, f.column_name, 'SELECT')
-            ) then true
-            -- TODO: check if relationships are accessible
-            when f.local_columns is not null then true
-            else false
-        end;
 create or replace function graphql.rebuild_types()
     returns void
     language plpgsql
     as
 $$
 begin
-    truncate table graphql.__type;
+    alter sequence graphql._type_id_seq restart with 1;
 
-    insert into graphql.__type(type_kind, meta_kind, is_builtin, description)
+    insert into graphql._type(type_kind, meta_kind, is_builtin, description)
         select
             type_kind::graphql.type_kind,
             meta_kind::graphql.meta_kind,
@@ -1189,19 +717,19 @@ begin
        ) x(meta_kind, type_kind, is_builtin, description);
 
 
-    insert into graphql.__type(type_kind, meta_kind, description, graphql_type)
+    insert into graphql._type(type_kind, meta_kind, description, graphql_type_id)
        values
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Int"',      'Int'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    'Float'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "String"',   'String'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Boolean"',  'Boolean'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "DateTime"', 'DateTime'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "BigInt"',   'BigInt'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "UUID"',     'UUID'),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     'JSON');
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Int"',      graphql.type_id('Int')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    graphql.type_id('Float')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "String"',   graphql.type_id('String')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Boolean"',  graphql.type_id('Boolean')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "DateTime"', graphql.type_id('DateTime')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "BigInt"',   graphql.type_id('BigInt')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "UUID"',     graphql.type_id('UUID')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     graphql.type_id('JSON'));
 
 
-    insert into graphql.__type(type_kind, meta_kind, description, entity)
+    insert into graphql._type(type_kind, meta_kind, description, entity)
         select
            x.*
         from
@@ -1216,7 +744,7 @@ begin
             ) x(type_kind, meta_kind, description, entity);
 
 
-    insert into graphql.__type(type_kind, meta_kind, description, enum)
+    insert into graphql._type(type_kind, meta_kind, description, enum)
         select
            'ENUM', 'Enum', null, t.oid::regtype
         from
@@ -1230,26 +758,555 @@ begin
             and exists (select 1 from pg_enum e where e.enumtypid = t.oid);
 end;
 $$;
-create or replace function graphql.rebuild_schema() returns event_trigger
-  language plpgsql
+create view graphql.relationship as
+    with rels as materialized (
+        select
+            const.conname as constraint_name,
+            e.entity as local_entity,
+            array_agg(local_.attname::text order by l.col_ix asc) as local_columns,
+            'MANY'::graphql.cardinality as local_cardinality,
+            const.confrelid::regclass as foreign_entity,
+            array_agg(ref_.attname::text order by r.col_ix asc) as foreign_columns,
+            'ONE'::graphql.cardinality as foreign_cardinality
+        from
+            graphql.entity e
+            join pg_constraint const
+                on const.conrelid = e.entity
+            join pg_attribute local_
+                on const.conrelid = local_.attrelid
+                and local_.attnum = any(const.conkey)
+            join pg_attribute ref_
+                on const.confrelid = ref_.attrelid
+                and ref_.attnum = any(const.confkey),
+            unnest(const.conkey) with ordinality l(col, col_ix)
+            join unnest(const.confkey) with ordinality r(col, col_ix)
+                on l.col_ix = r.col_ix
+        where
+            const.contype = 'f'
+        group by
+            e.entity,
+            const.conname,
+            const.confrelid
+    )
+    select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
+    union all
+    select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
+create type graphql.field_meta_kind as enum (
+    'Constant',
+    'Query.one',
+    'Query.collection',
+    'Column',
+    'Relationship.toMany',
+    'Relationship.toOne',
+    'OrderBy.Column',
+    'Filter.Column'
+);
+
+create table graphql._field (
+    id serial primary key,
+    parent_type_id int references graphql._type(id),
+    type_id  int not null references graphql._type(id) on delete cascade,
+    meta_kind graphql.field_meta_kind default 'Constant',
+    constant_name text,
+
+    -- args if is_arg, parent_arg_field_name is required
+    parent_arg_field_id int references graphql._field(id) on delete cascade,
+    default_value text,
+
+    -- columns
+    entity regclass,
+    column_name text,
+    column_type regtype,
+
+    -- relationships
+    local_columns text[],
+    foreign_columns text[],
+    foreign_entity regclass,
+
+    -- internal flags
+    is_not_null boolean not null,
+    is_array boolean not null,
+    is_array_not_null boolean,
+    is_arg boolean default false,
+    is_hidden_from_schema boolean default false,
+    description text,
+
+    check (meta_kind = 'Constant' and constant_name is not null or meta_kind <> 'Constant')
+);
+
+
+create or replace function graphql.field_name(rec graphql._field, dialect text = 'default')
+    returns text
+    immutable
+    strict
+    language sql
+as $$
+    -- TODO
+    select
+        case
+            when rec.meta_kind = 'Constant' then rec.constant_name
+            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.to_camel_case(rec.column_name)
+            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
+            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
+            when rec.meta_kind = 'Relationship.toMany' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
+            when rec.meta_kind = 'Relationship.toOne' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+            when rec.constant_name is not null then rec.constant_name
+            else graphql.exception(format('could not determine field name, %s', $1))
+        end
+$$;
+
+create index ix_graphql_field_name_dialect_default on graphql._field(
+    graphql.field_name(rec := _field, dialect := 'default'::text)
+);
+
+
+create or replace function graphql.type_id(type_name text)
+    returns int
+    stable
+    language sql
+as $$
+    select id from graphql.type where name = $1;
+$$;
+
+
+create or replace function graphql.type_id(graphql.meta_kind)
+    returns int
+    stable
+    language sql
+as $$
+    -- WARNING: meta_kinds are not always unique. Make sure
+    -- to only use this function with unique ones
+    select id from graphql.type where meta_kind = $1;
+$$;
+
+
+
+create function graphql.rebuild_fields()
+    returns void
+    volatile
+    language plpgsql
 as $$
 begin
-    if tg_tag = 'REFRESH MATERIALIZED VIEW' then
-        return;
-    end if;
+    alter sequence graphql._field_id_seq restart with 1;
 
-    refresh materialized view graphql.entity with data;
-    perform graphql.rebuild_types();
-    refresh materialized view graphql._field_output with data;
-    refresh materialized view graphql._field_arg with data;
-    refresh materialized view graphql.enum_value with data;
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    values
+        (graphql.type_id('__Schema'),     graphql.type_id('String'),              'description',       false, false, null, false,  null),
+        (graphql.type_id('__Schema'),     graphql.type_id('__Type'),              'types',             true,  true,  true, false,  'A list of all types supported by this server.'),
+        (graphql.type_id('__Schema'),     graphql.type_id('__Type'),              'queryType',         true,  false, null, false,  'The type that query operations will be rooted at.'),
+        (graphql.type_id('__Schema'),     graphql.type_id('__Type'),              'mutationType',      false, false, null, false,  'If this server supports mutation, the type that mutation operations will be rooted at.'),
+        (graphql.type_id('__Schema'),     graphql.type_id('__Type'),              'subscriptionType',  false, false, null, false,  'If this server support subscription, the type that subscription operations will be rooted at.'),
+        (graphql.type_id('__Schema'),     graphql.type_id('__Directive'),         'directives',        true,  true,  true, false,  'A list of all directives supported by this server.'),
+        (graphql.type_id('__Directive'),  graphql.type_id('String'),              'name',              true,  false, null, false,  null),
+        (graphql.type_id('__Directive'),  graphql.type_id('String'),              'description',       false, false, null, false,  null),
+        (graphql.type_id('__Directive'),  graphql.type_id('Boolean'),             'isRepeatable',      true,  false, null, false,  null),
+        (graphql.type_id('__Directive'),  graphql.type_id('__DirectiveLocation'), 'locations',         true,  true,  true, false,  null),
+        (graphql.type_id('__Type'),       graphql.type_id('__TypeKind'),          'kind',              true,  false, null, false,  null),
+        (graphql.type_id('__Type'),       graphql.type_id('String'),              'name',              false, false, null, false,  null),
+        (graphql.type_id('__Type'),       graphql.type_id('String'),              'description',       false, false, null, false,  null),
+        (graphql.type_id('__Type'),       graphql.type_id('String'),              'specifiedByURL',    false, false, null, false,  null),
+        (graphql.type_id('__Type'),       graphql.type_id('__Field'),             'fields',            false, true,  true, false,  null),
+        (graphql.type_id('__Type'),       graphql.type_id('__Type'),              'interfaces',        true,  true,  false, false, null),
+        (graphql.type_id('__Type'),       graphql.type_id('__Type'),              'possibleTypes',     true,  true,  false, false, null),
+        (graphql.type_id('__Type'),       graphql.type_id('__EnumValue'),         'enumValues',        true,  true,  false, false, null),
+        (graphql.type_id('__Type'),       graphql.type_id('__InputValue'),        'inputFields',       true,  true,  false, false, null),
+        (graphql.type_id('__Type'),       graphql.type_id('__Type'),              'ofType',            false, false, null, false,  null),
+        (graphql.type_id('__Field'),      graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
+        (graphql.type_id('__Field'),      graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null),
+        (graphql.type_id('__Field'),      graphql.type_id('__Type'),              'type',              true,  false, null, false,  null),
+        (graphql.type_id('__InputValue'), graphql.type_id('String'),              'name',              true,  false, null, false,  null),
+        (graphql.type_id('__InputValue'), graphql.type_id('String'),              'description',       false, false, null, false,  null),
+        (graphql.type_id('__InputValue'), graphql.type_id('String'),              'defaultValue',      false, false, null, false,  'A GraphQL-formatted string representing the default value for this input value.'),
+        (graphql.type_id('__InputValue'), graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
+        (graphql.type_id('__InputValue'), graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null),
+        (graphql.type_id('__InputValue'), graphql.type_id('__Type'),              'type',              true,  false, null, false,  null),
+        (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'name',              true,  false, null, false,  null),
+        (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'description',       false, false, null, false,  null),
+        (graphql.type_id('__EnumValue'),  graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
+        (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null);
+
+
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    select
+        t.id,
+        x.*
+    from
+        graphql.type t,
+        lateral (
+            values
+                (graphql.type_id('__Type'),   '__type',   true,  false, null::boolean, true,  null::text),
+                (graphql.type_id('__Schema'), '__schema', true , false, null,          true,  null)
+        ) x(type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    where
+        t.meta_kind = 'Query';
+
+
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    values
+        -- TODO parent type lookup from metakind
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'hasPreviousPage', true, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'hasNextPage',     true, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'startCursor',     true, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'endCursor',       true, false, null, false, null);
+
+
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            conn.entity,
+            fs.parent_type_id,
+            fs.type_id,
+            fs.constant_name,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            fs.is_hidden_from_schema
+        from
+            graphql.type conn
+            join graphql.type edge
+                on conn.entity = edge.entity
+            join graphql.type node
+                on edge.entity = node.entity,
+            lateral (
+                values
+                    -- TODO replace constant names
+                    ('Constant', node.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
+                    ('Constant', edge.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
+                    ('Constant', conn.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
+                    ('Constant', edge.id, node.id,                     'node',       false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
+                    ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
+                    ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
+                    ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
+                    ('Constant', node.id, graphql.type_id('ID'),       'nodeId',     true,  false, null, null, null, null, null, false),
+                    ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
+                    ('Query.one',        graphql.type_id('Query'::graphql.meta_kind), node.id, null, false, false, null, null, null, null, null, false),
+                    ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null, null, null, null, null, false)
+            ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, foreign_columns, local_columns, is_hidden_from_schema)
+        where
+            conn.meta_kind = 'Connection'
+            and edge.meta_kind = 'Edge'
+            and node.meta_kind = 'Node';
+
+
+    -- Node
+    -- Node.<column>
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, column_name, column_type, is_hidden_from_schema)
+        select
+            'Column' as meta_kind,
+            gt.entity,
+            gt.id parent_type_id,
+            graphql.type_id(pa.atttypid::regtype) as type_id,
+            pa.attnotnull as is_not_null,
+            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
+            pa.attnotnull and graphql.sql_type_is_array(pa.atttypid::regtype) as is_array_not_null,
+            null::text description,
+            pa.attname::text as column_name,
+            pa.atttypid::regtype as column_type,
+            false as is_hidden_from_schema
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'Node'
+            and pa.attnum > 0
+            and not pa.attisdropped;
+
+
+    -- Node.<relationship>
+    -- Node.<connection>
+    insert into graphql._field(parent_type_id, type_id, entity, foreign_entity, meta_kind, is_not_null, is_array, is_array_not_null, description, foreign_columns, local_columns)
+        select
+            node.id parent_type_id,
+            conn.id type_id,
+            node.entity,
+            rel.foreign_entity,
+            case
+                when (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE') then 'Relationship.toOne'
+                when (conn.meta_kind = 'Connection' and rel.foreign_cardinality = 'MANY') then 'Relationship.toMany'
+                else null
+            end::graphql.field_meta_kind meta_kind,
+            false as is_not_null, -- todo: reference column nullability
+            false as is_array,
+            null as is_array_not_null,
+            null::text as description,
+            rel.local_columns,
+            rel.foreign_columns
+        from
+            graphql.type node
+            join graphql.relationship rel
+                on node.entity = rel.local_entity
+            join graphql.type conn
+                on conn.entity = rel.foreign_entity
+                and (
+                    (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE')
+                    or (conn.meta_kind = 'Connection' and rel.foreign_cardinality = 'MANY')
+                )
+        where
+            node.meta_kind = 'Node';
+
+
+    -- NodeOrderBy
+    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, column_name, column_type, entity, description)
+        select
+            'OrderBy.Column' meta_kind,
+            gt.id parent_type,
+            graphql.type_id('OrderByDirection'::graphql.meta_kind) as type_id,
+            false is_not_null,
+            false is_array,
+            null is_array_not_null,
+            pa.attname::text as column_name,
+            pa.atttypid::regtype as column_type,
+            gt.entity,
+            null::text description
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+        where
+            gt.meta_kind = 'OrderBy'
+            and pa.attnum > 0
+            and not pa.attisdropped;
+
+
+    -- IntFilter {eq: ...}
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, description)
+        select
+            gt.id as parent_type_id,
+            gt.graphql_type_id type_id,
+            'eq' as constant_name,
+            false,
+            false,
+            null::text as description
+        from
+            graphql.type gt -- IntFilter
+        where
+            gt.meta_kind = 'FilterType';
+
+    -- AccountFilter(column eq)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, column_name, entity, description)
+        select distinct
+            'Filter.Column'::graphql.field_meta_kind as meta_kind,
+            gt.id parent_type_id,
+            gt_scalar.id type_id,
+            false is_not_null,
+            false is_array,
+            pa.attname::text as column_name,
+            gt.entity,
+            null::text description
+        from
+            graphql.type gt
+            join pg_attribute pa
+                on gt.entity = pa.attrelid
+            join graphql.type gt_scalar
+                on graphql.type_id(pa.atttypid::regtype) = gt_scalar.graphql_type_id
+                and gt_scalar.meta_kind = 'FilterType'
+        where
+            gt.meta_kind = 'FilterEntity'
+            and pa.attnum > 0
+            and not pa.attisdropped;
+
+
+    -- Arguments
+    -- __Field(includeDeprecated)
+    -- __enumValue(includeDeprecated)
+    -- __InputFields(includeDeprecated)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, default_value, description)
+    select
+        f.type_id as parent_type_id,
+        graphql.type_id('Boolean') as type_id,
+        'includeDeprecated' as constant_name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id as parent_arg_field_id,
+        'f' as default_value,
+        null::text as description
+    from
+        graphql._field f
+        join graphql.type t
+            on f.type_id = t.id
+    where
+        t.meta_kind in ('__Field', '__EnumValue', '__InputValue', '__Directive');
+
+
+    -- __type(name)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        graphql.type_id('String') type_id,
+        'name' as constant_name,
+        true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null::text as description
+    from
+        graphql._field f
+        join graphql.type t
+            on f.type_id = t.id
+        join graphql.type pt
+            on f.parent_type_id = pt.id
+    where
+        t.meta_kind = '__Type'
+        and pt.meta_kind = 'Query'
+        and f.constant_name = '__type';
+
+    -- Node(nodeId)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id,
+        graphql.type_id('ID'::graphql.meta_kind) type_id,
+        -- todo
+        'nodeId' as constant_name,
+        true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql.type t
+        inner join graphql._field f
+            on t.id = f.type_id
+        join graphql.type pt
+            on f.parent_type_id = pt.id
+    where
+        t.meta_kind = 'Node'
+        and pt.meta_kind = 'Query';
+
+
+    -- Connection(first, last)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        graphql.type_id('Int') type_id,
+        y.name_ as constant_name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null::text as description
+    from
+        graphql.type t
+        inner join graphql._field f
+            on t.id = f.type_id,
+        lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+    where
+        t.meta_kind = 'Connection';
+
+    -- Connection(before, after)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        graphql.type_id('Cursor') type_id,
+        y.name_ as constant_name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql.type t
+        inner join graphql._field f
+            on t.id = f.type_id,
+        lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+    where
+        t.meta_kind = 'Connection';
+
+
+    -- Connection(orderBy)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        tt.id type_id,
+        'orderBy' as constant_name,
+        true as is_not_null,
+        true as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_name,
+        null as description
+    from
+        graphql.type t
+        inner join graphql._field f
+            on t.id = f.type_id
+            and t.meta_kind = 'Connection'
+        inner join graphql.type tt
+            on t.entity = tt.entity
+            and tt.meta_kind = 'OrderBy';
+
+    -- Connection(filter)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        tt.id type_,
+        'filter' as constant_name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql.type t
+        inner join graphql._field f
+            on t.id = f.type_id
+            and t.meta_kind = 'Connection'
+        inner join graphql.type tt
+            on t.entity = tt.entity
+            and tt.meta_kind = 'FilterEntity';
+
 end;
 $$;
 
 
-create event trigger graphql_watch
-    on ddl_command_end
-    execute procedure graphql.rebuild_schema();
+create view graphql.field as
+    select
+        f.id,
+        t_parent.name parent_type,
+        t_self.name type_,
+        graphql.field_name(f, 'default') as name,
+        f.is_not_null,
+        f.is_array,
+        f.is_array_not_null,
+        f.is_arg,
+        graphql.field_name(f_arg_parent, 'default') as parent_arg_field_name,
+        f.default_value,
+        f.description,
+        f.column_name,
+        f.column_type,
+        f.foreign_columns,
+        f.local_columns,
+        f.is_hidden_from_schema
+    from
+        graphql._field f
+        join graphql.type t_parent
+            on f.parent_type_id = t_parent.id
+        join graphql.type t_self
+            on f.type_id = t_self.id
+        left join graphql._field f_arg_parent
+            on f.parent_arg_field_id = f_arg_parent.id
+    where
+        -- Apply visibility rules
+        case
+            when f.constant_name = 'nodeId' then true
+            when t_parent.entity is null then true
+            when f.column_name is null then true
+            when (
+                f.column_name is not null
+                and pg_catalog.has_column_privilege(current_user, t_parent.entity, f.column_name, 'SELECT')
+            ) then true
+            -- TODO: check if relationships are accessible
+            when f.local_columns is not null then true
+            else false
+        end;
 create or replace function graphql.arg_index(arg_name text, variable_definitions jsonb)
     returns int
     immutable
@@ -2043,7 +2100,7 @@ begin
             case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
             case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
             -- join
-            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.parent_columns, parent_block_name), 'true'),
+            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
@@ -2126,7 +2183,7 @@ begin
 ',
     type_.entity,
     quote_ident(block_name),
-    coalesce(graphql.join_clause(field.local_columns, block_name, field.parent_columns, parent_block_name), 'true'),
+    coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
     case
         when nodeId is null then 'true'
         else graphql.cursor_row_clause(type_.entity, block_name)
@@ -2172,15 +2229,24 @@ create or replace function graphql.resolve_field(field text, parent_type text, p
 as $$
 declare
     field_rec graphql.field;
+    field_recs graphql.field[];
 begin
     -- todo can this conflict for input types?
-    field_rec = gf
+    field_recs = array_agg(gf)
         from
             graphql.field gf
         where
             gf.name = $1
             and gf.parent_type = $2
-            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '');
+            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '')
+            limit 1;
+
+    if array_length(field_recs, 1) > 1 then
+        raise exception '% % %', $1, $2, $3;
+    end if;
+
+    field_rec = graphql.array_first(field_recs);
+
     if field_rec is null then
         raise exception '% % %', $1, $2, $3;
 
@@ -2368,7 +2434,7 @@ begin
                     )
                     when selection_name = 'fields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel))
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel) order by f.name)
                         from
                             graphql.field f
                         where
@@ -2392,7 +2458,7 @@ begin
                     when selection_name = 'enumValues' then graphql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel))
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel) order by f.name)
                         from
                             graphql.field f
                         where
@@ -2695,3 +2761,91 @@ as $$
             end
         ) jae(f)
 $$;
+create or replace function graphql.rebuild_schema()
+    returns void
+    language plpgsql
+as $$
+begin
+    truncate table graphql._field;
+    delete from graphql._type;
+    refresh materialized view graphql.entity with data;
+    perform graphql.rebuild_types();
+    perform graphql.rebuild_fields();
+    refresh materialized view graphql.enum_value with data;
+end;
+$$;
+
+create or replace function graphql.rebuild_on_ddl()
+    returns event_trigger
+    language plpgsql
+as $$
+declare
+    cmd record;
+begin
+    for cmd IN select * FROM pg_event_trigger_ddl_commands()
+    loop
+        if cmd.command_tag in (
+            'CREATE SCHEMA',
+            'ALTER SCHEMA',
+            'CREATE TABLE',
+            'CREATE TABLE AS',
+            'SELECT INTO',
+            'ALTER TABLE',
+            'CREATE FOREIGN TABLE',
+            'ALTER FOREIGN TABLE'
+            'CREATE VIEW',
+            'ALTER VIEW',
+            'CREATE MATERIALIZED VIEW',
+            'ALTER MATERIALIZED VIEW',
+            'CREATE FUNCTION',
+            'ALTER FUNCTION',
+            'CREATE TRIGGER',
+            'CREATE TYPE',
+            'CREATE RULE',
+            'COMMENT'
+        )
+        and cmd.schema_name is distinct from 'pg_temp'
+        then
+            perform graphql.rebuild_schema();
+        end if;
+    end loop;
+end;
+$$;
+
+
+create or replace function graphql.rebuild_on_drop()
+    returns event_trigger
+    language plpgsql
+as $$
+declare
+    obj record;
+begin
+    for obj IN SELECT * FROM pg_event_trigger_dropped_objects()
+    loop
+        if obj.object_type IN (
+            'schema',
+            'table',
+            'foreign table',
+            'view',
+            'materialized view',
+            'function',
+            'trigger',
+            'type',
+            'rule',
+        )
+        and obj.is_temporary IS false
+        then
+            perform graphql.rebuild_schema();
+        end if
+    end loop;
+end;
+$$;
+
+
+create event trigger graphql_watch_ddl
+    on ddl_command_end
+    execute procedure graphql.rebuild_on_ddl();
+
+create event trigger graphql_watch_drop
+    on sql_drop
+    execute procedure graphql.rebuild_on_ddl();
