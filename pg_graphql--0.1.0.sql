@@ -405,6 +405,78 @@ $$
         ||')'
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
+create function graphql.comment_directive(comment_ text)
+    returns jsonb
+    language sql
+as $$
+    /*
+    comment on column public.account.name is '@graphql.name: myField'
+    */
+    select
+        (
+            regexp_matches(
+                comment_,
+                '@graphql\((.+?)\)',
+                'g'
+            )
+        )[1]::jsonb
+$$;
+
+
+create function graphql.comment(regclass)
+    returns text
+    language sql
+as $$
+    select pg_catalog.obj_description($1::oid, 'pg_class')
+$$;
+
+
+create function graphql.comment(regtype)
+    returns text
+    language sql
+as $$
+    select pg_catalog.obj_description($1::oid, 'pg_type')
+$$;
+
+
+create function graphql.comment(regclass, column_name text)
+    returns text
+    language sql
+as $$
+    select
+        pg_catalog.col_description($1::oid, attnum)
+    from
+        pg_attribute
+    where
+        attrelid = $1::oid
+        and attname = column_name::name
+        and attnum > 0
+        and not attisdropped
+$$;
+
+
+create function graphql.comment_directive_name(regclass, column_name text)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1, column_name)) ->> 'name'
+$$;
+
+
+create function graphql.comment_directive_name(regclass)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+
+create function graphql.comment_directive_name(regtype)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
 create type graphql.cardinality as enum ('ONE', 'MANY');
 create type graphql.meta_kind as enum (
 -- Constant
@@ -470,6 +542,8 @@ create table graphql._type (
     type_kind graphql.type_kind not null,
     meta_kind graphql.meta_kind not null,
     is_builtin bool not null default false,
+    constant_name text,
+    name text not null,
     entity regclass,
     graphql_type_id int references graphql._type(id),
     enum regtype,
@@ -477,6 +551,11 @@ create table graphql._type (
     unique (meta_kind, entity),
     check (entity is null or graphql_type_id is null)
 );
+
+create index ix_graphql_type_name on graphql._type(name);
+create index ix_graphql_type_type_kind on graphql._type(type_kind);
+create index ix_graphql_type_meta_kind on graphql._type(meta_kind);
+create index ix_graphql_type_graphql_type_id on graphql._type(graphql_type_id);
 
 
 create or replace function graphql.inflect_type_default(text)
@@ -488,41 +567,52 @@ as $$
 $$;
 
 
-create function graphql.type_name(rec graphql._type, dialect text = 'default')
+create function graphql.type_name(rec graphql._type)
     returns text
     immutable
     language sql
 as $$
+    with name_override as (
+        select
+            case
+                when rec.entity is not null then coalesce(
+                    graphql.comment_directive_name(rec.entity),
+                    graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                )
+                else null
+            end as base_type_name
+    )
     select
         case
             when (rec).is_builtin then rec.meta_kind::text
-            when dialect = 'default' then
-                case rec.meta_kind
-                    when 'Node'         then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
-                    when 'Edge'         then format('%sEdge',       graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'Connection'   then format('%sConnection', graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'OrderBy'      then format('%sOrderBy',    graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'FilterEntity' then format('%sFilter',     graphql.inflect_type_default(graphql.to_table_name(rec.entity)))
-                    when 'FilterType'   then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
-                    when 'OrderByDirection' then rec.meta_kind::text
-                    when 'PageInfo'     then rec.meta_kind::text
-                    when 'Cursor'       then rec.meta_kind::text
-                    when 'Query'        then rec.meta_kind::text
-                    when 'Mutation'     then rec.meta_kind::text
-                    when 'Enum'         then graphql.inflect_type_default(graphql.to_type_name(rec.enum))
-                    else                graphql.exception('could not determine type name')
-                end
-            else graphql.exception('unknown dialect')
+            when rec.meta_kind='Node'         then base_type_name
+            when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
+            when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
+            when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)
+            when rec.meta_kind='FilterEntity' then format('%sFilter',     base_type_name)
+            when rec.meta_kind='FilterType'   then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
+            when rec.meta_kind='OrderByDirection' then rec.meta_kind::text
+            when rec.meta_kind='PageInfo'     then rec.meta_kind::text
+            when rec.meta_kind='Cursor'       then rec.meta_kind::text
+            when rec.meta_kind='Query'        then rec.meta_kind::text
+            when rec.meta_kind='Mutation'     then rec.meta_kind::text
+            when rec.meta_kind='Enum'         then coalesce(
+                graphql.comment_directive_name(rec.enum),
+                graphql.inflect_type_default(graphql.to_type_name(rec.enum))
+            )
+            else graphql.exception('could not determine type name')
         end
+    from
+        name_override
 $$;
 
-create function graphql.type_name(type_id int, dialect text = 'default')
+create function graphql.type_name(type_id int)
     returns text
     immutable
     language sql
 as $$
     select
-        graphql.type_name(rec, $2)
+        graphql.type_name(rec)
     from
         graphql._type rec
     where
@@ -530,29 +620,43 @@ as $$
 $$;
 
 
+create function graphql.set_type_name()
+    returns trigger
+    language plpgsql
+as $$
+begin
+    new.name = coalesce(
+        new.constant_name,
+        graphql.type_name(new)
+    );
+    return new;
+end;
+$$;
 
-create index ix_graphql_type_name_dialect_default on graphql._type(
-    graphql.type_name(rec := _type, dialect := 'default'::text)
-);
+create trigger on_insert_set_name
+    before insert on graphql._type
+    for each row execute procedure graphql.set_type_name();
 create view graphql.type as
-    with d(dialect) as (
-        select
-            -- do not inline this call as it has a significant performance impact
-            --coalesce(current_setting('graphql.dialect', true), 'default')
-            'default'
-    )
     select
-       graphql.type_name(
-            rec := t,
-            dialect := d.dialect
-       ) as name,
-       t.*
+        id,
+        type_kind,
+        meta_kind,
+        is_builtin,
+        constant_name,
+        name,
+        entity,
+        graphql_type_id,
+        enum,
+        description
     from
-        graphql._type t,
-        d
+        graphql._type t
     where
         t.entity is null
-        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
+        or pg_catalog.has_any_column_privilege(
+            current_user,
+            t.entity,
+            'SELECT'
+        );
 create materialized view graphql.entity as
     select
         oid::regclass as entity
@@ -762,12 +866,16 @@ create view graphql.relationship as
     with rels as materialized (
         select
             const.conname as constraint_name,
+            const.oid as constraint_oid,
             e.entity as local_entity,
             array_agg(local_.attname::text order by l.col_ix asc) as local_columns,
             'MANY'::graphql.cardinality as local_cardinality,
             const.confrelid::regclass as foreign_entity,
             array_agg(ref_.attname::text order by r.col_ix asc) as foreign_columns,
-            'ONE'::graphql.cardinality as foreign_cardinality
+            'ONE'::graphql.cardinality as foreign_cardinality,
+            com.comment_,
+            graphql.comment_directive(com.comment_) ->> 'local_name' as local_name_override,
+            graphql.comment_directive(com.comment_) ->> 'foreign_name' as foreign_name_override
         from
             graphql.entity e
             join pg_constraint const
@@ -780,17 +888,42 @@ create view graphql.relationship as
                 and ref_.attnum = any(const.confkey),
             unnest(const.conkey) with ordinality l(col, col_ix)
             join unnest(const.confkey) with ordinality r(col, col_ix)
-                on l.col_ix = r.col_ix
+                on l.col_ix = r.col_ix,
+            lateral (
+                select pg_catalog.obj_description(const.oid, 'pg_constraint') body
+            ) com(comment_)
         where
             const.contype = 'f'
         group by
             e.entity,
+            com.comment_,
+            const.oid,
             const.conname,
             const.confrelid
     )
-    select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
+    select
+        constraint_name,
+        local_entity,
+        local_columns,
+        local_cardinality,
+        foreign_entity,
+        foreign_columns,
+        foreign_cardinality,
+        foreign_name_override
+    from
+        rels
     union all
-    select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
+    select
+        constraint_name,
+        foreign_entity,
+        foreign_columns,
+        foreign_cardinality,
+        local_entity,
+        local_columns,
+        local_cardinality,
+        local_name_override
+    from
+        rels;
 create type graphql.field_meta_kind as enum (
     'Constant',
     'Query.one',
@@ -807,6 +940,7 @@ create table graphql._field (
     parent_type_id int references graphql._type(id),
     type_id  int not null references graphql._type(id) on delete cascade,
     meta_kind graphql.field_meta_kind default 'Constant',
+    name text not null,
     constant_name text,
 
     -- args if is_arg, parent_arg_field_name is required
@@ -822,6 +956,8 @@ create table graphql._field (
     local_columns text[],
     foreign_columns text[],
     foreign_entity regclass,
+    foreign_name_override text, -- from comment directive
+
 
     -- internal flags
     is_not_null boolean not null,
@@ -834,30 +970,63 @@ create table graphql._field (
     check (meta_kind = 'Constant' and constant_name is not null or meta_kind <> 'Constant')
 );
 
+create index ix_graphql_field_name on graphql._field(name);
+create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
+create index ix_graphql_field_type_id on graphql._field(type_id);
+create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_field_id);
+create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
 
-create or replace function graphql.field_name(rec graphql._field, dialect text = 'default')
+
+create or replace function graphql.field_name(rec graphql._field)
     returns text
     immutable
     strict
     language sql
 as $$
-    -- TODO
     select
         case
             when rec.meta_kind = 'Constant' then rec.constant_name
-            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.to_camel_case(rec.column_name)
+            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then coalesce(
+                graphql.comment_directive_name(rec.entity, rec.column_name),
+                graphql.to_camel_case(rec.column_name)
+            )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
-            when rec.meta_kind = 'Relationship.toMany' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
-            when rec.meta_kind = 'Relationship.toOne' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+            when rec.meta_kind = 'Relationship.toMany' then coalesce(
+                rec.foreign_name_override,
+                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
+            )
+            when rec.meta_kind = 'Relationship.toOne' then coalesce(
+                -- comment directive override
+                rec.foreign_name_override,
+                -- owner_id -> owner
+                case array_length(rec.foreign_columns, 1) = 1 and rec.foreign_columns[1] like '%\_id'
+                    when true then graphql.to_camel_case(left(rec.foreign_columns[1], -3))
+                    else null
+                end,
+                -- default
+                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+            )
+            -- todo remove
             when rec.constant_name is not null then rec.constant_name
             else graphql.exception(format('could not determine field name, %s', $1))
         end
 $$;
 
-create index ix_graphql_field_name_dialect_default on graphql._field(
-    graphql.field_name(rec := _field, dialect := 'default'::text)
-);
+
+create function graphql.set_field_name()
+    returns trigger
+    language plpgsql
+as $$
+begin
+    new.name = graphql.field_name(new);
+    return new;
+end;
+$$;
+
+create trigger on_insert_set_name
+    before insert on graphql._field
+    for each row execute procedure graphql.set_field_name();
 
 
 create or replace function graphql.type_id(type_name text)
@@ -1016,8 +1185,20 @@ begin
 
 
     -- Node.<relationship>
-    -- Node.<connection>
-    insert into graphql._field(parent_type_id, type_id, entity, foreign_entity, meta_kind, is_not_null, is_array, is_array_not_null, description, foreign_columns, local_columns)
+    insert into graphql._field(
+        parent_type_id,
+        type_id,
+        entity,
+        foreign_entity,
+        meta_kind,
+        is_not_null,
+        is_array,
+        is_array_not_null,
+        description,
+        foreign_columns,
+        local_columns,
+        foreign_name_override
+    )
         select
             node.id parent_type_id,
             conn.id type_id,
@@ -1033,7 +1214,8 @@ begin
             null as is_array_not_null,
             null::text as description,
             rel.local_columns,
-            rel.foreign_columns
+            rel.foreign_columns,
+            rel.foreign_name_override
         from
             graphql.type node
             join graphql.relationship rel
@@ -1272,19 +1454,21 @@ create view graphql.field as
         f.id,
         t_parent.name parent_type,
         t_self.name type_,
-        graphql.field_name(f, 'default') as name,
+        f.name,
         f.is_not_null,
         f.is_array,
         f.is_array_not_null,
         f.is_arg,
-        graphql.field_name(f_arg_parent, 'default') as parent_arg_field_name,
+        f_arg_parent.name as parent_arg_field_name,
         f.default_value,
         f.description,
+        f.entity,
         f.column_name,
         f.column_type,
         f.foreign_columns,
         f.local_columns,
-        f.is_hidden_from_schema
+        f.is_hidden_from_schema,
+        f.meta_kind
     from
         graphql._field f
         join graphql.type t_parent
@@ -1301,10 +1485,41 @@ create view graphql.field as
             when f.column_name is null then true
             when (
                 f.column_name is not null
-                and pg_catalog.has_column_privilege(current_user, t_parent.entity, f.column_name, 'SELECT')
+                and pg_catalog.has_column_privilege(
+                    current_user,
+                    t_parent.entity,
+                    f.column_name,
+                    'SELECT'
+                )
             ) then true
-            -- TODO: check if relationships are accessible
-            when f.local_columns is not null then true
+            -- Check if relationship local and remote columns are selectable
+            when f.local_columns is not null then (
+                (
+                    select
+                        bool_and(
+                            pg_catalog.has_column_privilege(
+                                current_user,
+                                f.foreign_entity,
+                                x.col,
+                                'SELECT'
+                            )
+                        )
+                    from
+                        unnest(f.foreign_columns) x(col)
+                ) and (
+                    select
+                        bool_and(
+                            pg_catalog.has_column_privilege(
+                                current_user,
+                                f.entity,
+                                x.col,
+                                'SELECT'
+                            )
+                        )
+                    from
+                        unnest(f.local_columns) x(col)
+                )
+            )
             else false
         end;
 create or replace function graphql.arg_index(arg_name text, variable_definitions jsonb)

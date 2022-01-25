@@ -22,6 +22,7 @@ cat \
     src/sql/ast/*.sql \
     src/sql/exception/*.sql \
     src/sql/cursor/*.sql \
+    src/sql/directive/*.sql \
     src/sql/reflection/type/types/*.sql \
     src/sql/reflection/type/tables/*.sql \
     src/sql/reflection/type/views/*.sql \
