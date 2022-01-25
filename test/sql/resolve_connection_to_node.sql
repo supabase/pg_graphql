@@ -36,7 +36,7 @@ begin;
             edges {
               node {
                 ownerId
-                account {
+                owner {
                   id
                 }
               }

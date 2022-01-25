@@ -2,12 +2,16 @@ create view graphql.relationship as
     with rels as materialized (
         select
             const.conname as constraint_name,
+            const.oid as constraint_oid,
             e.entity as local_entity,
             array_agg(local_.attname::text order by l.col_ix asc) as local_columns,
             'MANY'::graphql.cardinality as local_cardinality,
             const.confrelid::regclass as foreign_entity,
             array_agg(ref_.attname::text order by r.col_ix asc) as foreign_columns,
-            'ONE'::graphql.cardinality as foreign_cardinality
+            'ONE'::graphql.cardinality as foreign_cardinality,
+            com.comment_,
+            graphql.comment_directive(com.comment_) ->> 'local_name' as local_name_override,
+            graphql.comment_directive(com.comment_) ->> 'foreign_name' as foreign_name_override
         from
             graphql.entity e
             join pg_constraint const
@@ -20,14 +24,43 @@ create view graphql.relationship as
                 and ref_.attnum = any(const.confkey),
             unnest(const.conkey) with ordinality l(col, col_ix)
             join unnest(const.confkey) with ordinality r(col, col_ix)
-                on l.col_ix = r.col_ix
+                on l.col_ix = r.col_ix,
+            lateral (
+                select pg_catalog.obj_description(const.oid, 'pg_constraint') body
+            ) com(comment_)
         where
             const.contype = 'f'
         group by
             e.entity,
+            com.comment_,
+            const.oid,
             const.conname,
             const.confrelid
     )
-    select constraint_name, local_entity, local_columns, local_cardinality, foreign_entity, foreign_columns, foreign_cardinality from rels
+    select
+        constraint_name,
+        constraint_oid,
+        false as is_reversed,
+        local_entity,
+        local_columns,
+        local_cardinality,
+        foreign_entity,
+        foreign_columns,
+        foreign_cardinality,
+        foreign_name_override
+    from
+        rels
     union all
-    select constraint_name, foreign_entity, foreign_columns, foreign_cardinality, local_entity, local_columns, local_cardinality from rels;
+    select
+        constraint_name,
+        constraint_oid,
+        true as is_reversed,
+        foreign_entity,
+        foreign_columns,
+        foreign_cardinality,
+        local_entity,
+        local_columns,
+        local_cardinality,
+        local_name_override
+    from
+        rels;

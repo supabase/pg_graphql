@@ -30,6 +30,8 @@ create table graphql._field (
     local_columns text[],
     foreign_columns text[],
     foreign_entity regclass,
+    foreign_name_override text, -- from comment directive
+
 
     -- internal flags
     is_not_null boolean not null,
@@ -60,8 +62,22 @@ as $$
             )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
-            when rec.meta_kind = 'Relationship.toMany' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
-            when rec.meta_kind = 'Relationship.toOne' then graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+            when rec.meta_kind = 'Relationship.toMany' then coalesce(
+                rec.foreign_name_override,
+                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
+            )
+            when rec.meta_kind = 'Relationship.toOne' then coalesce(
+                -- comment directive override
+                rec.foreign_name_override,
+                -- owner_id -> owner
+                case array_length(rec.foreign_columns, 1) = 1 and rec.foreign_columns[1] like '%\_id'
+                    when true then graphql.to_camel_case(left(rec.foreign_columns[1], -3))
+                    else null
+                end,
+                -- default
+                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+            )
+            -- todo remove
             when rec.constant_name is not null then rec.constant_name
             else graphql.exception(format('could not determine field name, %s', $1))
         end
@@ -239,8 +255,20 @@ begin
 
 
     -- Node.<relationship>
-    -- Node.<connection>
-    insert into graphql._field(parent_type_id, type_id, entity, foreign_entity, meta_kind, is_not_null, is_array, is_array_not_null, description, foreign_columns, local_columns)
+    insert into graphql._field(
+        parent_type_id,
+        type_id,
+        entity,
+        foreign_entity,
+        meta_kind,
+        is_not_null,
+        is_array,
+        is_array_not_null,
+        description,
+        foreign_columns,
+        local_columns,
+        foreign_name_override
+    )
         select
             node.id parent_type_id,
             conn.id type_id,
@@ -256,7 +284,8 @@ begin
             null as is_array_not_null,
             null::text as description,
             rel.local_columns,
-            rel.foreign_columns
+            rel.foreign_columns,
+            rel.foreign_name_override
         from
             graphql.type node
             join graphql.relationship rel
