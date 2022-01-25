@@ -65,10 +65,10 @@ as $$
                 graphql.to_camel_case(rec.column_name)
             )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
-            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
+            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.to_table_name($1.entity)) || 'Collection'
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
-                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
+                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 'Collection'
             )
             when rec.meta_kind = 'Relationship.toOne' then coalesce(
                 -- comment directive override
@@ -370,7 +370,7 @@ begin
     -- __enumValue(includeDeprecated)
     -- __InputFields(includeDeprecated)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, default_value, description)
-    select
+    select distinct
         f.type_id as parent_type_id,
         graphql.type_id('Boolean') as type_id,
         'includeDeprecated' as constant_name,
@@ -534,6 +534,7 @@ create view graphql.field as
         f.is_array_not_null,
         f.is_arg,
         f_arg_parent.name as parent_arg_field_name,
+        f.parent_arg_field_id,
         f.default_value,
         f.description,
         f.entity,

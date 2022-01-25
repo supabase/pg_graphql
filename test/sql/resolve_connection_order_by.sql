@@ -19,7 +19,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(orderBy: [{id: AscNullsFirst}]) {
+              accountCollection(orderBy: [{id: AscNullsFirst}]) {
                 edges {
                   node {
                     id
@@ -34,7 +34,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(orderBy: [{id: AscNullsLast}]) {
+              accountCollection(orderBy: [{id: AscNullsLast}]) {
                 edges {
                   node {
                     id
@@ -50,7 +50,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(orderBy: [{id: DescNullsFirst}]) {
+              accountCollection(orderBy: [{id: DescNullsFirst}]) {
                 edges {
                   node {
                     id
@@ -66,7 +66,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(orderBy: [{id: DescNullsLast}]) {
+              accountCollection(orderBy: [{id: DescNullsLast}]) {
                 edges {
                   node {
                     id
@@ -82,7 +82,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: OrderByDirection)
            {
-             allAccounts(orderBy: [{id: $direction}]) {
+             accountCollection(orderBy: [{id: $direction}]) {
                edges {
                  node{
                    id
@@ -100,7 +100,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: OrderByDirection)
            {
-             allAccounts(orderBy: [{id: $direction}]) {
+             accountCollection(orderBy: [{id: $direction}]) {
                edges {
                  node{
                    id
@@ -118,7 +118,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: OrderByDirection)
            {
-             allAccounts(orderBy: [{id: $direction}]) {
+             accountCollection(orderBy: [{id: $direction}]) {
                edges {
                  node{
                    id
@@ -136,7 +136,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: OrderByDirection)
            {
-             allAccounts(orderBy: [{id: $direction}]) {
+             accountCollection(orderBy: [{id: $direction}]) {
                edges {
                  node{
                    id
@@ -154,7 +154,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: OrderByDirection)
            {
-             allAccounts(orderBy: [{id: $direction}]) {
+             accountCollection(orderBy: [{id: $direction}]) {
                edges {
                  node{
                    id
@@ -172,7 +172,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: OrderByDirection)
            {
-             allAccounts(orderBy: [{id: $direction}]) {
+             accountCollection(orderBy: [{id: $direction}]) {
                edges {
                  node{
                    id
@@ -190,7 +190,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
            {
-             allAccounts(orderBy: $direction) {
+             accountCollection(orderBy: $direction) {
                edges {
                  node{
                    id
@@ -208,7 +208,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
            {
-             allAccounts(orderBy: $direction) {
+             accountCollection(orderBy: $direction) {
                edges {
                  node{
                    id
@@ -227,7 +227,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
            {
-             allAccounts(orderBy: $direction) {
+             accountCollection(orderBy: $direction) {
                edges {
                  node{
                    id
@@ -246,7 +246,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
            {
-             allAccounts(orderBy: $direction) {
+             accountCollection(orderBy: $direction) {
                edges {
                  node{
                    id
@@ -265,7 +265,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
            {
-             allAccounts(orderBy: $direction) {
+             accountCollection(orderBy: $direction) {
                edges {
                  node{
                    id
@@ -283,7 +283,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
            {
-             allAccounts(orderBy: $direction) {
+             accountCollection(orderBy: $direction) {
                edges {
                  node{
                    id
@@ -301,7 +301,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($ent: AccountOrderBy!)
            {
-             allAccounts(orderBy: [$ent]) {
+             accountCollection(orderBy: [$ent]) {
                edges {
                  node{
                    id
@@ -319,7 +319,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($ent: AccountOrderBy!)
            {
-             allAccounts(orderBy: [$ent]) {
+             accountCollection(orderBy: [$ent]) {
                edges {
                  node{
                    id
@@ -337,7 +337,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($ent: AccountOrderBy!)
            {
-             allAccounts(orderBy: [$ent]) {
+             accountCollection(orderBy: [$ent]) {
                edges {
                  node{
                    id
@@ -355,7 +355,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($ent: AccountOrderBy!)
            {
-             allAccounts(orderBy: [$ent]) {
+             accountCollection(orderBy: [$ent]) {
                edges {
                  node{
                    id
@@ -373,7 +373,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($ent: AccountOrderBy!)
            {
-             allAccounts(orderBy: [$ent]) {
+             accountCollection(orderBy: [$ent]) {
                edges {
                  node{
                    id
@@ -391,7 +391,7 @@ begin;
         graphql.resolve($$
            query AccountsOrdered($ent: AccountOrderBy!)
            {
-             allAccounts(orderBy: [$ent]) {
+             accountCollection(orderBy: [$ent]) {
                edges {
                  node{
                    id

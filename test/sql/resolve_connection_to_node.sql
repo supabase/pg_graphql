@@ -32,7 +32,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-          allBlogs {
+          blogCollection {
             edges {
               node {
                 ownerId

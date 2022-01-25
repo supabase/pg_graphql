@@ -206,7 +206,7 @@ begin;
                                      "defaultValue": null                                                                                   +
                                  }                                                                                                          +
                              ],                                                                                                             +
-                             "name": "blogs",                                                                                               +
+                             "name": "blogCollection",                                                                                      +
                              "type": {                                                                                                      +
                                  "kind": "OBJECT",                                                                                          +
                                  "name": "BlogConnection",                                                                                  +
@@ -670,7 +670,7 @@ begin;
                                      "defaultValue": null                                                                                   +
                                  }                                                                                                          +
                              ],                                                                                                             +
-                             "name": "blogPosts",                                                                                           +
+                             "name": "blogPostCollection",                                                                                  +
                              "type": {                                                                                                      +
                                  "kind": "OBJECT",                                                                                          +
                                  "name": "BlogPostConnection",                                                                              +
@@ -1079,20 +1079,6 @@ begin;
                      "fields": [                                                                                                            +
                          {                                                                                                                  +
                              "args": [                                                                                                      +
-                                 {                                                                                                          +
-                                     "name": "nodeId",                                                                                      +
-                                     "type": {                                                                                              +
-                                         "kind": "NON_NULL",                                                                                +
-                                         "name": null,                                                                                      +
-                                         "ofType": {                                                                                        +
-                                             "kind": "SCALAR",                                                                              +
-                                             "name": "ID",                                                                                  +
-                                             "ofType": null                                                                                 +
-                                         }                                                                                                  +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 }                                                                                                          +
                              ],                                                                                                             +
                              "name": "blog",                                                                                                +
                              "type": {                                                                                                      +
@@ -1943,7 +1929,7 @@ begin;
                                      "defaultValue": null                                                                                   +
                                  }                                                                                                          +
                              ],                                                                                                             +
-                             "name": "allAccounts",                                                                                         +
+                             "name": "accountCollection",                                                                                   +
                              "type": {                                                                                                      +
                                  "kind": "OBJECT",                                                                                          +
                                  "name": "AccountConnection",                                                                               +
@@ -1956,78 +1942,24 @@ begin;
                          {                                                                                                                  +
                              "args": [                                                                                                      +
                                  {                                                                                                          +
-                                     "name": "after",                                                                                       +
+                                     "name": "nodeId",                                                                                      +
                                      "type": {                                                                                              +
-                                         "kind": "SCALAR",                                                                                  +
-                                         "name": "Cursor",                                                                                  +
-                                         "ofType": null                                                                                     +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 },                                                                                                         +
-                                 {                                                                                                          +
-                                     "name": "before",                                                                                      +
-                                     "type": {                                                                                              +
-                                         "kind": "SCALAR",                                                                                  +
-                                         "name": "Cursor",                                                                                  +
-                                         "ofType": null                                                                                     +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 },                                                                                                         +
-                                 {                                                                                                          +
-                                     "name": "filter",                                                                                      +
-                                     "type": {                                                                                              +
-                                         "kind": "INPUT_OBJECT",                                                                            +
-                                         "name": "BlogPostFilter",                                                                          +
-                                         "ofType": null                                                                                     +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 },                                                                                                         +
-                                 {                                                                                                          +
-                                     "name": "first",                                                                                       +
-                                     "type": {                                                                                              +
-                                         "kind": "SCALAR",                                                                                  +
-                                         "name": "Int",                                                                                     +
-                                         "ofType": null                                                                                     +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 },                                                                                                         +
-                                 {                                                                                                          +
-                                     "name": "last",                                                                                        +
-                                     "type": {                                                                                              +
-                                         "kind": "SCALAR",                                                                                  +
-                                         "name": "Int",                                                                                     +
-                                         "ofType": null                                                                                     +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 },                                                                                                         +
-                                 {                                                                                                          +
-                                     "name": "orderBy",                                                                                     +
-                                     "type": {                                                                                              +
-                                         "kind": "LIST",                                                                                    +
+                                         "kind": "NON_NULL",                                                                                +
                                          "name": null,                                                                                      +
                                          "ofType": {                                                                                        +
-                                             "kind": "NON_NULL",                                                                            +
-                                             "name": null,                                                                                  +
-                                             "ofType": {                                                                                    +
-                                                 "kind": "INPUT_OBJECT",                                                                    +
-                                                 "name": "BlogPostOrderBy",                                                                 +
-                                                 "ofType": null                                                                             +
-                                             }                                                                                              +
+                                             "kind": "SCALAR",                                                                              +
+                                             "name": "ID",                                                                                  +
+                                             "ofType": null                                                                                 +
                                          }                                                                                                  +
                                      },                                                                                                     +
                                      "description": null,                                                                                   +
                                      "defaultValue": null                                                                                   +
                                  }                                                                                                          +
                              ],                                                                                                             +
-                             "name": "allBlogPosts",                                                                                        +
+                             "name": "blog",                                                                                                +
                              "type": {                                                                                                      +
                                  "kind": "OBJECT",                                                                                          +
-                                 "name": "BlogPostConnection",                                                                              +
+                                 "name": "Blog",                                                                                            +
                                  "ofType": null                                                                                             +
                              },                                                                                                             +
                              "description": null,                                                                                           +
@@ -2105,37 +2037,10 @@ begin;
                                      "defaultValue": null                                                                                   +
                                  }                                                                                                          +
                              ],                                                                                                             +
-                             "name": "allBlogs",                                                                                            +
+                             "name": "blogCollection",                                                                                      +
                              "type": {                                                                                                      +
                                  "kind": "OBJECT",                                                                                          +
                                  "name": "BlogConnection",                                                                                  +
-                                 "ofType": null                                                                                             +
-                             },                                                                                                             +
-                             "description": null,                                                                                           +
-                             "isDeprecated": false,                                                                                         +
-                             "deprecationReason": null                                                                                      +
-                         },                                                                                                                 +
-                         {                                                                                                                  +
-                             "args": [                                                                                                      +
-                                 {                                                                                                          +
-                                     "name": "nodeId",                                                                                      +
-                                     "type": {                                                                                              +
-                                         "kind": "NON_NULL",                                                                                +
-                                         "name": null,                                                                                      +
-                                         "ofType": {                                                                                        +
-                                             "kind": "SCALAR",                                                                              +
-                                             "name": "ID",                                                                                  +
-                                             "ofType": null                                                                                 +
-                                         }                                                                                                  +
-                                     },                                                                                                     +
-                                     "description": null,                                                                                   +
-                                     "defaultValue": null                                                                                   +
-                                 }                                                                                                          +
-                             ],                                                                                                             +
-                             "name": "blog",                                                                                                +
-                             "type": {                                                                                                      +
-                                 "kind": "OBJECT",                                                                                          +
-                                 "name": "Blog",                                                                                            +
                                  "ofType": null                                                                                             +
                              },                                                                                                             +
                              "description": null,                                                                                           +
@@ -2163,6 +2068,87 @@ begin;
                              "type": {                                                                                                      +
                                  "kind": "OBJECT",                                                                                          +
                                  "name": "BlogPost",                                                                                        +
+                                 "ofType": null                                                                                             +
+                             },                                                                                                             +
+                             "description": null,                                                                                           +
+                             "isDeprecated": false,                                                                                         +
+                             "deprecationReason": null                                                                                      +
+                         },                                                                                                                 +
+                         {                                                                                                                  +
+                             "args": [                                                                                                      +
+                                 {                                                                                                          +
+                                     "name": "after",                                                                                       +
+                                     "type": {                                                                                              +
+                                         "kind": "SCALAR",                                                                                  +
+                                         "name": "Cursor",                                                                                  +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "before",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "SCALAR",                                                                                  +
+                                         "name": "Cursor",                                                                                  +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "filter",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "INPUT_OBJECT",                                                                            +
+                                         "name": "BlogPostFilter",                                                                          +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "first",                                                                                       +
+                                     "type": {                                                                                              +
+                                         "kind": "SCALAR",                                                                                  +
+                                         "name": "Int",                                                                                     +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "last",                                                                                        +
+                                     "type": {                                                                                              +
+                                         "kind": "SCALAR",                                                                                  +
+                                         "name": "Int",                                                                                     +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "orderBy",                                                                                     +
+                                     "type": {                                                                                              +
+                                         "kind": "LIST",                                                                                    +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "NON_NULL",                                                                            +
+                                             "name": null,                                                                                  +
+                                             "ofType": {                                                                                    +
+                                                 "kind": "INPUT_OBJECT",                                                                    +
+                                                 "name": "BlogPostOrderBy",                                                                 +
+                                                 "ofType": null                                                                             +
+                                             }                                                                                              +
+                                         }                                                                                                  +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 }                                                                                                          +
+                             ],                                                                                                             +
+                             "name": "blogPostCollection",                                                                                  +
+                             "type": {                                                                                                      +
+                                 "kind": "OBJECT",                                                                                          +
+                                 "name": "BlogPostConnection",                                                                              +
                                  "ofType": null                                                                                             +
                              },                                                                                                             +
                              "description": null,                                                                                           +

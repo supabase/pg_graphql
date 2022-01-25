@@ -11,7 +11,7 @@ begin;
         (2, 'A: Blog 2', 'second');
     select graphql.resolve($$
         {
-          allBlogs(first: 1) {
+          blogCollection(first: 1) {
             edges {
               cursor
               node {
@@ -27,9 +27,9 @@ begin;
           description
         }
     $$);
-                                                                        resolve                                                                         
---------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"allBlogs": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "first"}, "cursor": "WyJibG9nIiwgMV0="}]}}, "errors": []}
+                                                                           resolve                                                                            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"blogCollection": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "first"}, "cursor": "WyJibG9nIiwgMV0="}]}}, "errors": []}
 (1 row)
 
 rollback;

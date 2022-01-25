@@ -26,7 +26,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
     {
-      aA: allAccounts(first: 1) {
+      aA: accountCollection(first: 1) {
         tc: totalCount
         pi: pageInfo {
           hnp: hasNextPage
@@ -36,7 +36,7 @@ begin;
           n: node{
             id_: id
             ni: nodeId
-            b: blogs {
+            b: blogCollection {
               tc2: totalCount
             }
           }

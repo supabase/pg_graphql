@@ -11,7 +11,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
                 edges {
                   node {
                     nodeId

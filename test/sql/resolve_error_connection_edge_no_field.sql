@@ -7,7 +7,7 @@ begin;
 
     select graphql.resolve($$
     {
-      allAccounts {
+      accountCollection {
         totalCount
         edges {
             dneField

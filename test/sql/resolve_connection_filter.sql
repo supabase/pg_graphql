@@ -16,7 +16,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(filter: {id: {eq: 2}}) {
+              accountCollection(filter: {id: {eq: 2}}) {
                 edges {
                   node {
                     id
@@ -32,7 +32,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(filter: {id: {eq: 2}, isVerified: {eq: true}}) {
+              accountCollection(filter: {id: {eq: 2}, isVerified: {eq: true}}) {
                 edges {
                   node {
                     id
@@ -48,7 +48,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              allAccounts(filter: {id: {eq: 2}, isVerified: {eq: false}}) {
+              accountCollection(filter: {id: {eq: 2}, isVerified: {eq: false}}) {
                 edges {
                   node {
                     id
@@ -66,7 +66,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($filt: Int!)
            {
-             allAccounts(filter: {id: {eq: $filt}}) {
+             accountCollection(filter: {id: {eq: $filt}}) {
                edges {
                  node{
                    id
@@ -85,7 +85,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($ifilt: IntFilter!)
            {
-             allAccounts(filter: {id: $ifilt}) {
+             accountCollection(filter: {id: $ifilt}) {
                edges {
                  node{
                    id
@@ -104,7 +104,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
            {
-             allAccounts(filter: $afilt) {
+             accountCollection(filter: $afilt) {
                edges {
                  node{
                    id
@@ -123,7 +123,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
            {
-             allAccounts(filter: $afilt) {
+             accountCollection(filter: $afilt) {
                edges {
                  node{
                    id
@@ -142,7 +142,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
            {
-             allAccounts(filter: $afilt) {
+             accountCollection(filter: $afilt) {
                edges {
                  node{
                    id
@@ -161,7 +161,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
            {
-             allAccounts(filter: $afilt) {
+             accountCollection(filter: $afilt) {
                edges {
                  node{
                    id
@@ -180,7 +180,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
            {
-             allAccounts(filter: $afilt) {
+             accountCollection(filter: $afilt) {
                edges {
                  node{
                    id
@@ -199,7 +199,7 @@ begin;
         graphql.resolve($$
            query AccountsFiltered($afilt: AccountFilter!)
            {
-             allAccounts(filter: $afilt) {
+             accountCollection(filter: $afilt) {
                edges {
                  node{
                    id
