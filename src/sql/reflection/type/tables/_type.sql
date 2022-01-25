@@ -4,7 +4,6 @@ create table graphql._type (
     meta_kind graphql.meta_kind not null,
     is_builtin bool not null default false,
     constant_name text,
-    override_name text,
     name text not null,
     entity regclass,
     graphql_type_id int references graphql._type(id),
@@ -86,7 +85,6 @@ as $$
 begin
     new.name = coalesce(
         new.constant_name,
-        new.override_name,
         graphql.type_name(new)
     );
     return new;

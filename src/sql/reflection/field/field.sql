@@ -555,9 +555,40 @@ create view graphql.field as
             when f.column_name is null then true
             when (
                 f.column_name is not null
-                and pg_catalog.has_column_privilege(current_user, t_parent.entity, f.column_name, 'SELECT')
+                and pg_catalog.has_column_privilege(
+                    current_user,
+                    t_parent.entity,
+                    f.column_name,
+                    'SELECT'
+                )
             ) then true
-            -- TODO: check if relationships are accessible
-            when f.local_columns is not null then true
+            -- Check if relationship local and remote columns are selectable
+            when f.local_columns is not null then (
+                (
+                    select
+                        bool_and(
+                            pg_catalog.has_column_privilege(
+                                current_user,
+                                f.foreign_entity,
+                                x.col,
+                                'SELECT'
+                            )
+                        )
+                    from
+                        unnest(f.foreign_columns) x(col)
+                ) and (
+                    select
+                        bool_and(
+                            pg_catalog.has_column_privilege(
+                                current_user,
+                                f.entity,
+                                x.col,
+                                'SELECT'
+                            )
+                        )
+                    from
+                        unnest(f.local_columns) x(col)
+                )
+            )
             else false
         end;

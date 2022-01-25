@@ -543,7 +543,6 @@ create table graphql._type (
     meta_kind graphql.meta_kind not null,
     is_builtin bool not null default false,
     constant_name text,
-    override_name text,
     name text not null,
     entity regclass,
     graphql_type_id int references graphql._type(id),
@@ -625,7 +624,6 @@ as $$
 begin
     new.name = coalesce(
         new.constant_name,
-        new.override_name,
         graphql.type_name(new)
     );
     return new;
@@ -637,12 +635,25 @@ create trigger on_insert_set_name
     for each row execute procedure graphql.set_type_name();
 create view graphql.type as
     select
-       t.*
+        id,
+        type_kind,
+        meta_kind,
+        is_builtin,
+        constant_name,
+        name,
+        entity,
+        graphql_type_id,
+        enum,
+        description
     from
         graphql._type t
     where
         t.entity is null
-        or pg_catalog.has_any_column_privilege(current_user, t.entity, 'SELECT');
+        or pg_catalog.has_any_column_privilege(
+            current_user,
+            t.entity,
+            'SELECT'
+        );
 create materialized view graphql.entity as
     select
         oid::regclass as entity
@@ -1467,10 +1478,41 @@ create view graphql.field as
             when f.column_name is null then true
             when (
                 f.column_name is not null
-                and pg_catalog.has_column_privilege(current_user, t_parent.entity, f.column_name, 'SELECT')
+                and pg_catalog.has_column_privilege(
+                    current_user,
+                    t_parent.entity,
+                    f.column_name,
+                    'SELECT'
+                )
             ) then true
-            -- TODO: check if relationships are accessible
-            when f.local_columns is not null then true
+            -- Check if relationship local and remote columns are selectable
+            when f.local_columns is not null then (
+                (
+                    select
+                        bool_and(
+                            pg_catalog.has_column_privilege(
+                                current_user,
+                                f.foreign_entity,
+                                x.col,
+                                'SELECT'
+                            )
+                        )
+                    from
+                        unnest(f.foreign_columns) x(col)
+                ) and (
+                    select
+                        bool_and(
+                            pg_catalog.has_column_privilege(
+                                current_user,
+                                f.entity,
+                                x.col,
+                                'SELECT'
+                            )
+                        )
+                    from
+                        unnest(f.local_columns) x(col)
+                )
+            )
             else false
         end;
 create or replace function graphql.arg_index(arg_name text, variable_definitions jsonb)
