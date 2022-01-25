@@ -19,7 +19,8 @@ begin
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(graphql.alias_or_name_literal(x.sel)) || E',\n' ||
             case
-                when nf.column_name is not null then (quote_ident(block_name) || '.' || quote_ident(nf.column_name))
+                when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
+                when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
                 when nf.local_columns is not null and nf_t.meta_kind = 'Connection' then graphql.build_connection_query(

@@ -6,7 +6,8 @@ create type graphql.field_meta_kind as enum (
     'Relationship.toMany',
     'Relationship.toOne',
     'OrderBy.Column',
-    'Filter.Column'
+    'Filter.Column',
+    'Function'
 );
 
 create table graphql._field (
@@ -32,6 +33,8 @@ create table graphql._field (
     foreign_entity regclass,
     foreign_name_override text, -- from comment directive
 
+    -- function extensions
+    func regproc,
 
     -- internal flags
     is_not_null boolean not null,
@@ -63,6 +66,10 @@ as $$
             when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then coalesce(
                 graphql.comment_directive_name(rec.entity, rec.column_name),
                 graphql.to_camel_case(rec.column_name)
+            )
+            when rec.meta_kind = 'Function' then coalesce(
+                graphql.comment_directive_name(rec.func),
+                graphql.to_camel_case(graphql.to_function_name(rec.func))
             )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.to_table_name($1.entity)) || 'Collection'
@@ -257,6 +264,30 @@ begin
             and pa.attnum > 0
             and not pa.attisdropped;
 
+    -- Node
+    -- Extensibility via function taking record type
+    -- Node.<function()>
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema, func)
+        select
+            'Function' as meta_kind,
+            gt.entity,
+            gt.id parent_type_id,
+            graphql.type_id(pp.prorettype::regtype) as type_id,
+            false as is_not_null,
+            graphql.sql_type_is_array(pp.prorettype::regtype) as is_array,
+            false as is_array_not_null,
+            null::text description,
+            false as is_hidden_from_schema,
+            pp.oid::regproc as func
+        from
+            graphql.type gt
+            join pg_class pc
+                on gt.entity = pc.oid
+            join pg_proc pp
+                on pp.proargtypes[0] = pc.reltype
+        where
+            gt.meta_kind = 'Node'
+            and pronargs = 1;
 
     -- Node.<relationship>
     insert into graphql._field(
@@ -542,6 +573,7 @@ create view graphql.field as
         f.column_type,
         f.foreign_columns,
         f.local_columns,
+        f.func,
         f.is_hidden_from_schema,
         f.meta_kind
     from
