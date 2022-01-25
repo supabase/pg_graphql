@@ -23,4 +23,22 @@ begin;
         $$)
     );
 
+    -- Last without a before clause
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(last: 2) {
+                edges {
+                  node {
+                    nodeId
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+
+
 rollback;

@@ -23,4 +23,21 @@ begin;
         $$)
     );
 
+    -- First without an after clause
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(first: 2) {
+                edges {
+                  node {
+                    nodeId
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+
 rollback;

@@ -2321,11 +2321,11 @@ begin
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
             case
-                when before_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
+                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
                 else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
             end,
-            -- limit
-            coalesce(first_, last_, '10'),
+            -- limit: max 20
+            least(coalesce(first_, last_), '30'),
             -- JSON selects
             coalesce(clauses.total_count_clause, ''),
             coalesce(clauses.page_info_clause, ''),
