@@ -33,8 +33,6 @@ create table account(
     updated_at timestamp not null
 );
 
-comment on column public.account.encrypted_password is E'@graphql({"name": "passwordHash"})';
-
 
 create table blog(
     id serial primary key,
