@@ -15,7 +15,7 @@ At time of writing, the introspection schema is a partial implementation. It is 
 - [x] Node Types
     * [x] Arguments
         * [x] nodeId
-- [ ] Connection Types
+- [x] Connection Types
     * [x] totalCount
     * [x] PageInfo
     *   * [x] hasNextPage
@@ -25,12 +25,13 @@ At time of writing, the introspection schema is a partial implementation. It is 
     * [x] Edges
     *   * [x] cursor
     * [x] Pagination
-    * [ ] Arguments
+    * [x] Arguments
     *   * [x] first
     *   * [x] last
     *   * [x] before
     *   * [x] after
-    *   * [ ] condition
+    *   * [x] filter
+    *   * [x] orderBy
 
 ### Relationships
 - [x] One-to-Many
@@ -47,10 +48,8 @@ At time of writing, the introspection schema is a partial implementation. It is 
 - [x] Useful error on non-existent field
 
 ### Configuration
-- [ ] Max Query Depth
-- [ ] Document
-    * [x] Role based schema/table/column exclusion
-    * [ ] Override Type/Field names
+- [x] Role based schema/table/column exclusion
+- [x] Override Type/Field names
 
 ### Optimizations
 - [x] Prepared statement query cached

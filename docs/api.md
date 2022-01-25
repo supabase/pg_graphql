@@ -39,7 +39,7 @@ INSERT 0 1
 -- Example
 graphqldb= select graphql.resolve($$
 query {
-  allBooks {
+  bookCollection {
     edges {
       node {
         id
@@ -51,5 +51,5 @@ $$);
 
              resolve
 ----------------------------------------------------------------------
-{"data": {"allBooks": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
+{"data": {"bookCollection": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
 ```

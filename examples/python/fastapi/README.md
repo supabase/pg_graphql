@@ -38,14 +38,14 @@ Then make a request against the GraphQL API endpoint `/rpc/graphql`
 
 ```shell
 curl -X POST http://0.0.0.0:8000/rpc/graphql \
-  -H 'Content-Type: application/json' -d '{"query": "{ allAccounts(first: 1) { edges { cursor node { email createdAt } } } }"}'
+  -H 'Content-Type: application/json' -d '{"query": "{ accountCollection(first: 1) { edges { cursor node { email createdAt } } } }"}'
 ```
 
 Response
 ```json
 {
   "data": {
-    "allAccounts": {
+    "accountCollection": {
       "edges": [
         {
           "node": {

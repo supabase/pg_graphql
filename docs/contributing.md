@@ -42,7 +42,7 @@ Finally, execute some graphql queries against the table.
 ```sql
 graphqldb= select graphql.resolve($$
 query {
-  allBooks {
+  bookCollection {
     edges {
       node {
         id
@@ -54,7 +54,7 @@ $$);
 
              resolve
 ----------------------------------------------------------------------
-{"data": {"allBooks": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
+{"data": {"bookCollection": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
 ```
 
 ## Documentation
