@@ -566,7 +566,7 @@ $ nix-shell --run <span class="s2">&quot;pg_13_graphql make installcheck&quot;</
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">graphqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
 <span class="n">query</span> <span class="err">{</span>
-  <span class="n">allBooks</span> <span class="err">{</span>
+  <span class="n">bookCollection</span> <span class="err">{</span>
     <span class="n">edges</span> <span class="err">{</span>
       <span class="n">node</span> <span class="err">{</span>
         <span class="n">id</span>
@@ -578,7 +578,7 @@ $ nix-shell --run <span class="s2">&quot;pg_13_graphql make installcheck&quot;</
 
              <span class="n">resolve</span>
 <span class="c1">----------------------------------------------------------------------</span>
-<span class="err">{</span><span class="ss">&quot;data&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;allBooks&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;node&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="err">}}</span><span class="p">]</span><span class="err">}}</span><span class="p">,</span> <span class="ss">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[]</span><span class="err">}</span>
+<span class="err">{</span><span class="ss">&quot;data&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;bookCollection&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;node&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="err">}}</span><span class="p">]</span><span class="err">}}</span><span class="p">,</span> <span class="ss">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[]</span><span class="err">}</span>
 </code></pre></div>
 </td></tr></table></p>
 <h2 id="documentation">Documentation</h2>

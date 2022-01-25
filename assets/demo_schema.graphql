@@ -1,59 +1,11 @@
-scalar BigInt
-scalar Cursor
-scalar DateTime
-scalar JSON
-scalar UUID
-
-type Query {
-  account(nodeId: ID!): Account
-
-  allAccounts(
-    after: Cursor,
-    before: Cursor,
-    filter: AccountFilter,
-    first: Int,
-    last: Int,
-    orderBy: [AccountOrderBy!]
-  ): AccountConnection
-
-  blog(nodeId: ID!): Blog
-
-  allBlogs(
-    after: Cursor,
-    before: Cursor,
-    filter: BlogFilter,
-    first: Int,
-    last: Int,
-    orderBy: [BlogOrderBy!]
-  ): BlogConnection
-
-  blogPost(nodeId: ID!): BlogPost
-
-  allBlogPosts(
-    after: Cursor,
-    before: Cursor,
-    filter: BlogPostFilter,
-    first: Int,
-    last: Int,
-    orderBy: [BlogPostOrderBy!]
-  ): BlogPostConnection
-}
-
 type Account {
-  nodeId: ID!
-  id: Int!
+  blogCollection(after: Cursor, before: Cursor, filter: BlogFilter, first: Int, last: Int, orderBy: [BlogOrderBy!]): BlogConnection
+  createdAt: DateTime!
   email: String!
   encryptedPassword: String!
-  createdAt: DateTime!
+  id: Int!
+  nodeId: ID!
   updatedAt: DateTime!
-  blogs(
-    after: Cursor,
-    before: Cursor,
-    filter: BlogFilter,
-    first: Int,
-    last: Int,
-    orderBy: [BlogOrderBy!]
-  ): BlogConnection
 }
 
 type AccountConnection {
@@ -63,43 +15,45 @@ type AccountConnection {
 }
 
 type AccountEdge {
-  node: Account
   cursor: String!
+  node: Account
 }
 
 input AccountFilter {
   createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-  id: IntFilter
   email: StringFilter
   encryptedPassword: StringFilter
+  id: IntFilter
+  updatedAt: DateTimeFilter
 }
 
 input AccountOrderBy {
-  id: OrderByDirection
+  createdAt: OrderByDirection
   email: OrderByDirection
   encryptedPassword: OrderByDirection
-  createdAt: OrderByDirection
+  id: OrderByDirection
   updatedAt: OrderByDirection
 }
 
+scalar BigInt
+
+"""
+Boolean expression comparing fields on type "BigInt"
+"""
+input BigIntFilter {
+  eq: BigInt
+}
+
 type Blog {
-  nodeId: ID!
-  id: Int!
-  ownerId: Int!
-  name: String!
-  description: String
+  blogPostCollection(after: Cursor, before: Cursor, filter: BlogPostFilter, first: Int, last: Int, orderBy: [BlogPostOrderBy!]): BlogPostConnection
   createdAt: DateTime!
-  updatedAt: DateTime!
+  description: String
+  id: Int!
+  name: String!
+  nodeId: ID!
   owner: Account
-  blogPosts(
-    after: Cursor,
-    before: Cursor,
-    filter: BlogPostFilter,
-    first: Int,
-    last: Int,
-    orderBy: [BlogPostOrderBy!]
-  ): BlogPostConnection
+  ownerId: Int!
+  updatedAt: DateTime!
 }
 
 type BlogConnection {
@@ -109,43 +63,38 @@ type BlogConnection {
 }
 
 type BlogEdge {
-  node: Blog
   cursor: String!
+  node: Blog
 }
 
 input BlogFilter {
   createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-  id: IntFilter
-  ownerId: IntFilter
   description: StringFilter
+  id: IntFilter
   name: StringFilter
+  ownerId: IntFilter
+  updatedAt: DateTimeFilter
 }
 
 input BlogOrderBy {
-  id: OrderByDirection
-  ownerId: OrderByDirection
-  name: OrderByDirection
-  description: OrderByDirection
   createdAt: OrderByDirection
+  description: OrderByDirection
+  id: OrderByDirection
+  name: OrderByDirection
+  ownerId: OrderByDirection
   updatedAt: OrderByDirection
 }
 
-enum BlogPostStatus {
-  PENDING
-  RELEASED
-}
-
 type BlogPost {
-  nodeId: ID!
-  id: UUID!
+  blog: Blog
   blogId: Int!
-  title: String!
   body: String
-  status: String!
   createdAt: DateTime!
+  id: UUID!
+  nodeId: ID!
+  status: String!
+  title: String!
   updatedAt: DateTime!
-  blog(nodeId: ID!): Blog
 }
 
 type BlogPostConnection {
@@ -155,44 +104,45 @@ type BlogPostConnection {
 }
 
 type BlogPostEdge {
-  node: BlogPost
   cursor: String!
+  node: BlogPost
 }
 
 input BlogPostFilter {
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
   blogId: IntFilter
   body: StringFilter
+  createdAt: DateTimeFilter
+  id: UUIDFilter
   status: StringFilter
   title: StringFilter
-  id: UUIDFilter
+  updatedAt: DateTimeFilter
 }
 
 input BlogPostOrderBy {
-  id: OrderByDirection
   blogId: OrderByDirection
-  title: OrderByDirection
   body: OrderByDirection
-  status: OrderByDirection
   createdAt: OrderByDirection
+  id: OrderByDirection
+  status: OrderByDirection
+  title: OrderByDirection
   updatedAt: OrderByDirection
 }
 
-type PageInfo {
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-  startCursor: String!
-  endCursor: String!
+enum BlogPostStatus {
+  PENDING
+  RELEASED
 }
 
-"""Defines a per-field sorting order"""
-enum OrderByDirection {
-  AscNullsFirst
-  AscNullsLast
-  DescNullsFirst
-  DescNullsLast
+"""
+Boolean expression comparing fields on type "Boolean"
+"""
+input BooleanFilter {
+  eq: Boolean
 }
+
+scalar Cursor
+
+scalar DateTime
 
 """
 Boolean expression comparing fields on type "DateTime"
@@ -202,10 +152,49 @@ input DateTimeFilter {
 }
 
 """
+Boolean expression comparing fields on type "Float"
+"""
+input FloatFilter {
+  eq: Float
+}
+
+"""
 Boolean expression comparing fields on type "Int"
 """
 input IntFilter {
   eq: Int
+}
+
+scalar JSON
+
+"""
+Boolean expression comparing fields on type "JSON"
+"""
+input JSONFilter {
+  eq: JSON
+}
+
+enum OrderByDirection {
+  AscNullsFirst
+  AscNullsLast
+  DescNullsFirst
+  DescNullsLast
+}
+
+type PageInfo {
+  endCursor: String!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String!
+}
+
+type Query {
+  account(nodeId: ID!): Account
+  accountCollection(after: Cursor, before: Cursor, filter: AccountFilter, first: Int, last: Int, orderBy: [AccountOrderBy!]): AccountConnection
+  blog(nodeId: ID!): Blog
+  blogCollection(after: Cursor, before: Cursor, filter: BlogFilter, first: Int, last: Int, orderBy: [BlogOrderBy!]): BlogConnection
+  blogPost(nodeId: ID!): BlogPost
+  blogPostCollection(after: Cursor, before: Cursor, filter: BlogPostFilter, first: Int, last: Int, orderBy: [BlogPostOrderBy!]): BlogPostConnection
 }
 
 """
@@ -214,6 +203,8 @@ Boolean expression comparing fields on type "String"
 input StringFilter {
   eq: String
 }
+
+scalar UUID
 
 """
 Boolean expression comparing fields on type "UUID"

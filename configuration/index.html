@@ -303,6 +303,40 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#comment-directives" class="md-nav__link">
+    Comment Directives
+  </a>
+  
+    <nav class="md-nav" aria-label="Comment Directives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rename-a-tables-type" class="md-nav__link">
+    Rename a Table's Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rename-a-columns-field" class="md-nav__link">
+    Rename a Column's Field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rename-a-relationships-foreign-key-field" class="md-nav__link">
+    Rename a Relationship's (Foreign Key) Field
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -402,6 +436,40 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#comment-directives" class="md-nav__link">
+    Comment Directives
+  </a>
+  
+    <nav class="md-nav" aria-label="Comment Directives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rename-a-tables-type" class="md-nav__link">
+    Rename a Table's Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rename-a-columns-field" class="md-nav__link">
+    Rename a Column's Field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rename-a-relationships-foreign-key-field" class="md-nav__link">
+    Rename a Relationship's (Foreign Key) Field
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -428,6 +496,133 @@
 </code></pre></div>
 </td></tr></table></p>
 <p>removes the <code>Account</code> GraphQL type.</p>
+<h2 id="comment-directives">Comment Directives</h2>
+<p>Comment directives are snippets of configuration you can associated with SQL entities to alter how they will be reflected into the GraphQL schema.</p>
+<p>The format of a comment directive is</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="o">@</span><span class="n">graphql</span><span class="p">(</span><span class="o">&lt;</span><span class="n">JSON</span><span class="o">&gt;</span><span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<h3 id="rename-a-tables-type">Rename a Table's Type</h3>
+<p>Use the <code>"name"</code> JSON key to override a table's type name.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="n">account</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span>
+<span class="p">);</span>
+
+<span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span> <span class="k">is</span>
+<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;AccountHolder&quot;})&#39;</span><span class="p">;</span>
+</code></pre></div>
+</td></tr></table>
+<p>results in:
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type AccountHolder { # previously: &quot;Account&quot;
+  id: Int!
+}
+</code></pre></div>
+</td></tr></table></p>
+<h3 id="rename-a-columns-field">Rename a Column's Field</h3>
+<p>Use the <code>"name"</code> JSON key to override a column's field name.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">email</span> <span class="nb">text</span>
+<span class="p">);</span>
+
+<span class="k">comment</span> <span class="k">on</span> <span class="k">column</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">.</span><span class="n">email</span> <span class="k">is</span>
+<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;emailAddress&quot;})&#39;</span><span class="p">;</span>
+</code></pre></div>
+</td></tr></table>
+<p>results in:
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Account {
+  id: Int!
+  emailAddress: String! # previously &quot;email&quot;
+}
+</code></pre></div>
+</td></tr></table></p>
+<h3 id="rename-a-relationships-foreign-key-field">Rename a Relationship's (Foreign Key) Field</h3>
+<p>Use the <code>"local_name"</code> and <code>"foreign_name"</code> JSON keys to override a a relationships inbound and outbound field names.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="n">account</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span>
+<span class="p">);</span>
+
+<span class="k">create</span> <span class="k">table</span> <span class="n">post</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">account_id</span> <span class="nb">integer</span> <span class="k">not</span> <span class="k">null</span> <span class="k">references</span> <span class="n">account</span><span class="p">(</span><span class="n">id</span><span class="p">),</span>
+    <span class="n">title</span> <span class="nb">text</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
+    <span class="n">body</span> <span class="nb">text</span>
+<span class="p">);</span>
+
+<span class="k">comment</span> <span class="k">on</span> <span class="k">constraint</span> <span class="n">post_owner_id_fkey</span>
+<span class="k">on</span> <span class="n">post</span>
+<span class="k">is</span> <span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;author&quot;, &quot;local_name&quot;: &quot;posts&quot;})&#39;</span><span class="p">;</span>
+</code></pre></div>
+</td></tr></table>
+<p>results in:
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Post {
+  id: Int!
+  accountId: Int!
+  title: String!
+  body: String!
+  author: Account # was &quot;account&quot;
+}
+
+type Account {
+  id: Int!
+  posts( # was &quot;postCollection&quot;
+    after: Cursor,
+    before: Cursor,
+    filter: PostFilter,
+    first: Int,
+    last: Int,
+    orderBy: [PostOrderBy!]
+  ): PostConnection
+}
+</code></pre></div>
+</td></tr></table></p>
 
               
             </article>
