@@ -889,8 +889,6 @@ create view graphql.relationship as
     )
     select
         constraint_name,
-        constraint_oid,
-        false as is_reversed,
         local_entity,
         local_columns,
         local_cardinality,
@@ -903,8 +901,6 @@ create view graphql.relationship as
     union all
     select
         constraint_name,
-        constraint_oid,
-        true as is_reversed,
         foreign_entity,
         foreign_columns,
         foreign_cardinality,
