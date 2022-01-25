@@ -553,6 +553,9 @@ create table graphql._type (
 );
 
 create index ix_graphql_type_name on graphql._type(name);
+create index ix_graphql_type_type_kind on graphql._type(type_kind);
+create index ix_graphql_type_meta_kind on graphql._type(meta_kind);
+create index ix_graphql_type_graphql_type_id on graphql._type(graphql_type_id);
 
 
 create or replace function graphql.inflect_type_default(text)
@@ -968,6 +971,10 @@ create table graphql._field (
 );
 
 create index ix_graphql_field_name on graphql._field(name);
+create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
+create index ix_graphql_field_type_id on graphql._field(type_id);
+create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_field_id);
+create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
 
 
 create or replace function graphql.field_name(rec graphql._field)

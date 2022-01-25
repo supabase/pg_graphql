@@ -45,6 +45,10 @@ create table graphql._field (
 );
 
 create index ix_graphql_field_name on graphql._field(name);
+create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
+create index ix_graphql_field_type_id on graphql._field(type_id);
+create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_field_id);
+create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
 
 
 create or replace function graphql.field_name(rec graphql._field)
