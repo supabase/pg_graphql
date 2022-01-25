@@ -44,4 +44,45 @@ begin;
  }
 (1 row)
 
+    -- First without an after clause
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(first: 2) {
+                edges {
+                  node {
+                    nodeId
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "accountCollection": {                          +
+             "edges": [                                  +
+                 {                                       +
+                     "node": {                           +
+                         "id": 1,                        +
+                         "nodeId": "WyJhY2NvdW50IiwgMV0="+
+                     }                                   +
+                 },                                      +
+                 {                                       +
+                     "node": {                           +
+                         "id": 2,                        +
+                         "nodeId": "WyJhY2NvdW50IiwgMl0="+
+                     }                                   +
+                 }                                       +
+             ]                                           +
+         }                                               +
+     },                                                  +
+     "errors": [                                         +
+     ]                                                   +
+ }
+(1 row)
+
 rollback;
