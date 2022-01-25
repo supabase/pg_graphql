@@ -13,7 +13,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
     {
-      allAccounts {
+      accountCollection {
         __typename
         pageInfo {
           __typename

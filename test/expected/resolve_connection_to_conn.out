@@ -24,12 +24,12 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
     {
-      allAccounts {
+      accountCollection {
         edges {
           node {
             id
             email
-            blogs {
+            blogCollection {
               totalCount
                 edges {
                   node {
@@ -47,12 +47,13 @@ begin;
 -------------------------------------------------------------
  {                                                          +
      "data": {                                              +
-         "allAccounts": {                                   +
+         "accountCollection": {                             +
              "edges": [                                     +
                  {                                          +
                      "node": {                              +
                          "id": 1,                           +
-                         "blogs": {                         +
+                         "email": "aardvark@x.com",         +
+                         "blogCollection": {                +
                              "edges": [                     +
                                  {                          +
                                      "node": {              +
@@ -71,14 +72,14 @@ begin;
                                  }                          +
                              ],                             +
                              "totalCount": 3                +
-                         },                                 +
-                         "email": "aardvark@x.com"          +
+                         }                                  +
                      }                                      +
                  },                                         +
                  {                                          +
                      "node": {                              +
                          "id": 2,                           +
-                         "blogs": {                         +
+                         "email": "bat@x.com",              +
+                         "blogCollection": {                +
                              "edges": [                     +
                                  {                          +
                                      "node": {              +
@@ -87,41 +88,40 @@ begin;
                                  }                          +
                              ],                             +
                              "totalCount": 1                +
-                         },                                 +
-                         "email": "bat@x.com"               +
+                         }                                  +
                      }                                      +
                  },                                         +
                  {                                          +
                      "node": {                              +
                          "id": 3,                           +
-                         "blogs": {                         +
+                         "email": "cat@x.com",              +
+                         "blogCollection": {                +
                              "edges": [                     +
                              ],                             +
                              "totalCount": 0                +
-                         },                                 +
-                         "email": "cat@x.com"               +
+                         }                                  +
                      }                                      +
                  },                                         +
                  {                                          +
                      "node": {                              +
                          "id": 4,                           +
-                         "blogs": {                         +
+                         "email": "dog@x.com",              +
+                         "blogCollection": {                +
                              "edges": [                     +
                              ],                             +
                              "totalCount": 0                +
-                         },                                 +
-                         "email": "dog@x.com"               +
+                         }                                  +
                      }                                      +
                  },                                         +
                  {                                          +
                      "node": {                              +
                          "id": 5,                           +
-                         "blogs": {                         +
+                         "email": "elephant@x.com",         +
+                         "blogCollection": {                +
                              "edges": [                     +
                              ],                             +
                              "totalCount": 0                +
-                         },                                 +
-                         "email": "elephant@x.com"          +
+                         }                                  +
                      }                                      +
                  }                                          +
              ]                                              +

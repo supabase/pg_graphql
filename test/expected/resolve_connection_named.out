@@ -7,7 +7,7 @@ begin;
     select graphql.resolve(
         $$
         query FirstNAccounts($first: Int!) {
-          allAccounts(first: $first) {
+          accountCollection(first: $first) {
             edges {
               node {
                 id
@@ -18,9 +18,9 @@ begin;
         $$,
         '{"first": 2}'::jsonb
     );
-                                            resolve                                             
-------------------------------------------------------------------------------------------------
- {"data": {"allAccounts": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}, "errors": []}
+                                               resolve                                                
+------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}, "errors": []}
 (1 row)
 
 rollback;

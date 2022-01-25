@@ -33,12 +33,12 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
     {
-      allAccounts {
+      accountCollection {
         edges {
           node {
             id
             email
-            blogs {
+            blogCollection {
               totalCount
                 edges {
                   node {

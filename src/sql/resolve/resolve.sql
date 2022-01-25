@@ -57,6 +57,11 @@ begin
                     field.parent_type = 'Query'
                     and field.name = graphql.name_literal(ast_operation);
 
+            -- Invalid top level field name
+            if meta_kind is null then
+                perform graphql.exception_unknown_field(graphql.name_literal(ast_operation), 'Query');
+            end if;
+
             q = case meta_kind
                 when 'Connection' then
                     graphql.build_connection_query(
@@ -100,6 +105,9 @@ begin
                     )
                 else null::jsonb
             end;
+
+
+
 
         exception when others then
             -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql

@@ -11,7 +11,7 @@ begin;
     select graphql.resolve(
         $$
         query FirstNAccounts($first: Int!) {
-          allAccounts(first: $first) {
+          accountCollection(first: $first) {
             edges {
               node {
                 id

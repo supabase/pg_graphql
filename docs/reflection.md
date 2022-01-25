@@ -4,7 +4,7 @@ SQL tables are reflected into GraphQL types with columns and foreign keys repres
 
 PostgreSQL tables/columns are are expected to be lowercase with underscores. To follow casing conventions, table and column are converted to pascal case for type name, camel case for field names and pluralized as necessary in the GraphQL schema.
 
-For example, an `account` table has GraphQL type name `Account` and fields on the `Query` type of `account` and `allAccounts`.
+For example, an `account` table has GraphQL type name `Account` and fields on the `Query` type of `account` and `accountCollection`.
 
 The pluralization logic is extremely basic. Name overrides have not been implemented yet but are comming soon.
 

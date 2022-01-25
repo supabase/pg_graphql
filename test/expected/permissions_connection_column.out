@@ -10,7 +10,7 @@ begin;
     select graphql.resolve(
         $$
         {
-          allAccounts(first: 1) {
+          accountCollection(first: 1) {
             edges {
               node {
                 id
@@ -21,9 +21,9 @@ begin;
         }
         $$
     );
-                                                    resolve                                                    
----------------------------------------------------------------------------------------------------------------
- {"data": {"allAccounts": {"edges": [{"node": {"id": 1, "encryptedPassword": "hidden_hash"}}]}}, "errors": []}
+                                                       resolve                                                       
+---------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1, "encryptedPassword": "hidden_hash"}}]}}, "errors": []}
 (1 row)
 
     create role api;
@@ -40,7 +40,7 @@ begin;
     select graphql.resolve(
         $$
         {
-          allAccounts(first: 1) {
+          accountCollection(first: 1) {
             edges {
               node {
                 id
@@ -50,16 +50,16 @@ begin;
         }
         $$
     );
-                                  resolve                                  
----------------------------------------------------------------------------
- {"data": {"allAccounts": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
+                                     resolve                                     
+---------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
 (1 row)
 
     -- Attempt select on revoked column
     select graphql.resolve(
         $$
         {
-          allAccounts(first: 1) {
+          accountCollection(first: 1) {
             edges {
               node {
                 id

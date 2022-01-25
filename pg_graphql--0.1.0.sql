@@ -991,10 +991,10 @@ as $$
                 graphql.to_camel_case(rec.column_name)
             )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
-            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case('all_' || graphql.to_table_name($1.entity) || 's')
+            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.to_table_name($1.entity)) || 'Collection'
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
-                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 's'
+                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 'Collection'
             )
             when rec.meta_kind = 'Relationship.toOne' then coalesce(
                 -- comment directive override
@@ -1296,7 +1296,7 @@ begin
     -- __enumValue(includeDeprecated)
     -- __InputFields(includeDeprecated)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, default_value, description)
-    select
+    select distinct
         f.type_id as parent_type_id,
         graphql.type_id('Boolean') as type_id,
         'includeDeprecated' as constant_name,
@@ -1460,6 +1460,7 @@ create view graphql.field as
         f.is_array_not_null,
         f.is_arg,
         f_arg_parent.name as parent_arg_field_name,
+        f.parent_arg_field_id,
         f.default_value,
         f.description,
         f.entity,
@@ -2437,7 +2438,7 @@ as $$
     from
         graphql.enum_value ev where ev.type_ = $1;
 $$;
-create or replace function graphql.resolve_field(field text, parent_type text, parent_arg_field_name text, ast jsonb)
+create or replace function graphql.resolve_field(field text, parent_type text, parent_arg_field_id integer, ast jsonb)
     returns jsonb
     stable
     language plpgsql
@@ -2446,26 +2447,19 @@ declare
     field_rec graphql.field;
     field_recs graphql.field[];
 begin
-    -- todo can this conflict for input types?
     field_recs = array_agg(gf)
         from
             graphql.field gf
         where
             gf.name = $1
             and gf.parent_type = $2
-            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '')
+            and (
+                (gf.parent_arg_field_id is null and $3 is null)
+                or gf.parent_arg_field_id = $3
+            )
             limit 1;
 
-    if array_length(field_recs, 1) > 1 then
-        raise exception '% % %', $1, $2, $3;
-    end if;
-
     field_rec = graphql.array_first(field_recs);
-
-    if field_rec is null then
-        raise exception '% % %', $1, $2, $3;
-
-    end if;
 
     return
         coalesce(
@@ -2490,7 +2484,7 @@ begin
                                     graphql.resolve_field(
                                         ga.name,
                                         field_rec.type_,
-                                        field_rec.name,
+                                        field_rec.id,
                                         x.sel
                                     )
                                     order by ga.name
@@ -2500,7 +2494,7 @@ begin
                         from
                             graphql.field ga
                         where
-                            ga.parent_arg_field_name = field_rec.name
+                            ga.parent_arg_field_id = field_rec.id
                             and not ga.is_hidden_from_schema
                             and ga.is_arg
                             and ga.parent_type = field_rec.type_ -- todo double check this join
@@ -2673,7 +2667,7 @@ begin
                     when selection_name = 'enumValues' then graphql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel) order by f.name)
+                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, f.parent_arg_field_id, x.sel) order by f.name)
                         from
                             graphql.field f
                         where
@@ -2883,6 +2877,11 @@ begin
                     field.parent_type = 'Query'
                     and field.name = graphql.name_literal(ast_operation);
 
+            -- Invalid top level field name
+            if meta_kind is null then
+                perform graphql.exception_unknown_field(graphql.name_literal(ast_operation), 'Query');
+            end if;
+
             q = case meta_kind
                 when 'Connection' then
                     graphql.build_connection_query(
@@ -2926,6 +2925,9 @@ begin
                     )
                 else null::jsonb
             end;
+
+
+
 
         exception when others then
             -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql

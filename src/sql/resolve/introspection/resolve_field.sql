@@ -1,4 +1,4 @@
-create or replace function graphql.resolve_field(field text, parent_type text, parent_arg_field_name text, ast jsonb)
+create or replace function graphql.resolve_field(field text, parent_type text, parent_arg_field_id integer, ast jsonb)
     returns jsonb
     stable
     language plpgsql
@@ -7,26 +7,19 @@ declare
     field_rec graphql.field;
     field_recs graphql.field[];
 begin
-    -- todo can this conflict for input types?
     field_recs = array_agg(gf)
         from
             graphql.field gf
         where
             gf.name = $1
             and gf.parent_type = $2
-            and coalesce(gf.parent_arg_field_name, '') = coalesce($3, '')
+            and (
+                (gf.parent_arg_field_id is null and $3 is null)
+                or gf.parent_arg_field_id = $3
+            )
             limit 1;
 
-    if array_length(field_recs, 1) > 1 then
-        raise exception '% % %', $1, $2, $3;
-    end if;
-
     field_rec = graphql.array_first(field_recs);
-
-    if field_rec is null then
-        raise exception '% % %', $1, $2, $3;
-
-    end if;
 
     return
         coalesce(
@@ -51,7 +44,7 @@ begin
                                     graphql.resolve_field(
                                         ga.name,
                                         field_rec.type_,
-                                        field_rec.name,
+                                        field_rec.id,
                                         x.sel
                                     )
                                     order by ga.name
@@ -61,7 +54,7 @@ begin
                         from
                             graphql.field ga
                         where
-                            ga.parent_arg_field_name = field_rec.name
+                            ga.parent_arg_field_id = field_rec.id
                             and not ga.is_hidden_from_schema
                             and ga.is_arg
                             and ga.parent_type = field_rec.type_ -- todo double check this join

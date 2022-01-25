@@ -2,7 +2,7 @@ with doc(x) as (
     select (graphql.parse(
         $$
             {
-              allAccounts(last: 2, before: "WyJhY2NvdW50IiwgM10=") {
+              accountConnection(last: 2, before: "WyJhY2NvdW50IiwgM10=") {
                 edges {
                   node {
                     nodeId

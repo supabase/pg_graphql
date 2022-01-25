@@ -13,7 +13,7 @@ begin;
     select graphql.resolve(
         $$
         {
-          allAccounts(first: 1) {
+          accountCollection(first: 1) {
             edges {
               node {
                 id
@@ -43,7 +43,7 @@ begin;
     select graphql.resolve(
         $$
         {
-          allAccounts(first: 1) {
+          accountCollection(first: 1) {
             edges {
               node {
                 id
@@ -58,7 +58,7 @@ begin;
     select graphql.resolve(
         $$
         {
-          allAccounts(first: 1) {
+          accountCollection(first: 1) {
             edges {
               node {
                 id

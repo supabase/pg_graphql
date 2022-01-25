@@ -15,7 +15,7 @@ begin;
 
     select graphql.resolve($$
         {
-          allBlogs(first: 1) {
+          blogCollection(first: 1) {
             edges {
               cursor
               node {
