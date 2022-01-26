@@ -31,6 +31,13 @@ as $$
     select pg_catalog.obj_description($1::oid, 'pg_type')
 $$;
 
+create function graphql.comment(regproc)
+    returns text
+    language sql
+as $$
+    select pg_catalog.obj_description($1::oid, 'pg_proc')
+$$;
+
 
 create function graphql.comment(regclass, column_name text)
     returns text
@@ -65,6 +72,13 @@ $$;
 
 
 create function graphql.comment_directive_name(regtype)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+create function graphql.comment_directive_name(regproc)
     returns text
     language sql
 as $$

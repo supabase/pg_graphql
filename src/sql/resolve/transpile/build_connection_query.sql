@@ -163,6 +163,7 @@ begin
                                                                         parent_block_name := block_name
                                                                     )
                                                                 when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
+                                                                when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
                                                                 else graphql.exception_unknown_field(graphql.name_literal(n.sel), gf_n.type_)
                                                             end
                                                         ),
@@ -272,15 +273,21 @@ begin
             (
                 select
                     coalesce(
-                        string_agg(format('%I.%I', block_name, column_name), ', '),
-                        '1'
+                        string_agg(
+                            case f.meta_kind
+                                when 'Column' then format('%I.%I', block_name, column_name)
+                                when 'Function' then format('%I(%I) as %I', f.func, block_name, f.func)
+                                else graphql.exception('Unexpected meta_kind in select')
+                            end,
+                            ', '
+                        )
                     )
                 from
                     graphql.field f
                     join graphql.type t
                         on f.parent_type = t.name
                 where
-                    f.column_name is not null
+                    f.meta_kind in ('Column', 'Function') --(f.column_name is not null or f.func is not null)
                     and t.entity = ent
                     and t.meta_kind = 'Node'
             ),
