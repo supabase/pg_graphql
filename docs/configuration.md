@@ -61,6 +61,43 @@ type Account {
 }
 ```
 
+### Rename a Computed Field
+
+Use the `"name"` JSON key to override a [computed field's](computed_fields.md) name.
+
+```sql
+create table public.account(
+    id serial primary key,
+    first_name varchar(255) not null,
+    last_name varchar(255) not null
+);
+
+-- Extend with function
+create function public._full_name(rec public.account)
+    returns text
+    immutable
+    strict
+    language sql
+as $$
+    select format('%s %s', rec.first_name, rec.last_name)
+$$;
+
+comment on function public._full_name is
+e'@graphql({"name": "displayName"})';
+```
+
+results in:
+```graphql
+type Account {
+  id: Int!
+  firstName: String!
+  lastName: String!
+  displayName: String # previously "fullName"
+}
+```
+
+
+
 ### Rename a Relationship's (Foreign Key) Field
 
 Use the `"local_name"` and `"foreign_name"` JSON keys to override a a relationships inbound and outbound field names.
