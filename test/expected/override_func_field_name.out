@@ -22,9 +22,8 @@ begin;
         entity = 'public.account'::regclass
         and func = 'full_name'::regproc
         and meta_kind = 'Function';
-   name    
------------
- wholeName
-(1 row)
+ name 
+------
+(0 rows)
 
 rollback;

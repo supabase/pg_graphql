@@ -2,22 +2,12 @@ begin;
     create table public.account(
         id serial primary key,
         first_name varchar(255) not null,
-        last_name varchar(255) not null
+        last_name varchar(255) not null,
+        full_name text generated always as (first_name || ' ' ||  last_name) stored
     );
-    -- Extend with function
-    create function public._full_name(rec public.account)
-        returns text
-        immutable
-        strict
-        language sql
-    as $$
-        select format('%s %s', rec.first_name, rec.last_name)
-    $$;
     insert into public.account(first_name, last_name)
     values
-        ('Foo', 'Fooington'),
-        ('Bar', 'Barsworth');
-    savepoint a;
+        ('Foo', 'Fooington');
     select jsonb_pretty(
         graphql.resolve($$
     {
@@ -47,14 +37,6 @@ begin;
                          "lastName": "Fooington",    +
                          "firstName": "Foo"          +
                      }                               +
-                 },                                  +
-                 {                                   +
-                     "node": {                       +
-                         "id": 2,                    +
-                         "fullName": "Bar Barsworth",+
-                         "lastName": "Barsworth",    +
-                         "firstName": "Bar"          +
-                     }                               +
                  }                                   +
              ]                                       +
          }                                           +
@@ -64,19 +46,4 @@ begin;
  }
 (1 row)
 
-    rollback to savepoint a;
-    select graphql.resolve($$
-    {
-      account(id: "WyJhY2NvdW50IiwgMV0=") {
-        id
-        fullName
-      }
-    }
-    $$);
-                                   resolve                                   
------------------------------------------------------------------------------
- {"data": {"account": {"id": 1, "fullName": "Foo Fooington"}}, "errors": []}
-(1 row)
-
-    rollback to savepoint a;
 rollback;

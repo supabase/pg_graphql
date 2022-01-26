@@ -1015,7 +1015,7 @@ as $$
             )
             when rec.meta_kind = 'Function' then coalesce(
                 graphql.comment_directive_name(rec.func),
-                graphql.to_camel_case(graphql.to_function_name(rec.func))
+                graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
             when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.to_table_name($1.entity)) || 'Collection'
@@ -1233,7 +1233,9 @@ begin
                 on pp.proargtypes[0] = pc.reltype
         where
             gt.meta_kind = 'Node'
-            and pronargs = 1;
+            and pronargs = 1
+            -- starts with underscore
+            and graphql.to_function_name(pp.oid::regproc) like '\_%';
 
     -- Node.<relationship>
     insert into graphql._field(

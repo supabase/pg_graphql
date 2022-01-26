@@ -1,13 +1,13 @@
 begin;
 
-    create table account(
+    create table public.account(
         id serial primary key,
         first_name varchar(255) not null,
         last_name varchar(255) not null
     );
 
     -- Extend with function
-    create function full_name(rec public.account)
+    create function public._full_name(rec public.account)
         returns text
         immutable
         strict

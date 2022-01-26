@@ -10,6 +10,7 @@ nav:
     - Quickstart: 'quickstart.md'
     - API: 'api.md'
     - Reflection: 'reflection.md'
+    - Computed Fields: 'computed_fields.md'
     - Configuration: 'configuration.md'
     - Performance: 'performance.md'
     - Roadmap: 'roadmap.md'
