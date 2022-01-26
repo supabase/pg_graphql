@@ -341,6 +341,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rename-a-computed-field" class="md-nav__link">
+    Rename a Computed Field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rename-a-relationships-foreign-key-field" class="md-nav__link">
     Rename a Relationship's (Foreign Key) Field
   </a>
@@ -474,6 +481,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rename-a-computed-field" class="md-nav__link">
+    Rename a Computed Field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rename-a-relationships-foreign-key-field" class="md-nav__link">
     Rename a Relationship's (Foreign Key) Field
   </a>
@@ -564,6 +578,59 @@
 <span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Account {
   id: Int!
   emailAddress: String! # previously &quot;email&quot;
+}
+</code></pre></div>
+</td></tr></table></p>
+<h3 id="rename-a-computed-field">Rename a Computed Field</h3>
+<p>Use the <code>"name"</code> JSON key to override a <a href="../computed_fields/">computed field's</a> name.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">first_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
+    <span class="n">last_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span>
+<span class="p">);</span>
+
+<span class="c1">-- Extend with function</span>
+<span class="k">create</span> <span class="k">function</span> <span class="k">public</span><span class="p">.</span><span class="n">_full_name</span><span class="p">(</span><span class="n">rec</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">)</span>
+    <span class="k">returns</span> <span class="nb">text</span>
+    <span class="k">immutable</span>
+    <span class="k">strict</span>
+    <span class="k">language</span> <span class="k">sql</span>
+<span class="k">as</span> <span class="err">$$</span>
+    <span class="k">select</span> <span class="n">format</span><span class="p">(</span><span class="s1">&#39;%s %s&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="p">.</span><span class="n">first_name</span><span class="p">,</span> <span class="n">rec</span><span class="p">.</span><span class="n">last_name</span><span class="p">)</span>
+<span class="err">$$</span><span class="p">;</span>
+
+<span class="k">comment</span> <span class="k">on</span> <span class="k">function</span> <span class="k">public</span><span class="p">.</span><span class="n">_full_name</span> <span class="k">is</span>
+<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;displayName&quot;})&#39;</span><span class="p">;</span>
+</code></pre></div>
+</td></tr></table>
+<p>results in:
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Account {
+  id: Int!
+  firstName: String!
+  lastName: String!
+  displayName: String # previously &quot;fullName&quot;
 }
 </code></pre></div>
 </td></tr></table></p>
