@@ -1,4 +1,4 @@
-create or replace function graphql.resolve_query_type(ast jsonb)
+create or replace function graphql.resolve_mutation_type(ast jsonb)
     returns jsonb
     stable
     language sql
@@ -8,9 +8,9 @@ as $$
             jsonb_object_agg(
                 fa.field_alias,
                 case
-                    when selection_name = 'name' then 'Query'
+                    when selection_name = 'name' then 'Mutation'
                     when selection_name = 'description' then null
-                    else graphql.exception_unknown_field(selection_name, 'Query')
+                    else graphql.exception_unknown_field(selection_name, 'Mutation')
                 end
             ),
             'null'::jsonb

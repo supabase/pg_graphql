@@ -7,7 +7,9 @@ create type graphql.field_meta_kind as enum (
     'Relationship.toOne',
     'OrderBy.Column',
     'Filter.Column',
-    'Function'
+    'Function',
+    'Mutation.insert.one',
+    'ObjectArg'
 );
 
 create table graphql._field (
@@ -60,6 +62,7 @@ create or replace function graphql.field_name(rec graphql._field)
     strict
     language sql
 as $$
+
     select
         case
             when rec.meta_kind = 'Constant' then rec.constant_name
@@ -71,11 +74,12 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
-            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.to_table_name($1.entity)) || 'Collection'
+            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
+            when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
-                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 'Collection'
+                graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node')) || 'Collection'
             )
             when rec.meta_kind = 'Relationship.toOne' then coalesce(
                 -- comment directive override
@@ -86,7 +90,7 @@ as $$
                     else null
                 end,
                 -- default
-                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+                graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node'))
             )
             -- todo remove
             when rec.constant_name is not null then rec.constant_name
@@ -551,6 +555,78 @@ begin
         inner join graphql.type tt
             on t.entity = tt.entity
             and tt.meta_kind = 'FilterEntity';
+
+    -- Mutation.insertAccount
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            ins.entity,
+            fs.parent_type_id,
+            fs.type_id,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            false asis_hidden_from_schema
+        from
+            graphql.type ins
+            join graphql.type node
+                on ins.entity = node.entity,
+            lateral (
+                values
+                    ('Mutation.insert.one', graphql.type_id('Mutation'::graphql.meta_kind), node.id, false, false, false, null::boolean, null::text)
+            ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
+        where
+            ins.meta_kind = 'UpsertNode'
+            and node.meta_kind = 'Node';
+
+    -- Mutation.insertAccount(object: ...)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+        select
+            'ObjectArg' meta_kind,
+            f.type_id as parent_type_id,
+            tt.id type_id,
+            t.entity,
+            'object' as constant_name,
+            true as is_not_null,
+            false as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            f.id parent_arg_field_id,
+            null as description
+        from
+            graphql.type t
+            inner join graphql._field f
+                on t.id = f.type_id
+                and f.meta_kind = 'Mutation.insert.one'
+            inner join graphql.type tt
+                on t.entity = tt.entity
+                and tt.meta_kind = 'UpsertNode';
+
+    -- Mutation.insertAccount(object: {<column> })
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, is_hidden_from_schema)
+        select
+            'Column' as meta_kind,
+            gf.entity,
+            gf.type_id parent_type_id,
+            graphql.type_id(pa.atttypid::regtype) as type_id,
+            false as is_not_null,
+            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            gf.id as parent_arg_field_id,
+            null::text description,
+            pa.attname::text as column_name,
+            pa.atttypid::regtype as column_type,
+            false as is_hidden_from_schema
+        from
+            graphql._field gf
+            join pg_attribute pa
+                on gf.entity = pa.attrelid
+        where
+            gf.meta_kind = 'ObjectArg'
+            and pa.attnum > 0
+            and not pa.attisdropped;
 
 end;
 $$;

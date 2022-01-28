@@ -176,7 +176,11 @@ $$
 select
     string_agg(
         case
-            when part_ix = 1 then part
+            when part_ix = 1 then format(
+                '%s%s',
+                lower(left(part,1)),
+                right(part, character_length(part)-1)
+            )
             else initcap(part)
         end, '')
 from
@@ -539,6 +543,7 @@ create type graphql.meta_kind as enum (
     'Connection',
     'OrderBy',
     'FilterEntity',
+    'UpsertNode',
 
 -- GraphQL Type Derived
     'FilterType',
@@ -606,6 +611,7 @@ as $$
         case
             when (rec).is_builtin then rec.meta_kind::text
             when rec.meta_kind='Node'         then base_type_name
+            when rec.meta_kind='UpsertNode'   then format('%sInsertInput',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
             when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)
@@ -639,6 +645,19 @@ as $$
         id = $1;
 $$;
 
+create function graphql.type_name(regclass, graphql.meta_kind)
+    returns text
+    immutable
+    language sql
+as $$
+    select
+        graphql.type_name(rec)
+    from
+        graphql._type rec
+    where
+        entity = $1
+        and meta_kind = $2
+$$;
 
 create function graphql.set_type_name()
     returns trigger
@@ -825,7 +844,7 @@ begin
             ('JSON',     'SCALAR', true, null),
             ('Cursor',   'SCALAR', false, null),
             ('Query',    'OBJECT', false, null),
-            --('Mutation', 'OBJECT', 'MUTATION', null),
+            ('Mutation', 'OBJECT', 'false', null),
             ('PageInfo',  'OBJECT', false, null),
             -- Introspection System
             ('__TypeKind', 'ENUM', true, 'An enum describing what kind of type a given `__Type` is.'),
@@ -853,6 +872,7 @@ begin
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     graphql.type_id('JSON'));
 
 
+    -- Query types
     insert into graphql._type(type_kind, meta_kind, description, entity)
         select
            x.*
@@ -865,6 +885,17 @@ begin
                     ('OBJECT',                    'Connection',               null,       ent.entity),
                     ('INPUT_OBJECT',              'OrderBy',                  null,       ent.entity),
                     ('INPUT_OBJECT',              'FilterEntity',             null,       ent.entity)
+            ) x(type_kind, meta_kind, description, entity);
+
+    -- Upsert types
+    insert into graphql._type(type_kind, meta_kind, description, entity)
+        select
+           x.*
+        from
+            graphql.entity ent,
+            lateral (
+                values
+                    ('INPUT_OBJECT'::graphql.type_kind, 'UpsertNode'::graphql.meta_kind, null::text, ent.entity)
             ) x(type_kind, meta_kind, description, entity);
 
 
@@ -953,7 +984,9 @@ create type graphql.field_meta_kind as enum (
     'Relationship.toOne',
     'OrderBy.Column',
     'Filter.Column',
-    'Function'
+    'Function',
+    'Mutation.insert.one',
+    'ObjectArg'
 );
 
 create table graphql._field (
@@ -1006,6 +1039,7 @@ create or replace function graphql.field_name(rec graphql._field)
     strict
     language sql
 as $$
+
     select
         case
             when rec.meta_kind = 'Constant' then rec.constant_name
@@ -1017,11 +1051,12 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.to_table_name($1.entity))
-            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.to_table_name($1.entity)) || 'Collection'
+            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
+            when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
-                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity)) || 'Collection'
+                graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node')) || 'Collection'
             )
             when rec.meta_kind = 'Relationship.toOne' then coalesce(
                 -- comment directive override
@@ -1032,7 +1067,7 @@ as $$
                     else null
                 end,
                 -- default
-                graphql.to_camel_case(graphql.to_table_name(rec.foreign_entity))
+                graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node'))
             )
             -- todo remove
             when rec.constant_name is not null then rec.constant_name
@@ -1497,6 +1532,78 @@ begin
         inner join graphql.type tt
             on t.entity = tt.entity
             and tt.meta_kind = 'FilterEntity';
+
+    -- Mutation.insertAccount
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            ins.entity,
+            fs.parent_type_id,
+            fs.type_id,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            false asis_hidden_from_schema
+        from
+            graphql.type ins
+            join graphql.type node
+                on ins.entity = node.entity,
+            lateral (
+                values
+                    ('Mutation.insert.one', graphql.type_id('Mutation'::graphql.meta_kind), node.id, false, false, false, null::boolean, null::text)
+            ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
+        where
+            ins.meta_kind = 'UpsertNode'
+            and node.meta_kind = 'Node';
+
+    -- Mutation.insertAccount(object: ...)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+        select
+            'ObjectArg' meta_kind,
+            f.type_id as parent_type_id,
+            tt.id type_id,
+            t.entity,
+            'object' as constant_name,
+            true as is_not_null,
+            false as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            f.id parent_arg_field_id,
+            null as description
+        from
+            graphql.type t
+            inner join graphql._field f
+                on t.id = f.type_id
+                and f.meta_kind = 'Mutation.insert.one'
+            inner join graphql.type tt
+                on t.entity = tt.entity
+                and tt.meta_kind = 'UpsertNode';
+
+    -- Mutation.insertAccount(object: {<column> })
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, is_hidden_from_schema)
+        select
+            'Column' as meta_kind,
+            gf.entity,
+            gf.type_id parent_type_id,
+            graphql.type_id(pa.atttypid::regtype) as type_id,
+            false as is_not_null,
+            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            gf.id as parent_arg_field_id,
+            null::text description,
+            pa.attname::text as column_name,
+            pa.atttypid::regtype as column_type,
+            false as is_hidden_from_schema
+        from
+            graphql._field gf
+            join pg_attribute pa
+                on gf.entity = pa.attrelid
+        where
+            gf.meta_kind = 'ObjectArg'
+            and pa.attnum > 0
+            and not pa.attisdropped;
 
 end;
 $$;
@@ -2577,7 +2684,33 @@ begin
         ) fa;
 end;
 $$;
-create or replace function graphql."resolve_queryType"(ast jsonb)
+create or replace function graphql.resolve_mutation_type(ast jsonb)
+    returns jsonb
+    stable
+    language sql
+as $$
+    select
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' then 'Mutation'
+                    when selection_name = 'description' then null
+                    else graphql.exception_unknown_field(selection_name, 'Mutation')
+                end
+            ),
+            'null'::jsonb
+        )
+    from
+        jsonb_path_query(ast, '$.selectionSet.selections') selections,
+        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+        lateral (
+            select
+                graphql.alias_or_name_literal(x.sel) field_alias,
+                graphql.name_literal(x.sel) as selection_name
+        ) fa
+$$;
+create or replace function graphql.resolve_query_type(ast jsonb)
     returns jsonb
     stable
     language sql
@@ -2629,10 +2762,10 @@ begin
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), '[]'::jsonb);
 
         elsif node_field_rec.name = 'queryType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql."resolve_queryType"(node_field));
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_query_type(node_field));
 
         elsif node_field_rec.name = 'mutationType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), 'null'::jsonb);
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_mutation_type(node_field));
 
         elsif node_field_rec.name = 'subscriptionType' then
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);

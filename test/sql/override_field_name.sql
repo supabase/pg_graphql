@@ -13,6 +13,7 @@ begin;
     where
         entity = 'public.account'::regclass
         and column_name = 'email'
-        and meta_kind = 'Column';
+        and meta_kind = 'Column'
+        and not is_arg;
 
 rollback;
