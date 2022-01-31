@@ -17,4 +17,16 @@ begin;
     variables := '{"emailAddress": "foo@bar.com"}'::jsonb
     );
 
+
+    select graphql.resolve($$
+    mutation createAccount($acc: AccountInsertInput) {
+       insertAccount(object: $acc) {
+        id
+      }
+    }
+    $$,
+    variables := '{"acc": {"email": "bar@foo.com"}}'::jsonb
+    );
+
+
 rollback;

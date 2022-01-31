@@ -29,42 +29,63 @@ declare
     result text;
 begin
 
-    if graphql.is_variable(object_arg) then
-        return graphql.exception('Variable for arg "object" not yet supported');
-    end if;
-
-    select
-        -- Column Clause
-        string_agg(
-            format(
-                '%I',
-                case
-                    when ac.meta_kind = 'Column' then ac.column_name
-                    else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
-                end
-            ),
-            ', '
-        ) as column_clause,
-        -- Values Clause
-        string_agg(
-            case
-                when graphql.is_variable(val -> 'value') then format(
-                    '$%s',
+    if graphql.is_variable(object_arg -> 'value') then
+        -- `object` is variable
+        select
+            string_agg(format('%I', x.key_), ', ') as column_clause,
+            string_agg(
+                format(
+                    '$%s::jsonb -> %L',
                     graphql.arg_index(
-                        (val -> 'value' -> 'name' ->> 'value'),
+                        graphql.name_literal(object_arg -> 'value'),
                         variable_definitions
+                    ),
+                    x.key_
+                ),
+                ', '
+            ) as values_clause
+        from
+            jsonb_each(variables -> graphql.name_literal(object_arg -> 'value')) x(key_, val)
+            left join unnest(allowed_columns) ac
+                on x.key_ = ac.name
+        into
+            column_clause, values_clause;
+
+    else
+        -- Literals and Column Variables
+        select
+            string_agg(
+                format(
+                    '%I',
+                    case
+                        when ac.meta_kind = 'Column' then ac.column_name
+                        else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
+                    end
+                ),
+                ', '
+            ) as column_clause,
+
+            string_agg(
+                case
+                    when graphql.is_variable(val -> 'value') then format(
+                        '$%s',
+                        graphql.arg_index(
+                            (val -> 'value' -> 'name' ->> 'value'),
+                            variable_definitions
+                        )
                     )
-                )
-                else format('%L', graphql.value_literal(val))
-            end,
-            ', '
-        ) as values_clause
-    from
-        jsonb_array_elements(object_arg -> 'value' -> 'fields') arg_cols(val)
-        left join unnest(allowed_columns) ac
-            on graphql.name_literal(arg_cols.val) = ac.name
-    into
-        column_clause, values_clause;
+                    else format('%L', graphql.value_literal(val))
+                end,
+                ', '
+            ) as values_clause
+        from
+            jsonb_array_elements(object_arg -> 'value' -> 'fields') arg_cols(val)
+            left join unnest(allowed_columns) ac
+                on graphql.name_literal(arg_cols.val) = ac.name
+        into
+            column_clause, values_clause;
+
+    end if;
 
     returning_clause = format(
         'jsonb_build_object( %s )',
