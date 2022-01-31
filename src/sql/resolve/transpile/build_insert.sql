@@ -48,7 +48,13 @@ begin
         -- Values Clause
         string_agg(
             case
-                when graphql.is_variable(val -> 'value') then format('$%s::jsonb -> %L', object_arg_ix, graphql.name_literal(val))
+                when graphql.is_variable(val -> 'value') then format(
+                    '$%s',
+                    graphql.arg_index(
+                        (val -> 'value' -> 'name' ->> 'value'),
+                        variable_definitions
+                    )
+                )
                 else format('%L', graphql.value_literal(val))
             end,
             ', '
