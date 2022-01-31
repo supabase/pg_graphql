@@ -1,0 +1,22 @@
+begin;
+    create table account(
+        id serial primary key,
+        name text not null,
+        created_at timesatmp not null generated always as (now()) stored
+    );
+ERROR:  type "timesatmp" does not exist
+LINE 4:         created_at timesatmp not null generated always as (n...
+                           ^
+    select graphql.resolve($$
+    mutation {
+      insertAccount(object: {
+        name: "Foo Barsley"
+      }) {
+        id
+      }
+    }
+    $$);
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+    select * from account;
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+rollback;
