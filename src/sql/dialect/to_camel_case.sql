@@ -7,7 +7,11 @@ $$
 select
     string_agg(
         case
-            when part_ix = 1 then part
+            when part_ix = 1 then format(
+                '%s%s',
+                lower(left(part,1)),
+                right(part, character_length(part)-1)
+            )
             else initcap(part)
         end, '')
 from

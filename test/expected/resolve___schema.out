@@ -71,6 +71,10 @@ begin;
                  },                               +
                  {                                +
                      "kind": "INPUT_OBJECT",      +
+                     "name": "AccountInsertInput" +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
                      "name": "AccountOrderBy"     +
                  },                               +
                  {                                +
@@ -99,6 +103,10 @@ begin;
                  },                               +
                  {                                +
                      "kind": "INPUT_OBJECT",      +
+                     "name": "BlogInsertInput"    +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
                      "name": "BlogOrderBy"        +
                  },                               +
                  {                                +
@@ -116,6 +124,10 @@ begin;
                  {                                +
                      "kind": "INPUT_OBJECT",      +
                      "name": "BlogPostFilter"     +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogPostInsertInput"+
                  },                               +
                  {                                +
                      "kind": "INPUT_OBJECT",      +
@@ -172,6 +184,10 @@ begin;
                  {                                +
                      "kind": "INPUT_OBJECT",      +
                      "name": "JSONFilter"         +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "Mutation"           +
                  },                               +
                  {                                +
                      "kind": "ENUM",              +
@@ -239,7 +255,9 @@ begin;
              },                                   +
              "directives": [                      +
              ],                                   +
-             "mutationType": null                 +
+             "mutationType": {                    +
+                 "name": "Mutation"               +
+             }                                    +
          }                                        +
      },                                           +
      "errors": [                                  +

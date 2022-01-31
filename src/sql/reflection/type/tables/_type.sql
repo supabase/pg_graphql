@@ -47,6 +47,7 @@ as $$
         case
             when (rec).is_builtin then rec.meta_kind::text
             when rec.meta_kind='Node'         then base_type_name
+            when rec.meta_kind='UpsertNode'   then format('%sInsertInput',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
             when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)
@@ -80,6 +81,19 @@ as $$
         id = $1;
 $$;
 
+create function graphql.type_name(regclass, graphql.meta_kind)
+    returns text
+    immutable
+    language sql
+as $$
+    select
+        graphql.type_name(rec)
+    from
+        graphql._type rec
+    where
+        entity = $1
+        and meta_kind = $2
+$$;
 
 create function graphql.set_type_name()
     returns trigger

@@ -23,6 +23,7 @@ begin;
  SCALAR       | JSON                | t          |         |                 | JSON
  SCALAR       | Cursor              | t          |         |                 | Cursor
  OBJECT       | Query               | t          |         |                 | Query
+ OBJECT       | Mutation            | t          |         |                 | Mutation
  OBJECT       | PageInfo            | t          |         |                 | PageInfo
  ENUM         | __TypeKind          | t          |         |                 | __TypeKind
  OBJECT       | __Schema            | t          |         |                 | __Schema
@@ -46,7 +47,8 @@ begin;
  OBJECT       | Connection          | f          | account |                 | AccountConnection
  INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
  INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
+ INPUT_OBJECT | UpsertNode          | f          | account |                 | AccountInsertInput
  ENUM         | Enum                | f          |         |                 | PostStatus
-(35 rows)
+(37 rows)
 
 rollback;
