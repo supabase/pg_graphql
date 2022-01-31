@@ -1,5 +1,5 @@
 -- Confirm no match returns string, not null
-select graphql.cache_key_variable_component('{}') = '';
+select graphql.cache_key_variable_component('{}') = '$';
  ?column? 
 ----------
  t
@@ -9,38 +9,38 @@ select graphql.cache_key_variable_component('{}') = '';
 select graphql.cache_key_variable_component('{}');
  cache_key_variable_component 
 ------------------------------
- 
+ $
 (1 row)
 
 select graphql.cache_key_variable_component('{"x": 1}');
  cache_key_variable_component 
 ------------------------------
- 
+ $,$."x"
 (1 row)
 
 select graphql.cache_key_variable_component('{"x": "1"}');
  cache_key_variable_component 
 ------------------------------
- 
+ $,$."x"
 (1 row)
 
 -- Matches
 select graphql.cache_key_variable_component('{"id": {"eq": 1}}');
  cache_key_variable_component 
 ------------------------------
- $."id"."eq"
+ $,$."id",$."id"."eq"
 (1 row)
 
 select graphql.cache_key_variable_component('{"orderByVal": "DescNullsFirst"}');
-  cache_key_variable_component   
----------------------------------
- $."orderByVal"="DescNullsFirst"
+           cache_key_variable_component           
+--------------------------------------------------
+ $,$."orderByVal",$."orderByVal"="DescNullsFirst"
 (1 row)
 
 select graphql.cache_key_variable_component('{"orderByObj": [{"email": "AscNullsFirst"}]}');
-       cache_key_variable_component        
--------------------------------------------
- $."orderByObj"[0]."email"="AscNullsFirst"
+                                      cache_key_variable_component                                      
+--------------------------------------------------------------------------------------------------------
+ $,$."orderByObj",$."orderByObj"[0],$."orderByObj"[0]."email",$."orderByObj"[0]."email"="AscNullsFirst"
 (1 row)
 
 select graphql.cache_key_variable_component('{
@@ -50,8 +50,8 @@ select graphql.cache_key_variable_component('{
         {"email": "AscNullsFirst"}
     ]
 }');
-                             cache_key_variable_component                              
----------------------------------------------------------------------------------------
- $."id"."eq",$."orderByObj"[0]."email"="AscNullsFirst",$."orderByVal"="DescNullsFirst"
+                                                                       cache_key_variable_component                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ $,$."id",$."id"."eq",$."orderByObj",$."orderByObj"[0],$."orderByObj"[0]."email",$."orderByObj"[0]."email"="AscNullsFirst",$."orderByVal",$."orderByVal"="DescNullsFirst"
 (1 row)
 

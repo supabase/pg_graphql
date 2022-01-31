@@ -1,5 +1,5 @@
 -- Confirm no match returns string, not null
-select graphql.cache_key_variable_component('{}') = '';
+select graphql.cache_key_variable_component('{}') = '$';
 
 -- No matches
 select graphql.cache_key_variable_component('{}');

@@ -3086,13 +3086,11 @@ While false positives are possible, the cost of false positives is low
         from
             graphql.jsonb_unnest_recursive_with_jsonpath(variables)
     ),
-    filter_clause as (
+    general_structure as (
         select
             jpath::text as x
         from
             doc
-        where
-            jpath::text similar to '%."eq"|%."neq"'
     ),
     order_clause as (
         select
@@ -3103,10 +3101,10 @@ While false positives are possible, the cost of false positives is low
             obj #>> '{}' in ('AscNullsFirst', 'AscNullsLast', 'DescNullsFirst', 'DescNullsLast')
     )
     select
-        coalesce(string_agg(x, ','), '')
+        coalesce(string_agg(y.x, ',' order by y.x), '')
     from
         (
-            select x from filter_clause
+            select x from general_structure
             union all
             select x from order_clause
         ) y(x)
