@@ -541,16 +541,6 @@ begin;
                              "defaultValue": null                                                                                           +
                          },                                                                                                                 +
                          {                                                                                                                  +
-                             "name": "id",                                                                                                  +
-                             "type": {                                                                                                      +
-                                 "kind": "SCALAR",                                                                                          +
-                                 "name": "Int",                                                                                             +
-                                 "ofType": null                                                                                             +
-                             },                                                                                                             +
-                             "description": null,                                                                                           +
-                             "defaultValue": null                                                                                           +
-                         },                                                                                                                 +
-                         {                                                                                                                  +
                              "name": "updatedAt",                                                                                           +
                              "type": {                                                                                                      +
                                  "kind": "SCALAR",                                                                                          +
@@ -1087,16 +1077,6 @@ begin;
                              "type": {                                                                                                      +
                                  "kind": "SCALAR",                                                                                          +
                                  "name": "String",                                                                                          +
-                                 "ofType": null                                                                                             +
-                             },                                                                                                             +
-                             "description": null,                                                                                           +
-                             "defaultValue": null                                                                                           +
-                         },                                                                                                                 +
-                         {                                                                                                                  +
-                             "name": "id",                                                                                                  +
-                             "type": {                                                                                                      +
-                                 "kind": "SCALAR",                                                                                          +
-                                 "name": "Int",                                                                                             +
                                  "ofType": null                                                                                             +
                              },                                                                                                             +
                              "description": null,                                                                                           +

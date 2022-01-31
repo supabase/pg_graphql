@@ -626,6 +626,8 @@ begin
         where
             gf.meta_kind = 'ObjectArg'
             and pa.attnum > 0
+            and attgenerated = '' -- skip generated columns
+            and pg_get_serial_sequence(gf.entity::text, pa.attname) is null -- skip (big)serial columns
             and not pa.attisdropped;
 
 end;
