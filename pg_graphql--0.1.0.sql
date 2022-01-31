@@ -2681,14 +2681,14 @@ begin
                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                 when nf.name = '__typename' then quote_literal(type_.name)
                 when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
-                when nf.local_columns is not null and nf_t.meta_kind = 'Connection' then graphql.build_connection_query(
+                when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     variables := variables,
                     parent_type := field.type_,
                     parent_block_name := block_name
                 )
-                when nf.local_columns is not null and nf_t.meta_kind = 'Node' then graphql.build_node_query(
+                when nf.local_columns is not null and nf.meta_kind = 'Relationship.toOne' then graphql.build_node_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
                     variables := variables,
@@ -2729,8 +2729,6 @@ begin
         left join graphql.field nf
             on nf.parent_type = field.type_
             and graphql.name_literal(x.sel) = nf.name
-        left join graphql.type nf_t
-            on nf.type_ = nf_t.name
     where
         field.name = graphql.name_literal(ast)
         and $4 = field.parent_type;
