@@ -629,7 +629,6 @@ begin
             and attgenerated = '' -- skip generated columns
             and pg_get_serial_sequence(gf.entity::text, pa.attname) is null -- skip (big)serial columns
             and not pa.attisdropped;
-
 end;
 $$;
 
@@ -667,9 +666,6 @@ create view graphql.field as
     where
         -- Apply visibility rules
         case
-            when f.constant_name = 'nodeId' then true
-            when t_parent.entity is null then true
-            when f.column_name is null then true
             when (
                 f.column_name is not null
                 and pg_catalog.has_column_privilege(
@@ -679,6 +675,13 @@ create view graphql.field as
                     'SELECT'
                 )
             ) then true
+            -- When an input column, make sure role has insert and permission
+            when f_arg_parent.meta_kind = 'ObjectArg' then pg_catalog.has_column_privilege(
+                current_user,
+                f.entity,
+                f.column_name,
+                'INSERT'
+            )
             -- Check if relationship local and remote columns are selectable
             when f.local_columns is not null then (
                 (
@@ -686,7 +689,7 @@ create view graphql.field as
                         bool_and(
                             pg_catalog.has_column_privilege(
                                 current_user,
-                                f.foreign_entity,
+                                f.entity,
                                 x.col,
                                 'SELECT'
                             )
@@ -698,7 +701,7 @@ create view graphql.field as
                         bool_and(
                             pg_catalog.has_column_privilege(
                                 current_user,
-                                f.entity,
+                                f.foreign_entity,
                                 x.col,
                                 'SELECT'
                             )
@@ -707,5 +710,8 @@ create view graphql.field as
                         unnest(f.local_columns) x(col)
                 )
             )
+            when f.constant_name = 'nodeId' then true
+            when t_parent.entity is null then true
+            when f.column_name is null then true
             else false
         end;
