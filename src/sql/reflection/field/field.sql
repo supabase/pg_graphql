@@ -9,7 +9,8 @@ create type graphql.field_meta_kind as enum (
     'Filter.Column',
     'Function',
     'Mutation.insert.one',
-    'ObjectArg'
+    'ObjectArg',
+    'OnConflictArg'
 );
 
 create table graphql._field (
@@ -574,14 +575,14 @@ begin
             ins.meta_kind = 'UpsertNode'
             and node.meta_kind = 'Node';
 
-    -- Mutation.insertAccount(object: ...)
+    -- Mutation.insertAccount(object: ...) & Mutation.insertAccount(onConflict: ...)
     insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
         select
-            'ObjectArg' meta_kind,
+            x.meta_kind,
             f.type_id as parent_type_id,
             tt.id type_id,
             t.entity,
-            'object' as constant_name,
+            x.constant_name,
             true as is_not_null,
             false as is_array,
             false as is_array_not_null,
@@ -595,7 +596,12 @@ begin
                 and f.meta_kind = 'Mutation.insert.one'
             inner join graphql.type tt
                 on t.entity = tt.entity
-                and tt.meta_kind = 'UpsertNode';
+                and tt.meta_kind = 'UpsertNode',
+            lateral (
+                values
+                    ('ObjectArg'::graphql.field_meta_kind, 'object') --,
+                    --('OnConflictArg', 'onConflict')
+            ) x(meta_kind, constant_name);
 
     -- Mutation.insertAccount(object: {<column> })
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, is_hidden_from_schema)
