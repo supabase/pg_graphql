@@ -18,6 +18,8 @@ create view graphql.entity_column as
         pa.attname as column_name,
         pa.atttypid::regtype as column_type,
         pa.attnotnull as is_not_null,
+        not pa.attgenerated = '' as is_generated,
+        pg_get_serial_sequence(e.entity::text, pa.attname) is not null as is_serial,
         pa.attnum as column_attribute_num
     from
         graphql.entity e

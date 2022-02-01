@@ -716,6 +716,8 @@ create view graphql.entity_column as
         pa.attname as column_name,
         pa.atttypid::regtype as column_type,
         pa.attnotnull as is_not_null,
+        not pa.attgenerated = '' as is_generated,
+        pg_get_serial_sequence(e.entity::text, pa.attname) is not null as is_serial,
         pa.attnum as column_attribute_num
     from
         graphql.entity e
@@ -1362,18 +1364,16 @@ begin
             false is_not_null,
             false is_array,
             null is_array_not_null,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
+            ec.column_name,
+            ec.column_type,
             gt.entity,
             null::text description
         from
             graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
+            join graphql.entity_column ec
+                on gt.entity = ec.entity
         where
-            gt.meta_kind = 'OrderBy'
-            and pa.attnum > 0
-            and not pa.attisdropped;
+            gt.meta_kind = 'OrderBy';
 
 
     -- IntFilter {eq: ...}
@@ -1398,20 +1398,18 @@ begin
             gt_scalar.id type_id,
             false is_not_null,
             false is_array,
-            pa.attname::text as column_name,
+            ec.column_name,
             gt.entity,
             null::text description
         from
             graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
+            join graphql.entity_column ec
+                on gt.entity = ec.entity
             join graphql.type gt_scalar
-                on graphql.type_id(pa.atttypid::regtype) = gt_scalar.graphql_type_id
+                on graphql.type_id(ec.column_type) = gt_scalar.graphql_type_id
                 and gt_scalar.meta_kind = 'FilterType'
         where
-            gt.meta_kind = 'FilterEntity'
-            and pa.attnum > 0
-            and not pa.attisdropped;
+            gt.meta_kind = 'FilterEntity';
 
 
     -- Arguments
@@ -1621,26 +1619,24 @@ begin
             'Column' as meta_kind,
             gf.entity,
             gf.type_id parent_type_id,
-            graphql.type_id(pa.atttypid::regtype) as type_id,
+            graphql.type_id(ec.column_type) as type_id,
             false as is_not_null,
-            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
+            graphql.sql_type_is_array(ec.column_type) as is_array,
             false as is_array_not_null,
             true as is_arg,
             gf.id as parent_arg_field_id,
             null::text description,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
+            ec.column_name,
+            ec.column_type,
             false as is_hidden_from_schema
         from
             graphql._field gf
-            join pg_attribute pa
-                on gf.entity = pa.attrelid
+            join graphql.entity_column ec
+                on gf.entity = ec.entity
         where
             gf.meta_kind = 'ObjectArg'
-            and pa.attnum > 0
-            and attgenerated = '' -- skip generated columns
-            and pg_get_serial_sequence(gf.entity::text, pa.attname) is null -- skip (big)serial columns
-            and not pa.attisdropped;
+            and not ec.is_generated -- skip generated columns
+            and not ec.is_serial; -- skip (big)serial columns
 end;
 $$;
 
