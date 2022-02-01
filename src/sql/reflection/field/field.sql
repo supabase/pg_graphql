@@ -251,22 +251,20 @@ begin
             'Column' as meta_kind,
             gt.entity,
             gt.id parent_type_id,
-            graphql.type_id(pa.atttypid::regtype) as type_id,
-            pa.attnotnull as is_not_null,
-            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
-            pa.attnotnull and graphql.sql_type_is_array(pa.atttypid::regtype) as is_array_not_null,
+            graphql.type_id(es.column_type) as type_id,
+            es.is_not_null,
+            graphql.sql_type_is_array(es.column_type) as is_array,
+            es.is_not_null and graphql.sql_type_is_array(es.column_type) as is_array_not_null,
             null::text description,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
+            es.column_name as column_name,
+            es.column_type as column_type,
             false as is_hidden_from_schema
         from
             graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
+            join graphql.entity_column es
+                on gt.entity = es.entity
         where
-            gt.meta_kind = 'Node'
-            and pa.attnum > 0
-            and not pa.attisdropped;
+            gt.meta_kind = 'Node';
 
     -- Node
     -- Extensibility via function taking record type
