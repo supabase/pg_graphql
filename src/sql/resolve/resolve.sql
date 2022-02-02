@@ -67,8 +67,8 @@ begin
                         and f.name = graphql.name_literal(ast_operation);
 
                 q = case field_meta_kind
-                    when 'Mutation.insert.one' then
-                        graphql.build_insert(
+                    when 'Mutation.upsert.one' then
+                        graphql.build_upsert(
                             ast := ast_operation,
                             variable_definitions := variable_definitions,
                             variables := variables

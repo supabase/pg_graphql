@@ -17,7 +17,7 @@ begin;
     as $$ select $1.email $$;
     select graphql.resolve($$
     mutation {
-      insertAccount(object: {
+      upsertAccount(object: {
         email: "foo@barsley.com"
       }) {
         id
@@ -31,7 +31,7 @@ begin;
     $$);
                                                                            resolve                                                                           
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertAccount": {"id": 2, "nodeId": "WyJhY2NvdW50IiwgMl0=", "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}}, "errors": []}
+ {"data": {"upsertAccount": {"id": 2, "nodeId": "WyJhY2NvdW50IiwgMl0=", "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}}, "errors": []}
 (1 row)
 
     select * from account;
@@ -43,7 +43,7 @@ begin;
 
     select graphql.resolve($$
     mutation {
-      insertBlog(object: {
+      upsertBlog(object: {
         ownerId: 2
       }) {
         id
@@ -56,7 +56,7 @@ begin;
     $$);
                                                resolve                                               
 -----------------------------------------------------------------------------------------------------
- {"data": {"insertBlog": {"id": 1, "owner": {"id": 2}, "nodeId": "WyJibG9nIiwgMV0="}}, "errors": []}
+ {"data": {"upsertBlog": {"id": 1, "owner": {"id": 2}, "nodeId": "WyJibG9nIiwgMV0="}}, "errors": []}
 (1 row)
 
     select * from blog;

@@ -23,7 +23,7 @@ begin;
 
     select graphql.resolve($$
     mutation {
-      insertAccount(object: {
+      upsertAccount(object: {
         email: "foo@barsley.com"
       }) {
         id
@@ -41,7 +41,7 @@ begin;
 
     select graphql.resolve($$
     mutation {
-      insertBlog(object: {
+      upsertBlog(object: {
         ownerId: 2
       }) {
         id

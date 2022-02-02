@@ -1,4 +1,4 @@
-create or replace function graphql.build_insert(
+create or replace function graphql.build_upsert(
     ast jsonb,
     variable_definitions jsonb = '[]',
     variables jsonb = '{}',
@@ -11,7 +11,7 @@ declare
     field_rec graphql.field = field
         from graphql.field
         where
-            meta_kind = 'Mutation.insert.one'
+            meta_kind = 'Mutation.upsert.one'
             and name = graphql.name_literal(ast);
 
     entity regclass = field_rec.entity;

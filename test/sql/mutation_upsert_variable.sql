@@ -1,11 +1,13 @@
 begin;
+
     create table account(
         id serial primary key,
         email varchar(255) not null
     );
+
     select graphql.resolve($$
     mutation createAccount($emailAddress: String) {
-       xyz: insertAccount(object: {
+       xyz: upsertAccount(object: {
         email: $emailAddress
       }) {
         id
@@ -14,23 +16,17 @@ begin;
     $$,
     variables := '{"emailAddress": "foo@bar.com"}'::jsonb
     );
-                  resolve                   
---------------------------------------------
- {"data": {"xyz": {"id": 1}}, "errors": []}
-(1 row)
+
 
     select graphql.resolve($$
     mutation createAccount($acc: AccountInsertInput) {
-       insertAccount(object: $acc) {
+       upsertAccount(object: $acc) {
         id
       }
     }
     $$,
     variables := '{"acc": {"email": "bar@foo.com"}}'::jsonb
     );
-                       resolve                        
-------------------------------------------------------
- {"data": {"insertAccount": {"id": 2}}, "errors": []}
-(1 row)
+
 
 rollback;

@@ -62,21 +62,14 @@ begin
             lateral (
                 values
                     ('OBJECT'::graphql.type_kind, 'Node'::graphql.meta_kind, null::text, ent.entity),
-                    ('OBJECT',                    'Edge',                     null,       ent.entity),
-                    ('OBJECT',                    'Connection',               null,       ent.entity),
-                    ('INPUT_OBJECT',              'OrderBy',                  null,       ent.entity),
-                    ('INPUT_OBJECT',              'FilterEntity',             null,       ent.entity)
-            ) x(type_kind, meta_kind, description, entity);
-
-    -- Upsert types
-    insert into graphql._type(type_kind, meta_kind, description, entity)
-        select
-           x.*
-        from
-            graphql.entity ent,
-            lateral (
-                values
-                    ('INPUT_OBJECT'::graphql.type_kind, 'UpsertNode'::graphql.meta_kind, null::text, ent.entity)
+                    ('OBJECT',                    'Edge',                    null,       ent.entity),
+                    ('OBJECT',                    'Connection',              null,       ent.entity),
+                    ('INPUT_OBJECT',              'OrderBy',                 null,       ent.entity),
+                    ('INPUT_OBJECT',              'FilterEntity',            null,       ent.entity),
+                    ('INPUT_OBJECT',              'UpsertNode',              null,       ent.entity),
+                    ('INPUT_OBJECT',              'OnConflict',              null,       ent.entity),
+                    ('ENUM',                      'SelectableColumns',       null,       ent.entity),
+                    ('ENUM',                      'UpdatableColumns',        null,       ent.entity)
             ) x(type_kind, meta_kind, description, entity);
 
 
