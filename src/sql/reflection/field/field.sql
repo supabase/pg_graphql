@@ -775,11 +775,21 @@ create view graphql.field as
                 )
             ) then true
             -- When an input column, make sure role has insert and permission
-            when f_arg_parent.meta_kind = 'ObjectArg' then pg_catalog.has_column_privilege(
-                current_user,
-                f.entity,
-                f.column_name,
-                'INSERT'
+            when f_arg_parent.meta_kind = 'ObjectArg' then (
+                -- Could be used for insert
+                pg_catalog.has_column_privilege(
+                    current_user,
+                    f.entity,
+                    f.column_name,
+                    'INSERT'
+                ) or
+                -- Or used for an update
+                pg_catalog.has_column_privilege(
+                    current_user,
+                    f.entity,
+                    f.column_name,
+                    'UPDATE'
+                )
             )
             -- Check if relationship local and remote columns are selectable
             when f.local_columns is not null then (

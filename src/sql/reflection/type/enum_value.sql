@@ -92,6 +92,7 @@ create view graphql.enum_value as
                     on gt.entity = ec.entity
             where
                 gt.meta_kind = 'UpdatableColumns'
+                and not ec.is_generated
                 and pg_catalog.has_column_privilege(
                     current_user,
                     gt.entity,
