@@ -132,10 +132,12 @@ begin
                 end;
             end if;
 
+        /*
         exception when others then
             -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql
             get stacked diagnostics error_message = MESSAGE_TEXT;
             errors_ = errors_ || error_message;
+        */
         end;
 
     end if;

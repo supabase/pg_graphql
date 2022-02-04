@@ -2,6 +2,7 @@ create view graphql.enum_value as
     select
         type_,
         value,
+        entity,
         column_name,
         description
     from
@@ -9,6 +10,7 @@ create view graphql.enum_value as
             select
                 type_::text,
                 value::text,
+                null::regclass as entity,
                 null::text as column_name,
                 0 as column_attribute_num,
                 description::text
@@ -51,6 +53,7 @@ create view graphql.enum_value as
             select
                 ty.name,
                 e.enumlabel as value,
+                null::regclass as entity,
                 null::text,
                 0,
                 null::text
@@ -64,6 +67,7 @@ create view graphql.enum_value as
             select
                 gt.name,
                 graphql.field_name_for_column(ec.entity, ec.column_name),
+                ec.entity,
                 ec.column_name,
                 ec.column_attribute_num,
                 null::text
@@ -83,6 +87,7 @@ create view graphql.enum_value as
             select
                 gt.name,
                 graphql.field_name_for_column(ec.entity, ec.column_name),
+                ec.entity,
                 ec.column_name,
                 ec.column_attribute_num,
                 null::text

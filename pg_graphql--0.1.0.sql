@@ -271,6 +271,15 @@ select
         'g'
     )::jsonb
 $$;
+create type graphql.parser_kind as enum ('ObjectValue', 'ObjectField', 'ListValue');
+
+
+create or replace function graphql.is_kind(ast jsonb, k graphql.parser_kind)
+    returns boolean
+    language sql
+as $$
+    select ast ->> 'kind' = k::text;
+$$;
 create or replace function graphql.is_literal(field jsonb)
     returns boolean
     immutable
@@ -310,6 +319,22 @@ create or replace function graphql.value_literal(ast jsonb)
     language sql
 as $$
     select ast -> 'value' ->> 'value';
+$$;
+create or replace function graphql.variable_literal(ast jsonb, variables jsonb)
+    returns jsonb
+    language sql
+as $$
+    with val_from_vars(val) as (
+        select
+            variables -> graphql.name_literal(ast)
+    )
+    select
+        case val is null
+            when true then graphql.exception('Variable value was not provided')::jsonb
+            else val
+        end
+    from
+        val_from_vars
 $$;
 create or replace function graphql.exception(message text)
     returns text
@@ -1793,6 +1818,7 @@ create view graphql.enum_value as
     select
         type_,
         value,
+        entity,
         column_name,
         description
     from
@@ -1800,6 +1826,7 @@ create view graphql.enum_value as
             select
                 type_::text,
                 value::text,
+                null::regclass as entity,
                 null::text as column_name,
                 0 as column_attribute_num,
                 description::text
@@ -1842,6 +1869,7 @@ create view graphql.enum_value as
             select
                 ty.name,
                 e.enumlabel as value,
+                null::regclass as entity,
                 null::text,
                 0,
                 null::text
@@ -1855,6 +1883,7 @@ create view graphql.enum_value as
             select
                 gt.name,
                 graphql.field_name_for_column(ec.entity, ec.column_name),
+                ec.entity,
                 ec.column_name,
                 ec.column_attribute_num,
                 null::text
@@ -1874,6 +1903,7 @@ create view graphql.enum_value as
             select
                 gt.name,
                 graphql.field_name_for_column(ec.entity, ec.column_name),
+                ec.entity,
                 ec.column_name,
                 ec.column_attribute_num,
                 null::text
@@ -2824,11 +2854,44 @@ declare
     object_arg_ix int = graphql.arg_index(arg_object.name, variable_definitions);
     object_arg jsonb = graphql.get_arg_by_name(arg_object.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
 
+    on_conflict_field graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'OnConflictArg';
+    on_conflict_arg_ix int = graphql.arg_index(on_conflict_field.name, variable_definitions);
+    on_conflict_arg jsonb = graphql.get_arg_by_name(on_conflict_field.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
+
     block_name text = graphql.slug();
     column_clause text;
     values_clause text;
     returning_clause text;
     result text;
+
+    variable_val jsonb;
+    variable_ix int;
+
+    ast_seg jsonb;
+    ast_working jsonb;
+
+    on_conflict_clause text;
+    on_conflict_conflict_clause text;
+    on_conflict_update_clause text;
+    arg_on_conflict_update_fields text[];
+
+    selectable_cols graphql.enum_value[] = array_agg(ev)
+        from
+            graphql.type t
+            join graphql.enum_value ev
+                on t.name = ev.value
+        where
+            t.entity = field_rec.entity
+            and t.meta_kind = 'SelectableColumns';
+
+    updatable_cols graphql.enum_value[] = array_agg(ev)
+        from
+            graphql.type t
+            join graphql.enum_value ev
+                on t.name = ev.value
+        where
+            t.entity = field_rec.entity
+            and t.meta_kind = 'UpdatableColumns';
 begin
 
     if graphql.is_variable(object_arg -> 'value') then
@@ -2886,7 +2949,6 @@ begin
                 on graphql.name_literal(arg_cols.val) = ac.name
         into
             column_clause, values_clause;
-
     end if;
 
     returning_clause = format(
@@ -2926,15 +2988,86 @@ begin
             on field_rec.type_ = nf.parent_type
             and graphql.name_literal(x.sel) = nf.name;
 
+
+    if on_conflict_arg is null then
+        on_conflict_clause = '';
+
+    elsif graphql.is_variable(on_conflict_arg -> 'value') then
+        -- `onConflict` is variable
+        -- variable_value := graphql.variable_literal(on_conflict_arg -> 'value', variables);
+        -- variable_ix := graphql.arg_index(graphql.name_literal(on_conflict_arg -> 'value'), variable_definitions);
+        perform graphql.exception('variables not supported for on conflict clause');
+
+    elsif not graphql.is_kind(on_conflict_arg -> 'value', 'ObjectValue') then
+        --perform graphql.exception(on_conflict_arg -> 'value');
+        -- Wrong type
+        perform graphql.exception('Bad data for onConflict parameter');
+    else
+        -- Literals and Column Variables
+        -- on_conflict_update_clause = 'id, "col2", xyz';
+        arg_on_conflict_update_fields = array['temp'];
+
+        with top_arg(val) as (
+            select
+                val
+            from
+                jsonb_array_elements(on_conflict_arg -> 'value' -> 'fields') arg_conf(val)
+            where
+                graphql.name_literal(arg_conf.val) = 'conflictFields'
+        ),
+        -- todo could be a variable
+        ---- WORKING HERE
+        list_items as (
+            select
+                case
+                    when top_arg
+                    graphql.name_literal(obj -> 'value' -> 'values')
+            from
+                top_arg,
+                jsonb_array_elements(top_arg -> 'value' -> 'values') x(val)
+        )
+        select
+            string_agg(
+                format(
+                    '%I',
+                    case
+                        when sc.column_name is not null then sc.column_name
+                        else graphql.exception('unknown field 1 ' || arg_conf.val::text)
+                    end
+                ),
+                ', '
+            )
+        from
+            list_items li
+            left join unnest(updatable_cols) sc
+                on sc.value = graphql.name_literal(li.val)
+        into
+            on_conflict_update_clause;
+        ---- WORKING HERE
+
+        perform graphql.exception(on_conflict_update_clause);
+
+        -- todo on_confclit_confclit_clause has not been set
+        -- todo join in above stmt is wrong
+        -- todo pre_normalize variable list and literal list before select statments
+
+        if on_conflict_update_clause is not null and on_conflict_conflict_clause is not null then
+            on_conflict_clause = format('on conflict ( %s ) do update set  %s', on_conflict_conflict_clause, on_conflict_update_clause);
+        else
+            perform graphql.exception('conflictColumns and updateColumns are required fields foronConflict parameter');
+        end if;
+    end if;
+
+
     result = format(
-        'insert into %I as %I (%s) values (%s) returning %s;',
+        'insert into %I as %I (%s) values (%s) %s returning %s;',
         entity,
         block_name,
         column_clause,
         values_clause,
+        on_conflict_clause,
         coalesce(returning_clause, 'null')
     );
-
     return result;
 end;
 $$;
@@ -3496,10 +3629,12 @@ begin
                 end;
             end if;
 
+        /*
         exception when others then
             -- https://stackoverflow.com/questions/56595217/get-error-message-from-error-code-postgresql
             get stacked diagnostics error_message = MESSAGE_TEXT;
             errors_ = errors_ || error_message;
+        */
         end;
 
     end if;
