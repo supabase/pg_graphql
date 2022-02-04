@@ -2683,7 +2683,7 @@ begin
     quote_ident(block_name),
     coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
     'true',
-    'true',
+    'true'
     )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
@@ -3184,6 +3184,13 @@ begin
                         f.parent_type = 'Mutation'
                         and f.name = graphql.name_literal(ast_operation);
 
+                if field_meta_kind is null then
+                    perform graphql.exception_unknown_field(
+                        graphql.name_literal(ast_operation),
+                        'Mutation'
+                    );
+                end if;
+
                 q = case field_meta_kind
                     when 'Mutation.insert.one' then
                         graphql.build_insert(
@@ -3191,7 +3198,6 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables
                         )
-                    else graphql.exception(field_meta_kind::text) --null::text
                 end;
 
             elsif operation = 'query' then
@@ -3204,6 +3210,13 @@ begin
                     where
                         field.parent_type = 'Query'
                         and field.name = graphql.name_literal(ast_operation);
+
+                if meta_kind is null then
+                    perform graphql.exception_unknown_field(
+                        graphql.name_literal(ast_operation),
+                        'Query'
+                    );
+                end if;
 
                 q = case meta_kind
                     when 'Connection' then

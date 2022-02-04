@@ -38,9 +38,6 @@ begin;
                      "name": "id"               +
                  },                             +
                  {                              +
-                     "name": "nodeId"           +
-                 },                             +
-                 {                              +
                      "name": "updatedAt"        +
                  }                              +
              ]                                  +

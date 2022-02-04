@@ -27,7 +27,6 @@ begin;
           c: cursor
           n: node{
             id_: id
-            ni: nodeId
             b: blogCollection {
               tc2: totalCount
             }
@@ -37,45 +36,31 @@ begin;
     }
         $$)
     );
-                     jsonb_pretty                      
--------------------------------------------------------
- {                                                    +
-     "data": {                                        +
-         "aA": {                                      +
-             "e": [                                   +
-                 {                                    +
-                     "c": "WyJhY2NvdW50IiwgMV0=",     +
-                     "n": {                           +
-                         "b": {                       +
-                             "tc2": 1                 +
-                         },                           +
-                         "ni": "WyJhY2NvdW50IiwgMV0=",+
-                         "id_": 1                     +
-                     }                                +
-                 }                                    +
-             ],                                       +
-             "pi": {                                  +
-                 "hnp": false                         +
-             },                                       +
-             "tc": 1                                  +
-         }                                            +
-     },                                               +
-     "errors": [                                      +
-     ]                                                +
+                   jsonb_pretty                   
+--------------------------------------------------
+ {                                               +
+     "data": {                                   +
+         "aA": {                                 +
+             "e": [                              +
+                 {                               +
+                     "c": "WyJhY2NvdW50IiwgMV0=",+
+                     "n": {                      +
+                         "b": {                  +
+                             "tc2": 1            +
+                         },                      +
+                         "id_": 1                +
+                     }                           +
+                 }                               +
+             ],                                  +
+             "pi": {                             +
+                 "hnp": false                    +
+             },                                  +
+             "tc": 1                             +
+         }                                       +
+     },                                          +
+     "errors": [                                 +
+     ]                                           +
  }
-(1 row)
-
-    select graphql.resolve($$
-    {
-      acc: account(id: "WyJhY2NvdW50IiwgMV0=") {
-        id_: id
-        N: nodeId
-      }
-    }
-    $$);
-                                 resolve                                  
---------------------------------------------------------------------------
- {"data": {"acc": {"N": "WyJhY2NvdW50IiwgMV0=", "id_": 1}}, "errors": []}
 (1 row)
 
     select graphql.resolve($$

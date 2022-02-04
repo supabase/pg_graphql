@@ -56,7 +56,7 @@ begin
     quote_ident(block_name),
     coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
     'true',
-    'true',
+    'true'
     )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
