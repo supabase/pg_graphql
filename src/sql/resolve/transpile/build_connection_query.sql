@@ -162,7 +162,6 @@ begin
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
-                                                                when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
                                                                 when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
                                                                 else graphql.exception_unknown_field(graphql.name_literal(n.sel), gf_n.type_)
                                                             end

@@ -1,6 +1,5 @@
 create type graphql.field_meta_kind as enum (
     'Constant',
-    'Query.one',
     'Query.collection',
     'Column',
     'Relationship.toMany',
@@ -74,7 +73,6 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
             when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
@@ -233,9 +231,7 @@ begin
                     ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
-                    ('Constant', node.id, graphql.type_id('ID'),       'nodeId',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
-                    ('Query.one',        graphql.type_id('Query'::graphql.meta_kind), node.id, null, false, false, null, null, null, null, null, false),
                     ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null, null, null, null, null, false)
             ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, foreign_columns, local_columns, is_hidden_from_schema)
         where
@@ -448,30 +444,6 @@ begin
         t.meta_kind = '__Type'
         and pt.meta_kind = 'Query'
         and f.constant_name = '__type';
-
-    -- Node(nodeId)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
-    select
-        f.type_id,
-        graphql.type_id('ID'::graphql.meta_kind) type_id,
-        -- todo
-        'nodeId' as constant_name,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.id parent_arg_field_id,
-        null as description
-    from
-        graphql.type t
-        inner join graphql._field f
-            on t.id = f.type_id
-        join graphql.type pt
-            on f.parent_type_id = pt.id
-    where
-        t.meta_kind = 'Node'
-        and pt.meta_kind = 'Query';
-
 
     -- Connection(first, last)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -710,7 +682,6 @@ create view graphql.field as
                         unnest(f.local_columns) x(col)
                 )
             )
-            when f.constant_name = 'nodeId' then true
             when t_parent.entity is null then true
             when f.column_name is null then true
             else false

@@ -96,14 +96,6 @@ begin
                             parent_type :=  'Query',
                             parent_block_name := null
                         )
-                    when 'Node' then
-                        graphql.build_node_query(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables,
-                            parent_type := 'Query',
-                            parent_block_name := null
-                        )
                     else null::text
                 end;
 

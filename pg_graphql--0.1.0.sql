@@ -977,7 +977,6 @@ create view graphql.relationship as
         rels;
 create type graphql.field_meta_kind as enum (
     'Constant',
-    'Query.one',
     'Query.collection',
     'Column',
     'Relationship.toMany',
@@ -1051,7 +1050,6 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
             when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
@@ -1210,9 +1208,7 @@ begin
                     ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
-                    ('Constant', node.id, graphql.type_id('ID'),       'nodeId',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
-                    ('Query.one',        graphql.type_id('Query'::graphql.meta_kind), node.id, null, false, false, null, null, null, null, null, false),
                     ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null, null, null, null, null, false)
             ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, foreign_columns, local_columns, is_hidden_from_schema)
         where
@@ -1425,30 +1421,6 @@ begin
         t.meta_kind = '__Type'
         and pt.meta_kind = 'Query'
         and f.constant_name = '__type';
-
-    -- Node(nodeId)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
-    select
-        f.type_id,
-        graphql.type_id('ID'::graphql.meta_kind) type_id,
-        -- todo
-        'nodeId' as constant_name,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.id parent_arg_field_id,
-        null as description
-    from
-        graphql.type t
-        inner join graphql._field f
-            on t.id = f.type_id
-        join graphql.type pt
-            on f.parent_type_id = pt.id
-    where
-        t.meta_kind = 'Node'
-        and pt.meta_kind = 'Query';
-
 
     -- Connection(first, last)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -1687,7 +1659,6 @@ create view graphql.field as
                         unnest(f.local_columns) x(col)
                 )
             )
-            when f.constant_name = 'nodeId' then true
             when t_parent.entity is null then true
             when f.column_name is null then true
             else false
@@ -1726,7 +1697,7 @@ as $$
 declare
     arg jsonb = graphql.get_arg_by_name(name, graphql.jsonb_coalesce(arguments, '[]'));
 
-    is_opaque boolean = name in ('nodeId', 'before', 'after');
+    is_opaque boolean = name in ('before', 'after');
 
     res text;
 
@@ -2355,7 +2326,6 @@ begin
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
-                                                                when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
                                                                 when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
                                                                 else graphql.exception_unknown_field(graphql.name_literal(n.sel), gf_n.type_)
                                                             end
@@ -2617,7 +2587,6 @@ begin
                     when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                     when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                     when nf.name = '__typename' then format('%L', nf.type_)
-                    when nf.name = 'nodeId' then graphql.cursor_encoded_clause(field_rec.entity, block_name)
                     when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                         ast := x.sel,
                         variable_definitions := variable_definitions,
@@ -2670,7 +2639,6 @@ declare
     block_name text = graphql.slug();
     field graphql.field = gf from graphql.field gf where gf.name = graphql.name_literal(ast) and gf.parent_type = $4;
     type_ graphql.type = gt from graphql.type gt where gt.name = field.type_;
-    nodeId text = graphql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
     result text;
 begin
     return
@@ -2680,7 +2648,6 @@ begin
                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                 when nf.name = '__typename' then quote_literal(type_.name)
-                when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
                 when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
@@ -2715,14 +2682,8 @@ begin
     type_.entity,
     quote_ident(block_name),
     coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
-    case
-        when nodeId is null then 'true'
-        else graphql.cursor_row_clause(type_.entity, block_name)
-    end,
-    case
-        when nodeId is null then 'true'
-        else nodeId
-    end
+    'true',
+    'true',
     )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
@@ -3251,14 +3212,6 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables,
                             parent_type :=  'Query',
-                            parent_block_name := null
-                        )
-                    when 'Node' then
-                        graphql.build_node_query(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables,
-                            parent_type := 'Query',
                             parent_block_name := null
                         )
                     else null::text
