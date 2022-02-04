@@ -66,6 +66,13 @@ begin
                         f.parent_type = 'Mutation'
                         and f.name = graphql.name_literal(ast_operation);
 
+                if field_meta_kind is null then
+                    perform graphql.exception_unknown_field(
+                        graphql.name_literal(ast_operation),
+                        'Mutation'
+                    );
+                end if;
+
                 q = case field_meta_kind
                     when 'Mutation.insert.one' then
                         graphql.build_insert(
@@ -73,7 +80,6 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables
                         )
-                    else graphql.exception(field_meta_kind::text) --null::text
                 end;
 
             elsif operation = 'query' then
@@ -87,6 +93,13 @@ begin
                         field.parent_type = 'Query'
                         and field.name = graphql.name_literal(ast_operation);
 
+                if meta_kind is null then
+                    perform graphql.exception_unknown_field(
+                        graphql.name_literal(ast_operation),
+                        'Query'
+                    );
+                end if;
+
                 q = case meta_kind
                     when 'Connection' then
                         graphql.build_connection_query(
@@ -94,14 +107,6 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables,
                             parent_type :=  'Query',
-                            parent_block_name := null
-                        )
-                    when 'Node' then
-                        graphql.build_node_query(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables,
-                            parent_type := 'Query',
                             parent_block_name := null
                         )
                     else null::text

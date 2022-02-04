@@ -35,7 +35,6 @@ begin;
           c: cursor
           n: node{
             id_: id
-            ni: nodeId
             b: blogCollection {
               tc2: totalCount
             }
@@ -45,17 +44,6 @@ begin;
     }
         $$)
     );
-
-
-    select graphql.resolve($$
-    {
-      acc: account(id: "WyJhY2NvdW50IiwgMV0=") {
-        id_: id
-        N: nodeId
-      }
-    }
-    $$);
-
 
     select graphql.resolve($$
     query Introspec {

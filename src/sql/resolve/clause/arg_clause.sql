@@ -6,7 +6,7 @@ as $$
 declare
     arg jsonb = graphql.get_arg_by_name(name, graphql.jsonb_coalesce(arguments, '[]'));
 
-    is_opaque boolean = name in ('nodeId', 'before', 'after');
+    is_opaque boolean = name in ('before', 'after');
 
     res text;
 

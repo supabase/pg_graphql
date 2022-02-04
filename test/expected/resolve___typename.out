@@ -1,10 +1,11 @@
 begin;
     create table account(
-        id int primary key
+        id int primary key,
+        parent_id int references account(id)
     );
-    insert into public.account(id)
+    insert into public.account(id, parent_id)
     values
-        (1);
+        (1, 1);
     select jsonb_pretty(
         graphql.resolve($$
     {
@@ -17,46 +18,40 @@ begin;
           __typename
           node {
             __typename
+            parent {
+              __typename
+            }
           }
         }
       }
     }
         $$)
     );
-                  jsonb_pretty                   
--------------------------------------------------
- {                                              +
-     "data": {                                  +
-         "accountCollection": {                 +
-             "edges": [                         +
-                 {                              +
-                     "node": {                  +
-                         "__typename": "Account"+
-                     },                         +
-                     "__typename": "AccountEdge"+
-                 }                              +
-             ],                                 +
-             "pageInfo": {                      +
-                 "__typename": "PageInfo"       +
-             },                                 +
-             "__typename": "AccountConnection"  +
-         }                                      +
-     },                                         +
-     "errors": [                                +
-     ]                                          +
+                    jsonb_pretty                     
+-----------------------------------------------------
+ {                                                  +
+     "data": {                                      +
+         "accountCollection": {                     +
+             "edges": [                             +
+                 {                                  +
+                     "node": {                      +
+                         "parent": {                +
+                             "__typename": "Account"+
+                         },                         +
+                         "__typename": "Account"    +
+                     },                             +
+                     "__typename": "AccountEdge"    +
+                 }                                  +
+             ],                                     +
+             "pageInfo": {                          +
+                 "__typename": "PageInfo"           +
+             },                                     +
+             "__typename": "AccountConnection"      +
+         }                                          +
+     },                                             +
+     "errors": [                                    +
+     ]                                              +
  }
-(1 row)
-
-    select graphql.resolve($$
-    {
-      account(id: "WyJhY2NvdW50IiwgMV0=") {
-        __typename
-      }
-    }
-    $$);
-                            resolve                             
-----------------------------------------------------------------
- {"data": {"account": {"__typename": "Account"}}, "errors": []}
 (1 row)
 
 rollback;

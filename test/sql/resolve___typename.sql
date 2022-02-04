@@ -1,13 +1,14 @@
 begin;
 
     create table account(
-        id int primary key
+        id int primary key,
+        parent_id int references account(id)
     );
 
 
-    insert into public.account(id)
+    insert into public.account(id, parent_id)
     values
-        (1);
+        (1, 1);
 
 
     select jsonb_pretty(
@@ -22,20 +23,14 @@ begin;
           __typename
           node {
             __typename
+            parent {
+              __typename
+            }
           }
         }
       }
     }
         $$)
     );
-
-
-    select graphql.resolve($$
-    {
-      account(id: "WyJhY2NvdW50IiwgMV0=") {
-        __typename
-      }
-    }
-    $$);
 
 rollback;
