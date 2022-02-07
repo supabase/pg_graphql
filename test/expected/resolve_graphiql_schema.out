@@ -300,23 +300,6 @@ begin;
                              "description": null,                                                                                                                    +
                              "isDeprecated": false,                                                                                                                  +
                              "deprecationReason": null                                                                                                               +
-                         },                                                                                                                                          +
-                         {                                                                                                                                           +
-                             "args": [                                                                                                                               +
-                             ],                                                                                                                                      +
-                             "name": "nodeId",                                                                                                                       +
-                             "type": {                                                                                                                               +
-                                 "kind": "NON_NULL",                                                                                                                 +
-                                 "name": null,                                                                                                                       +
-                                 "ofType": {                                                                                                                         +
-                                     "kind": "SCALAR",                                                                                                               +
-                                     "name": "ID",                                                                                                                   +
-                                     "ofType": null                                                                                                                  +
-                                 }                                                                                                                                   +
-                             },                                                                                                                                      +
-                             "description": null,                                                                                                                    +
-                             "isDeprecated": false,                                                                                                                  +
-                             "deprecationReason": null                                                                                                               +
                          }                                                                                                                                           +
                      ],                                                                                                                                              +
                      "enumValues": [                                                                                                                                 +
@@ -982,23 +965,6 @@ begin;
                          {                                                                                                                                           +
                              "args": [                                                                                                                               +
                              ],                                                                                                                                      +
-                             "name": "nodeId",                                                                                                                       +
-                             "type": {                                                                                                                               +
-                                 "kind": "NON_NULL",                                                                                                                 +
-                                 "name": null,                                                                                                                       +
-                                 "ofType": {                                                                                                                         +
-                                     "kind": "SCALAR",                                                                                                               +
-                                     "name": "ID",                                                                                                                   +
-                                     "ofType": null                                                                                                                  +
-                                 }                                                                                                                                   +
-                             },                                                                                                                                      +
-                             "description": null,                                                                                                                    +
-                             "isDeprecated": false,                                                                                                                  +
-                             "deprecationReason": null                                                                                                               +
-                         },                                                                                                                                          +
-                         {                                                                                                                                           +
-                             "args": [                                                                                                                               +
-                             ],                                                                                                                                      +
                              "name": "owner",                                                                                                                        +
                              "type": {                                                                                                                               +
                                  "kind": "OBJECT",                                                                                                                   +
@@ -1463,23 +1429,6 @@ begin;
                                  "kind": "OBJECT",                                                                                                                   +
                                  "name": "Blog",                                                                                                                     +
                                  "ofType": null                                                                                                                      +
-                             },                                                                                                                                      +
-                             "description": null,                                                                                                                    +
-                             "isDeprecated": false,                                                                                                                  +
-                             "deprecationReason": null                                                                                                               +
-                         },                                                                                                                                          +
-                         {                                                                                                                                           +
-                             "args": [                                                                                                                               +
-                             ],                                                                                                                                      +
-                             "name": "nodeId",                                                                                                                       +
-                             "type": {                                                                                                                               +
-                                 "kind": "NON_NULL",                                                                                                                 +
-                                 "name": null,                                                                                                                       +
-                                 "ofType": {                                                                                                                         +
-                                     "kind": "SCALAR",                                                                                                               +
-                                     "name": "ID",                                                                                                                   +
-                                     "ofType": null                                                                                                                  +
-                                 }                                                                                                                                   +
                              },                                                                                                                                      +
                              "description": null,                                                                                                                    +
                              "isDeprecated": false,                                                                                                                  +
@@ -2646,33 +2595,6 @@ begin;
                          {                                                                                                                                           +
                              "args": [                                                                                                                               +
                                  {                                                                                                                                   +
-                                     "name": "nodeId",                                                                                                               +
-                                     "type": {                                                                                                                       +
-                                         "kind": "NON_NULL",                                                                                                         +
-                                         "name": null,                                                                                                               +
-                                         "ofType": {                                                                                                                 +
-                                             "kind": "SCALAR",                                                                                                       +
-                                             "name": "ID",                                                                                                           +
-                                             "ofType": null                                                                                                          +
-                                         }                                                                                                                           +
-                                     },                                                                                                                              +
-                                     "description": null,                                                                                                            +
-                                     "defaultValue": null                                                                                                            +
-                                 }                                                                                                                                   +
-                             ],                                                                                                                                      +
-                             "name": "account",                                                                                                                      +
-                             "type": {                                                                                                                               +
-                                 "kind": "OBJECT",                                                                                                                   +
-                                 "name": "Account",                                                                                                                  +
-                                 "ofType": null                                                                                                                      +
-                             },                                                                                                                                      +
-                             "description": null,                                                                                                                    +
-                             "isDeprecated": false,                                                                                                                  +
-                             "deprecationReason": null                                                                                                               +
-                         },                                                                                                                                          +
-                         {                                                                                                                                           +
-                             "args": [                                                                                                                               +
-                                 {                                                                                                                                   +
                                      "name": "after",                                                                                                                +
                                      "type": {                                                                                                                       +
                                          "kind": "SCALAR",                                                                                                           +
@@ -2754,33 +2676,6 @@ begin;
                          {                                                                                                                                           +
                              "args": [                                                                                                                               +
                                  {                                                                                                                                   +
-                                     "name": "nodeId",                                                                                                               +
-                                     "type": {                                                                                                                       +
-                                         "kind": "NON_NULL",                                                                                                         +
-                                         "name": null,                                                                                                               +
-                                         "ofType": {                                                                                                                 +
-                                             "kind": "SCALAR",                                                                                                       +
-                                             "name": "ID",                                                                                                           +
-                                             "ofType": null                                                                                                          +
-                                         }                                                                                                                           +
-                                     },                                                                                                                              +
-                                     "description": null,                                                                                                            +
-                                     "defaultValue": null                                                                                                            +
-                                 }                                                                                                                                   +
-                             ],                                                                                                                                      +
-                             "name": "blog",                                                                                                                         +
-                             "type": {                                                                                                                               +
-                                 "kind": "OBJECT",                                                                                                                   +
-                                 "name": "Blog",                                                                                                                     +
-                                 "ofType": null                                                                                                                      +
-                             },                                                                                                                                      +
-                             "description": null,                                                                                                                    +
-                             "isDeprecated": false,                                                                                                                  +
-                             "deprecationReason": null                                                                                                               +
-                         },                                                                                                                                          +
-                         {                                                                                                                                           +
-                             "args": [                                                                                                                               +
-                                 {                                                                                                                                   +
                                      "name": "after",                                                                                                                +
                                      "type": {                                                                                                                       +
                                          "kind": "SCALAR",                                                                                                           +
@@ -2853,33 +2748,6 @@ begin;
                              "type": {                                                                                                                               +
                                  "kind": "OBJECT",                                                                                                                   +
                                  "name": "BlogConnection",                                                                                                           +
-                                 "ofType": null                                                                                                                      +
-                             },                                                                                                                                      +
-                             "description": null,                                                                                                                    +
-                             "isDeprecated": false,                                                                                                                  +
-                             "deprecationReason": null                                                                                                               +
-                         },                                                                                                                                          +
-                         {                                                                                                                                           +
-                             "args": [                                                                                                                               +
-                                 {                                                                                                                                   +
-                                     "name": "nodeId",                                                                                                               +
-                                     "type": {                                                                                                                       +
-                                         "kind": "NON_NULL",                                                                                                         +
-                                         "name": null,                                                                                                               +
-                                         "ofType": {                                                                                                                 +
-                                             "kind": "SCALAR",                                                                                                       +
-                                             "name": "ID",                                                                                                           +
-                                             "ofType": null                                                                                                          +
-                                         }                                                                                                                           +
-                                     },                                                                                                                              +
-                                     "description": null,                                                                                                            +
-                                     "defaultValue": null                                                                                                            +
-                                 }                                                                                                                                   +
-                             ],                                                                                                                                      +
-                             "name": "blogPost",                                                                                                                     +
-                             "type": {                                                                                                                               +
-                                 "kind": "OBJECT",                                                                                                                   +
-                                 "name": "BlogPost",                                                                                                                 +
                                  "ofType": null                                                                                                                      +
                              },                                                                                                                                      +
                              "description": null,                                                                                                                    +

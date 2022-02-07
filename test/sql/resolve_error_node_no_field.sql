@@ -1,15 +1,22 @@
 begin;
 
     create table account(
-        id int primary key
+        id int primary key,
+        parent_id int references account(id)
     );
 
 
     select graphql.resolve($$
     {
-      account(id: "WyJhY2NvdW50IiwgMV0=") {
-        id
-        shouldFail
+      accountCollection {
+        edges {
+          cursor
+          node {
+            parent {
+              dneField
+            }
+          }
+        }
       }
     }
     $$);

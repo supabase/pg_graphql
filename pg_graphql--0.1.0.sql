@@ -990,7 +990,6 @@ create view graphql.relationship as
         rels;
 create type graphql.field_meta_kind as enum (
     'Constant',
-    'Query.one',
     'Query.collection',
     'Column',
     'Relationship.toMany',
@@ -1081,7 +1080,6 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.one' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
             when rec.meta_kind = 'Mutation.upsert.one' then format('upsert%s', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
@@ -1239,9 +1237,7 @@ begin
                     ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
-                    ('Constant', node.id, graphql.type_id('ID'),       'nodeId',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
-                    ('Query.one',        graphql.type_id('Query'::graphql.meta_kind), node.id, null, false, false, null, null, null, null, null, false),
                     ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null, null, null, null, null, false)
             ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, foreign_columns, local_columns, is_hidden_from_schema)
         where
@@ -1452,30 +1448,6 @@ begin
         and pt.meta_kind = 'Query'
         and f.constant_name = '__type';
 
-    -- Node(nodeId)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
-    select
-        f.type_id,
-        graphql.type_id('ID'::graphql.meta_kind) type_id,
-        -- todo
-        'nodeId' as constant_name,
-        true as is_not_null,
-        false as is_array,
-        false as is_array_not_null,
-        true as is_arg,
-        f.id parent_arg_field_id,
-        null as description
-    from
-        graphql.type t
-        inner join graphql._field f
-            on t.id = f.type_id
-        join graphql.type pt
-            on f.parent_type_id = pt.id
-    where
-        t.meta_kind = 'Node'
-        and pt.meta_kind = 'Query';
-
-
     -- Connection(first, last)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
     select
@@ -1632,9 +1604,7 @@ begin
             join graphql.entity_column ec
                 on gf.entity = ec.entity
         where
-            gf.meta_kind = 'ObjectArg'
-            and not ec.is_generated -- skip generated columns
-            and not ec.is_serial; -- skip (big)serial columns
+            gf.meta_kind = 'ObjectArg';
 
     -- Mutation.upsertAccount(onConflict: ...)
     insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -1767,18 +1737,10 @@ create view graphql.field as
             -- When an input column, make sure role has insert and permission
             when f_arg_parent.meta_kind = 'ObjectArg' then (
                 -- Could be used for insert
-                pg_catalog.has_column_privilege(
+                pg_catalog.has_any_column_privilege(
                     current_user,
                     f.entity,
-                    f.column_name,
-                    'INSERT'
-                ) or
-                -- Or used for an update
-                pg_catalog.has_column_privilege(
-                    current_user,
-                    f.entity,
-                    f.column_name,
-                    'UPDATE'
+                    f.column_name
                 )
             )
             -- Check if relationship local and remote columns are selectable
@@ -1809,7 +1771,6 @@ create view graphql.field as
                         unnest(f.local_columns) x(col)
                 )
             )
-            when f.constant_name = 'nodeId' then true
             when t_parent.entity is null then true
             when f.column_name is null then true
             else false
@@ -1960,7 +1921,7 @@ as $$
 declare
     arg jsonb = graphql.get_arg_by_name(name, graphql.jsonb_coalesce(arguments, '[]'));
 
-    is_opaque boolean = name in ('nodeId', 'before', 'after');
+    is_opaque boolean = name in ('before', 'after');
 
     res text;
 
@@ -2589,7 +2550,6 @@ begin
                                                                         parent_type := gf_n.type_,
                                                                         parent_block_name := block_name
                                                                     )
-                                                                when gf_s.name = 'nodeId' then format('%I.%I', block_name, '__cursor')
                                                                 when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
                                                                 else graphql.exception_unknown_field(graphql.name_literal(n.sel), gf_n.type_)
                                                             end
@@ -2766,7 +2726,6 @@ declare
     block_name text = graphql.slug();
     field graphql.field = gf from graphql.field gf where gf.name = graphql.name_literal(ast) and gf.parent_type = $4;
     type_ graphql.type = gt from graphql.type gt where gt.name = field.type_;
-    nodeId text = graphql.arg_clause('nodeId', (ast -> 'arguments'), variable_definitions, type_.entity);
     result text;
 begin
     return
@@ -2776,7 +2735,6 @@ begin
                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                 when nf.name = '__typename' then quote_literal(type_.name)
-                when nf.name = 'nodeId' then graphql.cursor_encoded_clause(type_.entity, block_name)
                 when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                     ast := x.sel,
                     variable_definitions := variable_definitions,
@@ -2811,14 +2769,8 @@ begin
     type_.entity,
     quote_ident(block_name),
     coalesce(graphql.join_clause(field.local_columns, block_name, field.foreign_columns, parent_block_name), 'true'),
-    case
-        when nodeId is null then 'true'
-        else graphql.cursor_row_clause(type_.entity, block_name)
-    end,
-    case
-        when nodeId is null then 'true'
-        else nodeId
-    end
+    'true',
+    'true'
     )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
@@ -2879,7 +2831,7 @@ declare
         from
             graphql.type t
             join graphql.enum_value ev
-                on t.name = ev.value
+                on t.name = ev.type_
         where
             t.entity = field_rec.entity
             and t.meta_kind = 'SelectableColumns';
@@ -2888,10 +2840,13 @@ declare
         from
             graphql.type t
             join graphql.enum_value ev
-                on t.name = ev.value
+                on t.name = ev.type_
         where
             t.entity = field_rec.entity
             and t.meta_kind = 'UpdatableColumns';
+
+    conflict_fields_ast jsonb;
+    conflict_update_ast jsonb;
 begin
 
     if graphql.is_variable(object_arg -> 'value') then
@@ -2961,7 +2916,6 @@ begin
                     when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                     when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                     when nf.name = '__typename' then format('%L', nf.type_)
-                    when nf.name = 'nodeId' then graphql.cursor_encoded_clause(field_rec.entity, block_name)
                     when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                         ast := x.sel,
                         variable_definitions := variable_definitions,
@@ -3007,51 +2961,103 @@ begin
         -- on_conflict_update_clause = 'id, "col2", xyz';
         arg_on_conflict_update_fields = array['temp'];
 
-        with top_arg(val) as (
+
+        /*
+            onConflict.conflictFields
+        */
+        conflict_fields_ast = jsonb_path_query_first(
+            on_conflict_arg,
+            '$.value.fields ? ( @.name.value == $param_name )',
+            '{"param_name": "conflictFields"}'
+        );
+
+        if graphql.is_variable(conflict_fields_ast) then
+            perform graphql.exception('onConflict.conflictFields does not support variables');
+        elsif not graphql.is_kind(conflict_fields_ast, 'ObjectField') or not (graphql.is_kind(conflict_fields_ast -> 'value', 'ListValue')) then
+            perform graphql.exception('onConflict.conflictFields is invalid type');
+        else
+
             select
-                val
+                string_agg(
+                    format(
+                        '%I',
+                        case
+                            when sc1.column_name is not null then sc1.column_name
+                            when sc2.column_name is not null then sc2.column_name
+                            when true then graphql.exception(selectable_cols::text)
+                            when graphql.is_variable(arg.obj) then graphql.exception('variable missing for onConflict.conflictFields')
+                            else graphql.exception('invalid onConflict.conflictFields')
+                        end
+                    ),
+                    ', '
+                )
             from
-                jsonb_array_elements(on_conflict_arg -> 'value' -> 'fields') arg_conf(val)
-            where
-                graphql.name_literal(arg_conf.val) = 'conflictFields'
-        ),
-        -- todo could be a variable
-        ---- WORKING HERE
-        list_items as (
+                jsonb_array_elements(conflict_fields_ast -> 'value' -> 'values') arg(obj)
+                -- literals
+                left join unnest(selectable_cols) sc1
+                    on graphql.is_literal(arg.obj)
+                    and jsonb_typeof((arg.obj -> 'value')) = 'string'
+                    and (arg.obj ->> 'value') = sc1.value
+                -- variables
+                left join unnest(selectable_cols) sc2
+                    on graphql.is_variable(arg.obj)
+                    and graphql.variable_literal(arg.obj, variables)::text = sc2.value
+            into
+                on_conflict_conflict_clause;
+
+        end if;
+
+        /*
+            onConflict.updateFields
+        */
+        conflict_update_ast = jsonb_path_query_first(
+            on_conflict_arg,
+            '$.value.fields ? ( @.name.value == $param_name )',
+            '{"param_name": "updateFields"}'
+        );
+
+        if graphql.is_variable(conflict_update_ast) then
+            perform graphql.exception('onConflict.updateFields does not support variables');
+        elsif not graphql.is_kind(conflict_update_ast, 'ObjectField') or not (graphql.is_kind(conflict_update_ast -> 'value', 'ListValue')) then
+            perform graphql.exception('onConflict.updateFields is invalid type');
+        else
+
             select
-                case
-                    when top_arg
-                    graphql.name_literal(obj -> 'value' -> 'values')
+                string_agg(
+                    format(
+                        '%I = excluded.%I',
+                        col.name,
+                        col.name
+                    ),
+                    ', '
+                )
             from
-                top_arg,
-                jsonb_array_elements(top_arg -> 'value' -> 'values') x(val)
-        )
-        select
-            string_agg(
-                format(
-                    '%I',
-                    case
-                        when sc.column_name is not null then sc.column_name
-                        else graphql.exception('unknown field 1 ' || arg_conf.val::text)
-                    end
-                ),
-                ', '
-            )
-        from
-            list_items li
-            left join unnest(updatable_cols) sc
-                on sc.value = graphql.name_literal(li.val)
-        into
-            on_conflict_update_clause;
-        ---- WORKING HERE
+                jsonb_array_elements(conflict_update_ast -> 'value' -> 'values') arg(obj)
+                -- literals
+                left join unnest(updatable_cols) sc1
+                    on graphql.is_literal(arg.obj)
+                    and jsonb_typeof((arg.obj -> 'value')) = 'string'
+                    and (arg.obj ->> 'value') = sc1.value
+                -- variables
+                left join unnest(updatable_cols) sc2
+                    on graphql.is_variable(arg.obj)
+                    and graphql.variable_literal(arg.obj, variables)::text = sc2.value,
+                lateral (
+                    select
+                        case
+                            when sc1.column_name is not null then sc1.column_name
+                            when sc2.column_name is not null then sc2.column_name
+                            when true then graphql.exception(selectable_cols::text)
+                            when graphql.is_variable(arg.obj) then graphql.exception('variable missing for onConflict.updateFields')
+                            else graphql.exception('invalid onConflict.updateFields')
+                        end
+                ) col(name)
+            into
+                on_conflict_update_clause;
 
-        perform graphql.exception(on_conflict_update_clause);
+        end if;
 
-        -- todo on_confclit_confclit_clause has not been set
-        -- todo join in above stmt is wrong
-        -- todo pre_normalize variable list and literal list before select statments
-
-        if on_conflict_update_clause is not null and on_conflict_conflict_clause is not null then
+        if coalesce(on_conflict_update_clause, '') <> '' and coalesce(on_conflict_conflict_clause, '') <> '' then
             on_conflict_clause = format('on conflict ( %s ) do update set  %s', on_conflict_conflict_clause, on_conflict_update_clause);
         else
             perform graphql.exception('conflictColumns and updateColumns are required fields foronConflict parameter');
@@ -3563,6 +3569,13 @@ begin
                         f.parent_type = 'Mutation'
                         and f.name = graphql.name_literal(ast_operation);
 
+                if field_meta_kind is null then
+                    perform graphql.exception_unknown_field(
+                        graphql.name_literal(ast_operation),
+                        'Mutation'
+                    );
+                end if;
+
                 q = case field_meta_kind
                     when 'Mutation.upsert.one' then
                         graphql.build_upsert(
@@ -3570,7 +3583,6 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables
                         )
-                    else graphql.exception(field_meta_kind::text) --null::text
                 end;
 
             elsif operation = 'query' then
@@ -3584,6 +3596,13 @@ begin
                         field.parent_type = 'Query'
                         and field.name = graphql.name_literal(ast_operation);
 
+                if meta_kind is null then
+                    perform graphql.exception_unknown_field(
+                        graphql.name_literal(ast_operation),
+                        'Query'
+                    );
+                end if;
+
                 q = case meta_kind
                     when 'Connection' then
                         graphql.build_connection_query(
@@ -3591,14 +3610,6 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables,
                             parent_type :=  'Query',
-                            parent_block_name := null
-                        )
-                    when 'Node' then
-                        graphql.build_node_query(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables,
-                            parent_type := 'Query',
                             parent_block_name := null
                         )
                     else null::text

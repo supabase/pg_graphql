@@ -14,7 +14,6 @@ begin;
               accountCollection(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
                 edges {
                   node {
-                    nodeId
                     id
                   }
                 }
@@ -30,7 +29,6 @@ begin;
               accountCollection(first: 2) {
                 edges {
                   node {
-                    nodeId
                     id
                   }
                 }

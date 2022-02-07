@@ -3,7 +3,8 @@ begin;
     create table public.account(
         id serial primary key,
         first_name varchar(255) not null,
-        last_name varchar(255) not null
+        last_name varchar(255) not null,
+        parent_id int references account(id)
     );
 
     -- Extend with function
@@ -16,13 +17,10 @@ begin;
         select format('%s %s', rec.first_name, rec.last_name)
     $$;
 
-    insert into public.account(first_name, last_name)
+    insert into public.account(first_name, last_name, parent_id)
     values
-        ('Foo', 'Fooington'),
-        ('Bar', 'Barsworth');
+        ('Foo', 'Fooington', 1);
 
-
-    savepoint a;
 
     select jsonb_pretty(
         graphql.resolve($$
@@ -34,6 +32,9 @@ begin;
             firstName
             lastName
             fullName
+            parent {
+              fullName
+            }
           }
         }
       }
@@ -41,17 +42,5 @@ begin;
         $$)
     );
 
-    rollback to savepoint a;
-
-    select graphql.resolve($$
-    {
-      account(id: "WyJhY2NvdW50IiwgMV0=") {
-        id
-        fullName
-      }
-    }
-    $$);
-
-    rollback to savepoint a;
 
 rollback;

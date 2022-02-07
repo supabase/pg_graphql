@@ -47,7 +47,7 @@ declare
         from
             graphql.type t
             join graphql.enum_value ev
-                on t.name = ev.value
+                on t.name = ev.type_
         where
             t.entity = field_rec.entity
             and t.meta_kind = 'SelectableColumns';
@@ -56,10 +56,13 @@ declare
         from
             graphql.type t
             join graphql.enum_value ev
-                on t.name = ev.value
+                on t.name = ev.type_
         where
             t.entity = field_rec.entity
             and t.meta_kind = 'UpdatableColumns';
+
+    conflict_fields_ast jsonb;
+    conflict_update_ast jsonb;
 begin
 
     if graphql.is_variable(object_arg -> 'value') then
@@ -129,7 +132,6 @@ begin
                     when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                     when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                     when nf.name = '__typename' then format('%L', nf.type_)
-                    when nf.name = 'nodeId' then graphql.cursor_encoded_clause(field_rec.entity, block_name)
                     when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                         ast := x.sel,
                         variable_definitions := variable_definitions,
@@ -175,51 +177,103 @@ begin
         -- on_conflict_update_clause = 'id, "col2", xyz';
         arg_on_conflict_update_fields = array['temp'];
 
-        with top_arg(val) as (
+
+        /*
+            onConflict.conflictFields
+        */
+        conflict_fields_ast = jsonb_path_query_first(
+            on_conflict_arg,
+            '$.value.fields ? ( @.name.value == $param_name )',
+            '{"param_name": "conflictFields"}'
+        );
+
+        if graphql.is_variable(conflict_fields_ast) then
+            perform graphql.exception('onConflict.conflictFields does not support variables');
+        elsif not graphql.is_kind(conflict_fields_ast, 'ObjectField') or not (graphql.is_kind(conflict_fields_ast -> 'value', 'ListValue')) then
+            perform graphql.exception('onConflict.conflictFields is invalid type');
+        else
+
             select
-                val
+                string_agg(
+                    format(
+                        '%I',
+                        case
+                            when sc1.column_name is not null then sc1.column_name
+                            when sc2.column_name is not null then sc2.column_name
+                            when true then graphql.exception(selectable_cols::text)
+                            when graphql.is_variable(arg.obj) then graphql.exception('variable missing for onConflict.conflictFields')
+                            else graphql.exception('invalid onConflict.conflictFields')
+                        end
+                    ),
+                    ', '
+                )
             from
-                jsonb_array_elements(on_conflict_arg -> 'value' -> 'fields') arg_conf(val)
-            where
-                graphql.name_literal(arg_conf.val) = 'conflictFields'
-        ),
-        -- todo could be a variable
-        ---- WORKING HERE
-        list_items as (
+                jsonb_array_elements(conflict_fields_ast -> 'value' -> 'values') arg(obj)
+                -- literals
+                left join unnest(selectable_cols) sc1
+                    on graphql.is_literal(arg.obj)
+                    and jsonb_typeof((arg.obj -> 'value')) = 'string'
+                    and (arg.obj ->> 'value') = sc1.value
+                -- variables
+                left join unnest(selectable_cols) sc2
+                    on graphql.is_variable(arg.obj)
+                    and graphql.variable_literal(arg.obj, variables)::text = sc2.value
+            into
+                on_conflict_conflict_clause;
+
+        end if;
+
+        /*
+            onConflict.updateFields
+        */
+        conflict_update_ast = jsonb_path_query_first(
+            on_conflict_arg,
+            '$.value.fields ? ( @.name.value == $param_name )',
+            '{"param_name": "updateFields"}'
+        );
+
+        if graphql.is_variable(conflict_update_ast) then
+            perform graphql.exception('onConflict.updateFields does not support variables');
+        elsif not graphql.is_kind(conflict_update_ast, 'ObjectField') or not (graphql.is_kind(conflict_update_ast -> 'value', 'ListValue')) then
+            perform graphql.exception('onConflict.updateFields is invalid type');
+        else
+
             select
-                case
-                    when top_arg
-                    graphql.name_literal(obj -> 'value' -> 'values')
+                string_agg(
+                    format(
+                        '%I = excluded.%I',
+                        col.name,
+                        col.name
+                    ),
+                    ', '
+                )
             from
-                top_arg,
-                jsonb_array_elements(top_arg -> 'value' -> 'values') x(val)
-        )
-        select
-            string_agg(
-                format(
-                    '%I',
-                    case
-                        when sc.column_name is not null then sc.column_name
-                        else graphql.exception('unknown field 1 ' || arg_conf.val::text)
-                    end
-                ),
-                ', '
-            )
-        from
-            list_items li
-            left join unnest(updatable_cols) sc
-                on sc.value = graphql.name_literal(li.val)
-        into
-            on_conflict_update_clause;
-        ---- WORKING HERE
+                jsonb_array_elements(conflict_update_ast -> 'value' -> 'values') arg(obj)
+                -- literals
+                left join unnest(updatable_cols) sc1
+                    on graphql.is_literal(arg.obj)
+                    and jsonb_typeof((arg.obj -> 'value')) = 'string'
+                    and (arg.obj ->> 'value') = sc1.value
+                -- variables
+                left join unnest(updatable_cols) sc2
+                    on graphql.is_variable(arg.obj)
+                    and graphql.variable_literal(arg.obj, variables)::text = sc2.value,
+                lateral (
+                    select
+                        case
+                            when sc1.column_name is not null then sc1.column_name
+                            when sc2.column_name is not null then sc2.column_name
+                            when true then graphql.exception(selectable_cols::text)
+                            when graphql.is_variable(arg.obj) then graphql.exception('variable missing for onConflict.updateFields')
+                            else graphql.exception('invalid onConflict.updateFields')
+                        end
+                ) col(name)
+            into
+                on_conflict_update_clause;
 
-        perform graphql.exception(on_conflict_update_clause);
+        end if;
 
-        -- todo on_confclit_confclit_clause has not been set
-        -- todo join in above stmt is wrong
-        -- todo pre_normalize variable list and literal list before select statments
-
-        if on_conflict_update_clause is not null and on_conflict_conflict_clause is not null then
+        if coalesce(on_conflict_update_clause, '') <> '' and coalesce(on_conflict_conflict_clause, '') <> '' then
             on_conflict_clause = format('on conflict ( %s ) do update set  %s', on_conflict_conflict_clause, on_conflict_update_clause);
         else
             perform graphql.exception('conflictColumns and updateColumns are required fields foronConflict parameter');

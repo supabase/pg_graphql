@@ -21,7 +21,6 @@ begin;
         email: "foo@barsley.com"
       }) {
         id
-        nodeId
         echoEmail
         blogCollection {
             totalCount
@@ -29,9 +28,9 @@ begin;
       }
     }
     $$);
-                                                                           resolve                                                                           
--------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"upsertAccount": {"id": 2, "nodeId": "WyJhY2NvdW50IiwgMl0=", "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}}, "errors": []}
+                                                          resolve                                                          
+---------------------------------------------------------------------------------------------------------------------------
+ {"data": {"upsertAccount": {"id": 2, "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}}, "errors": []}
 (1 row)
 
     select * from account;
@@ -47,16 +46,15 @@ begin;
         ownerId: 2
       }) {
         id
-        nodeId
         owner {
           id
         }
       }
     }
     $$);
-                                               resolve                                               
------------------------------------------------------------------------------------------------------
- {"data": {"upsertBlog": {"id": 1, "owner": {"id": 2}, "nodeId": "WyJibG9nIiwgMV0="}}, "errors": []}
+                                resolve                                
+-----------------------------------------------------------------------
+ {"data": {"upsertBlog": {"id": 1, "owner": {"id": 2}}}, "errors": []}
 (1 row)
 
     select * from blog;

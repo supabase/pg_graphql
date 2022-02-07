@@ -27,7 +27,6 @@ begin;
         email: "foo@barsley.com"
       }) {
         id
-        nodeId
         echoEmail
         blogCollection {
             totalCount
@@ -45,7 +44,6 @@ begin;
         ownerId: 2
       }) {
         id
-        nodeId
         owner {
           id
         }

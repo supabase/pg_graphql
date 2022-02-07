@@ -39,9 +39,6 @@ begin;
                  },                             +
                  {                              +
                      "name": "updatedAt"        +
-                 },                             +
-                 {                              +
-                     "name": "nodeId"           +
                  }                              +
              ]                                  +
          }                                      +

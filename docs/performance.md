@@ -1,5 +1,5 @@
 
-On an a machine with:
+On a machine with:
 
 - 4 CPUs
 - 16GB of RAM
