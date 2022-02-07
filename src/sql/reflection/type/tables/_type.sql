@@ -28,6 +28,16 @@ as $$
 $$;
 
 
+create function graphql.sql_type_is_array(regtype)
+    returns boolean
+    immutable
+    language sql
+as
+$$
+    select pg_catalog.format_type($1, null) like '%[]'
+$$;
+
+
 create function graphql.type_name(rec graphql._type)
     returns text
     immutable
@@ -47,13 +57,16 @@ as $$
         case
             when (rec).is_builtin then rec.meta_kind::text
             when rec.meta_kind='Node'         then base_type_name
-            when rec.meta_kind='UpsertNode'   then format('%sInsertInput',base_type_name)
+            when rec.meta_kind='UpsertNode'   then format('%sUpsertInput',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
             when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)
             when rec.meta_kind='FilterEntity' then format('%sFilter',     base_type_name)
-            when rec.meta_kind='FilterType'   then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
-            when rec.meta_kind='OrderByDirection' then rec.meta_kind::text
+            when rec.meta_kind='OnConflict'   then format('%sOnConflict', base_type_name)
+            when rec.meta_kind='SelectableColumns' then format('%sSelectableField',      base_type_name)
+            when rec.meta_kind='UpdatableColumns'  then format('%sUpdatableField', base_type_name)
+            when rec.meta_kind='FilterType'        then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
+            when rec.meta_kind='OrderByDirection'  then rec.meta_kind::text
             when rec.meta_kind='PageInfo'     then rec.meta_kind::text
             when rec.meta_kind='Cursor'       then rec.meta_kind::text
             when rec.meta_kind='Query'        then rec.meta_kind::text

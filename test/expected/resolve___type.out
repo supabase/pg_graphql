@@ -26,7 +26,7 @@ begin;
              "kind": "OBJECT",                  +
              "fields": [                        +
                  {                              +
-                     "name": "createdAt"        +
+                     "name": "id"               +
                  },                             +
                  {                              +
                      "name": "email"            +
@@ -35,7 +35,7 @@ begin;
                      "name": "encryptedPassword"+
                  },                             +
                  {                              +
-                     "name": "id"               +
+                     "name": "createdAt"        +
                  },                             +
                  {                              +
                      "name": "updatedAt"        +

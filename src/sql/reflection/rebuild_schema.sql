@@ -8,7 +8,6 @@ begin
     refresh materialized view graphql.entity with data;
     perform graphql.rebuild_types();
     perform graphql.rebuild_fields();
-    refresh materialized view graphql.enum_value with data;
 end;
 $$;
 
