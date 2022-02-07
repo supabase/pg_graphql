@@ -617,7 +617,7 @@ begin
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial; -- skip (big)serial columns
 
-    -- Mutation.deleteFromAccountCollection
+    -- Mutation.delete()
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
         select
             fs.field_meta_kind::graphql.field_meta_kind,
@@ -633,10 +633,48 @@ begin
             graphql.type node,
             lateral (
                 values
-                    ('Mutation.delete', graphql.type_id('Mutation'::graphql.meta_kind), node.id, false, true, true::boolean, null::text)
+                    ('Mutation.delete', graphql.type_id('Mutation'::graphql.meta_kind), node.id, true, true, true::boolean, null::text)
             ) fs(field_meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description)
         where
             node.meta_kind = 'Node';
+
+    -- Mutation.delete(... filter: {})
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        tt.id type_,
+        'filter' as constant_name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql._field f
+        inner join graphql.type tt
+            on f.entity = tt.entity
+            and tt.meta_kind = 'FilterEntity'
+    where
+        f.meta_kind = 'Mutation.delete';
+
+    -- Mutation.delete(... atMost: Int!)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        graphql.type_id('Int'),
+        'atMost' as constant_name,
+        true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        '1' as default_value,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql._field f
+    where
+        f.meta_kind = 'Mutation.delete';
 
 end;
 $$;

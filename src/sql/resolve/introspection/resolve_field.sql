@@ -47,7 +47,9 @@ begin
                                         field_rec.id,
                                         x.sel
                                     )
-                                    order by ga.column_attribute_num, ga.name
+                                    order by
+                                        ga.column_attribute_num,
+                                        ga.name
                                 ),
                                 '[]'
                             )

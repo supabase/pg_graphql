@@ -80,6 +80,12 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables
                         )
+                    when 'Mutation.delete' then
+                        graphql.build_delete(
+                            ast := ast_operation,
+                            variable_definitions := variable_definitions,
+                            variables := variables
+                        )
                 end;
 
             elsif operation = 'query' then

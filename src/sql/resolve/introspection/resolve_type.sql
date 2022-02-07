@@ -29,7 +29,17 @@ begin
                     )
                     when selection_name = 'fields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, null, x.sel) order by f.column_attribute_num, f.name)
+                            jsonb_agg(
+                                graphql.resolve_field(
+                                    f.name,
+                                    f.parent_type,
+                                    null,
+                                    x.sel
+                                )
+                                order by
+                                    f.column_attribute_num,
+                                    f.name
+                        )
                         from
                             graphql.field f
                         where
@@ -52,7 +62,17 @@ begin
                     when selection_name = 'enumValues' then graphql."resolve_enumValues"(gt.name, x.sel)
                     when selection_name = 'inputFields' and not has_modifiers then (
                         select
-                            jsonb_agg(graphql.resolve_field(f.name, f.parent_type, f.parent_arg_field_id, x.sel) order by f.column_attribute_num, f.name)
+                            jsonb_agg(
+                                graphql.resolve_field(
+                                    f.name,
+                                    f.parent_type,
+                                    f.parent_arg_field_id,
+                                    x.sel
+                                )
+                                order by
+                                    f.column_attribute_num,
+                                    f.name
+                            )
                         from
                             graphql.field f
                         where
