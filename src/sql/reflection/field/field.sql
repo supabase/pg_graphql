@@ -8,6 +8,7 @@ create type graphql.field_meta_kind as enum (
     'Filter.Column',
     'Function',
     'Mutation.insert.one',
+    'Mutation.delete',
     'ObjectArg'
 );
 
@@ -75,6 +76,7 @@ as $$
             )
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
             when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
                 graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node')) || 'Collection'
@@ -601,6 +603,27 @@ begin
             and attgenerated = '' -- skip generated columns
             and pg_get_serial_sequence(gf.entity::text, pa.attname) is null -- skip (big)serial columns
             and not pa.attisdropped;
+
+    -- Mutation.deleteAccountCollection
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            node.entity,
+            fs.parent_type_id,
+            fs.type_id,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            false asis_hidden_from_schema
+        from
+            graphql.type node,
+            lateral (
+                values
+                    ('Mutation.delete', graphql.type_id('Mutation'::graphql.meta_kind), node.id, false, true, true::boolean, null::text)
+            ) fs(field_meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description)
+        where
+            node.meta_kind = 'Node';
 end;
 $$;
 
