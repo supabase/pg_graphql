@@ -567,9 +567,9 @@
 <p>results in:
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type AccountHolder { # previously: &quot;Account&quot;
-  id: Int!
-}
+<span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">AccountHolder</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c c-Singline"># previously: &quot;Account&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <h3 id="rename-a-columns-field">Rename a Column's Field</h3>
@@ -593,10 +593,10 @@
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Account {
-  id: Int!
-  emailAddress: String! # previously &quot;email&quot;
-}
+<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">emailAddress</span><span class="n">: String</span><span class="o">!</span><span class="w"> </span><span class="c c-Singline"># previously &quot;email&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <h3 id="rename-a-computed-field">Rename a Computed Field</h3>
@@ -644,12 +644,12 @@
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Account {
-  id: Int!
-  firstName: String!
-  lastName: String!
-  displayName: String # previously &quot;fullName&quot;
-}
+<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">firstName</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">lastName</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">displayName</span><span class="n">: String</span><span class="w"> </span><span class="c c-Singline"># previously &quot;fullName&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <h3 id="rename-a-relationships-foreign-key-field">Rename a Relationship's (Foreign Key) Field</h3>
@@ -702,25 +702,25 @@
 <span class="normal">16</span>
 <span class="normal">17</span>
 <span class="normal">18</span>
-<span class="normal">19</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Post {
-  id: Int!
-  accountId: Int!
-  title: String!
-  body: String!
-  author: Account # was &quot;account&quot;
-}
+<span class="normal">19</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Post</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">accountId</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">author</span><span class="n">: Account</span><span class="w"> </span><span class="c c-Singline"># was &quot;account&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 
-type Account {
-  id: Int!
-  posts( # was &quot;postCollection&quot;
-    after: Cursor,
-    before: Cursor,
-    filter: PostFilter,
-    first: Int,
-    last: Int,
-    orderBy: [PostOrderBy!]
-  ): PostConnection
-}
+<span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">posts</span><span class="p">(</span><span class="w"> </span><span class="c c-Singline"># was &quot;postCollection&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w">,</span>
+<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w">,</span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: PostFilter</span><span class="w">,</span>
+<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w">,</span>
+<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w">,</span>
+<span class="w">    </span><span class="na">orderBy</span><span class="n">: [PostOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: PostConnection</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 

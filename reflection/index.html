@@ -1003,454 +1003,454 @@
 <span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
-<span class="normal">448</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>type Account {
-  id: Int!
-  email: String!
-  encryptedPassword: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  blogCollection(
-    &quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;
-    first: Int
-
-    &quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;
-    last: Int
-
-    &quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;
-    before: Cursor
-
-    &quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;
-    after: Cursor
-
-    &quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;
-    filter: BlogFilter
-
-    &quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;
-    orderBy: [BlogOrderBy!]
-  ): BlogConnection
-}
-
-type AccountConnection {
-  edges: [AccountEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-input AccountCreateInput {
-  email: String
-  encryptedPassword: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-type AccountEdge {
-  cursor: String!
-  node: Account
-}
-
-input AccountFilter {
-  id: IntFilter
-  email: StringFilter
-  encryptedPassword: StringFilter
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-}
-
-input AccountOrderBy {
-  id: OrderByDirection
-  email: OrderByDirection
-  encryptedPassword: OrderByDirection
-  createdAt: OrderByDirection
-  updatedAt: OrderByDirection
-}
-
-input AccountUpdateInput {
-  email: String
-  encryptedPassword: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-scalar BigInt
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;BigInt&quot;
-&quot;&quot;&quot;
-input BigIntFilter {
-  eq: BigInt
-}
-
-type Blog {
-  id: Int!
-  ownerId: Int!
-  name: String!
-  description: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  blogPostCollection(
-    &quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;
-    first: Int
-
-    &quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;
-    last: Int
-
-    &quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;
-    before: Cursor
-
-    &quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;
-    after: Cursor
-
-    &quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;
-    filter: BlogPostFilter
-
-    &quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;
-    orderBy: [BlogPostOrderBy!]
-  ): BlogPostConnection
-  owner: Account
-}
-
-type BlogConnection {
-  edges: [BlogEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-input BlogCreateInput {
-  ownerId: Int
-  name: String
-  description: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-type BlogEdge {
-  cursor: String!
-  node: Blog
-}
-
-input BlogFilter {
-  id: IntFilter
-  ownerId: IntFilter
-  name: StringFilter
-  description: StringFilter
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-}
-
-input BlogOrderBy {
-  id: OrderByDirection
-  ownerId: OrderByDirection
-  name: OrderByDirection
-  description: OrderByDirection
-  createdAt: OrderByDirection
-  updatedAt: OrderByDirection
-}
-
-type BlogPost {
-  id: UUID!
-  blogId: Int!
-  title: String!
-  body: String
-  status: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  blog: Blog
-}
-
-type BlogPostConnection {
-  edges: [BlogPostEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-input BlogPostCreateInput {
-  id: UUID
-  blogId: Int
-  title: String
-  body: String
-  status: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-type BlogPostEdge {
-  cursor: String!
-  node: BlogPost
-}
-
-input BlogPostFilter {
-  id: UUIDFilter
-  blogId: IntFilter
-  title: StringFilter
-  body: StringFilter
-  status: StringFilter
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-}
-
-input BlogPostOrderBy {
-  id: OrderByDirection
-  blogId: OrderByDirection
-  title: OrderByDirection
-  body: OrderByDirection
-  status: OrderByDirection
-  createdAt: OrderByDirection
-  updatedAt: OrderByDirection
-}
-
-enum BlogPostStatus {
-  PENDING
-  RELEASED
-}
-
-input BlogPostUpdateInput {
-  id: UUID
-  blogId: Int
-  title: String
-  body: String
-  status: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-input BlogUpdateInput {
-  ownerId: Int
-  name: String
-  description: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;Boolean&quot;
-&quot;&quot;&quot;
-input BooleanFilter {
-  eq: Boolean
-}
-
-scalar Cursor
-
-scalar DateTime
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;DateTime&quot;
-&quot;&quot;&quot;
-input DateTimeFilter {
-  eq: DateTime
-}
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;Float&quot;
-&quot;&quot;&quot;
-input FloatFilter {
-  eq: Float
-}
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;Int&quot;
-&quot;&quot;&quot;
-input IntFilter {
-  eq: Int
-}
-
-scalar JSON
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;JSON&quot;
-&quot;&quot;&quot;
-input JSONFilter {
-  eq: JSON
-}
-
-&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;
-type Mutation {
-  &quot;&quot;&quot;Creates a single `Account`&quot;&quot;&quot;
-  createAccount(object: AccountCreateInput!): Account
-
-  &quot;&quot;&quot;Creates a single `Blog`&quot;&quot;&quot;
-  createBlog(object: BlogCreateInput!): Blog
-
-  &quot;&quot;&quot;Creates a single `BlogPost`&quot;&quot;&quot;
-  createBlogPost(object: BlogPostCreateInput!): BlogPost
-
-  &quot;&quot;&quot;Deletes zero or more `Account` from the collection &quot;&quot;&quot;
-  deleteFromAccountCollection(
-    &quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;
-    filter: AccountFilter
-
-    &quot;&quot;&quot;
-    The maximum number of records in the collection permitted to be affected
-    &quot;&quot;&quot;
-    atMost: Int! = 1
-  ): [Account!]!
-
-  &quot;&quot;&quot;Deletes zero or more `Blog` from the collection &quot;&quot;&quot;
-  deleteFromBlogCollection(
-    &quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;
-    filter: BlogFilter
-
-    &quot;&quot;&quot;
-    The maximum number of records in the collection permitted to be affected
-    &quot;&quot;&quot;
-    atMost: Int! = 1
-  ): [Blog!]!
-
-  &quot;&quot;&quot;Deletes zero or more `BlogPost` from the collection &quot;&quot;&quot;
-  deleteFromBlogPostCollection(
-    &quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;
-    filter: BlogPostFilter
-
-    &quot;&quot;&quot;
-    The maximum number of records in the collection permitted to be affected
-    &quot;&quot;&quot;
-    atMost: Int! = 1
-  ): [BlogPost!]!
-
-  &quot;&quot;&quot;Updates zero or more `Account` in the collection&quot;&quot;&quot;
-  updateAccountCollection(
-    &quot;&quot;&quot;
-    Fields that are set will be updated for all records matching the `filter`
-    &quot;&quot;&quot;
-    set: AccountUpdateInput!
-
-    &quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;
-    filter: AccountFilter
-
-    &quot;&quot;&quot;
-    The maximum number of records in the collection permitted to be affected
-    &quot;&quot;&quot;
-    atMost: Int! = 1
-  ): [Account!]!
-
-  &quot;&quot;&quot;Updates zero or more `Blog` in the collection&quot;&quot;&quot;
-  updateBlogCollection(
-    &quot;&quot;&quot;
-    Fields that are set will be updated for all records matching the `filter`
-    &quot;&quot;&quot;
-    set: BlogUpdateInput!
-
-    &quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;
-    filter: BlogFilter
-
-    &quot;&quot;&quot;
-    The maximum number of records in the collection permitted to be affected
-    &quot;&quot;&quot;
-    atMost: Int! = 1
-  ): [Blog!]!
-
-  &quot;&quot;&quot;Updates zero or more `BlogPost` in the collection&quot;&quot;&quot;
-  updateBlogPostCollection(
-    &quot;&quot;&quot;
-    Fields that are set will be updated for all records matching the `filter`
-    &quot;&quot;&quot;
-    set: BlogPostUpdateInput!
-
-    &quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;
-    filter: BlogPostFilter
-
-    &quot;&quot;&quot;
-    The maximum number of records in the collection permitted to be affected
-    &quot;&quot;&quot;
-    atMost: Int! = 1
-  ): [BlogPost!]!
-}
-
-&quot;&quot;&quot;Defines a per-field sorting order&quot;&quot;&quot;
-enum OrderByDirection {
-  AscNullsFirst
-  AscNullsLast
-  DescNullsFirst
-  DescNullsLast
-}
-
-type PageInfo {
-  endCursor: String!
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String!
-}
-
-&quot;&quot;&quot;The root type for querying data&quot;&quot;&quot;
-type Query {
-  &quot;&quot;&quot;A pagable collection of type `Account`&quot;&quot;&quot;
-  accountCollection(
-    &quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;
-    first: Int
-
-    &quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;
-    last: Int
-
-    &quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;
-    before: Cursor
-
-    &quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;
-    after: Cursor
-
-    &quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;
-    filter: AccountFilter
-
-    &quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;
-    orderBy: [AccountOrderBy!]
-  ): AccountConnection
-
-  &quot;&quot;&quot;A pagable collection of type `Blog`&quot;&quot;&quot;
-  blogCollection(
-    &quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;
-    first: Int
-
-    &quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;
-    last: Int
-
-    &quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;
-    before: Cursor
-
-    &quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;
-    after: Cursor
-
-    &quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;
-    filter: BlogFilter
-
-    &quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;
-    orderBy: [BlogOrderBy!]
-  ): BlogConnection
-
-  &quot;&quot;&quot;A pagable collection of type `BlogPost`&quot;&quot;&quot;
-  blogPostCollection(
-    &quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;
-    first: Int
-
-    &quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;
-    last: Int
-
-    &quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;
-    before: Cursor
-
-    &quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;
-    after: Cursor
-
-    &quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;
-    filter: BlogPostFilter
-
-    &quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;
-    orderBy: [BlogPostOrderBy!]
-  ): BlogPostConnection
-}
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;String&quot;
-&quot;&quot;&quot;
-input StringFilter {
-  eq: String
-}
-
-scalar UUID
-
-&quot;&quot;&quot;
-Boolean expression comparing fields on type &quot;UUID&quot;
-&quot;&quot;&quot;
-input UUIDFilter {
-  eq: UUID
-}
+<span class="normal">448</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogCollection</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">orderBy</span><span class="n">: [BlogOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogConnection</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>AccountConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">edges</span><span class="n">: [AccountEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>AccountCreateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>AccountEdge<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">cursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">node</span><span class="n">: Account</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>AccountFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: IntFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">email</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>AccountOrderBy<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">email</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>AccountUpdateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+scalar<span class="w"> </span>BigInt<span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>BigInt<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>BigIntFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: BigInt</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>Blog<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">ownerId</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">name</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">description</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span>blogPostCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogPostFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">orderBy</span><span class="n">: [BlogPostOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogPostConnection</span><span class="w"></span>
+<span class="w">  </span><span class="na">owner</span><span class="n">: Account</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">edges</span><span class="n">: [BlogEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogCreateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">ownerId</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">name</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">description</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogEdge<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">cursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">node</span><span class="n">: Blog</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: IntFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">ownerId</span><span class="n">: IntFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">name</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">description</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogOrderBy<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">ownerId</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">name</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">description</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogPost<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: UUID</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogId</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">status</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">blog</span><span class="n">: Blog</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogPostConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">edges</span><span class="n">: [BlogPostEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogPostCreateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: UUID</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogId</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">status</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogPostEdge<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">cursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">node</span><span class="n">: BlogPost</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogPostFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: UUIDFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogId</span><span class="n">: IntFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">status</span><span class="n">: StringFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogPostOrderBy<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogId</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">status</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: OrderByDirection</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+enum<span class="w"> </span>BlogPostStatus<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span>PENDING<span class="w"></span>
+<span class="w">  </span>RELEASED<span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogPostUpdateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: UUID</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogId</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">status</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogUpdateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">ownerId</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">name</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">description</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>Boolean<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>BooleanFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: Boolean</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+scalar<span class="w"> </span>Cursor<span class="w"></span>
+
+scalar<span class="w"> </span>DateTime<span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>DateTime<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>DateTimeFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>Float<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>FloatFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: Float</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>Int<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>IntFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: Int</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+scalar<span class="w"> </span>JSON<span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>JSON<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>JSONFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: JSON</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span><span class="w"></span>
+type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `Account`&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>createAccount<span class="p">(</span><span class="na">object</span><span class="n">: AccountCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: Account</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `Blog`&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>createBlog<span class="p">(</span><span class="na">object</span><span class="n">: BlogCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: Blog</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `BlogPost`&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>createBlogPost<span class="p">(</span><span class="na">object</span><span class="n">: BlogPostCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: BlogPost</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more `Account` from the collection &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>deleteFromAccountCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: AccountFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    The maximum number of records in the collection permitted to be affected</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more `Blog` from the collection &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>deleteFromBlogCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    The maximum number of records in the collection permitted to be affected</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more `BlogPost` from the collection &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>deleteFromBlogPostCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogPostFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    The maximum number of records in the collection permitted to be affected</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more `Account` in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>updateAccountCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">set</span><span class="n">: AccountUpdateInput</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: AccountFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    The maximum number of records in the collection permitted to be affected</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more `Blog` in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>updateBlogCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">set</span><span class="n">: BlogUpdateInput</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    The maximum number of records in the collection permitted to be affected</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more `BlogPost` in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>updateBlogPostCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">set</span><span class="n">: BlogPostUpdateInput</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogPostFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    The maximum number of records in the collection permitted to be affected</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;Defines a per-field sorting order&quot;&quot;&quot;</span><span class="w"></span>
+enum<span class="w"> </span>OrderByDirection<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span>AscNullsFirst<span class="w"></span>
+<span class="w">  </span>AscNullsLast<span class="w"></span>
+<span class="w">  </span>DescNullsFirst<span class="w"></span>
+<span class="w">  </span>DescNullsLast<span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>PageInfo<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">endCursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">hasNextPage</span><span class="n">: Boolean</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">hasPreviousPage</span><span class="n">: Boolean</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">startCursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;The root type for querying data&quot;&quot;&quot;</span><span class="w"></span>
+type<span class="w"> </span>Query<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;A pagable collection of type `Account`&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>accountCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: AccountFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">orderBy</span><span class="n">: [AccountOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: AccountConnection</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;A pagable collection of type `Blog`&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>blogCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">orderBy</span><span class="n">: [BlogOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogConnection</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;A pagable collection of type `BlogPost`&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>blogPostCollection<span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">filter</span><span class="n">: BlogPostFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="na">orderBy</span><span class="n">: [BlogPostOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogPostConnection</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>String<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>StringFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: String</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+scalar<span class="w"> </span>UUID<span class="w"></span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Boolean expression comparing fields on type &quot;</span>UUID<span class="s2">&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
+input<span class="w"> </span>UUIDFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">eq</span><span class="n">: UUID</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 
