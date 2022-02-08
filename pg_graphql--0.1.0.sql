@@ -821,7 +821,7 @@ begin
             type_kind::graphql.type_kind,
             meta_kind::graphql.meta_kind,
             true::bool,
-            null::text
+            x.description
         from (
             values
             ('ID',       'SCALAR', true, null),
@@ -834,8 +834,8 @@ begin
             ('UUID',     'SCALAR', true, null),
             ('JSON',     'SCALAR', true, null),
             ('Cursor',   'SCALAR', false, null),
-            ('Query',    'OBJECT', false, null),
-            ('Mutation', 'OBJECT', 'false', null),
+            ('Query',    'OBJECT', false, 'The root type for querying data'),
+            ('Mutation', 'OBJECT', 'false', 'The root type for creating and mutating data'),
             ('PageInfo',  'OBJECT', false, null),
             -- Introspection System
             ('__TypeKind', 'ENUM', true, 'An enum describing what kind of type a given `__Type` is.'),
@@ -1209,7 +1209,8 @@ begin
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
-                    ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null, null, null, null, null, false)
+                    ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null,
+                        format('A pagable collection of type `%s`', graphql.type_name(conn.entity, 'Node')), null, null, null, false)
             ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, column_name, foreign_columns, local_columns, is_hidden_from_schema)
         where
             conn.meta_kind = 'Connection'
@@ -1424,18 +1425,22 @@ begin
     select
         f.type_id as parent_type_id,
         graphql.type_id('Int') type_id,
-        y.name_ as constant_name,
+        y.constant_name,
         false as is_not_null,
         false as is_array,
         false as is_array_not_null,
         true as is_arg,
         f.id parent_arg_field_id,
-        null::text as description
+        y.description
     from
         graphql.type t
         inner join graphql._field f
             on t.id = f.type_id,
-        lateral (select name_ from unnest(array['first', 'last']) x(name_)) y(name_)
+        lateral (
+            values
+                ('first', 'Query the first `n` records in the collection'),
+                ('last',  'Query the last `n` records in the collection')
+        ) y(constant_name, description)
     where
         t.meta_kind = 'Connection';
 
@@ -1444,18 +1449,22 @@ begin
     select
         f.type_id as parent_type_id,
         graphql.type_id('Cursor') type_id,
-        y.name_ as constant_name,
+        y.constant_name,
         false as is_not_null,
         false as is_array,
         false as is_array_not_null,
         true as is_arg,
         f.id parent_arg_field_id,
-        null as description
+        y.description
     from
         graphql.type t
         inner join graphql._field f
             on t.id = f.type_id,
-        lateral (select name_ from unnest(array['before', 'after']) x(name_)) y(name_)
+        lateral (
+            values
+                ('before', 'Query values in the collection before the provided cursor'),
+                ('after',  'Query values in the collection after the provided cursor')
+        ) y(constant_name, description)
     where
         t.meta_kind = 'Connection';
 
@@ -1471,7 +1480,7 @@ begin
         false as is_array_not_null,
         true as is_arg,
         f.id parent_arg_field_name,
-        null as description
+        'Sort order to apply to the collection' as description
     from
         graphql.type t
         inner join graphql._field f
@@ -1492,7 +1501,7 @@ begin
         false as is_array_not_null,
         true as is_arg,
         f.id parent_arg_field_id,
-        null as description
+        'Filters to apply to the results set when querying from the collection' as description
     from
         graphql.type t
         inner join graphql._field f
@@ -1515,14 +1524,14 @@ begin
             fs.is_array,
             fs.is_array_not_null,
             fs.description,
-            false asis_hidden_from_schema
+            false as is_hidden_from_schema
         from
             graphql.type node,
             lateral (
                 values
-                    ('Mutation.insert.one', node.id, false, false, false, null::text),
-                    ('Mutation.update',     node.id, true,  true,  true,  null),
-                    ('Mutation.delete',     node.id, true,  true,  true,  null)
+                    ('Mutation.insert.one', node.id, false, false, false, format('Creates a single `%s`', node.name)),
+                    ('Mutation.update',     node.id, true,  true,  true,  format('Updates zero or more `%s` in the collection', node.name)),
+                    ('Mutation.delete',     node.id, true,  true,  true,  format('Deletes zero or more `%s` from the collection ', node.name))
             ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
             node.meta_kind = 'Node';
@@ -1594,7 +1603,7 @@ begin
         false as is_array_not_null,
         true as is_arg,
         f.id parent_arg_field_id,
-        null as description
+        'Restricts the mutation''s impact to records matching the critera' as description
     from
         graphql._field f
         inner join graphql.type tt
@@ -1617,7 +1626,7 @@ begin
         true as is_arg,
         '1' as default_value,
         f.id parent_arg_field_id,
-        null as description
+        'The maximum number of records in the collection permitted to be affected' as description
     from
         graphql._field f
     where
@@ -1636,7 +1645,7 @@ begin
             false as is_array_not_null,
             true as is_arg,
             f.id parent_arg_field_id,
-            null as description
+            'Fields that are set will be updated for all records matching the `filter`' as description
         from
             graphql._field f
             inner join graphql.type tt
@@ -3235,9 +3244,14 @@ begin
                                     order by
                                         ga.column_attribute_num,
                                         case ga.name
-                                            when 'set' then 97
-                                            when 'filter' then 98
-                                            when 'atMost' then 99
+                                            when 'first' then 80
+                                            when 'last' then 81
+                                            when 'before' then 82
+                                            when 'after' then 83
+                                            when 'after' then 83
+                                            when 'filter' then 95
+                                            when 'orderBy' then 96
+                                            when 'atMost' then 97
                                             else 0
                                         end,
                                         ga.name

@@ -50,9 +50,14 @@ begin
                                     order by
                                         ga.column_attribute_num,
                                         case ga.name
-                                            when 'set' then 97
-                                            when 'filter' then 98
-                                            when 'atMost' then 99
+                                            when 'first' then 80
+                                            when 'last' then 81
+                                            when 'before' then 82
+                                            when 'after' then 83
+                                            when 'after' then 83
+                                            when 'filter' then 95
+                                            when 'orderBy' then 96
+                                            when 'atMost' then 97
                                             else 0
                                         end,
                                         ga.name

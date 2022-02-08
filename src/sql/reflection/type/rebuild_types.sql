@@ -11,7 +11,7 @@ begin
             type_kind::graphql.type_kind,
             meta_kind::graphql.meta_kind,
             true::bool,
-            null::text
+            x.description
         from (
             values
             ('ID',       'SCALAR', true, null),
@@ -24,8 +24,8 @@ begin
             ('UUID',     'SCALAR', true, null),
             ('JSON',     'SCALAR', true, null),
             ('Cursor',   'SCALAR', false, null),
-            ('Query',    'OBJECT', false, null),
-            ('Mutation', 'OBJECT', 'false', null),
+            ('Query',    'OBJECT', false, 'The root type for querying data'),
+            ('Mutation', 'OBJECT', 'false', 'The root type for creating and mutating data'),
             ('PageInfo',  'OBJECT', false, null),
             -- Introspection System
             ('__TypeKind', 'ENUM', true, 'An enum describing what kind of type a given `__Type` is.'),
