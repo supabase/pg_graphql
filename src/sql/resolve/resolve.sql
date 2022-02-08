@@ -86,6 +86,12 @@ begin
                             variable_definitions := variable_definitions,
                             variables := variables
                         )
+                    when 'Mutation.update' then
+                        graphql.build_update(
+                            ast := ast_operation,
+                            variable_definitions := variable_definitions,
+                            variables := variables
+                        )
                 end;
 
             elsif operation = 'query' then

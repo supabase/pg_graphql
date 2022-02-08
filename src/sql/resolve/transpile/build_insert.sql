@@ -32,7 +32,17 @@ begin
     if graphql.is_variable(object_arg -> 'value') then
         -- `object` is variable
         select
-            string_agg(format('%I', x.key_), ', ') as column_clause,
+            -- todo, handle DNE field
+            string_agg(
+                format(
+                    '%I',
+                    case
+                        when ac.meta_kind = 'Column' then ac.column_name
+                        else graphql.exception_unknown_field(x.key_, field_rec.type_)
+                    end
+                ),
+                ', '
+            ) as column_clause,
             string_agg(
                 format(
                     '$%s::jsonb -> %L',

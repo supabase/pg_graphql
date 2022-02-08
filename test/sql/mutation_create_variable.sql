@@ -6,8 +6,8 @@ begin;
     );
 
     select graphql.resolve($$
-    mutation createAccount($emailAddress: String) {
-       xyz: insertAccount(object: {
+    mutation newAccount($emailAddress: String) {
+       xyz: createAccount(object: {
         email: $emailAddress
       }) {
         id
@@ -19,8 +19,8 @@ begin;
 
 
     select graphql.resolve($$
-    mutation createAccount($acc: AccountInsertInput) {
-       insertAccount(object: $acc) {
+    mutation newAccount($acc: AccountInsertInput) {
+       createAccount(object: $acc) {
         id
       }
     }
@@ -28,5 +28,15 @@ begin;
     variables := '{"acc": {"email": "bar@foo.com"}}'::jsonb
     );
 
+    -- Should fail with field does not exist
+    select graphql.resolve($$
+    mutation createAccount($acc: AccountInsertInput) {
+       createAccount(object: $acc) {
+        id
+      }
+    }
+    $$,
+    variables := '{"acc": {"doesNotExist": "other"}}'::jsonb
+    );
 
 rollback;
