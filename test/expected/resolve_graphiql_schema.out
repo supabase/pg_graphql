@@ -2182,6 +2182,30 @@ begin;
                      "fields": [                                                                                                            +
                          {                                                                                                                  +
                              "args": [                                                                                                      +
+                                 {                                                                                                          +
+                                     "name": "atMost",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "NON_NULL",                                                                                +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "SCALAR",                                                                              +
+                                             "name": "Int",                                                                                 +
+                                             "ofType": null                                                                                 +
+                                         }                                                                                                  +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": "1"                                                                                    +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "filter",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "INPUT_OBJECT",                                                                            +
+                                         "name": "AccountFilter",                                                                           +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 }                                                                                                          +
                              ],                                                                                                             +
                              "name": "deleteFromAccountCollection",                                                                         +
                              "type": {                                                                                                      +
@@ -2191,9 +2215,13 @@ begin;
                                      "kind": "LIST",                                                                                        +
                                      "name": null,                                                                                          +
                                      "ofType": {                                                                                            +
-                                         "kind": "OBJECT",                                                                                  +
-                                         "name": "Account",                                                                                 +
-                                         "ofType": null                                                                                     +
+                                         "kind": "NON_NULL",                                                                                +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "OBJECT",                                                                              +
+                                             "name": "Account",                                                                             +
+                                             "ofType": null                                                                                 +
+                                         }                                                                                                  +
                                      }                                                                                                      +
                                  }                                                                                                          +
                              },                                                                                                             +
@@ -2203,6 +2231,30 @@ begin;
                          },                                                                                                                 +
                          {                                                                                                                  +
                              "args": [                                                                                                      +
+                                 {                                                                                                          +
+                                     "name": "atMost",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "NON_NULL",                                                                                +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "SCALAR",                                                                              +
+                                             "name": "Int",                                                                                 +
+                                             "ofType": null                                                                                 +
+                                         }                                                                                                  +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": "1"                                                                                    +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "filter",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "INPUT_OBJECT",                                                                            +
+                                         "name": "BlogFilter",                                                                              +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 }                                                                                                          +
                              ],                                                                                                             +
                              "name": "deleteFromBlogCollection",                                                                            +
                              "type": {                                                                                                      +
@@ -2212,9 +2264,13 @@ begin;
                                      "kind": "LIST",                                                                                        +
                                      "name": null,                                                                                          +
                                      "ofType": {                                                                                            +
-                                         "kind": "OBJECT",                                                                                  +
-                                         "name": "Blog",                                                                                    +
-                                         "ofType": null                                                                                     +
+                                         "kind": "NON_NULL",                                                                                +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "OBJECT",                                                                              +
+                                             "name": "Blog",                                                                                +
+                                             "ofType": null                                                                                 +
+                                         }                                                                                                  +
                                      }                                                                                                      +
                                  }                                                                                                          +
                              },                                                                                                             +
@@ -2224,6 +2280,30 @@ begin;
                          },                                                                                                                 +
                          {                                                                                                                  +
                              "args": [                                                                                                      +
+                                 {                                                                                                          +
+                                     "name": "atMost",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "NON_NULL",                                                                                +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "SCALAR",                                                                              +
+                                             "name": "Int",                                                                                 +
+                                             "ofType": null                                                                                 +
+                                         }                                                                                                  +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": "1"                                                                                    +
+                                 },                                                                                                         +
+                                 {                                                                                                          +
+                                     "name": "filter",                                                                                      +
+                                     "type": {                                                                                              +
+                                         "kind": "INPUT_OBJECT",                                                                            +
+                                         "name": "BlogPostFilter",                                                                          +
+                                         "ofType": null                                                                                     +
+                                     },                                                                                                     +
+                                     "description": null,                                                                                   +
+                                     "defaultValue": null                                                                                   +
+                                 }                                                                                                          +
                              ],                                                                                                             +
                              "name": "deleteFromBlogPostCollection",                                                                        +
                              "type": {                                                                                                      +
@@ -2233,9 +2313,13 @@ begin;
                                      "kind": "LIST",                                                                                        +
                                      "name": null,                                                                                          +
                                      "ofType": {                                                                                            +
-                                         "kind": "OBJECT",                                                                                  +
-                                         "name": "BlogPost",                                                                                +
-                                         "ofType": null                                                                                     +
+                                         "kind": "NON_NULL",                                                                                +
+                                         "name": null,                                                                                      +
+                                         "ofType": {                                                                                        +
+                                             "kind": "OBJECT",                                                                              +
+                                             "name": "BlogPost",                                                                            +
+                                             "ofType": null                                                                                 +
+                                         }                                                                                                  +
                                      }                                                                                                      +
                                  }                                                                                                          +
                              },                                                                                                             +

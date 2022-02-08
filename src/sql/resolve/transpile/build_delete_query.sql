@@ -19,13 +19,13 @@ declare
         where
             f.name = graphql.name_literal(ast) and f.meta_kind = 'Mutation.delete';
 
-    at_most text = graphql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, field_rec.entity);
+    at_most_clause text = graphql.arg_clause('atMost',  (ast -> 'arguments'), variable_definitions, field_rec.entity);
 
-    returning_clause text;
 
     filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
     where_clause text = graphql.where_clause(filter_arg, field_rec.entity, block_name, variables, variable_definitions);
 
+    returning_clause text;
 begin
 
     returning_clause = format(
@@ -66,13 +66,57 @@ begin
 
 
     result = format(
-        'delete from %I as %I where %s returning %s;',
+        -- todo: return empty list (vs null) on no matches
+        'with deleted as (
+            delete from %I as %I
+            where %s
+            returning *
+        ),
+        total(total_count) as (
+            select
+                count(*)
+            from
+                deleted
+        ),
+        req(res) as (
+            select
+                %s
+            from
+                deleted as %I
+        ),
+        wrapper(res) as (
+            select
+                case
+                    when total.total_count > %s then graphql.exception($a$delete impacts too many records$a$)::jsonb
+                    when total.total_count = 0 then jsonb_build_array()
+                    else req.res
+                end
+            from
+                total
+                left join req
+                    on true
+            limit 1
+        )
+        select
+            res
+        from
+            wrapper;',
         field_rec.entity,
         block_name,
         where_clause,
-        coalesce(returning_clause, 'null')
+        coalesce(returning_clause, 'null'),
+        block_name,
+        at_most_clause
     );
 
     return result;
 end;
 $$;
+
+/*
+where
+            case
+                when (select count(deleted.res) > %s from deleted) then graphql.exception($a$delete impacts too many records$a$)::boolean
+                else true
+            end
+*/

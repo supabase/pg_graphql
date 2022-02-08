@@ -11,7 +11,7 @@ declare
     res text;
 
     cast_to text = case
-        when name in ('first', 'last') then 'int'
+        when name in ('first', 'last', 'atMost') then 'int'
         else 'text'
     end;
 
