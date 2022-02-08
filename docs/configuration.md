@@ -1,5 +1,5 @@
 ## Table/Column Visibility
-Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking `SELECT` access from the user/role executing queries removes that entity from the schema.
+Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking `SELECT` access from the user/role executing queries removes that entity from the visible schema.
 
 For example:
 ```sql
@@ -8,10 +8,19 @@ revoke all privileges on public.account from api_user;
 
 removes the `Account` GraphQL type.
 
+Similarly, revoking `SELECT` access on a table's column will remove that field from the associated GraphQL type/s.
+
+The permissions `SELECT`, `INSERT`, `UPDATE`, and `DELETE` all impact the relevant sections of the GraphQL schema.
+
+
+## Row Visibilty
+
+Visibility of rows in a given table can be configured using PostgreSQL's built-in [row level security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) policies.
+
 
 ## Comment Directives
 
-Comment directives are snippets of configuration you can associated with SQL entities to alter how they will be reflected into the GraphQL schema.
+Comment directives are snippets of configuration associated with SQL entities that alter if/how those entities are reflected into the GraphQL schema.
 
 The format of a comment directive is
 
