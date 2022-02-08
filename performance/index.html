@@ -375,8 +375,8 @@
 <ul>
 <li>4 CPUs</li>
 <li>16GB of RAM</li>
-<li>PostgreSQL 13 (docker)</li>
-<li>Postgrest +8 (docker, operating as webserver)</li>
+<li>PostgreSQL 14 (docker)</li>
+<li>Postgrest +9 (docker, operating as webserver)</li>
 </ul>
 <p>pg_graphql served a simple query at an average rate of +2200 req/second.</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -476,7 +476,7 @@ Percentage of the requests served within a certain time (ms)
 <span class="normal">4</span>
 <span class="normal">5</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>docker-compose up
 
-<span class="nb">echo</span> <span class="s1">&#39;{&quot;query&quot;: &quot;{ account(nodeId: $nodeId) { id }}&quot;, &quot;variables&quot;: {&quot;nodeId&quot;: &quot;WyJhY2NvdW50IiwgMV0=&quot;}}&#39;</span> &gt; query.json
+<span class="nb">echo</span> <span class="s1">&#39;{&quot;query&quot;: &quot;{ accountCollection(first: 1) { edges { node { id } } } }&quot;, &quot;variables&quot;: {}}&#39;</span> &gt; query.json
 
 ab -n <span class="m">8000</span> -c <span class="m">8</span> -T application/json -p query.json http://0.0.0.0:3000/rpc/graphql
 </code></pre></div>
