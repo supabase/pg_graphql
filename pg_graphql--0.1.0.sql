@@ -2657,8 +2657,14 @@ declare
         where
             f.name = graphql.name_literal(ast) and f.meta_kind = 'Mutation.delete';
 
-    at_most_clause text = graphql.arg_clause('atMost',  (ast -> 'arguments'), variable_definitions, field_rec.entity);
-
+    arg_at_most graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'AtMostArg';
+    at_most_clause text = graphql.arg_clause(
+        'atMost',
+        (ast -> 'arguments'),
+        variable_definitions,
+        field_rec.entity,
+        arg_at_most.default_value
+    );
 
     filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
     where_clause text = graphql.where_clause(filter_arg, field_rec.entity, block_name, variables, variable_definitions);
@@ -2704,7 +2710,6 @@ begin
 
 
     result = format(
-        -- todo: return empty list (vs null) on no matches
         'with deleted as (
             delete from %I as %I
             where %s

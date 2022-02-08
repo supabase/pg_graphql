@@ -86,6 +86,23 @@ begin;
 
     rollback to savepoint a;
 
+    -- Check `atMost` clause can be omitted b/c of default
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation {
+              deleteFromAccountCollection(
+                filter: {
+                  email: {eq: "bat@x.com"}
+                }
+              ) {
+                id
+              }
+            }
+        $$)
+    );
+
+    rollback to savepoint a;
+
     -- Check no matches returns empty array vs null + allows top xyz alias
     select jsonb_pretty(
         graphql.resolve($$
