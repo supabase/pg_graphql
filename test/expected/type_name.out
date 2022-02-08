@@ -47,8 +47,9 @@ begin;
  OBJECT       | Connection          | f          | account |                 | AccountConnection
  INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
  INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
- INPUT_OBJECT | UpsertNode          | f          | account |                 | AccountUpsertInput
+ INPUT_OBJECT | CreateNode          | f          | account |                 | AccountCreateInput
+ INPUT_OBJECT | UpdateNode          | f          | account |                 | AccountUpdateInput
  ENUM         | Enum                | f          |         |                 | PostStatus
-(37 rows)
+(38 rows)
 
 rollback;

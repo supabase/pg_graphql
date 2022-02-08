@@ -9,6 +9,8 @@ create type graphql.field_meta_kind as enum (
     'Function',
     'Mutation.insert.one',
     'Mutation.delete',
+    'Mutation.update',
+    'UpdateSetArg',
     'ObjectArg'
 );
 
@@ -73,7 +75,6 @@ $$;
 create or replace function graphql.field_name(rec graphql._field)
     returns text
     immutable
-    strict
     language sql
 as $$
 
@@ -88,8 +89,9 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
-            when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Query.collection' then format('%sCollection', graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')))
+            when rec.meta_kind = 'Mutation.insert.one' then format('create%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.update' then format('update%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
@@ -541,11 +543,13 @@ begin
             and tt.meta_kind = 'FilterEntity';
 
     -- Mutation.insertAccount
+    -- Mutation.deleteFromAccountCollection
+    -- Mutation.updateAccountCollection
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
         select
             fs.field_meta_kind::graphql.field_meta_kind,
-            ins.entity,
-            fs.parent_type_id,
+            node.entity,
+            graphql.type_id('Mutation'::graphql.meta_kind),
             fs.type_id,
             fs.is_not_null,
             fs.is_array,
@@ -553,16 +557,15 @@ begin
             fs.description,
             false asis_hidden_from_schema
         from
-            graphql.type ins
-            join graphql.type node
-                on ins.entity = node.entity,
+            graphql.type node,
             lateral (
                 values
-                    ('Mutation.insert.one', graphql.type_id('Mutation'::graphql.meta_kind), node.id, false, false, false, null::boolean, null::text)
-            ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
+                    ('Mutation.insert.one', node.id, false, false, false, null::text),
+                    ('Mutation.update',     node.id, true,  true,  true,  null),
+                    ('Mutation.delete',     node.id, true,  true,  true,  null)
+            ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
-            ins.meta_kind = 'UpsertNode'
-            and node.meta_kind = 'Node';
+            node.meta_kind = 'Node';
 
     -- Mutation.insertAccount(object: ...)
     insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -585,7 +588,7 @@ begin
                 and f.meta_kind = 'Mutation.insert.one'
             inner join graphql.type tt
                 on t.entity = tt.entity
-                and tt.meta_kind = 'UpsertNode',
+                and tt.meta_kind = 'CreateNode',
             lateral (
                 values
                     ('ObjectArg'::graphql.field_meta_kind, 'object')
@@ -617,28 +620,10 @@ begin
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial; -- skip (big)serial columns
 
-    -- Mutation.delete()
-    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
-        select
-            fs.field_meta_kind::graphql.field_meta_kind,
-            node.entity,
-            fs.parent_type_id,
-            fs.type_id,
-            fs.is_not_null,
-            fs.is_array,
-            fs.is_array_not_null,
-            fs.description,
-            false asis_hidden_from_schema
-        from
-            graphql.type node,
-            lateral (
-                values
-                    ('Mutation.delete', graphql.type_id('Mutation'::graphql.meta_kind), node.id, true, true, true::boolean, null::text)
-            ) fs(field_meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description)
-        where
-            node.meta_kind = 'Node';
+
 
     -- Mutation.delete(... filter: {})
+    -- Mutation.update(... filter: {})
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
     select
         f.type_id as parent_type_id,
@@ -656,9 +641,10 @@ begin
             on f.entity = tt.entity
             and tt.meta_kind = 'FilterEntity'
     where
-        f.meta_kind = 'Mutation.delete';
+        f.meta_kind in ('Mutation.delete', 'Mutation.update');
 
     -- Mutation.delete(... atMost: Int!)
+    -- Mutation.update(... atMost: Int!)
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
     select
         f.type_id as parent_type_id,
@@ -674,7 +660,55 @@ begin
     from
         graphql._field f
     where
-        f.meta_kind = 'Mutation.delete';
+        f.meta_kind in ('Mutation.delete', 'Mutation.update');
+
+    -- Mutation.update(set: ...)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+        select
+            'UpdateSetArg'::graphql.field_meta_kind,
+            f.type_id as parent_type_id,
+            tt.id type_id,
+            f.entity,
+            'set' as constant_name,
+            true as is_not_null,
+            false as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            f.id parent_arg_field_id,
+            null as description
+        from
+            graphql._field f
+            inner join graphql.type tt
+                on tt.meta_kind = 'UpdateNode'
+                and f.entity = tt.entity
+            where
+                f.meta_kind = 'Mutation.update';
+
+    -- Mutation.update(set: {<column> })
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, column_attribute_num, is_hidden_from_schema)
+        select
+            'Column' as meta_kind,
+            gf.entity,
+            gf.type_id parent_type_id,
+            graphql.type_id(ec.column_type) as type_id,
+            false as is_not_null,
+            graphql.sql_type_is_array(ec.column_type) as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            gf.id as parent_arg_field_id,
+            null::text description,
+            ec.column_name,
+            ec.column_type,
+            ec.column_attribute_num,
+            false as is_hidden_from_schema
+        from
+            graphql._field gf
+            join graphql.entity_column ec
+                on gf.entity = ec.entity
+        where
+            gf.meta_kind = 'UpdateSetArg'
+            and not ec.is_generated -- skip generated columns
+            and not ec.is_serial; -- skip (big)serial columns
 
 end;
 $$;

@@ -49,6 +49,12 @@ begin
                                     )
                                     order by
                                         ga.column_attribute_num,
+                                        case ga.name
+                                            when 'set' then 97
+                                            when 'filter' then 98
+                                            when 'atMost' then 99
+                                            else 0
+                                        end,
                                         ga.name
                                 ),
                                 '[]'

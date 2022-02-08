@@ -14,9 +14,9 @@ begin;
     $$,
     variables := '{"emailAddress": "foo@bar.com"}'::jsonb
     );
-                  resolve                   
---------------------------------------------
- {"data": {"xyz": {"id": 1}}, "errors": []}
+                                    resolve                                     
+--------------------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'insertAccount' on type 'Mutation'"]}
 (1 row)
 
     select graphql.resolve($$
@@ -28,9 +28,9 @@ begin;
     $$,
     variables := '{"acc": {"email": "bar@foo.com"}}'::jsonb
     );
-                       resolve                        
-------------------------------------------------------
- {"data": {"insertAccount": {"id": 2}}, "errors": []}
+                                    resolve                                     
+--------------------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'insertAccount' on type 'Mutation'"]}
 (1 row)
 
 rollback;
