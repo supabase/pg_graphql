@@ -1,11 +1,28 @@
 type Account {
-  blogCollection(after: Cursor, before: Cursor, filter: BlogFilter, first: Int, last: Int, orderBy: [BlogOrderBy!]): BlogConnection
-  createdAt: DateTime!
+  id: Int!
   email: String!
   encryptedPassword: String!
-  id: Int!
-  nodeId: ID!
+  createdAt: DateTime!
   updatedAt: DateTime!
+  blogCollection(
+    """Query the first `n` records in the collection"""
+    first: Int
+
+    """Query the last `n` records in the collection"""
+    last: Int
+
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+
+    """Filters to apply to the results set when querying from the collection"""
+    filter: BlogFilter
+
+    """Sort order to apply to the collection"""
+    orderBy: [BlogOrderBy!]
+  ): BlogConnection
 }
 
 type AccountConnection {
@@ -14,25 +31,39 @@ type AccountConnection {
   totalCount: Int!
 }
 
+input AccountCreateInput {
+  email: String
+  encryptedPassword: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
 type AccountEdge {
   cursor: String!
   node: Account
 }
 
 input AccountFilter {
-  createdAt: DateTimeFilter
+  id: IntFilter
   email: StringFilter
   encryptedPassword: StringFilter
-  id: IntFilter
+  createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
 
 input AccountOrderBy {
-  createdAt: OrderByDirection
+  id: OrderByDirection
   email: OrderByDirection
   encryptedPassword: OrderByDirection
-  id: OrderByDirection
+  createdAt: OrderByDirection
   updatedAt: OrderByDirection
+}
+
+input AccountUpdateInput {
+  email: String
+  encryptedPassword: String
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 scalar BigInt
@@ -45,15 +76,32 @@ input BigIntFilter {
 }
 
 type Blog {
-  blogPostCollection(after: Cursor, before: Cursor, filter: BlogPostFilter, first: Int, last: Int, orderBy: [BlogPostOrderBy!]): BlogPostConnection
-  createdAt: DateTime!
-  description: String
   id: Int!
-  name: String!
-  nodeId: ID!
-  owner: Account
   ownerId: Int!
+  name: String!
+  description: String
+  createdAt: DateTime!
   updatedAt: DateTime!
+  blogPostCollection(
+    """Query the first `n` records in the collection"""
+    first: Int
+
+    """Query the last `n` records in the collection"""
+    last: Int
+
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+
+    """Filters to apply to the results set when querying from the collection"""
+    filter: BlogPostFilter
+
+    """Sort order to apply to the collection"""
+    orderBy: [BlogPostOrderBy!]
+  ): BlogPostConnection
+  owner: Account
 }
 
 type BlogConnection {
@@ -62,39 +110,46 @@ type BlogConnection {
   totalCount: Int!
 }
 
+input BlogCreateInput {
+  ownerId: Int
+  name: String
+  description: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
 type BlogEdge {
   cursor: String!
   node: Blog
 }
 
 input BlogFilter {
-  createdAt: DateTimeFilter
-  description: StringFilter
   id: IntFilter
-  name: StringFilter
   ownerId: IntFilter
+  name: StringFilter
+  description: StringFilter
+  createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
 
 input BlogOrderBy {
-  createdAt: OrderByDirection
-  description: OrderByDirection
   id: OrderByDirection
-  name: OrderByDirection
   ownerId: OrderByDirection
+  name: OrderByDirection
+  description: OrderByDirection
+  createdAt: OrderByDirection
   updatedAt: OrderByDirection
 }
 
 type BlogPost {
-  blog: Blog
-  blogId: Int!
-  body: String
-  createdAt: DateTime!
   id: UUID!
-  nodeId: ID!
-  status: String!
+  blogId: Int!
   title: String!
+  body: String
+  status: String!
+  createdAt: DateTime!
   updatedAt: DateTime!
+  blog: Blog
 }
 
 type BlogPostConnection {
@@ -103,34 +158,62 @@ type BlogPostConnection {
   totalCount: Int!
 }
 
+input BlogPostCreateInput {
+  id: UUID
+  blogId: Int
+  title: String
+  body: String
+  status: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
 type BlogPostEdge {
   cursor: String!
   node: BlogPost
 }
 
 input BlogPostFilter {
-  blogId: IntFilter
-  body: StringFilter
-  createdAt: DateTimeFilter
   id: UUIDFilter
-  status: StringFilter
+  blogId: IntFilter
   title: StringFilter
+  body: StringFilter
+  status: StringFilter
+  createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
 
 input BlogPostOrderBy {
-  blogId: OrderByDirection
-  body: OrderByDirection
-  createdAt: OrderByDirection
   id: OrderByDirection
-  status: OrderByDirection
+  blogId: OrderByDirection
   title: OrderByDirection
+  body: OrderByDirection
+  status: OrderByDirection
+  createdAt: OrderByDirection
   updatedAt: OrderByDirection
 }
 
 enum BlogPostStatus {
   PENDING
   RELEASED
+}
+
+input BlogPostUpdateInput {
+  id: UUID
+  blogId: Int
+  title: String
+  body: String
+  status: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input BlogUpdateInput {
+  ownerId: Int
+  name: String
+  description: String
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 """
@@ -174,6 +257,100 @@ input JSONFilter {
   eq: JSON
 }
 
+"""The root type for creating and mutating data"""
+type Mutation {
+  """Creates a single `Account`"""
+  createAccount(object: AccountCreateInput!): Account
+
+  """Creates a single `Blog`"""
+  createBlog(object: BlogCreateInput!): Blog
+
+  """Creates a single `BlogPost`"""
+  createBlogPost(object: BlogPostCreateInput!): BlogPost
+
+  """Deletes zero or more `Account` from the collection """
+  deleteFromAccountCollection(
+    """Restricts the mutation's impact to records matching the critera"""
+    filter: AccountFilter
+
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+  ): [Account!]!
+
+  """Deletes zero or more `Blog` from the collection """
+  deleteFromBlogCollection(
+    """Restricts the mutation's impact to records matching the critera"""
+    filter: BlogFilter
+
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+  ): [Blog!]!
+
+  """Deletes zero or more `BlogPost` from the collection """
+  deleteFromBlogPostCollection(
+    """Restricts the mutation's impact to records matching the critera"""
+    filter: BlogPostFilter
+
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+  ): [BlogPost!]!
+
+  """Updates zero or more `Account` in the collection"""
+  updateAccountCollection(
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: AccountUpdateInput!
+
+    """Restricts the mutation's impact to records matching the critera"""
+    filter: AccountFilter
+
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+  ): [Account!]!
+
+  """Updates zero or more `Blog` in the collection"""
+  updateBlogCollection(
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: BlogUpdateInput!
+
+    """Restricts the mutation's impact to records matching the critera"""
+    filter: BlogFilter
+
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+  ): [Blog!]!
+
+  """Updates zero or more `BlogPost` in the collection"""
+  updateBlogPostCollection(
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: BlogPostUpdateInput!
+
+    """Restricts the mutation's impact to records matching the critera"""
+    filter: BlogPostFilter
+
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+  ): [BlogPost!]!
+}
+
+"""Defines a per-field sorting order"""
 enum OrderByDirection {
   AscNullsFirst
   AscNullsLast
@@ -188,13 +365,70 @@ type PageInfo {
   startCursor: String!
 }
 
+"""The root type for querying data"""
 type Query {
-  account(nodeId: ID!): Account
-  accountCollection(after: Cursor, before: Cursor, filter: AccountFilter, first: Int, last: Int, orderBy: [AccountOrderBy!]): AccountConnection
-  blog(nodeId: ID!): Blog
-  blogCollection(after: Cursor, before: Cursor, filter: BlogFilter, first: Int, last: Int, orderBy: [BlogOrderBy!]): BlogConnection
-  blogPost(nodeId: ID!): BlogPost
-  blogPostCollection(after: Cursor, before: Cursor, filter: BlogPostFilter, first: Int, last: Int, orderBy: [BlogPostOrderBy!]): BlogPostConnection
+  """A pagable collection of type `Account`"""
+  accountCollection(
+    """Query the first `n` records in the collection"""
+    first: Int
+
+    """Query the last `n` records in the collection"""
+    last: Int
+
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+
+    """Filters to apply to the results set when querying from the collection"""
+    filter: AccountFilter
+
+    """Sort order to apply to the collection"""
+    orderBy: [AccountOrderBy!]
+  ): AccountConnection
+
+  """A pagable collection of type `Blog`"""
+  blogCollection(
+    """Query the first `n` records in the collection"""
+    first: Int
+
+    """Query the last `n` records in the collection"""
+    last: Int
+
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+
+    """Filters to apply to the results set when querying from the collection"""
+    filter: BlogFilter
+
+    """Sort order to apply to the collection"""
+    orderBy: [BlogOrderBy!]
+  ): BlogConnection
+
+  """A pagable collection of type `BlogPost`"""
+  blogPostCollection(
+    """Query the first `n` records in the collection"""
+    first: Int
+
+    """Query the last `n` records in the collection"""
+    last: Int
+
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+
+    """Filters to apply to the results set when querying from the collection"""
+    filter: BlogPostFilter
+
+    """Sort order to apply to the collection"""
+    orderBy: [BlogPostOrderBy!]
+  ): BlogPostConnection
 }
 
 """
