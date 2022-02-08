@@ -5,17 +5,14 @@ begin;
     );
     comment on table public.account is E'@graphql({"name": "UserAccount"})';
     select name from graphql.type where entity = 'public.account'::regclass order by name;
-            name            
-----------------------------
+          name          
+------------------------
  UserAccount
  UserAccountConnection
  UserAccountEdge
  UserAccountFilter
- UserAccountOnConflict
  UserAccountOrderBy
- UserAccountSelectableField
- UserAccountUpdatableField
  UserAccountUpsertInput
-(9 rows)
+(6 rows)
 
 rollback;

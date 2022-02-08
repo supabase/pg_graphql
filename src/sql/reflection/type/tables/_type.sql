@@ -62,9 +62,6 @@ as $$
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
             when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)
             when rec.meta_kind='FilterEntity' then format('%sFilter',     base_type_name)
-            when rec.meta_kind='OnConflict'   then format('%sOnConflict', base_type_name)
-            when rec.meta_kind='SelectableColumns' then format('%sSelectableField',      base_type_name)
-            when rec.meta_kind='UpdatableColumns'  then format('%sUpdatableField', base_type_name)
             when rec.meta_kind='FilterType'        then format('%sFilter',     graphql.type_name(rec.graphql_type_id))
             when rec.meta_kind='OrderByDirection'  then rec.meta_kind::text
             when rec.meta_kind='PageInfo'     then rec.meta_kind::text

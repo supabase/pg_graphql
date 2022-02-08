@@ -112,11 +112,3 @@ begin
     return result;
 end;
 $$;
-
-/*
-where
-            case
-                when (select count(deleted.res) > %s from deleted) then graphql.exception($a$delete impacts too many records$a$)::boolean
-                else true
-            end
-*/

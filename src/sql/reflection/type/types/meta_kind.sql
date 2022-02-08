@@ -40,13 +40,10 @@ create type graphql.meta_kind as enum (
     'OrderBy',
     'FilterEntity',
     'UpsertNode',
-    'OnConflict',
 
 -- GraphQL Type Derived
     'FilterType',
 
 -- Enum Derived
-    'Enum',
-    'SelectableColumns',
-    'UpdatableColumns'
+    'Enum'
 );

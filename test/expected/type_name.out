@@ -10,8 +10,8 @@ begin;
         graphql.type_name(rec) type_name
     from
         graphql._type rec;
-  type_kind   |      meta_kind      | is_builtin | entity  | graphql_type_id |       type_name        
---------------+---------------------+------------+---------+-----------------+------------------------
+  type_kind   |      meta_kind      | is_builtin | entity  | graphql_type_id |      type_name      
+--------------+---------------------+------------+---------+-----------------+---------------------
  SCALAR       | ID                  | t          |         |                 | ID
  SCALAR       | Int                 | t          |         |                 | Int
  SCALAR       | Float               | t          |         |                 | Float
@@ -48,10 +48,7 @@ begin;
  INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
  INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
  INPUT_OBJECT | UpsertNode          | f          | account |                 | AccountUpsertInput
- INPUT_OBJECT | OnConflict          | f          | account |                 | AccountOnConflict
- ENUM         | SelectableColumns   | f          | account |                 | AccountSelectableField
- ENUM         | UpdatableColumns    | f          | account |                 | AccountUpdatableField
  ENUM         | Enum                | f          |         |                 | PostStatus
-(40 rows)
+(37 rows)
 
 rollback;
