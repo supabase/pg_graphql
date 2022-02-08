@@ -319,6 +319,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#row-visibilty" class="md-nav__link">
+    Row Visibilty
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#comment-directives" class="md-nav__link">
     Comment Directives
   </a>
@@ -459,6 +466,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#row-visibilty" class="md-nav__link">
+    Row Visibilty
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#comment-directives" class="md-nav__link">
     Comment Directives
   </a>
@@ -519,14 +533,18 @@
   <h1>Configuration</h1>
 
 <h2 id="tablecolumn-visibility">Table/Column Visibility</h2>
-<p>Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking <code>SELECT</code> access from the user/role executing queries removes that entity from the schema.</p>
+<p>Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking <code>SELECT</code> access from the user/role executing queries removes that entity from the visible schema.</p>
 <p>For example:
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">revoke</span> <span class="k">all</span> <span class="k">privileges</span> <span class="k">on</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span> <span class="k">from</span> <span class="n">api_user</span><span class="p">;</span>
 </code></pre></div>
 </td></tr></table></p>
 <p>removes the <code>Account</code> GraphQL type.</p>
+<p>Similarly, revoking <code>SELECT</code> access on a table's column will remove that field from the associated GraphQL type/s.</p>
+<p>The permissions <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> all impact the relevant sections of the GraphQL schema.</p>
+<h2 id="row-visibilty">Row Visibilty</h2>
+<p>Visibility of rows in a given table can be configured using PostgreSQL's built-in <a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html">row level security</a> policies.</p>
 <h2 id="comment-directives">Comment Directives</h2>
-<p>Comment directives are snippets of configuration you can associated with SQL entities to alter how they will be reflected into the GraphQL schema.</p>
+<p>Comment directives are snippets of configuration associated with SQL entities that alter if/how those entities are reflected into the GraphQL schema.</p>
 <p>The format of a comment directive is</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="o">@</span><span class="n">graphql</span><span class="p">(</span><span class="o">&lt;</span><span class="n">JSON</span><span class="o">&gt;</span><span class="p">)</span>
 </code></pre></div>

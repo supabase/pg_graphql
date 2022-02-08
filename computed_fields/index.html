@@ -560,7 +560,7 @@
 <p>For arbitrary computations that do not meet the requirements for <a href="https://www.postgresql.org/docs/14/ddl-generated-columns.html">generated columns</a>, a table's reflected GraphQL type can be extended by creating a function that:</p>
 <ul>
 <li>accepts a single parameter of the table's tuple type</li>
-<li>name starts with an underscore</li>
+<li>has a name starting with an underscore</li>
 </ul>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
@@ -625,29 +625,12 @@
 <span class="normal">61</span>
 <span class="normal">62</span>
 <span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">begin</span><span class="p">;</span>
+<span class="normal">64</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">begin</span><span class="p">;</span>
     <span class="k">create</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span>
         <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
         <span class="n">first_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
-        <span class="n">last_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span>
+        <span class="n">last_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
+        <span class="n">parent_id</span> <span class="nb">int</span> <span class="k">references</span> <span class="n">account</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
     <span class="p">);</span>
     <span class="c1">-- Extend with function</span>
     <span class="k">create</span> <span class="k">function</span> <span class="k">public</span><span class="p">.</span><span class="n">_full_name</span><span class="p">(</span><span class="n">rec</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">)</span>
@@ -658,11 +641,9 @@
     <span class="k">as</span> <span class="err">$$</span>
         <span class="k">select</span> <span class="n">format</span><span class="p">(</span><span class="s1">&#39;%s %s&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="p">.</span><span class="n">first_name</span><span class="p">,</span> <span class="n">rec</span><span class="p">.</span><span class="n">last_name</span><span class="p">)</span>
     <span class="err">$$</span><span class="p">;</span>
-    <span class="k">insert</span> <span class="k">into</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span><span class="n">first_name</span><span class="p">,</span> <span class="n">last_name</span><span class="p">)</span>
+    <span class="k">insert</span> <span class="k">into</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span><span class="n">first_name</span><span class="p">,</span> <span class="n">last_name</span><span class="p">,</span> <span class="n">parent_id</span><span class="p">)</span>
     <span class="k">values</span>
-        <span class="p">(</span><span class="s1">&#39;Foo&#39;</span><span class="p">,</span> <span class="s1">&#39;Fooington&#39;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;Bar&#39;</span><span class="p">,</span> <span class="s1">&#39;Barsworth&#39;</span><span class="p">);</span>
-    <span class="n">savepoint</span> <span class="n">a</span><span class="p">;</span>
+        <span class="p">(</span><span class="s1">&#39;Foo&#39;</span><span class="p">,</span> <span class="s1">&#39;Fooington&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
     <span class="k">select</span> <span class="n">jsonb_pretty</span><span class="p">(</span>
         <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
     <span class="err">{</span>
@@ -673,57 +654,40 @@
             <span class="n">firstName</span>
             <span class="n">lastName</span>
             <span class="n">fullName</span>
+            <span class="n">parent</span> <span class="err">{</span>
+              <span class="n">fullName</span>
+            <span class="err">}</span>
           <span class="err">}</span>
         <span class="err">}</span>
       <span class="err">}</span>
     <span class="err">}</span>
         <span class="err">$$</span><span class="p">)</span>
     <span class="p">);</span>
-                     <span class="n">jsonb_pretty</span>                     
-<span class="c1">------------------------------------------------------</span>
- <span class="err">{</span>                                                   <span class="o">+</span>
-     <span class="ss">&quot;data&quot;</span><span class="p">:</span> <span class="err">{</span>                                       <span class="o">+</span>
-         <span class="ss">&quot;accountCollection&quot;</span><span class="p">:</span> <span class="err">{</span>                      <span class="o">+</span>
-             <span class="ss">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span>                              <span class="o">+</span>
-                 <span class="err">{</span>                                   <span class="o">+</span>
-                     <span class="ss">&quot;node&quot;</span><span class="p">:</span> <span class="err">{</span>                       <span class="o">+</span>
-                         <span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                    <span class="o">+</span>
-                         <span class="ss">&quot;fullName&quot;</span><span class="p">:</span> <span class="ss">&quot;Foo Fooington&quot;</span><span class="p">,</span><span class="o">+</span>
-                         <span class="ss">&quot;lastName&quot;</span><span class="p">:</span> <span class="ss">&quot;Fooington&quot;</span><span class="p">,</span>    <span class="o">+</span>
-                         <span class="ss">&quot;firstName&quot;</span><span class="p">:</span> <span class="ss">&quot;Foo&quot;</span>          <span class="o">+</span>
-                     <span class="err">}</span>                               <span class="o">+</span>
-                 <span class="err">}</span><span class="p">,</span>                                  <span class="o">+</span>
-                 <span class="err">{</span>                                   <span class="o">+</span>
-                     <span class="ss">&quot;node&quot;</span><span class="p">:</span> <span class="err">{</span>                       <span class="o">+</span>
-                         <span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                    <span class="o">+</span>
-                         <span class="ss">&quot;fullName&quot;</span><span class="p">:</span> <span class="ss">&quot;Bar Barsworth&quot;</span><span class="p">,</span><span class="o">+</span>
-                         <span class="ss">&quot;lastName&quot;</span><span class="p">:</span> <span class="ss">&quot;Barsworth&quot;</span><span class="p">,</span>    <span class="o">+</span>
-                         <span class="ss">&quot;firstName&quot;</span><span class="p">:</span> <span class="ss">&quot;Bar&quot;</span>          <span class="o">+</span>
-                     <span class="err">}</span>                               <span class="o">+</span>
-                 <span class="err">}</span>                                   <span class="o">+</span>
-             <span class="p">]</span>                                       <span class="o">+</span>
-         <span class="err">}</span>                                           <span class="o">+</span>
-     <span class="err">}</span><span class="p">,</span>                                              <span class="o">+</span>
-     <span class="ss">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span>                                     <span class="o">+</span>
-     <span class="p">]</span>                                               <span class="o">+</span>
+                      <span class="n">jsonb_pretty</span>                       
+<span class="c1">---------------------------------------------------------</span>
+ <span class="err">{</span>                                                      <span class="o">+</span>
+     <span class="ss">&quot;data&quot;</span><span class="p">:</span> <span class="err">{</span>                                          <span class="o">+</span>
+         <span class="ss">&quot;accountCollection&quot;</span><span class="p">:</span> <span class="err">{</span>                         <span class="o">+</span>
+             <span class="ss">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span>                                 <span class="o">+</span>
+                 <span class="err">{</span>                                      <span class="o">+</span>
+                     <span class="ss">&quot;node&quot;</span><span class="p">:</span> <span class="err">{</span>                          <span class="o">+</span>
+                         <span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                       <span class="o">+</span>
+                         <span class="ss">&quot;parent&quot;</span><span class="p">:</span> <span class="err">{</span>                    <span class="o">+</span>
+                             <span class="ss">&quot;fullName&quot;</span><span class="p">:</span> <span class="ss">&quot;Foo Fooington&quot;</span><span class="o">+</span>
+                         <span class="err">}</span><span class="p">,</span>                             <span class="o">+</span>
+                         <span class="ss">&quot;fullName&quot;</span><span class="p">:</span> <span class="ss">&quot;Foo Fooington&quot;</span><span class="p">,</span>   <span class="o">+</span>
+                         <span class="ss">&quot;lastName&quot;</span><span class="p">:</span> <span class="ss">&quot;Fooington&quot;</span><span class="p">,</span>       <span class="o">+</span>
+                         <span class="ss">&quot;firstName&quot;</span><span class="p">:</span> <span class="ss">&quot;Foo&quot;</span>             <span class="o">+</span>
+                     <span class="err">}</span>                                  <span class="o">+</span>
+                 <span class="err">}</span>                                      <span class="o">+</span>
+             <span class="p">]</span>                                          <span class="o">+</span>
+         <span class="err">}</span>                                              <span class="o">+</span>
+     <span class="err">}</span><span class="p">,</span>                                                 <span class="o">+</span>
+     <span class="ss">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span>                                        <span class="o">+</span>
+     <span class="p">]</span>                                                  <span class="o">+</span>
  <span class="err">}</span>
 <span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
 
-    <span class="k">rollback</span> <span class="k">to</span> <span class="n">savepoint</span> <span class="n">a</span><span class="p">;</span>
-    <span class="k">select</span> <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
-    <span class="err">{</span>
-      <span class="n">account</span><span class="p">(</span><span class="n">id</span><span class="p">:</span> <span class="ss">&quot;WyJhY2NvdW50IiwgMV0=&quot;</span><span class="p">)</span> <span class="err">{</span>
-        <span class="n">id</span>
-        <span class="n">fullName</span>
-      <span class="err">}</span>
-    <span class="err">}</span>
-    <span class="err">$$</span><span class="p">);</span>
-                                   <span class="n">resolve</span>                                   
-<span class="c1">-----------------------------------------------------------------------------</span>
- <span class="err">{</span><span class="ss">&quot;data&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;account&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">&quot;fullName&quot;</span><span class="p">:</span> <span class="ss">&quot;Foo Fooington&quot;</span><span class="err">}}</span><span class="p">,</span> <span class="ss">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[]</span><span class="err">}</span>
-<span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
-
-    <span class="k">rollback</span> <span class="k">to</span> <span class="n">savepoint</span> <span class="n">a</span><span class="p">;</span>
 <span class="k">rollback</span><span class="p">;</span>
 </code></pre></div>
 </td></tr></table>
