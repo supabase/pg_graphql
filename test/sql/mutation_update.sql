@@ -36,70 +36,42 @@ begin;
     -- Check atMost clause stops deletes
     select graphql.resolve($$
     mutation {
-      deleteFromAccountCollection(
+      updateAccountCollection(
+        set: {
+          email: "new@email.com"
+        }
         filter: {
           email: {eq: "bat@x.com"}
         }
         atMost: 0
       ) {
         id
-        email
-        echoEmail
-        blogCollection {
-          totalCount
-          edges {
-            node {
-              id
-            }
-          }
-        }
       }
     }
     $$);
 
     rollback to savepoint a;
 
-    -- Check delete works and allows nested response
-    select jsonb_pretty(
-        graphql.resolve($$
-            mutation {
-              deleteFromAccountCollection(
-                filter: {
-                  email: {eq: "bat@x.com"}
-                }
-                atMost: 1
-              ) {
-                id
-                email
-                blogCollection {
-                  totalCount
-                  edges {
-                    node {
-                      id
-                    }
-                  }
-                }
-              }
+    -- Check update works and allows nested response
+    select graphql.resolve($$
+        mutation {
+          updateAccountCollection(
+            set: {
+              email: "new@email.com"
             }
-        $$)
-    );
-
-    rollback to savepoint a;
-
-    -- Check `atMost` clause can be omitted b/c of default
-    select jsonb_pretty(
-        graphql.resolve($$
-            mutation {
-              deleteFromAccountCollection(
-                filter: {
-                  email: {eq: "bat@x.com"}
-                }
-              ) {
-                id
-              }
+            filter: {
+              id: {eq: 2}
             }
-        $$)
-    );
+            atMost: 1
+          ) {
+            id
+            echoEmail
+            blogCollection {
+                totalCount
+            }
+          }
+        }
+    $$);
 
     rollback to savepoint a;
 
@@ -107,7 +79,10 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             mutation {
-              xyz: deleteFromAccountCollection(
+              xyz: updateAccountCollection(
+                set: {
+                  email: "new@email.com"
+                }
                 filter: {
                   email: {eq: "no@match.com"}
                 }
@@ -121,11 +96,14 @@ begin;
 
     rollback to savepoint a;
 
-    -- Check no filter deletes all records
+    -- Check no filter updates all records
     select jsonb_pretty(
         graphql.resolve($$
             mutation {
-              deleteFromAccountCollection(
+              updateAccountCollection(
+                set: {
+                  email: "new@email.com"
+                }
                 atMost: 8
               ) {
                 id
@@ -133,5 +111,39 @@ begin;
             }
         $$)
     );
+
+    rollback to savepoint a;
+
+    -- forgot `set` arg
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation {
+              xyz: updateAccountCollection(
+                filter: {
+                  email: {eq: "not_relevant@x.com"}
+                }
+                atMost: 1
+              ) {
+                id
+              }
+            }
+        $$)
+    );
+
+    -- `atMost` can be omitted b/c it has a default
+    select graphql.resolve($$
+        mutation {
+          updateAccountCollection(
+            set: {
+              email: "new@email.com"
+            }
+            filter: {
+              id: {eq: 2}
+            }
+          ) {
+            id
+          }
+        }
+    $$);
 
 rollback;

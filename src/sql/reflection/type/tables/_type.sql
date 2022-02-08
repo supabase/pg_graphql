@@ -57,7 +57,8 @@ as $$
         case
             when (rec).is_builtin then rec.meta_kind::text
             when rec.meta_kind='Node'         then base_type_name
-            when rec.meta_kind='UpsertNode'   then format('%sUpsertInput',base_type_name)
+            when rec.meta_kind='CreateNode'   then format('%sCreateInput',base_type_name)
+            when rec.meta_kind='UpdateNode'   then format('%sUpdateInput',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
             when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)

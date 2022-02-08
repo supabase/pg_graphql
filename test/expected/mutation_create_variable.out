@@ -1,0 +1,51 @@
+begin;
+    create table account(
+        id serial primary key,
+        email varchar(255) not null
+    );
+    select graphql.resolve($$
+    mutation newAccount($emailAddress: String) {
+       xyz: createAccount(object: {
+        email: $emailAddress
+      }) {
+        id
+      }
+    }
+    $$,
+    variables := '{"emailAddress": "foo@bar.com"}'::jsonb
+    );
+                  resolve                   
+--------------------------------------------
+ {"data": {"xyz": {"id": 1}}, "errors": []}
+(1 row)
+
+    select graphql.resolve($$
+    mutation newAccount($acc: AccountInsertInput) {
+       createAccount(object: $acc) {
+        id
+      }
+    }
+    $$,
+    variables := '{"acc": {"email": "bar@foo.com"}}'::jsonb
+    );
+                       resolve                        
+------------------------------------------------------
+ {"data": {"createAccount": {"id": 2}}, "errors": []}
+(1 row)
+
+    -- Should fail with field does not exist
+    select graphql.resolve($$
+    mutation createAccount($acc: AccountInsertInput) {
+       createAccount(object: $acc) {
+        id
+      }
+    }
+    $$,
+    variables := '{"acc": {"doesNotExist": "other"}}'::jsonb
+    );
+                                   resolve                                    
+------------------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'doesNotExist' on type 'Account'"]}
+(1 row)
+
+rollback;

@@ -7,9 +7,11 @@ as $$
         case count(1)
             when 0 then format('execute %I', statement_name)
             else
-                format('execute %I (', statement_name)
-                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
-                || ')'
+                format(
+                    'execute %I ( %s )',
+                    statement_name,
+                    string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
+                )
         end
     from
         jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)

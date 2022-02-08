@@ -543,7 +543,8 @@ create type graphql.meta_kind as enum (
     'Connection',
     'OrderBy',
     'FilterEntity',
-    'UpsertNode',
+    'CreateNode',
+    'UpdateNode',
 
 -- GraphQL Type Derived
     'FilterType',
@@ -621,7 +622,8 @@ as $$
         case
             when (rec).is_builtin then rec.meta_kind::text
             when rec.meta_kind='Node'         then base_type_name
-            when rec.meta_kind='UpsertNode'   then format('%sUpsertInput',base_type_name)
+            when rec.meta_kind='CreateNode'   then format('%sCreateInput',base_type_name)
+            when rec.meta_kind='UpdateNode'   then format('%sUpdateInput',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
             when rec.meta_kind='OrderBy'      then format('%sOrderBy',    base_type_name)
@@ -874,7 +876,8 @@ begin
                     ('OBJECT',                    'Connection',              null,       ent.entity),
                     ('INPUT_OBJECT',              'OrderBy',                 null,       ent.entity),
                     ('INPUT_OBJECT',              'FilterEntity',            null,       ent.entity),
-                    ('INPUT_OBJECT',              'UpsertNode',              null,       ent.entity)
+                    ('INPUT_OBJECT',              'CreateNode',              null,       ent.entity),
+                    ('INPUT_OBJECT',              'UpdateNode',              null,       ent.entity)
             ) x(type_kind, meta_kind, description, entity);
 
 
@@ -965,7 +968,10 @@ create type graphql.field_meta_kind as enum (
     'Function',
     'Mutation.insert.one',
     'Mutation.delete',
-    'ObjectArg'
+    'Mutation.update',
+    'UpdateSetArg',
+    'ObjectArg',
+    'AtMostArg'
 );
 
 create table graphql._field (
@@ -1029,7 +1035,6 @@ $$;
 create or replace function graphql.field_name(rec graphql._field)
     returns text
     immutable
-    strict
     language sql
 as $$
 
@@ -1044,8 +1049,9 @@ as $$
                 graphql.comment_directive_name(rec.func),
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
-            when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
-            when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Query.collection' then format('%sCollection', graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')))
+            when rec.meta_kind = 'Mutation.insert.one' then format('create%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.update' then format('update%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
@@ -1497,11 +1503,13 @@ begin
             and tt.meta_kind = 'FilterEntity';
 
     -- Mutation.insertAccount
+    -- Mutation.deleteFromAccountCollection
+    -- Mutation.updateAccountCollection
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
         select
             fs.field_meta_kind::graphql.field_meta_kind,
-            ins.entity,
-            fs.parent_type_id,
+            node.entity,
+            graphql.type_id('Mutation'::graphql.meta_kind),
             fs.type_id,
             fs.is_not_null,
             fs.is_array,
@@ -1509,16 +1517,15 @@ begin
             fs.description,
             false asis_hidden_from_schema
         from
-            graphql.type ins
-            join graphql.type node
-                on ins.entity = node.entity,
+            graphql.type node,
             lateral (
                 values
-                    ('Mutation.insert.one', graphql.type_id('Mutation'::graphql.meta_kind), node.id, false, false, false, null::boolean, null::text)
-            ) fs(field_meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
+                    ('Mutation.insert.one', node.id, false, false, false, null::text),
+                    ('Mutation.update',     node.id, true,  true,  true,  null),
+                    ('Mutation.delete',     node.id, true,  true,  true,  null)
+            ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
-            ins.meta_kind = 'UpsertNode'
-            and node.meta_kind = 'Node';
+            node.meta_kind = 'Node';
 
     -- Mutation.insertAccount(object: ...)
     insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -1541,7 +1548,7 @@ begin
                 and f.meta_kind = 'Mutation.insert.one'
             inner join graphql.type tt
                 on t.entity = tt.entity
-                and tt.meta_kind = 'UpsertNode',
+                and tt.meta_kind = 'CreateNode',
             lateral (
                 values
                     ('ObjectArg'::graphql.field_meta_kind, 'object')
@@ -1573,28 +1580,10 @@ begin
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial; -- skip (big)serial columns
 
-    -- Mutation.delete()
-    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
-        select
-            fs.field_meta_kind::graphql.field_meta_kind,
-            node.entity,
-            fs.parent_type_id,
-            fs.type_id,
-            fs.is_not_null,
-            fs.is_array,
-            fs.is_array_not_null,
-            fs.description,
-            false asis_hidden_from_schema
-        from
-            graphql.type node,
-            lateral (
-                values
-                    ('Mutation.delete', graphql.type_id('Mutation'::graphql.meta_kind), node.id, true, true, true::boolean, null::text)
-            ) fs(field_meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description)
-        where
-            node.meta_kind = 'Node';
+
 
     -- Mutation.delete(... filter: {})
+    -- Mutation.update(... filter: {})
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
     select
         f.type_id as parent_type_id,
@@ -1612,11 +1601,13 @@ begin
             on f.entity = tt.entity
             and tt.meta_kind = 'FilterEntity'
     where
-        f.meta_kind = 'Mutation.delete';
+        f.meta_kind in ('Mutation.delete', 'Mutation.update');
 
     -- Mutation.delete(... atMost: Int!)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
+    -- Mutation.update(... atMost: Int!)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
     select
+        'AtMostArg'::graphql.field_meta_kind,
         f.type_id as parent_type_id,
         graphql.type_id('Int'),
         'atMost' as constant_name,
@@ -1630,7 +1621,55 @@ begin
     from
         graphql._field f
     where
-        f.meta_kind = 'Mutation.delete';
+        f.meta_kind in ('Mutation.delete', 'Mutation.update');
+
+    -- Mutation.update(set: ...)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+        select
+            'UpdateSetArg'::graphql.field_meta_kind,
+            f.type_id as parent_type_id,
+            tt.id type_id,
+            f.entity,
+            'set' as constant_name,
+            true as is_not_null,
+            false as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            f.id parent_arg_field_id,
+            null as description
+        from
+            graphql._field f
+            inner join graphql.type tt
+                on tt.meta_kind = 'UpdateNode'
+                and f.entity = tt.entity
+            where
+                f.meta_kind = 'Mutation.update';
+
+    -- Mutation.update(set: {<column> })
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, column_attribute_num, is_hidden_from_schema)
+        select
+            'Column' as meta_kind,
+            gf.entity,
+            gf.type_id parent_type_id,
+            graphql.type_id(ec.column_type) as type_id,
+            false as is_not_null,
+            graphql.sql_type_is_array(ec.column_type) as is_array,
+            false as is_array_not_null,
+            true as is_arg,
+            gf.id as parent_arg_field_id,
+            null::text description,
+            ec.column_name,
+            ec.column_type,
+            ec.column_attribute_num,
+            false as is_hidden_from_schema
+        from
+            graphql._field gf
+            join graphql.entity_column ec
+                on gf.entity = ec.entity
+        where
+            gf.meta_kind = 'UpdateSetArg'
+            and not ec.is_generated -- skip generated columns
+            and not ec.is_serial; -- skip (big)serial columns
 
 end;
 $$;
@@ -1795,7 +1834,7 @@ as $$
     where
         graphql.name_literal(elem) = $1
 $$;
-create or replace function graphql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass)
+create or replace function graphql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass, default_value text = null)
     returns text
     immutable
     language plpgsql
@@ -1814,7 +1853,7 @@ declare
 
 begin
     if arg is null then
-        return null;
+        return default_value;
 
     elsif graphql.is_variable(arg -> 'value') and is_opaque then
         return graphql.cursor_clause_for_variable(entity, graphql.arg_index(name, variable_definitions));
@@ -1823,15 +1862,18 @@ begin
         return graphql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
 
 
-    -- Order by
-
     -- Non-special variable
     elsif graphql.is_variable(arg -> 'value') then
         return '$' || graphql.arg_index(name, variable_definitions)::text || '::' || cast_to;
 
     -- Non-special literal
     else
-        return format('%L::%s', (arg -> 'value' ->> 'value'), cast_to);
+        return
+            format(
+                '%L::%s',
+                (arg -> 'value' ->> 'value'),
+                cast_to
+            );
     end if;
 end
 $$;
@@ -2615,8 +2657,14 @@ declare
         where
             f.name = graphql.name_literal(ast) and f.meta_kind = 'Mutation.delete';
 
-    at_most_clause text = graphql.arg_clause('atMost',  (ast -> 'arguments'), variable_definitions, field_rec.entity);
-
+    arg_at_most graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'AtMostArg';
+    at_most_clause text = graphql.arg_clause(
+        'atMost',
+        (ast -> 'arguments'),
+        variable_definitions,
+        field_rec.entity,
+        arg_at_most.default_value
+    );
 
     filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
     where_clause text = graphql.where_clause(filter_arg, field_rec.entity, block_name, variables, variable_definitions);
@@ -2625,7 +2673,7 @@ declare
 begin
 
     returning_clause = format(
-        'jsonb_build_array(jsonb_build_object( %s ))',
+        'jsonb_agg(jsonb_build_object( %s ))',
         string_agg(
             format(
                 '%L, %s',
@@ -2662,7 +2710,6 @@ begin
 
 
     result = format(
-        -- todo: return empty list (vs null) on no matches
         'with deleted as (
             delete from %I as %I
             where %s
@@ -2742,7 +2789,16 @@ begin
     if graphql.is_variable(object_arg -> 'value') then
         -- `object` is variable
         select
-            string_agg(format('%I', x.key_), ', ') as column_clause,
+            string_agg(
+                format(
+                    '%I',
+                    case
+                        when ac.meta_kind = 'Column' then ac.column_name
+                        else graphql.exception_unknown_field(x.key_, field_rec.type_)
+                    end
+                ),
+                ', '
+            ) as column_clause,
             string_agg(
                 format(
                     '$%s::jsonb -> %L',
@@ -2915,6 +2971,197 @@ begin
         and $4 = field.parent_type;
 end;
 $$;
+create or replace function graphql.build_update(
+    ast jsonb,
+    variable_definitions jsonb = '[]',
+    variables jsonb = '{}',
+    parent_type text = null,
+    parent_block_name text = null
+)
+    returns text
+    language plpgsql
+as $$
+declare
+    result text;
+
+    block_name text = graphql.slug();
+
+    field_rec graphql.field = f
+        from
+            graphql.field f
+        where
+            f.name = graphql.name_literal(ast) and f.meta_kind = 'Mutation.update';
+
+    filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
+    where_clause text = graphql.where_clause(filter_arg, field_rec.entity, block_name, variables, variable_definitions);
+    returning_clause text;
+
+    arg_at_most graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'AtMostArg';
+    at_most_clause text = graphql.arg_clause(
+        'atMost',
+        (ast -> 'arguments'),
+        variable_definitions,
+        field_rec.entity,
+        arg_at_most.default_value
+    );
+
+    arg_set graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'UpdateSetArg';
+    allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_set.id and meta_kind = 'Column';
+    set_arg_ix int = graphql.arg_index(arg_set.name, variable_definitions);
+    set_arg jsonb = graphql.get_arg_by_name(arg_set.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
+    set_clause text;
+begin
+
+    if set_arg is null then
+        perform graphql.exception('missing argument "set"');
+    end if;
+
+    if graphql.is_variable(set_arg -> 'value') then
+        -- `set` is variable
+        select
+            string_agg(
+                format(
+                    '%I = $%s::jsonb -> %L',
+                    case
+                        when ac.column_name is not null then ac.column_name
+                        else graphql.exception_unknown_field(x.key_, f.type_)
+                    end,
+                    graphql.arg_index(
+                        graphql.name_literal(set_arg -> 'value'),
+                        variable_definitions
+                    ),
+                    x.key_
+                ),
+                ', '
+            )
+        from
+            jsonb_each(variables -> graphql.name_literal(set_arg -> 'value')) x(key_, val)
+            left join unnest(allowed_columns) ac
+                on x.key_ = ac.name
+        into
+            set_clause;
+
+    else
+        -- Literals and Column Variables
+        select
+            string_agg(
+                case
+                    when graphql.is_variable(val -> 'value') then format(
+                        '%I = $%s',
+                        case
+                            when ac.meta_kind = 'Column' then ac.column_name
+                            else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
+                        end,
+                        graphql.arg_index(
+                            (val -> 'value' -> 'name' ->> 'value'),
+                            variable_definitions
+                        )
+                    )
+                    else format(
+                        '%I = %L',
+                        case
+                            when ac.meta_kind = 'Column' then ac.column_name
+                            else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
+                        end,
+                        graphql.value_literal(val)
+                    )
+                end,
+                ', '
+            )
+        from
+            jsonb_array_elements(set_arg -> 'value' -> 'fields') arg_cols(val)
+            left join unnest(allowed_columns) ac
+                on graphql.name_literal(arg_cols.val) = ac.name
+        into
+            set_clause;
+
+    end if;
+
+    returning_clause = format(
+        'jsonb_agg(jsonb_build_object( %s ))',
+        string_agg(
+            format(
+                '%L, %s',
+                graphql.alias_or_name_literal(x.sel),
+                case
+                    when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
+                    when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
+                    when nf.name = '__typename' then format('%L', nf.type_)
+                    when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
+                        ast := x.sel,
+                        variable_definitions := variable_definitions,
+                        variables := variables,
+                        parent_type := field_rec.type_,
+                        parent_block_name := block_name
+                    )
+                    when nf.local_columns is not null and nf.meta_kind = 'Relationship.toOne' then graphql.build_node_query(
+                        ast := x.sel,
+                        variable_definitions := variable_definitions,
+                        variables := variables,
+                        parent_type := field_rec.type_,
+                        parent_block_name := block_name
+                    )
+                    else graphql.exception_unknown_field(graphql.name_literal(x.sel), field_rec.type_)
+                end
+            ),
+            ','
+        )
+    )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
+        left join graphql.field nf
+            on field_rec.type_ = nf.parent_type
+            and graphql.name_literal(x.sel) = nf.name;
+
+
+    result = format(
+        'with updated as (
+            update %I as %I
+            set %s
+            where %s
+            returning *
+        ),
+        total(total_count) as (
+            select
+                count(*)
+            from
+                updated
+        ),
+        req(res) as (
+            select
+                %s
+            from
+                updated as %I
+        ),
+        wrapper(res) as (
+            select
+                case
+                    when total.total_count > %s then graphql.exception($a$update impacts too many records$a$)::jsonb
+                    when total.total_count = 0 then jsonb_build_array()
+                    else req.res
+                end
+            from
+                total
+                left join req
+                    on true
+            limit 1
+        )
+        select
+            res
+        from
+            wrapper;',
+        field_rec.entity,
+        block_name,
+        set_clause,
+        where_clause,
+        coalesce(returning_clause, 'null'),
+        block_name,
+        at_most_clause
+    );
+
+    return result;
+end;
+$$;
 create or replace function graphql."resolve_enumValues"(type_ text, ast jsonb)
     returns jsonb
     stable
@@ -2987,6 +3234,12 @@ begin
                                     )
                                     order by
                                         ga.column_attribute_num,
+                                        case ga.name
+                                            when 'set' then 97
+                                            when 'filter' then 98
+                                            when 'atMost' then 99
+                                            else 0
+                                        end,
                                         ga.name
                                 ),
                                 '[]'
@@ -3338,9 +3591,11 @@ as $$
         case count(1)
             when 0 then format('execute %I', statement_name)
             else
-                format('execute %I (', statement_name)
-                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
-                || ')'
+                format(
+                    'execute %I ( %s )',
+                    statement_name,
+                    string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
+                )
         end
     from
         jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)
@@ -3445,6 +3700,12 @@ begin
                         )
                     when 'Mutation.delete' then
                         graphql.build_delete(
+                            ast := ast_operation,
+                            variable_definitions := variable_definitions,
+                            variables := variables
+                        )
+                    when 'Mutation.update' then
+                        graphql.build_update(
                             ast := ast_operation,
                             variable_definitions := variable_definitions,
                             variables := variables

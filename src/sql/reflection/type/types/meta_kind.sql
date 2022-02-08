@@ -39,7 +39,8 @@ create type graphql.meta_kind as enum (
     'Connection',
     'OrderBy',
     'FilterEntity',
-    'UpsertNode',
+    'CreateNode',
+    'UpdateNode',
 
 -- GraphQL Type Derived
     'FilterType',

@@ -9,10 +9,11 @@ begin;
 ------------------------
  UserAccount
  UserAccountConnection
+ UserAccountCreateInput
  UserAccountEdge
  UserAccountFilter
  UserAccountOrderBy
- UserAccountUpsertInput
-(6 rows)
+ UserAccountUpdateInput
+(7 rows)
 
 rollback;

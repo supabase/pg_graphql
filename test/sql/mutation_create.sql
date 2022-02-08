@@ -1,23 +1,29 @@
 begin;
+
     create table account(
         id serial primary key,
         email varchar(255) not null
     );
+
     insert into public.account(email)
     values
         ('aardvark@x.com');
+
     create table blog(
         id serial primary key,
         owner_id integer not null references account(id)
     );
+
     -- Make sure functions still work
     create function _echo_email(account)
         returns text
         language sql
     as $$ select $1.email $$;
+
+
     select graphql.resolve($$
     mutation {
-      insertAccount(object: {
+      createAccount(object: {
         email: "foo@barsley.com"
       }) {
         id
@@ -28,21 +34,13 @@ begin;
       }
     }
     $$);
-                                                          resolve                                                          
----------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertAccount": {"id": 2, "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}}, "errors": []}
-(1 row)
 
     select * from account;
- id |      email      
-----+-----------------
-  1 | aardvark@x.com
-  2 | foo@barsley.com
-(2 rows)
+
 
     select graphql.resolve($$
     mutation {
-      insertBlog(object: {
+      createBlog(object: {
         ownerId: 2
       }) {
         id
@@ -52,15 +50,9 @@ begin;
       }
     }
     $$);
-                                resolve                                
------------------------------------------------------------------------
- {"data": {"insertBlog": {"id": 1, "owner": {"id": 2}}}, "errors": []}
-(1 row)
 
     select * from blog;
- id | owner_id 
-----+----------
-  1 |        2
-(1 row)
+
+
 
 rollback;

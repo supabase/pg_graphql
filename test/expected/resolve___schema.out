@@ -62,6 +62,10 @@ begin;
                      "name": "AccountConnection"  +
                  },                               +
                  {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "AccountCreateInput" +
+                 },                               +
+                 {                                +
                      "kind": "OBJECT",            +
                      "name": "AccountEdge"        +
                  },                               +
@@ -75,7 +79,7 @@ begin;
                  },                               +
                  {                                +
                      "kind": "INPUT_OBJECT",      +
-                     "name": "AccountUpsertInput" +
+                     "name": "AccountUpdateInput" +
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
@@ -92,6 +96,10 @@ begin;
                  {                                +
                      "kind": "OBJECT",            +
                      "name": "BlogConnection"     +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogCreateInput"    +
                  },                               +
                  {                                +
                      "kind": "OBJECT",            +
@@ -114,6 +122,10 @@ begin;
                      "name": "BlogPostConnection" +
                  },                               +
                  {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogPostCreateInput"+
+                 },                               +
+                 {                                +
                      "kind": "OBJECT",            +
                      "name": "BlogPostEdge"       +
                  },                               +
@@ -131,11 +143,11 @@ begin;
                  },                               +
                  {                                +
                      "kind": "INPUT_OBJECT",      +
-                     "name": "BlogPostUpsertInput"+
+                     "name": "BlogPostUpdateInput"+
                  },                               +
                  {                                +
                      "kind": "INPUT_OBJECT",      +
-                     "name": "BlogUpsertInput"    +
+                     "name": "BlogUpdateInput"    +
                  },                               +
                  {                                +
                      "kind": "SCALAR",            +
