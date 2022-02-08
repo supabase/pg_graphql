@@ -29,7 +29,7 @@ declare
 begin
 
     returning_clause = format(
-        'jsonb_build_array(jsonb_build_object( %s ))',
+        'jsonb_agg(jsonb_build_object( %s ))',
         string_agg(
             format(
                 '%L, %s',

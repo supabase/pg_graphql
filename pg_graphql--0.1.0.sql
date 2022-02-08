@@ -970,7 +970,8 @@ create type graphql.field_meta_kind as enum (
     'Mutation.delete',
     'Mutation.update',
     'UpdateSetArg',
-    'ObjectArg'
+    'ObjectArg',
+    'AtMostArg'
 );
 
 create table graphql._field (
@@ -1604,8 +1605,9 @@ begin
 
     -- Mutation.delete(... atMost: Int!)
     -- Mutation.update(... atMost: Int!)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
     select
+        'AtMostArg'::graphql.field_meta_kind,
         f.type_id as parent_type_id,
         graphql.type_id('Int'),
         'atMost' as constant_name,
@@ -1832,7 +1834,7 @@ as $$
     where
         graphql.name_literal(elem) = $1
 $$;
-create or replace function graphql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass)
+create or replace function graphql.arg_clause(name text, arguments jsonb, variable_definitions jsonb, entity regclass, default_value text = null)
     returns text
     immutable
     language plpgsql
@@ -1851,7 +1853,7 @@ declare
 
 begin
     if arg is null then
-        return null;
+        return default_value;
 
     elsif graphql.is_variable(arg -> 'value') and is_opaque then
         return graphql.cursor_clause_for_variable(entity, graphql.arg_index(name, variable_definitions));
@@ -1860,15 +1862,18 @@ begin
         return graphql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
 
 
-    -- Order by
-
     -- Non-special variable
     elsif graphql.is_variable(arg -> 'value') then
         return '$' || graphql.arg_index(name, variable_definitions)::text || '::' || cast_to;
 
     -- Non-special literal
     else
-        return format('%L::%s', (arg -> 'value' ->> 'value'), cast_to);
+        return
+            format(
+                '%L::%s',
+                (arg -> 'value' ->> 'value'),
+                cast_to
+            );
     end if;
 end
 $$;
@@ -2662,7 +2667,7 @@ declare
 begin
 
     returning_clause = format(
-        'jsonb_build_array(jsonb_build_object( %s ))',
+        'jsonb_agg(jsonb_build_object( %s ))',
         string_agg(
             format(
                 '%L, %s',
@@ -2779,7 +2784,6 @@ begin
     if graphql.is_variable(object_arg -> 'value') then
         -- `object` is variable
         select
-            -- todo, handle DNE field
             string_agg(
                 format(
                     '%I',
@@ -2983,11 +2987,18 @@ declare
         where
             f.name = graphql.name_literal(ast) and f.meta_kind = 'Mutation.update';
 
-
     filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
     where_clause text = graphql.where_clause(filter_arg, field_rec.entity, block_name, variables, variable_definitions);
     returning_clause text;
-    at_most_clause text = graphql.arg_clause('atMost',  (ast -> 'arguments'), variable_definitions, field_rec.entity);
+
+    arg_at_most graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'AtMostArg';
+    at_most_clause text = graphql.arg_clause(
+        'atMost',
+        (ast -> 'arguments'),
+        variable_definitions,
+        field_rec.entity,
+        arg_at_most.default_value
+    );
 
     arg_set graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'UpdateSetArg';
     allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_set.id and meta_kind = 'Column';
@@ -2995,6 +3006,10 @@ declare
     set_arg jsonb = graphql.get_arg_by_name(arg_set.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
     set_clause text;
 begin
+
+    if set_arg is null then
+        perform graphql.exception('missing argument "set"');
+    end if;
 
     if graphql.is_variable(set_arg -> 'value') then
         -- `set` is variable
@@ -3058,7 +3073,7 @@ begin
     end if;
 
     returning_clause = format(
-        'jsonb_build_array(jsonb_build_object( %s ))',
+        'jsonb_agg(jsonb_build_object( %s ))',
         string_agg(
             format(
                 '%L, %s',
@@ -3095,7 +3110,6 @@ begin
 
 
     result = format(
-        -- todo: return empty list (vs null) on no matches
         'with updated as (
             update %I as %I
             set %s
@@ -3572,9 +3586,11 @@ as $$
         case count(1)
             when 0 then format('execute %I', statement_name)
             else
-                format('execute %I (', statement_name)
-                || string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
-                || ')'
+                format(
+                    'execute %I ( %s )',
+                    statement_name,
+                    string_agg(format('%L', coalesce(var.val, def ->> 'defaultValue')), ',' order by def_idx)
+                )
         end
     from
         jsonb_array_elements(variable_definitions) with ordinality d(def, def_idx)

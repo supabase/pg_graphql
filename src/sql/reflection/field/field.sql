@@ -11,7 +11,8 @@ create type graphql.field_meta_kind as enum (
     'Mutation.delete',
     'Mutation.update',
     'UpdateSetArg',
-    'ObjectArg'
+    'ObjectArg',
+    'AtMostArg'
 );
 
 create table graphql._field (
@@ -645,8 +646,9 @@ begin
 
     -- Mutation.delete(... atMost: Int!)
     -- Mutation.update(... atMost: Int!)
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
     select
+        'AtMostArg'::graphql.field_meta_kind,
         f.type_id as parent_type_id,
         graphql.type_id('Int'),
         'atMost' as constant_name,

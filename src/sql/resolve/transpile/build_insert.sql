@@ -32,7 +32,6 @@ begin
     if graphql.is_variable(object_arg -> 'value') then
         -- `object` is variable
         select
-            -- todo, handle DNE field
             string_agg(
                 format(
                     '%I',
