@@ -36,7 +36,7 @@ create table account(
 
 create table blog(
     id serial primary key,
-    owner_id integer not null references account(id),
+    owner_id integer not null references account(id) on delete cascade,
     name varchar(255) not null,
     description varchar(255),
     created_at timestamp not null,
@@ -49,7 +49,7 @@ create type blog_post_status as enum ('PENDING', 'RELEASED');
 
 create table blog_post(
     id uuid not null default uuid_generate_v4() primary key,
-    blog_id integer not null references blog(id),
+    blog_id integer not null references blog(id) on delete cascade,
     title varchar(255) not null,
     body varchar(10000),
     status blog_post_status not null,

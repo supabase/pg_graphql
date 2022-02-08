@@ -8,6 +8,7 @@ create type graphql.field_meta_kind as enum (
     'Filter.Column',
     'Function',
     'Mutation.insert.one',
+    'Mutation.delete',
     'ObjectArg'
 );
 
@@ -26,6 +27,7 @@ create table graphql._field (
     -- columns
     entity regclass,
     column_name text,
+    column_attribute_num int,
     column_type regtype,
 
     -- relationships
@@ -55,6 +57,19 @@ create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_f
 create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
 
 
+create or replace function graphql.field_name_for_column(entity regclass, column_name text)
+    returns text
+    immutable
+    language sql
+as $$
+    select
+        coalesce(
+            graphql.comment_directive_name($1, $2),
+            graphql.to_camel_case($2)
+        )
+$$;
+
+
 create or replace function graphql.field_name(rec graphql._field)
     returns text
     immutable
@@ -65,9 +80,9 @@ as $$
     select
         case
             when rec.meta_kind = 'Constant' then rec.constant_name
-            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then coalesce(
-                graphql.comment_directive_name(rec.entity, rec.column_name),
-                graphql.to_camel_case(rec.column_name)
+            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.field_name_for_column(
+                rec.entity,
+                rec.column_name
             )
             when rec.meta_kind = 'Function' then coalesce(
                 graphql.comment_directive_name(rec.func),
@@ -75,6 +90,7 @@ as $$
             )
             when rec.meta_kind = 'Query.collection' then graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')) || 'Collection'
             when rec.meta_kind = 'Mutation.insert.one' then format('insert%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
                 rec.foreign_name_override,
                 graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node')) || 'Collection'
@@ -90,7 +106,6 @@ as $$
                 -- default
                 graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node'))
             )
-            -- todo remove
             when rec.constant_name is not null then rec.constant_name
             else graphql.exception(format('could not determine field name, %s', $1))
         end
@@ -242,27 +257,26 @@ begin
 
     -- Node
     -- Node.<column>
-    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, column_name, column_type, is_hidden_from_schema)
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, column_name, column_type, column_attribute_num, is_hidden_from_schema)
         select
             'Column' as meta_kind,
             gt.entity,
             gt.id parent_type_id,
-            graphql.type_id(pa.atttypid::regtype) as type_id,
-            pa.attnotnull as is_not_null,
-            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
-            pa.attnotnull and graphql.sql_type_is_array(pa.atttypid::regtype) as is_array_not_null,
+            graphql.type_id(es.column_type) as type_id,
+            es.is_not_null,
+            es.is_array as is_array,
+            es.is_not_null and graphql.sql_type_is_array(es.column_type) as is_array_not_null,
             null::text description,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
+            es.column_name as column_name,
+            es.column_type as column_type,
+            es.column_attribute_num,
             false as is_hidden_from_schema
         from
             graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
+            join graphql.entity_column es
+                on gt.entity = es.entity
         where
-            gt.meta_kind = 'Node'
-            and pa.attnum > 0
-            and not pa.attisdropped;
+            gt.meta_kind = 'Node';
 
     -- Node
     -- Extensibility via function taking record type
@@ -338,7 +352,7 @@ begin
 
 
     -- NodeOrderBy
-    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, column_name, column_type, entity, description)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, column_name, column_type, column_attribute_num, entity, description)
         select
             'OrderBy.Column' meta_kind,
             gt.id parent_type,
@@ -346,18 +360,17 @@ begin
             false is_not_null,
             false is_array,
             null is_array_not_null,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
+            ec.column_name,
+            ec.column_type,
+            ec.column_attribute_num,
             gt.entity,
             null::text description
         from
             graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
+            join graphql.entity_column ec
+                on gt.entity = ec.entity
         where
-            gt.meta_kind = 'OrderBy'
-            and pa.attnum > 0
-            and not pa.attisdropped;
+            gt.meta_kind = 'OrderBy';
 
 
     -- IntFilter {eq: ...}
@@ -375,27 +388,26 @@ begin
             gt.meta_kind = 'FilterType';
 
     -- AccountFilter(column eq)
-    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, column_name, entity, description)
+    insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, column_name, column_attribute_num, entity, description)
         select distinct
             'Filter.Column'::graphql.field_meta_kind as meta_kind,
             gt.id parent_type_id,
             gt_scalar.id type_id,
             false is_not_null,
             false is_array,
-            pa.attname::text as column_name,
+            ec.column_name,
+            ec.column_attribute_num,
             gt.entity,
             null::text description
         from
             graphql.type gt
-            join pg_attribute pa
-                on gt.entity = pa.attrelid
+            join graphql.entity_column ec
+                on gt.entity = ec.entity
             join graphql.type gt_scalar
-                on graphql.type_id(pa.atttypid::regtype) = gt_scalar.graphql_type_id
+                on graphql.type_id(ec.column_type) = gt_scalar.graphql_type_id
                 and gt_scalar.meta_kind = 'FilterType'
         where
-            gt.meta_kind = 'FilterEntity'
-            and pa.attnum > 0
-            and not pa.attisdropped;
+            gt.meta_kind = 'FilterEntity';
 
 
     -- Arguments
@@ -555,7 +567,7 @@ begin
     -- Mutation.insertAccount(object: ...)
     insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
         select
-            'ObjectArg' meta_kind,
+            x.meta_kind,
             f.type_id as parent_type_id,
             tt.id type_id,
             t.entity,
@@ -573,34 +585,97 @@ begin
                 and f.meta_kind = 'Mutation.insert.one'
             inner join graphql.type tt
                 on t.entity = tt.entity
-                and tt.meta_kind = 'UpsertNode';
+                and tt.meta_kind = 'UpsertNode',
+            lateral (
+                values
+                    ('ObjectArg'::graphql.field_meta_kind, 'object')
+            ) x(meta_kind, constant_name);
 
     -- Mutation.insertAccount(object: {<column> })
-    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, is_hidden_from_schema)
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description, column_name, column_type, column_attribute_num, is_hidden_from_schema)
         select
             'Column' as meta_kind,
             gf.entity,
             gf.type_id parent_type_id,
-            graphql.type_id(pa.atttypid::regtype) as type_id,
+            graphql.type_id(ec.column_type) as type_id,
             false as is_not_null,
-            graphql.sql_type_is_array(pa.atttypid::regtype) as is_array,
+            graphql.sql_type_is_array(ec.column_type) as is_array,
             false as is_array_not_null,
             true as is_arg,
             gf.id as parent_arg_field_id,
             null::text description,
-            pa.attname::text as column_name,
-            pa.atttypid::regtype as column_type,
+            ec.column_name,
+            ec.column_type,
+            ec.column_attribute_num,
             false as is_hidden_from_schema
         from
             graphql._field gf
-            join pg_attribute pa
-                on gf.entity = pa.attrelid
+            join graphql.entity_column ec
+                on gf.entity = ec.entity
         where
             gf.meta_kind = 'ObjectArg'
-            and pa.attnum > 0
-            and attgenerated = '' -- skip generated columns
-            and pg_get_serial_sequence(gf.entity::text, pa.attname) is null -- skip (big)serial columns
-            and not pa.attisdropped;
+            and not ec.is_generated -- skip generated columns
+            and not ec.is_serial; -- skip (big)serial columns
+
+    -- Mutation.delete()
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            node.entity,
+            fs.parent_type_id,
+            fs.type_id,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            false asis_hidden_from_schema
+        from
+            graphql.type node,
+            lateral (
+                values
+                    ('Mutation.delete', graphql.type_id('Mutation'::graphql.meta_kind), node.id, true, true, true::boolean, null::text)
+            ) fs(field_meta_kind, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description)
+        where
+            node.meta_kind = 'Node';
+
+    -- Mutation.delete(... filter: {})
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        tt.id type_,
+        'filter' as constant_name,
+        false as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql._field f
+        inner join graphql.type tt
+            on f.entity = tt.entity
+            and tt.meta_kind = 'FilterEntity'
+    where
+        f.meta_kind = 'Mutation.delete';
+
+    -- Mutation.delete(... atMost: Int!)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_arg, default_value, parent_arg_field_id, description)
+    select
+        f.type_id as parent_type_id,
+        graphql.type_id('Int'),
+        'atMost' as constant_name,
+        true as is_not_null,
+        false as is_array,
+        false as is_array_not_null,
+        true as is_arg,
+        '1' as default_value,
+        f.id parent_arg_field_id,
+        null as description
+    from
+        graphql._field f
+    where
+        f.meta_kind = 'Mutation.delete';
+
 end;
 $$;
 
@@ -622,6 +697,7 @@ create view graphql.field as
         f.entity,
         f.column_name,
         f.column_type,
+        f.column_attribute_num,
         f.foreign_columns,
         f.local_columns,
         f.func,
