@@ -5,17 +5,10 @@ pg_graphql aims to implement all of the [GraphQL core specification](https://spe
 - [x] Fragments
 - [x] Variables
 - [x] Named Operations
-- [ ] Introspection Schema
+- [x] Introspection Schema
 
-At time of writing, the introspection schema is a partial implementation. It is complete enough to render the GraphiQL explorer & to dump the schema via the Apollo CLI.
-
-### Relay
-- [x] Opaque Cursors
-- [x] Global NodeId
-- [x] Node Types
-    * [x] Arguments
-        * [x] nodeId
-- [x] Connection Types
+### Query
+- [x] Pageable Types
     * [x] totalCount
     * [x] PageInfo
     *   * [x] hasNextPage
@@ -40,8 +33,9 @@ At time of writing, the introspection schema is a partial implementation. It is 
 - [ ] One-to-One
 
 ### Mutations
-- [ ] Upsert
-- [ ] User Defined Functions
+- [x] Insert
+- [x] Update
+- [x] Delete
 
 ### Error Handling
 - [x] Display parser syntax errors

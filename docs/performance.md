@@ -3,8 +3,8 @@ On a machine with:
 
 - 4 CPUs
 - 16GB of RAM
-- PostgreSQL 13 (docker)
-- Postgrest +8 (docker, operating as webserver)
+- PostgreSQL 14 (docker)
+- Postgrest +9 (docker, operating as webserver)
 
 pg_graphql served a simple query at an average rate of +2200 req/second.
 
@@ -63,7 +63,7 @@ i.e.
 ```shell
 docker-compose up
 
-echo '{"query": "{ account(nodeId: $nodeId) { id }}", "variables": {"nodeId": "WyJhY2NvdW50IiwgMV0="}}' > query.json
+echo '{"query": "{ accountCollection(first: 1) { edges { node { id } } } }", "variables": {}}' > query.json
 
 ab -n 8000 -c 8 -T application/json -p query.json http://0.0.0.0:3000/rpc/graphql
 ```
