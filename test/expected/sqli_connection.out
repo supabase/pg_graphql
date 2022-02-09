@@ -1,0 +1,488 @@
+begin;
+    -- Disable messages that display the prepared statement SQL
+    set client_min_messages to error;
+    set log_min_messages to panic;
+    create table account(
+        id int primary key,
+        email text,
+        is_verified bool
+    );
+    savepoint a;
+    -- Unknown arg is ignored
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            unknown: " ; $$ drop table public.account"
+          ) { edges { node { id } } }
+        }
+    $a$);
+                           resolve                            
+--------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}, "errors": []}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal first
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            first: " ; ' $$ "
+          ) { edges { node { id } } }
+        }
+    $a$);
+ERROR:  invalid input syntax for type integer: " ; ' $$ "
+LINE 22:             limit ' ; '' $$ '::integer
+                           ^
+QUERY:  prepare b1303f84d73d4912285a986627adc5fd6231fdfe  as 
+    (
+        with xyz as (
+            select
+                count(*) over () __total_count,
+                first_value(graphql.cursor_encode(jsonb_build_array('account'::text,"1a6a5836c06".id))) over (order by ("1a6a5836c06".id) asc range between unbounded preceding and current row)::text as __first_cursor,
+                last_value(graphql.cursor_encode(jsonb_build_array('account'::text,"1a6a5836c06".id))) over (order by ("1a6a5836c06".id) asc range between current row and unbounded following)::text as __last_cursor,
+                graphql.cursor_encode(jsonb_build_array('account'::text,"1a6a5836c06".id))::text as __cursor,
+                "1a6a5836c06".is_verified, "1a6a5836c06".email, "1a6a5836c06".id -- all allowed columns
+            from
+                account as "1a6a5836c06"
+            where
+                true
+                --pagination_clause
+                and true = true
+                -- join clause
+                and true
+                -- where clause
+                and true
+            order by
+                ("1a6a5836c06".id) asc
+            limit ' ; '' $$ '::integer
+        )
+        select
+            -- total count
+            jsonb_build_object(
+            
+            )
+            -- page info
+            || jsonb_build_object(
+            
+            )
+            -- edges
+            || jsonb_build_object(
+            'edges', coalesce(jsonb_agg(jsonb_build_object() || jsonb_build_object('node', jsonb_build_object('id', "1a6a5836c06".id))), jsonb_build_array())
+            )
+            -- __typename
+            || jsonb_build_object(
+            
+            )
+        from
+        (
+            select
+                *
+            from
+                xyz
+            order by
+                (xyz.id) asc
+        ) as "1a6a5836c06"
+    )
+CONTEXT:  PL/pgSQL function graphql.resolve(text,jsonb) line 153 at EXECUTE
+    rollback to savepoint a;
+    -- Literal last
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            last: " ; ' $$ "
+          ) { edges { node { id } } }
+        }
+    $a$);
+ERROR:  invalid input syntax for type integer: " ; ' $$ "
+LINE 22:             limit ' ; '' $$ '::integer
+                           ^
+QUERY:  prepare "6b81cfa745a89b320392d9e550867a239676f5a1"  as 
+    (
+        with xyz as (
+            select
+                count(*) over () __total_count,
+                first_value(graphql.cursor_encode(jsonb_build_array('account'::text,"06c40f08d85".id))) over (order by ("06c40f08d85".id) asc range between unbounded preceding and current row)::text as __first_cursor,
+                last_value(graphql.cursor_encode(jsonb_build_array('account'::text,"06c40f08d85".id))) over (order by ("06c40f08d85".id) asc range between current row and unbounded following)::text as __last_cursor,
+                graphql.cursor_encode(jsonb_build_array('account'::text,"06c40f08d85".id))::text as __cursor,
+                "06c40f08d85".is_verified, "06c40f08d85".email, "06c40f08d85".id -- all allowed columns
+            from
+                account as "06c40f08d85"
+            where
+                true
+                --pagination_clause
+                and true = true
+                -- join clause
+                and true
+                -- where clause
+                and true
+            order by
+                ("06c40f08d85".id) desc
+            limit ' ; '' $$ '::integer
+        )
+        select
+            -- total count
+            jsonb_build_object(
+            
+            )
+            -- page info
+            || jsonb_build_object(
+            
+            )
+            -- edges
+            || jsonb_build_object(
+            'edges', coalesce(jsonb_agg(jsonb_build_object() || jsonb_build_object('node', jsonb_build_object('id', "06c40f08d85".id))), jsonb_build_array())
+            )
+            -- __typename
+            || jsonb_build_object(
+            
+            )
+        from
+        (
+            select
+                *
+            from
+                xyz
+            order by
+                (xyz.id) asc
+        ) as "06c40f08d85"
+    )
+CONTEXT:  PL/pgSQL function graphql.resolve(text,jsonb) line 153 at EXECUTE
+    rollback to savepoint a;
+    -- Literal cursor: nonsense input
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            before: " ; ' $$ "
+          ) { edges { node { id } } }
+        }
+    $a$);
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": null, "errors": ["invalid symbol \";\" while decoding base64 sequence"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal cursor: decodes, but invalid
+    with curs(x) as (
+        select graphql.cursor_encode('[" $$ '' ", " $$ '' "]'::jsonb)
+    )
+    select
+        graphql.resolve(
+            format($a$
+                {
+                  accountCollection(
+                    before: "%s"
+                  ) { edges { node { id } } }
+                }$a$,
+                curs.x
+            )
+        )
+    from
+        curs;
+ERROR:  invalid input syntax for type integer: " $$ ' "
+LINE 15: ...w('account'::text,d9fae787bfd.id) < row(' $$ '' ',' $$ '' ')
+                                                              ^
+QUERY:  prepare "2729dd3ee88252326e0e2a17e38d067b87fb60a8"  as 
+    (
+        with xyz as (
+            select
+                count(*) over () __total_count,
+                first_value(graphql.cursor_encode(jsonb_build_array('account'::text,d9fae787bfd.id))) over (order by (d9fae787bfd.id) asc range between unbounded preceding and current row)::text as __first_cursor,
+                last_value(graphql.cursor_encode(jsonb_build_array('account'::text,d9fae787bfd.id))) over (order by (d9fae787bfd.id) asc range between current row and unbounded following)::text as __last_cursor,
+                graphql.cursor_encode(jsonb_build_array('account'::text,d9fae787bfd.id))::text as __cursor,
+                d9fae787bfd.is_verified, d9fae787bfd.email, d9fae787bfd.id -- all allowed columns
+            from
+                account as d9fae787bfd
+            where
+                true
+                --pagination_clause
+                and row('account'::text,d9fae787bfd.id) < row(' $$ '' ',' $$ '' ')
+                -- join clause
+                and true
+                -- where clause
+                and true
+            order by
+                (d9fae787bfd.id) asc
+            limit 30
+        )
+        select
+            -- total count
+            jsonb_build_object(
+            
+            )
+            -- page info
+            || jsonb_build_object(
+            
+            )
+            -- edges
+            || jsonb_build_object(
+            'edges', coalesce(jsonb_agg(jsonb_build_object() || jsonb_build_object('node', jsonb_build_object('id', d9fae787bfd.id))), jsonb_build_array())
+            )
+            -- __typename
+            || jsonb_build_object(
+            
+            )
+        from
+        (
+            select
+                *
+            from
+                xyz
+            order by
+                (xyz.id) asc
+        ) as d9fae787bfd
+    )
+CONTEXT:  PL/pgSQL function graphql.resolve(text,jsonb) line 153 at EXECUTE
+    rollback to savepoint a;
+    -- Literal filter 1
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            filter: " $$;' "
+          ) { edges { node { id } } }
+        }
+    $a$);
+                        resolve                        
+-------------------------------------------------------
+ {"data": null, "errors": ["Invalid filter argument"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal filter 2
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            filter: {id: " $$;' "}
+          ) { edges { node { id } } }
+        }
+    $a$);
+                   resolve                    
+----------------------------------------------
+ {"data": null, "errors": ["Invalid filter"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal filter 3
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            filter: {email: {eq: " $$;' "}}
+          ) { edges { node { id } } }
+        }
+    $a$);
+                           resolve                            
+--------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}, "errors": []}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal orderBy 1
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            orderBy: " $$;' "
+          ) { edges { node { id } } }
+        }
+    $a$);
+                           resolve                           
+-------------------------------------------------------------
+ {"data": null, "errors": ["Invalid type for order clause"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal orderBy 2
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            orderBy: [" $$;' "]
+          ) { edges { node { id } } }
+        }
+    $a$);
+                      resolve                       
+----------------------------------------------------
+ {"data": null, "errors": ["Invalid order clause"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Literal orderBy 3
+    select graphql.resolve($a$
+        {
+          accountCollection(
+            orderBy: [{email: " $$;' "}]
+          ) { edges { node { id } } }
+        }
+    $a$);
+                               resolve                               
+---------------------------------------------------------------------
+ {"data": null, "errors": ["Invalid value for ordering \" $$;' \""]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable first
+    select graphql.resolve($a$
+        query Abc($var: Int!) {
+          accountCollection(
+            first: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": " $$;'' "}'::jsonb);
+                                     resolve                                     
+---------------------------------------------------------------------------------
+ {"data": null, "errors": ["invalid input syntax for type integer: \" $$;' \""]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable last
+    select graphql.resolve($a$
+        query Abc($var: Int!) {
+          accountCollection(
+            last: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": " $$;'' "}'::jsonb);
+                                     resolve                                     
+---------------------------------------------------------------------------------
+ {"data": null, "errors": ["invalid input syntax for type integer: \" $$;' \""]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable filter 1
+    select graphql.resolve($a$
+        query Abc($var: Int!) {
+          accountCollection(
+            filter: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": " $$;'' "}'::jsonb);
+                        resolve                        
+-------------------------------------------------------
+ {"data": null, "errors": ["Invalid filter argument"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable filter 2
+    select graphql.resolve($a$
+        query Abc($var: Int!) {
+          accountCollection(
+            filter: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": [" $$;'' "]}'::jsonb);
+                        resolve                        
+-------------------------------------------------------
+ {"data": null, "errors": ["Invalid filter argument"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable filter 3
+    select graphql.resolve($a$
+        query Abc($var: Int!) {
+          accountCollection(
+            filter: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": {"email": " $$;'' "}}'::jsonb);
+                      resolve                       
+----------------------------------------------------
+ {"data": null, "errors": ["Invalid filter field"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable filter 4
+    select graphql.resolve($a$
+        query Abc($var: Int!) {
+          accountCollection(
+            filter: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": {"email": {"eq": " $$;'' "}}}'::jsonb);
+                           resolve                            
+--------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}, "errors": []}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable orderBy 1
+    select graphql.resolve($a$
+        query Abc($var: AccountFilter) {
+          accountCollection(
+            orderBy: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": " $$;'' "}'::jsonb);
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": null, "errors": ["Invalid value for ordering variable"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable orderBy 2
+    select graphql.resolve($a$
+        query Abc($var: AccountFilter) {
+          accountCollection(
+            orderBy: {id: $var}
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": " $$;'' "}'::jsonb);
+                           resolve                           
+-------------------------------------------------------------
+ {"data": null, "errors": ["Invalid type for order clause"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable orderBy 3
+    select graphql.resolve($a$
+        query Abc($var: AccountFilter) {
+          accountCollection(
+            orderBy: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": [" $$;'' "]}'::jsonb);
+                                  resolve                                  
+---------------------------------------------------------------------------
+ {"data": null, "errors": ["cannot call jsonb_each_text on a non-object"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable orderBy 4
+    select graphql.resolve($a$
+        query Abc($var: AccountFilter) {
+          accountCollection(
+            orderBy: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": {"email": " $$;'' "}}'::jsonb);
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": null, "errors": ["Invalid value for ordering variable"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable orderBy 5
+    select graphql.resolve($a$
+        query Abc($var: AccountFilter) {
+          accountCollection(
+            orderBy: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": [{" ;'' ": "AscNullsFirst"}]}'::jsonb);
+                                   resolve                                    
+------------------------------------------------------------------------------
+ {"data": null, "errors": ["Invalid list entry field name for order clause"]}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable orderBy 5
+    select graphql.resolve($a$
+        query Abc($var: AccountFilter) {
+          accountCollection(
+            orderBy: $var
+          ) { edges { node { id } } }
+        }
+    $a$, '{"var": [{"email": " $$;'' "}]}'::jsonb);
+                               resolve                               
+---------------------------------------------------------------------
+ {"data": null, "errors": ["Invalid value for ordering \" $$;' \""]}
+(1 row)
+
+    rollback to savepoint a;

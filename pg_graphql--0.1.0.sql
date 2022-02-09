@@ -311,6 +311,22 @@ create or replace function graphql.value_literal(ast jsonb)
 as $$
     select ast -> 'value' ->> 'value';
 $$;
+create or replace function graphql.variable_literal(ast jsonb, variables jsonb)
+    returns jsonb
+    language sql
+as $$
+    with val_from_vars(val) as (
+        select
+            variables -> graphql.name_literal(ast)
+    )
+    select
+        case val is null
+            when true then graphql.exception('Variable value was not provided')::jsonb
+            else val
+        end
+    from
+        val_from_vars
+$$;
 create or replace function graphql.exception(message text)
     returns text
     language plpgsql
@@ -1917,32 +1933,52 @@ declare
 
     res text;
 
-    cast_to text = case
+    cast_to regtype = case
         when name in ('first', 'last', 'atMost') then 'int'
         else 'text'
     end;
+
+    var_ix int;
+    var_name text;
 
 begin
     if arg is null then
         return default_value;
 
-    elsif graphql.is_variable(arg -> 'value') and is_opaque then
-        return graphql.cursor_clause_for_variable(entity, graphql.arg_index(name, variable_definitions));
+    elsif graphql.is_variable(arg -> 'value') then
+
+        -- variable name (if its a variable)
+        var_name = graphql.name_literal(arg -> 'value');
+        -- variable index (if its a variable)
+        var_ix   = graphql.arg_index(var_name, variable_definitions);
+
+        if var_ix is null then
+            perform graphql.exception(format("unknown variable %s", var_name));
+        end if;
+
+        if is_opaque then
+            return graphql.cursor_clause_for_variable(
+                entity,
+                var_ix
+            );
+
+        else
+            return format(
+                '$%s::%s',
+                var_ix,
+                cast_to
+            );
+        end if;
 
     elsif is_opaque then
-        return graphql.cursor_clause_for_literal(arg -> 'value' ->> 'value');
-
-
-    -- Non-special variable
-    elsif graphql.is_variable(arg -> 'value') then
-        return '$' || graphql.arg_index(name, variable_definitions)::text || '::' || cast_to;
+        return graphql.cursor_clause_for_literal(graphql.value_literal(arg));
 
     -- Non-special literal
     else
         return
             format(
                 '%L::%s',
-                (arg -> 'value' ->> 'value'),
+                graphql.value_literal(arg), -- -> 'value' ->> 'value'),
                 cast_to
             );
     end if;
@@ -1992,7 +2028,6 @@ begin
         -- todo handle no primary key
     end if;
 
-    -- Disallow variable order by clause because it is incompatible with prepared statements
     if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
 
         -- Expect [{"fieldName", "DescNullsFirst"}]
@@ -2235,7 +2270,7 @@ begin
             -- Sanity checks
             if column_name is null or jsonb_typeof(variable_part) <> 'object' then
                 -- Attempting to filter on field that does not exist
-                return graphql.exception('Invalid filter');
+                return graphql.exception('Invalid filter field');
             end if;
 
             op_name = k from jsonb_object_keys(variable_part) x(k) limit 1;
@@ -2279,7 +2314,7 @@ begin
 
             if column_name is null then
                 -- Attempting to filter on field that does not exist
-                return graphql.exception('Invalid filter');
+                return graphql.exception('Invalid filter field');
             end if;
 
 
@@ -2404,14 +2439,23 @@ declare
             and f.parent_type = $4;
 
     ent alias for entity;
-    field_row graphql.field = f from graphql.field f where f.name = graphql.name_literal(ast) and f.parent_type = $4;
-    first_ text = graphql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, entity);
-    last_ text = graphql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
-    before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
-    after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
 
-    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
-    filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
+    arguments jsonb = graphql.jsonb_coalesce((ast -> 'arguments'), '[]');
+
+
+    field_row graphql.field = f from graphql.field f where f.name = graphql.name_literal(ast) and f.parent_type = $4;
+    first_ text = graphql.arg_clause(
+        'first',
+        arguments,
+        variable_definitions,
+        entity
+    );
+    last_ text = graphql.arg_clause('last',   arguments, variable_definitions, entity);
+    before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
+    after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
+
+    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
 begin
     with clauses as (

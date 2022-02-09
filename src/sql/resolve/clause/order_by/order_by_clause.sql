@@ -20,7 +20,6 @@ begin
         -- todo handle no primary key
     end if;
 
-    -- Disallow variable order by clause because it is incompatible with prepared statements
     if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
 
         -- Expect [{"fieldName", "DescNullsFirst"}]

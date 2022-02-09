@@ -87,7 +87,7 @@ begin
             -- Sanity checks
             if column_name is null or jsonb_typeof(variable_part) <> 'object' then
                 -- Attempting to filter on field that does not exist
-                return graphql.exception('Invalid filter');
+                return graphql.exception('Invalid filter field');
             end if;
 
             op_name = k from jsonb_object_keys(variable_part) x(k) limit 1;
@@ -131,7 +131,7 @@ begin
 
             if column_name is null then
                 -- Attempting to filter on field that does not exist
-                return graphql.exception('Invalid filter');
+                return graphql.exception('Invalid filter field');
             end if;
 
 
