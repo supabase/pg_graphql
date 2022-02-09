@@ -21,14 +21,23 @@ declare
             and f.parent_type = $4;
 
     ent alias for entity;
-    field_row graphql.field = f from graphql.field f where f.name = graphql.name_literal(ast) and f.parent_type = $4;
-    first_ text = graphql.arg_clause('first',  (ast -> 'arguments'), variable_definitions, entity);
-    last_ text = graphql.arg_clause('last',   (ast -> 'arguments'), variable_definitions, entity);
-    before_ text = graphql.arg_clause('before', (ast -> 'arguments'), variable_definitions, entity);
-    after_ text = graphql.arg_clause('after',  (ast -> 'arguments'), variable_definitions, entity);
 
-    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
-    filter_arg jsonb = graphql.get_arg_by_name('filter',  graphql.jsonb_coalesce((ast -> 'arguments'), '[]'));
+    arguments jsonb = graphql.jsonb_coalesce((ast -> 'arguments'), '[]');
+
+
+    field_row graphql.field = f from graphql.field f where f.name = graphql.name_literal(ast) and f.parent_type = $4;
+    first_ text = graphql.arg_clause(
+        'first',
+        arguments,
+        variable_definitions,
+        entity
+    );
+    last_ text = graphql.arg_clause('last',   arguments, variable_definitions, entity);
+    before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
+    after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
+
+    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
 begin
     with clauses as (

@@ -158,7 +158,12 @@ begin
     end if;
 
     if errors_ = '{}' and q is not null then
-        execute graphql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
+        begin
+            execute graphql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
+        exception when others then
+            get stacked diagnostics error_message = MESSAGE_TEXT;
+            errors_ = errors_ || error_message;
+        end;
     end if;
 
     if errors_ = '{}' and data_ is null then

@@ -303,13 +303,13 @@ begin;
         variables:= '{"afilt": {"dne_id": 2} }'
       )
     );
-       jsonb_pretty       
---------------------------
- {                       +
-     "data": null,       +
-     "errors": [         +
-         "Invalid filter"+
-     ]                   +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid filter field"+
+     ]                         +
  }
 (1 row)
 
@@ -331,13 +331,13 @@ begin;
         variables:= '{"afilt": {"id": 2} }'
       )
     );
-       jsonb_pretty       
---------------------------
- {                       +
-     "data": null,       +
-     "errors": [         +
-         "Invalid filter"+
-     ]                   +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": null,             +
+     "errors": [               +
+         "Invalid filter field"+
+     ]                         +
  }
 (1 row)
 

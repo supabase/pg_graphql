@@ -10,8 +10,8 @@ begin;
 
     select graphql.resolve(
         $$
-        query FirstNAccounts($first: Int!) {
-          accountCollection(first: $first) {
+        query FirstNAccounts($first_: Int!) {
+          accountCollection(first: $first_) {
             edges {
               node {
                 id
@@ -20,7 +20,7 @@ begin;
           }
         }
         $$,
-        '{"first": 2}'::jsonb
+        '{"first_": 2}'::jsonb
     );
 
 rollback;
