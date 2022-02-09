@@ -1962,7 +1962,7 @@ begin
         return
             format(
                 '%L::%s',
-                graphql.value_literal(arg), -- -> 'value' ->> 'value'),
+                graphql.value_literal(arg),
                 cast_to
             );
     end if;
