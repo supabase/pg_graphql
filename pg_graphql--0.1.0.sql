@@ -311,22 +311,6 @@ create or replace function graphql.value_literal(ast jsonb)
 as $$
     select ast -> 'value' ->> 'value';
 $$;
-create or replace function graphql.variable_literal(ast jsonb, variables jsonb)
-    returns jsonb
-    language sql
-as $$
-    with val_from_vars(val) as (
-        select
-            variables -> graphql.name_literal(ast)
-    )
-    select
-        case val is null
-            when true then graphql.exception('Variable value was not provided')::jsonb
-            else val
-        end
-    from
-        val_from_vars
-$$;
 create or replace function graphql.exception(message text)
     returns text
     language plpgsql
@@ -3896,7 +3880,12 @@ begin
     end if;
 
     if errors_ = '{}' and q is not null then
-        execute graphql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
+        begin
+            execute graphql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
+        exception when others then
+            get stacked diagnostics error_message = MESSAGE_TEXT;
+            errors_ = errors_ || error_message;
+        end;
     end if;
 
     if errors_ = '{}' and data_ is null then
