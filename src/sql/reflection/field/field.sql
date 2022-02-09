@@ -53,11 +53,11 @@ create table graphql._field (
     check (meta_kind = 'Constant' and constant_name is not null or meta_kind <> 'Constant')
 );
 
-create index ix_graphql_field_name on graphql._field(name);
-create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
 create index ix_graphql_field_type_id on graphql._field(type_id);
+create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
 create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_field_id);
 create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
+create index ix_graphql_field_entity on graphql._field(entity);
 
 
 create or replace function graphql.field_name_for_column(entity regclass, column_name text)
@@ -759,21 +759,42 @@ create view graphql.field as
     where
         -- Apply visibility rules
         case
-            when (
-                f.column_name is not null
-                and pg_catalog.has_column_privilege(
-                    current_user,
-                    t_parent.entity,
-                    f.column_name,
-                    'SELECT'
-                )
-            ) then true
+            when f.meta_kind = 'Mutation.insert.one' then (
+                pg_catalog.has_any_column_privilege(current_user, f.entity, 'INSERT')
+                and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')
+            )
+            when f.meta_kind = 'Mutation.update' then (
+                pg_catalog.has_any_column_privilege(current_user, f.entity, 'UPDATE')
+                and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')
+            )
+            when f.meta_kind = 'Mutation.delete' then (
+                pg_catalog.has_table_privilege(current_user, f.entity, 'DELETE')
+                and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')
+            )
             -- When an input column, make sure role has insert and permission
             when f_arg_parent.meta_kind = 'ObjectArg' then pg_catalog.has_column_privilege(
                 current_user,
                 f.entity,
                 f.column_name,
                 'INSERT'
+            )
+            -- When an input column, make sure role has insert and permission
+            when f_arg_parent.meta_kind = 'UpdateSetArg' then pg_catalog.has_column_privilege(
+                current_user,
+                f.entity,
+                f.column_name,
+                'UPDATE'
+            )
+            when f.column_name is not null then pg_catalog.has_column_privilege(
+                current_user,
+                f.entity,
+                f.column_name,
+                'SELECT'
+            )
+            when f.func is not null then pg_catalog.has_function_privilege(
+                current_user,
+                f.func,
+                'EXECUTE'
             )
             -- Check if relationship local and remote columns are selectable
             when f.local_columns is not null then (
@@ -803,7 +824,6 @@ create view graphql.field as
                         unnest(f.local_columns) x(col)
                 )
             )
-            when t_parent.entity is null then true
             when f.column_name is null then true
             else false
         end;
