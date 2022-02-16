@@ -17,13 +17,13 @@ begin;
         }
         atMost: 1
       ) {
-        id
+        records { id }
       }
     }
     $$, '{"email": "bat@x.com"}');
-                               resolve                                
-----------------------------------------------------------------------
- {"data": {"deleteFromAccountCollection": [{"id": 2}]}, "errors": []}
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": {"deleteFromAccountCollection": {"records": [{"id": 2}]}}, "errors": []}
 (1 row)
 
     rollback to savepoint a;
@@ -34,15 +34,15 @@ begin;
             filter: $afilt
             atMost: 1
           ) {
-            id
+            records { id }
           }
         }
         $$,
         variables:= '{"afilt": {"id": {"eq": 1}} }'
     );
-                               resolve                                
-----------------------------------------------------------------------
- {"data": {"deleteFromAccountCollection": [{"id": 1}]}, "errors": []}
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": {"deleteFromAccountCollection": {"records": [{"id": 1}]}}, "errors": []}
 (1 row)
 
     rollback to savepoint a;
@@ -53,7 +53,7 @@ begin;
             filter: {id: {eq: 1}}
             atMost: $atMost
           ) {
-            id
+            records { id }
           }
         }
         $$,

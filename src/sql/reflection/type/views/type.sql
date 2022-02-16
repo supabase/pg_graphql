@@ -15,7 +15,14 @@ create view graphql.type as
     where
         t.entity is null
         or case
-            when meta_kind in ('Node', 'Edge', 'Connection', 'OrderBy')
+            when meta_kind in (
+                'Node',
+                'Edge',
+                'Connection',
+                'OrderBy',
+                'UpdateNodeResponse',
+                'DeleteNodeResponse'
+            )
                 then
                     pg_catalog.has_any_column_privilege(
                         current_user,

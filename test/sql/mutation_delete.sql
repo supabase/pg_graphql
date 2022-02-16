@@ -42,14 +42,17 @@ begin;
         }
         atMost: 0
       ) {
-        id
-        email
-        echoEmail
-        blogCollection {
-          totalCount
-          edges {
-            node {
-              id
+        affectedCount
+        records {
+          id
+          email
+          echoEmail
+          blogCollection {
+            totalCount
+            edges {
+              node {
+                id
+              }
             }
           }
         }
@@ -69,13 +72,17 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
-                email
-                blogCollection {
-                  totalCount
-                  edges {
-                    node {
-                      id
+                affectedCount
+                records {
+                  id
+                  email
+                  echoEmail
+                  blogCollection {
+                    totalCount
+                    edges {
+                      node {
+                        id
+                      }
                     }
                   }
                 }
@@ -95,7 +102,7 @@ begin;
                   email: {eq: "bat@x.com"}
                 }
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -113,7 +120,7 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -128,7 +135,7 @@ begin;
               deleteFromAccountCollection(
                 atMost: 8
               ) {
-                id
+                records { id }
               }
             }
         $$)

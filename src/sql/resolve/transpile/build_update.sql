@@ -104,42 +104,74 @@ begin
 
     end if;
 
-    returning_clause = format(
-        'jsonb_agg(jsonb_build_object( %s ))',
-        string_agg(
+    returning_clause = (
+        select
             format(
-                '%L, %s',
-                graphql.alias_or_name_literal(x.sel),
-                case
-                    when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
-                    when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
-                    when nf.name = '__typename' then format('%L', nf.type_)
-                    when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
-                        ast := x.sel,
-                        variable_definitions := variable_definitions,
-                        variables := variables,
-                        parent_type := field_rec.type_,
-                        parent_block_name := block_name
-                    )
-                    when nf.local_columns is not null and nf.meta_kind = 'Relationship.toOne' then graphql.build_node_query(
-                        ast := x.sel,
-                        variable_definitions := variable_definitions,
-                        variables := variables,
-                        parent_type := field_rec.type_,
-                        parent_block_name := block_name
-                    )
-                    else graphql.exception_unknown_field(graphql.name_literal(x.sel), field_rec.type_)
-                end
-            ),
-            ','
-        )
-    )
-    from
-        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel)
-        left join graphql.field nf
-            on field_rec.type_ = nf.parent_type
-            and graphql.name_literal(x.sel) = nf.name;
-
+                'jsonb_build_object( %s )',
+                string_agg(
+                    case
+                        when top_fields.name = '__typename' then format(
+                            '%L, %L',
+                            graphql.alias_or_name_literal(top.sel),
+                            top_fields.type_
+                        )
+                        when top_fields.name = 'affectedCount' then format(
+                            '%L, %s',
+                            graphql.alias_or_name_literal(top.sel),
+                            'count(1)'
+                        )
+                        when top_fields.name = 'records' then (
+                            select
+                                format(
+                                    '%L, coalesce(jsonb_agg(jsonb_build_object( %s )), jsonb_build_array())',
+                                    graphql.alias_or_name_literal(top.sel),
+                                    string_agg(
+                                        format(
+                                            '%L, %s',
+                                            graphql.alias_or_name_literal(x.sel),
+                                            case
+                                                when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
+                                                when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
+                                                when nf.name = '__typename' then format('%L', nf.type_)
+                                                when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
+                                                    ast := x.sel,
+                                                    variable_definitions := variable_definitions,
+                                                    variables := variables,
+                                                    parent_type := top_fields.type_,
+                                                    parent_block_name := block_name
+                                                )
+                                                when nf.local_columns is not null and nf.meta_kind = 'Relationship.toOne' then graphql.build_node_query(
+                                                    ast := x.sel,
+                                                    variable_definitions := variable_definitions,
+                                                    variables := variables,
+                                                    parent_type := top_fields.type_,
+                                                    parent_block_name := block_name
+                                                )
+                                                else graphql.exception_unknown_field(graphql.name_literal(x.sel), top_fields.type_)
+                                            end
+                                        ),
+                                        ','
+                                    )
+                                )
+                            from
+                                lateral jsonb_array_elements(top.sel -> 'selectionSet' -> 'selections') x(sel)
+                                left join graphql.field nf
+                                    on top_fields.type_ = nf.parent_type
+                                    and graphql.name_literal(x.sel) = nf.name
+                            where
+                                graphql.name_literal(top.sel) = 'records'
+                        )
+                        else graphql.exception_unknown_field(graphql.name_literal(top.sel), field_rec.type_)
+                    end,
+                    ', '
+                )
+            )
+        from
+            jsonb_array_elements(ast -> 'selectionSet' -> 'selections') top(sel)
+            left join graphql.field top_fields
+                on field_rec.type_ = top_fields.parent_type
+                and graphql.name_literal(top.sel) = top_fields.name
+    );
 
     result = format(
         'with updated as (
@@ -164,7 +196,6 @@ begin
             select
                 case
                     when total.total_count > %s then graphql.exception($a$update impacts too many records$a$)::jsonb
-                    when total.total_count = 0 then jsonb_build_array()
                     else req.res
                 end
             from

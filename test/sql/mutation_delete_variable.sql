@@ -21,7 +21,7 @@ begin;
         }
         atMost: 1
       ) {
-        id
+        records { id }
       }
     }
     $$, '{"email": "bat@x.com"}');
@@ -35,7 +35,7 @@ begin;
             filter: $afilt
             atMost: 1
           ) {
-            id
+            records { id }
           }
         }
         $$,
@@ -50,7 +50,7 @@ begin;
             filter: {id: {eq: 1}}
             atMost: $atMost
           ) {
-            id
+            records { id }
           }
         }
         $$,

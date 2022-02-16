@@ -35,14 +35,17 @@ begin;
         }
         atMost: 0
       ) {
-        id
-        email
-        echoEmail
-        blogCollection {
-          totalCount
-          edges {
-            node {
-              id
+        affectedCount
+        records {
+          id
+          email
+          echoEmail
+          blogCollection {
+            totalCount
+            edges {
+              node {
+                id
+              }
             }
           }
         }
@@ -65,13 +68,17 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
-                email
-                blogCollection {
-                  totalCount
-                  edges {
-                    node {
-                      id
+                affectedCount
+                records {
+                  id
+                  email
+                  echoEmail
+                  blogCollection {
+                    totalCount
+                    edges {
+                      node {
+                        id
+                      }
                     }
                   }
                 }
@@ -79,34 +86,38 @@ begin;
             }
         $$)
     );
-               jsonb_pretty               
-------------------------------------------
- {                                       +
-     "data": {                           +
-         "deleteFromAccountCollection": [+
-             {                           +
-                 "id": 2,                +
-                 "email": "bat@x.com",   +
-                 "blogCollection": {     +
-                     "edges": [          +
-                         {               +
-                             "node": {   +
-                                 "id": 3 +
-                             }           +
-                         },              +
-                         {               +
-                             "node": {   +
-                                 "id": 4 +
-                             }           +
-                         }               +
-                     ],                  +
-                     "totalCount": 2     +
-                 }                       +
-             }                           +
-         ]                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": {                                +
+         "deleteFromAccountCollection": {     +
+             "records": [                     +
+                 {                            +
+                     "id": 2,                 +
+                     "email": "bat@x.com",    +
+                     "echoEmail": "bat@x.com",+
+                     "blogCollection": {      +
+                         "edges": [           +
+                             {                +
+                                 "node": {    +
+                                     "id": 3  +
+                                 }            +
+                             },               +
+                             {                +
+                                 "node": {    +
+                                     "id": 4  +
+                                 }            +
+                             }                +
+                         ],                   +
+                         "totalCount": 2      +
+                     }                        +
+                 }                            +
+             ],                               +
+             "affectedCount": 1               +
+         }                                    +
+     },                                       +
+     "errors": [                              +
+     ]                                        +
  }
 (1 row)
 
@@ -120,7 +131,7 @@ begin;
                   email: {eq: "bat@x.com"}
                 }
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -129,11 +140,13 @@ begin;
 ------------------------------------------
  {                                       +
      "data": {                           +
-         "deleteFromAccountCollection": [+
-             {                           +
-                 "id": 2                 +
-             }                           +
-         ]                               +
+         "deleteFromAccountCollection": {+
+             "records": [                +
+                 {                       +
+                     "id": 2             +
+                 }                       +
+             ]                           +
+         }                               +
      },                                  +
      "errors": [                         +
      ]                                   +
@@ -151,20 +164,22 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
+                records { id }
               }
             }
         $$)
     );
-   jsonb_pretty   
-------------------
- {               +
-     "data": {   +
-         "xyz": [+
-         ]       +
-     },          +
-     "errors": [ +
-     ]           +
+       jsonb_pretty       
+--------------------------
+ {                       +
+     "data": {           +
+         "xyz": {        +
+             "records": [+
+             ]           +
+         }               +
+     },                  +
+     "errors": [         +
+     ]                   +
  }
 (1 row)
 
@@ -176,7 +191,7 @@ begin;
               deleteFromAccountCollection(
                 atMost: 8
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -185,23 +200,25 @@ begin;
 ------------------------------------------
  {                                       +
      "data": {                           +
-         "deleteFromAccountCollection": [+
-             {                           +
-                 "id": 1                 +
-             },                          +
-             {                           +
-                 "id": 2                 +
-             },                          +
-             {                           +
-                 "id": 3                 +
-             },                          +
-             {                           +
-                 "id": 4                 +
-             },                          +
-             {                           +
-                 "id": 5                 +
-             }                           +
-         ]                               +
+         "deleteFromAccountCollection": {+
+             "records": [                +
+                 {                       +
+                     "id": 1             +
+                 },                      +
+                 {                       +
+                     "id": 2             +
+                 },                      +
+                 {                       +
+                     "id": 3             +
+                 },                      +
+                 {                       +
+                     "id": 4             +
+                 },                      +
+                 {                       +
+                     "id": 5             +
+                 }                       +
+             ]                           +
+         }                               +
      },                                  +
      "errors": [                         +
      ]                                   +

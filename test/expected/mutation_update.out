@@ -38,7 +38,7 @@ begin;
         }
         atMost: 0
       ) {
-        id
+        records { id }
       }
     }
     $$);
@@ -60,17 +60,20 @@ begin;
             }
             atMost: 1
           ) {
-            id
-            echoEmail
-            blogCollection {
-                totalCount
+            affectedCount
+            records {
+              id
+              echoEmail
+              blogCollection {
+                  totalCount
+              }
             }
           }
         }
     $$);
-                                                               resolve                                                               
--------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"updateAccountCollection": [{"id": 2, "echoEmail": "new@email.com", "blogCollection": {"totalCount": 2}}]}, "errors": []}
+                                                                               resolve                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"updateAccountCollection": {"records": [{"id": 2, "echoEmail": "new@email.com", "blogCollection": {"totalCount": 2}}], "affectedCount": 1}}, "errors": []}
 (1 row)
 
     rollback to savepoint a;
@@ -87,20 +90,22 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
+                records { id }
               }
             }
         $$)
     );
-   jsonb_pretty   
-------------------
- {               +
-     "data": {   +
-         "xyz": [+
-         ]       +
-     },          +
-     "errors": [ +
-     ]           +
+       jsonb_pretty       
+--------------------------
+ {                       +
+     "data": {           +
+         "xyz": {        +
+             "records": [+
+             ]           +
+         }               +
+     },                  +
+     "errors": [         +
+     ]                   +
  }
 (1 row)
 
@@ -115,7 +120,7 @@ begin;
                 }
                 atMost: 8
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -124,23 +129,25 @@ begin;
 --------------------------------------
  {                                   +
      "data": {                       +
-         "updateAccountCollection": [+
-             {                       +
-                 "id": 1             +
-             },                      +
-             {                       +
-                 "id": 2             +
-             },                      +
-             {                       +
-                 "id": 3             +
-             },                      +
-             {                       +
-                 "id": 4             +
-             },                      +
-             {                       +
-                 "id": 5             +
-             }                       +
-         ]                           +
+         "updateAccountCollection": {+
+             "records": [            +
+                 {                   +
+                     "id": 1         +
+                 },                  +
+                 {                   +
+                     "id": 2         +
+                 },                  +
+                 {                   +
+                     "id": 3         +
+                 },                  +
+                 {                   +
+                     "id": 4         +
+                 },                  +
+                 {                   +
+                     "id": 5         +
+                 }                   +
+             ]                       +
+         }                           +
      },                              +
      "errors": [                     +
      ]                               +
@@ -158,7 +165,7 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -184,13 +191,13 @@ begin;
               id: {eq: 2}
             }
           ) {
-            id
+            records { id }
           }
         }
     $$);
-                             resolve                              
-------------------------------------------------------------------
- {"data": {"updateAccountCollection": [{"id": 2}]}, "errors": []}
+                                    resolve                                    
+-------------------------------------------------------------------------------
+ {"data": {"updateAccountCollection": {"records": [{"id": 2}]}}, "errors": []}
 (1 row)
 
 rollback;

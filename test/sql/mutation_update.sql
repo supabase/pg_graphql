@@ -45,7 +45,7 @@ begin;
         }
         atMost: 0
       ) {
-        id
+        records { id }
       }
     }
     $$);
@@ -64,10 +64,13 @@ begin;
             }
             atMost: 1
           ) {
-            id
-            echoEmail
-            blogCollection {
-                totalCount
+            affectedCount
+            records {
+              id
+              echoEmail
+              blogCollection {
+                  totalCount
+              }
             }
           }
         }
@@ -88,7 +91,7 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -106,7 +109,7 @@ begin;
                 }
                 atMost: 8
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -124,7 +127,7 @@ begin;
                 }
                 atMost: 1
               ) {
-                id
+                records { id }
               }
             }
         $$)
@@ -141,7 +144,7 @@ begin;
               id: {eq: 2}
             }
           ) {
-            id
+            records { id }
           }
         }
     $$);
