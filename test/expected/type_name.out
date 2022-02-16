@@ -12,6 +12,14 @@ begin;
         graphql._type rec;
   type_kind   |      meta_kind      | is_builtin | entity  | graphql_type_id |       type_name       
 --------------+---------------------+------------+---------+-----------------+-----------------------
+ OBJECT       | Connection          | f          | account |                 | AccountConnection
+ INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
+ INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
+ INPUT_OBJECT | CreateNode          | f          | account |                 | AccountCreateInput
+ INPUT_OBJECT | UpdateNode          | f          | account |                 | AccountUpdateInput
+ OBJECT       | UpdateNodeResponse  | f          | account |                 | AccountUpdateResponse
+ OBJECT       | DeleteNodeResponse  | f          | account |                 | AccountDeleteResponse
+ ENUM         | Enum                | f          |         |                 | PostStatus
  SCALAR       | ID                  | t          |         |                 | ID
  SCALAR       | Int                 | t          |         |                 | Int
  SCALAR       | Float               | t          |         |                 | Float
@@ -44,14 +52,6 @@ begin;
  INPUT_OBJECT | FilterType          | f          |         |               9 | JSONFilter
  OBJECT       | Node                | f          | account |                 | Account
  OBJECT       | Edge                | f          | account |                 | AccountEdge
- OBJECT       | Connection          | f          | account |                 | AccountConnection
- INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
- INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
- INPUT_OBJECT | CreateNode          | f          | account |                 | AccountCreateInput
- INPUT_OBJECT | UpdateNode          | f          | account |                 | AccountUpdateInput
- OBJECT       | UpdateNodeResponse  | f          | account |                 | AccountUpdateResponse
- OBJECT       | DeleteNodeResponse  | f          | account |                 | AccountDeleteResponse
- ENUM         | Enum                | f          |         |                 | PostStatus
 (40 rows)
 
 rollback;
