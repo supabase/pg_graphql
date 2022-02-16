@@ -67,7 +67,9 @@ begin
                     ('INPUT_OBJECT',              'OrderBy',                 null,       ent.entity),
                     ('INPUT_OBJECT',              'FilterEntity',            null,       ent.entity),
                     ('INPUT_OBJECT',              'CreateNode',              null,       ent.entity),
-                    ('INPUT_OBJECT',              'UpdateNode',              null,       ent.entity)
+                    ('INPUT_OBJECT',              'UpdateNode',              null,       ent.entity),
+                    ('OBJECT',                    'UpdateNodeResponse',      null,       ent.entity),
+                    ('OBJECT',                    'DeleteNodeResponse',      null,       ent.entity)
             ) x(type_kind, meta_kind, description, entity);
 
 

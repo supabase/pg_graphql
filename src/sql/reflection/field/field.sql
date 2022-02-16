@@ -242,9 +242,6 @@ begin
             lateral (
                 values
                     -- TODO replace constant names
-                    ('Constant', node.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
-                    ('Constant', edge.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
-                    ('Constant', conn.id, graphql.type_id('String'),   '__typename', true,  false, null, null, null, null, null, true),
                     ('Constant', edge.id, node.id,                     'node',       false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
                     ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
@@ -257,6 +254,22 @@ begin
             conn.meta_kind = 'Connection'
             and edge.meta_kind = 'Edge'
             and node.meta_kind = 'Node';
+
+    -- Object.__typename
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_hidden_from_schema)
+        select
+            'Constant'::graphql.field_meta_kind,
+            t.entity,
+            t.id,
+            graphql.type_id('String'),
+            '__typename',
+            true,
+            false,
+            true
+        from
+            graphql.type t
+        where
+            t.type_kind = 'OBJECT';
 
 
     -- Node
@@ -553,8 +566,6 @@ begin
             and tt.meta_kind = 'FilterEntity';
 
     -- Mutation.insertAccount
-    -- Mutation.deleteFromAccountCollection
-    -- Mutation.updateAccountCollection
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
         select
             fs.field_meta_kind::graphql.field_meta_kind,
@@ -570,12 +581,52 @@ begin
             graphql.type node,
             lateral (
                 values
-                    ('Mutation.insert.one', node.id, false, false, false, format('Creates a single `%s`', node.name)),
-                    ('Mutation.update',     node.id, true,  true,  true,  format('Updates zero or more `%s` in the collection', node.name)),
-                    ('Mutation.delete',     node.id, true,  true,  true,  format('Deletes zero or more `%s` from the collection ', node.name))
+                    ('Mutation.insert.one', node.id, false, false, false, format('Creates a single `%s`', node.name))
             ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
             node.meta_kind = 'Node';
+
+    -- Mutation.updateAccountCollection
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            ret_type.entity,
+            graphql.type_id('Mutation'::graphql.meta_kind),
+            fs.type_id,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            false as is_hidden_from_schema
+        from
+            graphql.type ret_type,
+            lateral (
+                values
+                    ('Mutation.update', ret_type.id, true,  false,  false,  'Updates zero or more records in the collection')
+            ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
+        where
+            ret_type.meta_kind = 'UpdateNodeResponse';
+
+    -- Mutation.deleteFromAccountCollection
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
+        select
+            fs.field_meta_kind::graphql.field_meta_kind,
+            ret_type.entity,
+            graphql.type_id('Mutation'::graphql.meta_kind),
+            fs.type_id,
+            fs.is_not_null,
+            fs.is_array,
+            fs.is_array_not_null,
+            fs.description,
+            false as is_hidden_from_schema
+        from
+            graphql.type ret_type,
+            lateral (
+                values
+                    ('Mutation.delete', ret_type.id, true,  false,  false,  'Deletes zero or more records from the collection')
+            ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
+        where
+            ret_type.meta_kind = 'DeleteNodeResponse';
 
     -- Mutation.insertAccount(object: ...)
     insert into graphql._field(meta_kind, parent_type_id, type_id, entity, constant_name, is_not_null, is_array, is_array_not_null, is_arg, parent_arg_field_id, description)
@@ -630,6 +681,32 @@ begin
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial; -- skip (big)serial columns
 
+
+    -- AccountUpdateResponse.affectedCount
+    -- AccountUpdateResponse.records
+    -- AccountDeleteResponse.affectedCount
+    -- AccountDeleteResponse.records
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
+    select
+        t.id parent_type_id,
+        x.type_id,
+        x.constant_name,
+        x.is_not_null,
+        x.is_array,
+        x.is_array_not_null,
+        x.description
+    from
+        graphql.type t
+        join graphql.type t_base
+            on t.entity = t_base.entity
+            and t_base.meta_kind = 'Node',
+        lateral (
+            values
+                ('records', t_base.id, true, true, true, 'Array of records impacted by the mutation'),
+                ('affectedCount', graphql.type_id('Int'), true, false, null, 'Count of the records impacted by the mutation')
+        ) x (constant_name, type_id, is_not_null, is_array, is_array_not_null, description)
+    where
+        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse');
 
 
     -- Mutation.delete(... filter: {})
@@ -720,6 +797,7 @@ begin
             gf.meta_kind = 'UpdateSetArg'
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial; -- skip (big)serial columns
+
 
 end;
 $$;
