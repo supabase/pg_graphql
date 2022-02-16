@@ -10,6 +10,10 @@ begin;
         (rec).graphql_type_id,
         graphql.type_name(rec) type_name
     from
-        graphql._type rec;
+        graphql._type rec
+    order by
+        (rec).entity,
+        (rec).type_kind,
+        graphql.type_name(rec);
 
 rollback;
