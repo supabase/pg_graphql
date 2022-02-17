@@ -708,64 +708,67 @@ create view graphql.type as
         left join pg_class pc
             on t.entity = pc.oid
     where
-        t.entity is null
-        or (
-            case
-                when meta_kind in (
-                    'Node',
-                    'Edge',
-                    'Connection',
-                    'OrderBy',
-                    'UpdateNodeResponse',
-                    'DeleteNodeResponse'
-                )
-                    then
-                        pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'SELECT'
-                        )
-                when meta_kind = 'FilterEntity'
-                    then
-                        pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'SELECT'
-                        ) or pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'UPDATE'
-                        ) or pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'DELETE'
-                        )
-                when meta_kind = 'CreateNode'
-                    then
-                        pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'INSERT'
-                        ) and pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'SELECT'
-                        )
-                when meta_kind = 'UpdateNode'
-                    then
-                        pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'UPDATE'
-                        ) and pg_catalog.has_any_column_privilege(
-                            current_user,
-                            t.entity,
-                            'SELECT'
-                        )
-                else true
-        end
-        -- ensure regclass' schema is on search_path
-        and pc.relnamespace::regnamespace::name = any(current_schemas(false))
+        t.name ~ '^[_A-Za-z][_0-9A-Za-z]*$'
+        and (
+            t.entity is null
+            or (
+                case
+                    when meta_kind in (
+                        'Node',
+                        'Edge',
+                        'Connection',
+                        'OrderBy',
+                        'UpdateNodeResponse',
+                        'DeleteNodeResponse'
+                    )
+                        then
+                            pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'SELECT'
+                            )
+                    when meta_kind = 'FilterEntity'
+                        then
+                            pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'SELECT'
+                            ) or pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'UPDATE'
+                            ) or pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'DELETE'
+                            )
+                    when meta_kind = 'CreateNode'
+                        then
+                            pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'INSERT'
+                            ) and pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'SELECT'
+                            )
+                    when meta_kind = 'UpdateNode'
+                        then
+                            pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'UPDATE'
+                            ) and pg_catalog.has_any_column_privilege(
+                                current_user,
+                                t.entity,
+                                'SELECT'
+                            )
+                    else true
+            end
+            -- ensure regclass' schema is on search_path
+            and pc.relnamespace::regnamespace::name = any(current_schemas(false))
+        )
     );
 create materialized view graphql.entity as
     select
@@ -1855,8 +1858,9 @@ create view graphql.field as
         left join graphql._field f_arg_parent
             on f.parent_arg_field_id = f_arg_parent.id
     where
+        f.name ~ '^[_A-Za-z][_0-9A-Za-z]*$'
         -- Apply visibility rules
-        case
+        and case
             when f.meta_kind = 'Mutation.insert.one' then (
                 pg_catalog.has_any_column_privilege(current_user, f.entity, 'INSERT')
                 and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')
@@ -3538,25 +3542,31 @@ create or replace function graphql.resolve_mutation_type(ast jsonb)
     language sql
 as $$
     select
-        coalesce(
-            jsonb_object_agg(
-                fa.field_alias,
-                case
-                    when selection_name = 'name' then 'Mutation'
-                    when selection_name = 'description' then null
-                    else graphql.exception_unknown_field(selection_name, 'Mutation')
-                end
-            ),
-            'null'::jsonb
+        -- check mutations exist
+        case exists(select 1 from graphql.field where parent_type = 'Mutation' and not is_hidden_from_schema)
+            when true then (
+                select
+                    coalesce(
+                        jsonb_object_agg(
+                            fa.field_alias,
+                            case
+                                when selection_name = 'name' then 'Mutation'
+                                when selection_name = 'description' then null
+                                else graphql.exception_unknown_field(selection_name, 'Mutation')
+                            end
+                        ),
+                        'null'::jsonb
+                    )
+                from
+                    jsonb_path_query(ast, '$.selectionSet.selections') selections,
+                    lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
+                    lateral (
+                        select
+                            graphql.alias_or_name_literal(x.sel) field_alias,
+                            graphql.name_literal(x.sel) as selection_name
+                    ) fa
         )
-    from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
-        lateral (
-            select
-                graphql.alias_or_name_literal(x.sel) field_alias,
-                graphql.name_literal(x.sel) as selection_name
-        ) fa
+    end
 $$;
 create or replace function graphql.resolve_query_type(ast jsonb)
     returns jsonb
@@ -3626,7 +3636,18 @@ begin
                     from
                         graphql.type gt
                         -- Filter out object types with no fields
-                        join (select distinct parent_type from graphql.field) gf
+                        join (
+                            select
+                                distinct parent_type
+                            from
+                                graphql.field
+                            where
+                                not is_hidden_from_schema
+                                -- scheam.queryType is non null so we must include it
+                                -- even when its empty. a client exception will be thrown
+                                -- if not fields exist
+                                or parent_type = 'Query'
+                            ) gf
                             on gt.name = gf.parent_type
                             or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT')
                 )
