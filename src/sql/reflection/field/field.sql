@@ -835,8 +835,9 @@ create view graphql.field as
         left join graphql._field f_arg_parent
             on f.parent_arg_field_id = f_arg_parent.id
     where
+        f.name ~ '^[_A-Za-z][_0-9A-Za-z]*$'
         -- Apply visibility rules
-        case
+        and case
             when f.meta_kind = 'Mutation.insert.one' then (
                 pg_catalog.has_any_column_privilege(current_user, f.entity, 'INSERT')
                 and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')

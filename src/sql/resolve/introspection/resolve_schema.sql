@@ -40,7 +40,18 @@ begin
                     from
                         graphql.type gt
                         -- Filter out object types with no fields
-                        join (select distinct parent_type from graphql.field) gf
+                        join (
+                            select
+                                distinct parent_type
+                            from
+                                graphql.field
+                            where
+                                not is_hidden_from_schema
+                                -- scheam.queryType is non null so we must include it
+                                -- even when its empty. a client exception will be thrown
+                                -- if not fields exist
+                                or parent_type = 'Query'
+                            ) gf
                             on gt.name = gf.parent_type
                             or gt.type_kind not in ('OBJECT', 'INPUT_OBJECT')
                 )
