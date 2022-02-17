@@ -737,7 +737,7 @@ create view graphql.type as
                                 current_user,
                                 t.entity,
                                 'UPDATE'
-                            ) or pg_catalog.has_any_column_privilege(
+                            ) or pg_catalog.has_table_privilege(
                                 current_user,
                                 t.entity,
                                 'DELETE'
