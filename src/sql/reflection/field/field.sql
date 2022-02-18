@@ -68,7 +68,11 @@ as $$
     select
         coalesce(
             graphql.comment_directive_name($1, $2),
-            graphql.to_camel_case($2)
+            case
+                -- If contains a capital letter, do not inflect
+                when $2 <> lower($2) then $2
+                else graphql.to_camel_case($2)
+            end
         )
 $$;
 

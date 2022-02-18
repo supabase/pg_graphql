@@ -166,7 +166,23 @@ create function graphql.to_table_name(regclass)
     language sql
     immutable
 as
-$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
+$$
+    with x(maybe_quoted_name) as (
+         select
+            coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text)
+    )
+    select
+        case
+            when maybe_quoted_name like '"%"' then substring(
+                maybe_quoted_name,
+                2,
+                character_length(maybe_quoted_name)-2
+            )
+            else maybe_quoted_name
+        end
+    from
+        x
+$$;
 create function graphql.to_camel_case(text)
     returns text
     language sql
@@ -615,7 +631,11 @@ as $$
             case
                 when rec.entity is not null then coalesce(
                     graphql.comment_directive_name(rec.entity),
-                    graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    case
+                        -- when the name contains a capital do not attempt inflection
+                        when graphql.to_table_name(rec.entity) <> lower(graphql.to_table_name(rec.entity)) then graphql.to_table_name(rec.entity)
+                        else graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    end
                 )
                 else null
             end as base_type_name
@@ -1091,7 +1111,11 @@ as $$
     select
         coalesce(
             graphql.comment_directive_name($1, $2),
-            graphql.to_camel_case($2)
+            case
+                -- If contains a capital letter, do not inflect
+                when $2 <> lower($2) then $2
+                else graphql.to_camel_case($2)
+            end
         )
 $$;
 
@@ -2732,7 +2756,7 @@ begin
                 %s::text as __cursor,
                 %s -- all allowed columns
             from
-                %I as %s
+                %s as %I
             where
                 true
                 --pagination_clause
@@ -2804,7 +2828,7 @@ begin
             ),
             -- from
             entity,
-            quote_ident(block_name),
+            block_name,
             -- pagination
             case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
             case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
@@ -2944,7 +2968,7 @@ begin
 
     result = format(
         'with deleted as (
-            delete from %I as %I
+            delete from %s as %I
             where %s
             returning *
         ),
@@ -3122,7 +3146,7 @@ begin
             and graphql.name_literal(x.sel) = nf.name;
 
     result = format(
-        'insert into %I as %I (%s) values (%s) returning %s;',
+        'insert into %s as %I (%s) values (%s) returning %s;',
         entity,
         block_name,
         column_clause,
@@ -3177,7 +3201,7 @@ begin
         || ')'
         || format('
     from
-        %I as %s
+        %s as %s
     where
         true
         -- join clause
@@ -3380,7 +3404,7 @@ begin
 
     result = format(
         'with updated as (
-            update %I as %I
+            update %s as %I
             set %s
             where %s
             returning *

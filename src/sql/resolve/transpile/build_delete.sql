@@ -106,7 +106,7 @@ begin
 
     result = format(
         'with deleted as (
-            delete from %I as %I
+            delete from %s as %I
             where %s
             returning *
         ),

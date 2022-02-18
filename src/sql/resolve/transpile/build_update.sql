@@ -175,7 +175,7 @@ begin
 
     result = format(
         'with updated as (
-            update %I as %I
+            update %s as %I
             set %s
             where %s
             returning *

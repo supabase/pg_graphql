@@ -42,7 +42,7 @@ begin
         || ')'
         || format('
     from
-        %I as %s
+        %s as %s
     where
         true
         -- join clause

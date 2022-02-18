@@ -1,0 +1,182 @@
+begin;
+    create table "AccountHolder"(
+        "someId" int primary key,
+        "accountHolderId" int references "AccountHolder"("someId")
+    );
+    insert into public."AccountHolder"("someId", "accountHolderId")
+    values
+        (1, 1),
+        (2, 2);
+    -- Select
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountHolderCollection(first: 1) {
+                pageInfo{
+                  startCursor
+                  endCursor
+                  hasNextPage
+                  hasPreviousPage
+                }
+                edges {
+                  cursor
+                  node {
+                    someId
+                    accountHolderId
+                    accountHolder {
+                      someId
+                    }
+                    accountHolderCollection {
+                      totalCount
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                                  jsonb_pretty                                  
+--------------------------------------------------------------------------------
+ {                                                                             +
+     "data": {                                                                 +
+         "accountHolderCollection": {                                          +
+             "edges": [                                                        +
+                 {                                                             +
+                     "node": {                                                 +
+                         "someId": 1,                                          +
+                         "accountHolder": {                                    +
+                             "someId": 1                                       +
+                         },                                                    +
+                         "accountHolderId": 1,                                 +
+                         "accountHolderCollection": {                          +
+                             "totalCount": 1                                   +
+                         }                                                     +
+                     },                                                        +
+                     "cursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0="  +
+                 }                                                             +
+             ],                                                                +
+             "pageInfo": {                                                     +
+                 "endCursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=",  +
+                 "hasNextPage": true,                                          +
+                 "startCursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=",+
+                 "hasPreviousPage": false                                      +
+             }                                                                 +
+         }                                                                     +
+     },                                                                        +
+     "errors": [                                                               +
+     ]                                                                         +
+ }
+(1 row)
+
+    -- Paginate
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountHolderCollection(first: 1 after: "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=" ) {
+                edges {
+                  cursor
+                  node {
+                    someId
+                    accountHolderId
+                    accountHolder {
+                      someId
+                    }
+                    accountHolderCollection {
+                      totalCount
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                                 jsonb_pretty                                 
+------------------------------------------------------------------------------
+ {                                                                           +
+     "data": {                                                               +
+         "accountHolderCollection": {                                        +
+             "edges": [                                                      +
+                 {                                                           +
+                     "node": {                                               +
+                         "someId": 2,                                        +
+                         "accountHolder": {                                  +
+                             "someId": 2                                     +
+                         },                                                  +
+                         "accountHolderId": 2,                               +
+                         "accountHolderCollection": {                        +
+                             "totalCount": 1                                 +
+                         }                                                   +
+                     },                                                      +
+                     "cursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMl0="+
+                 }                                                           +
+             ]                                                               +
+         }                                                                   +
+     },                                                                      +
+     "errors": [                                                             +
+     ]                                                                       +
+ }
+(1 row)
+
+    -- Insert
+    select graphql.resolve($$
+    mutation {
+      createAccountHolder(object: {
+        someId: 3
+        accountHolderId: 2
+      }) {
+        someId
+        accountHolder {
+          someId
+        }
+      }
+    }
+    $$);
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": {"createAccountHolder": {"someId": 3, "accountHolder": {"someId": 2}}}, "errors": []}
+(1 row)
+
+    -- Update
+    select graphql.resolve($$
+    mutation {
+      updateAccountHolderCollection(
+        set: {accountHolderId: 3}
+        filter: {someId: {eq: 3}}
+      ) {
+        affectedCount
+        records {
+          someId
+          accountHolder {
+            someId
+          }
+        }
+      }
+    }
+    $$);
+                                                                   resolve                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"updateAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 3}}], "affectedCount": 1}}, "errors": []}
+(1 row)
+
+    -- Delete
+    select graphql.resolve($$
+    mutation {
+      deleteFromAccountHolderCollection(
+        filter: {someId: {eq: 3}}
+      ) {
+        affectedCount
+        records {
+          someId
+          accountHolder {
+            someId
+          }
+        }
+      }
+    }
+    $$);
+                                                                     resolve                                                                     
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"deleteFromAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 3}}], "affectedCount": 1}}, "errors": []}
+(1 row)
+
+rollback;
