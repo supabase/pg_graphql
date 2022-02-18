@@ -48,7 +48,11 @@ as $$
             case
                 when rec.entity is not null then coalesce(
                     graphql.comment_directive_name(rec.entity),
-                    graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    case
+                        -- when the name contains a capital do not attempt inflection
+                        when graphql.to_table_name(rec.entity) <> lower(graphql.to_table_name(rec.entity)) then graphql.to_table_name(rec.entity)
+                        else graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    end
                 )
                 else null
             end as base_type_name

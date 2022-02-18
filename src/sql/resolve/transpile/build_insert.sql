@@ -133,7 +133,7 @@ begin
             and graphql.name_literal(x.sel) = nf.name;
 
     result = format(
-        'insert into %I as %I (%s) values (%s) returning %s;',
+        'insert into %s as %I (%s) values (%s) returning %s;',
         entity,
         block_name,
         column_clause,

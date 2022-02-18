@@ -229,7 +229,7 @@ begin
                 %s::text as __cursor,
                 %s -- all allowed columns
             from
-                %I as %s
+                %s as %I
             where
                 true
                 --pagination_clause
@@ -301,7 +301,7 @@ begin
             ),
             -- from
             entity,
-            quote_ident(block_name),
+            block_name,
             -- pagination
             case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
             case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
