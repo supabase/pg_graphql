@@ -38,6 +38,8 @@ begin
             'CREATE TRIGGER',
             'CREATE TYPE',
             'CREATE RULE',
+            'GRANT',
+            'REVOKE',
             'COMMENT'
         )
         and cmd.schema_name is distinct from 'pg_temp'
@@ -57,26 +59,27 @@ declare
     obj record;
 begin
     for obj IN SELECT * FROM pg_event_trigger_dropped_objects()
-    loop
-        if obj.object_type IN (
-            'schema',
-            'table',
-            'foreign table',
-            'view',
-            'materialized view',
-            'function',
-            'trigger',
-            'type',
-            'rule',
-        )
-        and obj.is_temporary IS false
-        then
-            perform graphql.rebuild_schema();
-        end if
+        loop
+            if obj.object_type IN (
+                'schema',
+                'table',
+                'foreign table',
+                'view',
+                'materialized view',
+                'function',
+                'trigger',
+                'type',
+                'rule'
+            )
+            and obj.is_temporary IS false
+            then
+                perform graphql.rebuild_schema();
+            end if;
     end loop;
 end;
 $$;
 
+select graphql.rebuild_schema();
 
 create event trigger graphql_watch_ddl
     on ddl_command_end
@@ -84,4 +87,4 @@ create event trigger graphql_watch_ddl
 
 create event trigger graphql_watch_drop
     on sql_drop
-    execute procedure graphql.rebuild_on_ddl();
+    execute procedure graphql.rebuild_on_drop();
