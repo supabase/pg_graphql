@@ -60,6 +60,25 @@ begin;
     );
     rollback to savepoint a;
 
+    -- neq
+    select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) {totalCount}}$$);
+    rollback to savepoint a;
+
+    -- lt
+    select graphql.resolve($${accountCollection(filter: {id: {lt: 2}}) {totalCount}}$$);
+    rollback to savepoint a;
+
+    -- lte
+    select graphql.resolve($${accountCollection(filter: {id: {lte: 2}}) {totalCount}}$$);
+    rollback to savepoint a;
+
+    -- gte
+    select graphql.resolve($${accountCollection(filter: {id: {gte: 2}}) {totalCount}}$$);
+    rollback to savepoint a;
+
+
+
+
 
     -- Variable: Int
     select jsonb_pretty(
