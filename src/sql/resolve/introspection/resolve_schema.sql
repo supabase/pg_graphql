@@ -24,10 +24,17 @@ begin
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), '[]'::jsonb);
 
         elsif node_field_rec.name = 'queryType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_query_type(node_field));
+           -- agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_query_type(node_field));
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql."resolve___Type"('Query', node_field));
 
         elsif node_field_rec.name = 'mutationType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_mutation_type(node_field));
+            agg = agg || jsonb_build_object(
+                graphql.alias_or_name_literal(node_field),
+                case exists(select 1 from graphql.field where parent_type = 'Mutation' and not is_hidden_from_schema)
+                    when true then graphql."resolve___Type"('Mutation', node_field)
+                    else null
+                end
+            );
 
         elsif node_field_rec.name = 'subscriptionType' then
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
