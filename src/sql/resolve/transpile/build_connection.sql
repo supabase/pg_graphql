@@ -40,6 +40,16 @@ declare
     filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
 begin
+    if first_ is not null and last_ is not null then
+        perform graphql.exception('only one of "first" and "last" may be provided');
+    elsif before_ is not null and after_ is not null then
+        perform graphql.exception('only one of "before" and "after" may be provided');
+    elsif first_ is not null and before_ is not null then
+        perform graphql.exception('"first" may only be used with "after"');
+    elsif last_ is not null and after_ is not null then
+        perform graphql.exception('"last" may only be used with "before"');
+    end if;
+
     with clauses as (
         select
             (
