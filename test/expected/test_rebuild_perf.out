@@ -1,0 +1,17 @@
+begin;
+    create table a(id int primary key);
+    create table b(id int primary key);
+    create table c(id int primary key);
+    create table x(id int primary key);
+    create table e(id int primary key);
+    create table f(id int primary key);
+    create table g(id int primary key);
+    create table h(id int primary key);
+    create table i(id int primary key);
+    create table j(id int primary key);
+    create table k(id int primary key);
+    create table l(id int primary key);
+    create table m(id int primary key);
+    create table o(id int primary key);
+    create table p(id int primary key);
+rollback;
