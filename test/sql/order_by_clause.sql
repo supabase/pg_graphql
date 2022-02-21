@@ -1,6 +1,6 @@
 begin;
 
-    create table blog(id int, name text);
+    create table blog(id int primary key, name text);
 
 
     with order_by_ast(order_by_arg) as (

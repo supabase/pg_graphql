@@ -1,15 +1,19 @@
 create materialized view graphql.entity as
     select
-        oid::regclass as entity
+        pc.oid::regclass as entity
     from
-        pg_class
+        pg_class pc
+        join pg_index pi
+            on pc.oid = pi.indrelid
     where
         relkind = ANY (ARRAY['r', 'p'])
         and not relnamespace = ANY (ARRAY[
             'information_schema'::regnamespace,
             'pg_catalog'::regnamespace,
             'graphql'::regnamespace
-        ]);
+        ])
+        -- require a primary key (for pagination)
+        and pi.indisprimary;
 
 
 create view graphql.entity_column as
