@@ -93,8 +93,16 @@ begin
                                                         when '__typename' then (select quote_literal(name) from graphql.type where meta_kind = 'PageInfo')
                                                         when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                                                         when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
-                                                        when 'hasNextPage' then format('graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor))', block_name, block_name)
-                                                        when 'hasPreviousPage' then format('graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor))', block_name, block_name)
+                                                        when 'hasNextPage' then format(
+                                                            'coalesce(graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor)), false)',
+                                                            block_name,
+                                                            block_name
+                                                        )
+                                                        when 'hasPreviousPage' then format(
+                                                            'coalesce(graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor)), false)',
+                                                            block_name,
+                                                            block_name
+                                                        )
                                                         else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
 
                                                     end
