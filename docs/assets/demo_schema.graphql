@@ -38,6 +38,14 @@ input AccountCreateInput {
   updatedAt: DateTime
 }
 
+type AccountDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [Account!]!
+}
+
 type AccountEdge {
   cursor: String!
   node: Account
@@ -64,6 +72,14 @@ input AccountUpdateInput {
   encryptedPassword: String
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+type AccountUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [Account!]!
 }
 
 scalar BigInt
@@ -118,6 +134,14 @@ input BlogCreateInput {
   updatedAt: DateTime
 }
 
+type BlogDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [Blog!]!
+}
+
 type BlogEdge {
   cursor: String!
   node: Blog
@@ -168,6 +192,14 @@ input BlogPostCreateInput {
   updatedAt: DateTime
 }
 
+type BlogPostDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [BlogPost!]!
+}
+
 type BlogPostEdge {
   cursor: String!
   node: BlogPost
@@ -208,12 +240,28 @@ input BlogPostUpdateInput {
   updatedAt: DateTime
 }
 
+type BlogPostUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [BlogPost!]!
+}
+
 input BlogUpdateInput {
   ownerId: Int
   name: String
   description: String
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+type BlogUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [Blog!]!
 }
 
 """
@@ -268,7 +316,7 @@ type Mutation {
   """Creates a single `BlogPost`"""
   createBlogPost(object: BlogPostCreateInput!): BlogPost
 
-  """Deletes zero or more `Account` from the collection """
+  """Deletes zero or more records from the collection"""
   deleteFromAccountCollection(
     """Restricts the mutation's impact to records matching the critera"""
     filter: AccountFilter
@@ -277,9 +325,9 @@ type Mutation {
     The maximum number of records in the collection permitted to be affected
     """
     atMost: Int! = 1
-  ): [Account!]!
+  ): AccountDeleteResponse!
 
-  """Deletes zero or more `Blog` from the collection """
+  """Deletes zero or more records from the collection"""
   deleteFromBlogCollection(
     """Restricts the mutation's impact to records matching the critera"""
     filter: BlogFilter
@@ -288,9 +336,9 @@ type Mutation {
     The maximum number of records in the collection permitted to be affected
     """
     atMost: Int! = 1
-  ): [Blog!]!
+  ): BlogDeleteResponse!
 
-  """Deletes zero or more `BlogPost` from the collection """
+  """Deletes zero or more records from the collection"""
   deleteFromBlogPostCollection(
     """Restricts the mutation's impact to records matching the critera"""
     filter: BlogPostFilter
@@ -299,9 +347,9 @@ type Mutation {
     The maximum number of records in the collection permitted to be affected
     """
     atMost: Int! = 1
-  ): [BlogPost!]!
+  ): BlogPostDeleteResponse!
 
-  """Updates zero or more `Account` in the collection"""
+  """Updates zero or more records in the collection"""
   updateAccountCollection(
     """
     Fields that are set will be updated for all records matching the `filter`
@@ -315,9 +363,9 @@ type Mutation {
     The maximum number of records in the collection permitted to be affected
     """
     atMost: Int! = 1
-  ): [Account!]!
+  ): AccountUpdateResponse!
 
-  """Updates zero or more `Blog` in the collection"""
+  """Updates zero or more records in the collection"""
   updateBlogCollection(
     """
     Fields that are set will be updated for all records matching the `filter`
@@ -331,9 +379,9 @@ type Mutation {
     The maximum number of records in the collection permitted to be affected
     """
     atMost: Int! = 1
-  ): [Blog!]!
+  ): BlogUpdateResponse!
 
-  """Updates zero or more `BlogPost` in the collection"""
+  """Updates zero or more records in the collection"""
   updateBlogPostCollection(
     """
     Fields that are set will be updated for all records matching the `filter`
@@ -347,7 +395,7 @@ type Mutation {
     The maximum number of records in the collection permitted to be affected
     """
     atMost: Int! = 1
-  ): [BlogPost!]!
+  ): BlogPostUpdateResponse!
 }
 
 """Defines a per-field sorting order"""
@@ -359,10 +407,10 @@ enum OrderByDirection {
 }
 
 type PageInfo {
-  endCursor: String!
+  endCursor: String
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
-  startCursor: String!
+  startCursor: String
 }
 
 """The root type for querying data"""
