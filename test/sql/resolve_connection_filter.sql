@@ -61,22 +61,24 @@ begin;
     rollback to savepoint a;
 
     -- neq
-    select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) {totalCount}}$$);
+    select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- lt
-    select graphql.resolve($${accountCollection(filter: {id: {lt: 2}}) {totalCount}}$$);
+    select graphql.resolve($${accountCollection(filter: {id: {lt: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- lte
-    select graphql.resolve($${accountCollection(filter: {id: {lte: 2}}) {totalCount}}$$);
+    select graphql.resolve($${accountCollection(filter: {id: {lte: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- gte
-    select graphql.resolve($${accountCollection(filter: {id: {gte: 2}}) {totalCount}}$$);
+    select graphql.resolve($${accountCollection(filter: {id: {gte: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-
+    -- gt
+    select graphql.resolve($${accountCollection(filter: {id: {gt: 2}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
 
 
 
