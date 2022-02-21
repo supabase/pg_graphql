@@ -3568,64 +3568,6 @@ begin
         ) fa;
 end;
 $$;
-create or replace function graphql.resolve_mutation_type(ast jsonb)
-    returns jsonb
-    stable
-    language sql
-as $$
-    select
-        -- check mutations exist
-        case exists(select 1 from graphql.field where parent_type = 'Mutation' and not is_hidden_from_schema)
-            when true then (
-                select
-                    coalesce(
-                        jsonb_object_agg(
-                            fa.field_alias,
-                            case
-                                when selection_name = 'name' then 'Mutation'
-                                when selection_name = 'description' then null
-                                else graphql.exception_unknown_field(selection_name, 'Mutation')
-                            end
-                        ),
-                        'null'::jsonb
-                    )
-                from
-                    jsonb_path_query(ast, '$.selectionSet.selections') selections,
-                    lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
-                    lateral (
-                        select
-                            graphql.alias_or_name_literal(x.sel) field_alias,
-                            graphql.name_literal(x.sel) as selection_name
-                    ) fa
-        )
-    end
-$$;
-create or replace function graphql.resolve_query_type(ast jsonb)
-    returns jsonb
-    stable
-    language sql
-as $$
-    select
-        coalesce(
-            jsonb_object_agg(
-                fa.field_alias,
-                case
-                    when selection_name = 'name' then 'Query'
-                    when selection_name = 'description' then null
-                    else graphql.exception_unknown_field(selection_name, 'Query')
-                end
-            ),
-            'null'::jsonb
-        )
-    from
-        jsonb_path_query(ast, '$.selectionSet.selections') selections,
-        lateral( select sel from jsonb_array_elements(selections) s(sel) ) x(sel),
-        lateral (
-            select
-                graphql.alias_or_name_literal(x.sel) field_alias,
-                graphql.name_literal(x.sel) as selection_name
-        ) fa
-$$;
 create or replace function graphql."resolve___Schema"(
     ast jsonb,
     variable_definitions jsonb = '[]'
@@ -3652,10 +3594,17 @@ begin
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), '[]'::jsonb);
 
         elsif node_field_rec.name = 'queryType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_query_type(node_field));
+           -- agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_query_type(node_field));
+            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql."resolve___Type"('Query', node_field));
 
         elsif node_field_rec.name = 'mutationType' then
-            agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), graphql.resolve_mutation_type(node_field));
+            agg = agg || jsonb_build_object(
+                graphql.alias_or_name_literal(node_field),
+                case exists(select 1 from graphql.field where parent_type = 'Mutation' and not is_hidden_from_schema)
+                    when true then graphql."resolve___Type"('Mutation', node_field)
+                    else null
+                end
+            );
 
         elsif node_field_rec.name = 'subscriptionType' then
             agg = agg || jsonb_build_object(graphql.alias_or_name_literal(node_field), null);
