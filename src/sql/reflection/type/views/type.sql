@@ -14,6 +14,8 @@ create view graphql.type as
         graphql._type t
         left join pg_class pc
             on t.entity = pc.oid
+        left join pg_type tp
+            on t.enum = tp.oid
     where
         t.name ~ '^[_A-Za-z][_0-9A-Za-z]*$'
         and (
@@ -72,8 +74,20 @@ create view graphql.type as
                                 'SELECT'
                             )
                     else true
-            end
-            -- ensure regclass' schema is on search_path
-            and pc.relnamespace::regnamespace::name = any(current_schemas(false))
+                end
+                -- ensure regclass' schema is on search_path
+                and pc.relnamespace::regnamespace::name = any(current_schemas(false))
+            )
         )
-    );
+        and (
+            t.enum is null
+            or (
+                pg_catalog.has_type_privilege(
+                    current_user,
+                    t.enum,
+                    'USAGE'
+                )
+                -- ensure enum's schema is on search_path
+                and tp.typnamespace::regnamespace::name = any(current_schemas(false))
+            )
+        );
