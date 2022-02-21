@@ -1003,7 +1003,55 @@
 <span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
-<span class="normal">448</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
@@ -1043,6 +1091,14 @@ input<span class="w"> </span>AccountCreateInput<span class="w"> </span><span cla
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
+type<span class="w"> </span>AccountDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
 type<span class="w"> </span>AccountEdge<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">cursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">node</span><span class="n">: Account</span><span class="w"></span>
@@ -1069,6 +1125,14 @@ input<span class="w"> </span>AccountUpdateInput<span class="w"> </span><span cla
 <span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="w"></span>
 <span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>AccountUpdateResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 scalar<span class="w"> </span>BigInt<span class="w"></span>
@@ -1123,6 +1187,14 @@ input<span class="w"> </span>BlogCreateInput<span class="w"> </span><span class=
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
+type<span class="w"> </span>BlogDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
 type<span class="w"> </span>BlogEdge<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">cursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">node</span><span class="n">: Blog</span><span class="w"></span>
@@ -1173,6 +1245,14 @@ input<span class="w"> </span>BlogPostCreateInput<span class="w"> </span><span cl
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
+type<span class="w"> </span>BlogPostDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
 type<span class="w"> </span>BlogPostEdge<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">cursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">node</span><span class="n">: BlogPost</span><span class="w"></span>
@@ -1213,12 +1293,28 @@ input<span class="w"> </span>BlogPostUpdateInput<span class="w"> </span><span cl
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
+type<span class="w"> </span>BlogPostUpdateResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
 input<span class="w"> </span>BlogUpdateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">ownerId</span><span class="n">: Int</span><span class="w"></span>
 <span class="w">  </span><span class="na">name</span><span class="n">: String</span><span class="w"></span>
 <span class="w">  </span><span class="na">description</span><span class="n">: String</span><span class="w"></span>
 <span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogUpdateResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 <span class="s2">&quot;&quot;&quot;</span>
@@ -1273,7 +1369,7 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `BlogPost`&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>createBlogPost<span class="p">(</span><span class="na">object</span><span class="n">: BlogPostCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: BlogPost</span><span class="w"></span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more `Account` from the collection &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>deleteFromAccountCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">filter</span><span class="n">: AccountFilter</span><span class="w"></span>
@@ -1282,9 +1378,9 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    The maximum number of records in the collection permitted to be affected</span>
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: AccountDeleteResponse</span><span class="o">!</span><span class="w"></span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more `Blog` from the collection &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>deleteFromBlogCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">filter</span><span class="n">: BlogFilter</span><span class="w"></span>
@@ -1293,9 +1389,9 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    The maximum number of records in the collection permitted to be affected</span>
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogDeleteResponse</span><span class="o">!</span><span class="w"></span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more `BlogPost` from the collection &quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>deleteFromBlogPostCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">filter</span><span class="n">: BlogPostFilter</span><span class="w"></span>
@@ -1304,9 +1400,9 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    The maximum number of records in the collection permitted to be affected</span>
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogPostDeleteResponse</span><span class="o">!</span><span class="w"></span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more `Account` in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>updateAccountCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    Fields that are set will be updated for all records matching the `filter`</span>
@@ -1320,9 +1416,9 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    The maximum number of records in the collection permitted to be affected</span>
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: AccountUpdateResponse</span><span class="o">!</span><span class="w"></span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more `Blog` in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>updateBlogCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    Fields that are set will be updated for all records matching the `filter`</span>
@@ -1336,9 +1432,9 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    The maximum number of records in the collection permitted to be affected</span>
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogUpdateResponse</span><span class="o">!</span><span class="w"></span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more `BlogPost` in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>updateBlogPostCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    Fields that are set will be updated for all records matching the `filter`</span>
@@ -1352,7 +1448,7 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    The maximum number of records in the collection permitted to be affected</span>
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="p">)</span><span class="n">: BlogPostUpdateResponse</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 <span class="s2">&quot;&quot;&quot;Defines a per-field sorting order&quot;&quot;&quot;</span><span class="w"></span>
@@ -1364,10 +1460,10 @@ enum<span class="w"> </span>OrderByDirection<span class="w"> </span><span class=
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>PageInfo<span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">endCursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">endCursor</span><span class="n">: String</span><span class="w"></span>
 <span class="w">  </span><span class="na">hasNextPage</span><span class="n">: Boolean</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">hasPreviousPage</span><span class="n">: Boolean</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">startCursor</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="na">startCursor</span><span class="n">: String</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 <span class="s2">&quot;&quot;&quot;The root type for querying data&quot;&quot;&quot;</span><span class="w"></span>
