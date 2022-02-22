@@ -16,12 +16,13 @@ create materialized view graphql.entity as
         and pi.indisprimary;
 
 
-create view graphql.entity_column as
+create materialized view graphql.entity_column as
     select
         e.entity,
         pa.attname::text as column_name,
         pa.atttypid::regtype as column_type,
-        graphql.sql_type_is_array(pa.atttypid::regtype) is_array,
+        graphql.is_array(pa.atttypid::regtype) is_array,
+        graphql.is_composite(pa.atttypid::regtype) is_composite,
         pa.attnotnull as is_not_null,
         not pa.attgenerated = '' as is_generated,
         pg_get_serial_sequence(e.entity::text, pa.attname) is not null as is_serial,
@@ -37,8 +38,11 @@ create view graphql.entity_column as
         entity,
         attnum;
 
+create index ix_entity_column_entity_column_name
+    on graphql.entity_column(entity, column_name);
 
-create view graphql.entity_unique_columns as
+
+create materialized view graphql.entity_unique_columns as
     select distinct
         ec.entity,
         array_agg(ec.column_name order by array_position(pi.indkey, ec.column_attribute_num)) unique_column_set

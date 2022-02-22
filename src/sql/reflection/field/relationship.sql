@@ -1,4 +1,4 @@
-create view graphql.relationship as
+create materialized view graphql.relationship as
     with rels as materialized (
         select
             const.conname as constraint_name,

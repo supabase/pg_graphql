@@ -286,7 +286,7 @@ begin
             graphql.type_id(es.column_type) as type_id,
             es.is_not_null,
             es.is_array as is_array,
-            es.is_not_null and graphql.sql_type_is_array(es.column_type) as is_array_not_null,
+            es.is_not_null and es.is_array as is_array_not_null,
             null::text description,
             es.column_name as column_name,
             es.column_type as column_type,
@@ -297,7 +297,8 @@ begin
             join graphql.entity_column es
                 on gt.entity = es.entity
         where
-            gt.meta_kind = 'Node';
+            gt.meta_kind = 'Node'
+            and not es.is_composite;
 
     -- Node
     -- Extensibility via function taking record type
@@ -309,7 +310,7 @@ begin
             gt.id parent_type_id,
             graphql.type_id(pp.prorettype::regtype) as type_id,
             false as is_not_null,
-            graphql.sql_type_is_array(pp.prorettype::regtype) as is_array,
+            graphql.is_array(pp.prorettype::regtype) as is_array,
             false as is_array_not_null,
             null::text description,
             false as is_hidden_from_schema,
@@ -391,7 +392,8 @@ begin
             join graphql.entity_column ec
                 on gt.entity = ec.entity
         where
-            gt.meta_kind = 'OrderBy';
+            gt.meta_kind = 'OrderBy'
+            and not ec.is_composite;
 
 
     -- IntFilter {eq: ... neq: ... gt: ... gte: ... lt: ... lte: ... }
@@ -443,7 +445,9 @@ begin
                 on graphql.type_id(ec.column_type) = gt_scalar.graphql_type_id
                 and gt_scalar.meta_kind = 'FilterType'
         where
-            gt.meta_kind = 'FilterEntity';
+            gt.meta_kind = 'FilterEntity'
+            and not ec.is_array -- disallow arrays
+            and not ec.is_composite; -- disallow composite
 
 
     -- Arguments
@@ -682,7 +686,7 @@ begin
             gf.type_id parent_type_id,
             graphql.type_id(ec.column_type) as type_id,
             false as is_not_null,
-            graphql.sql_type_is_array(ec.column_type) as is_array,
+            ec.is_array as is_array,
             false as is_array_not_null,
             true as is_arg,
             gf.id as parent_arg_field_id,
@@ -698,7 +702,9 @@ begin
         where
             gf.meta_kind = 'ObjectArg'
             and not ec.is_generated -- skip generated columns
-            and not ec.is_serial; -- skip (big)serial columns
+            and not ec.is_serial -- skip (big)serial columns
+            and not ec.is_array -- disallow arrays
+            and not ec.is_composite; -- disallow arrays
 
 
     -- AccountUpdateResponse.affectedCount
@@ -799,7 +805,7 @@ begin
             gf.type_id parent_type_id,
             graphql.type_id(ec.column_type) as type_id,
             false as is_not_null,
-            graphql.sql_type_is_array(ec.column_type) as is_array,
+            ec.is_array,
             false as is_array_not_null,
             true as is_arg,
             gf.id as parent_arg_field_id,
@@ -815,8 +821,9 @@ begin
         where
             gf.meta_kind = 'UpdateSetArg'
             and not ec.is_generated -- skip generated columns
-            and not ec.is_serial; -- skip (big)serial columns
-
+            and not ec.is_serial -- skip (big)serial columns
+            and not ec.is_array -- disallow arrays
+            and not ec.is_composite; -- disallow composite
 
 end;
 $$;
