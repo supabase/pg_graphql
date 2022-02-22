@@ -18,6 +18,7 @@ begin
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(graphql.alias_or_name_literal(x.sel)) || E',\n' ||
             case
+                when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                 when nf.name = '__typename' then quote_literal(type_.name)

@@ -1,0 +1,28 @@
+begin;
+    create table account(
+        id bigserial primary key,
+        parent_id int references account(id)
+    );
+    insert into account(id, parent_id)
+    values (1,1);
+    select graphql.resolve($$
+    {
+      accountCollection {
+        edges {
+          cursor
+          node {
+            id
+            parent {
+              id
+            }
+          }
+        }
+      }
+    }
+    $$);
+                                                                 resolve                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1, "parent": {"id": "1"}}, "cursor": "WyJhY2NvdW50IiwgMV0="}]}}, "errors": []}
+(1 row)
+
+rollback;
