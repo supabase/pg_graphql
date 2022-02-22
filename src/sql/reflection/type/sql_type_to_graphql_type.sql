@@ -6,7 +6,8 @@ $$
     -- SQL type from pg_catalog.format_type
     select
         case
-            when sql_type like 'int%' then 'Int' -- unsafe for int8
+            when sql_type like 'bigint%' then 'BigInt'
+            when sql_type like 'int%' then 'Int'
             when sql_type like 'bool%' then 'Boolean'
             when sql_type like 'float%' then 'Float'
             when sql_type like 'numeric%' then 'Float' -- unsafe

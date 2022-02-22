@@ -878,7 +878,8 @@ $$
     -- SQL type from pg_catalog.format_type
     select
         case
-            when sql_type like 'int%' then 'Int' -- unsafe for int8
+            when sql_type like 'bigint%' then 'BigInt'
+            when sql_type like 'int%' then 'Int'
             when sql_type like 'bool%' then 'Boolean'
             when sql_type like 'float%' then 'Float'
             when sql_type like 'numeric%' then 'Float' -- unsafe
@@ -2754,6 +2755,11 @@ begin
                                                             graphql.alias_or_name_literal(n.sel),
                                                             case
                                                                 when gf_s.name = '__typename' then quote_literal(gf_n.type_)
+                                                                when gf_s.column_name is not null and gf_s.column_type = 'bigint'::regtype then format(
+                                                                    '(%I.%I)::text',
+                                                                    block_name,
+                                                                    gf_s.column_name
+                                                                )
                                                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
                                                                 when gf_s.local_columns is not null and gf_st.meta_kind = 'Node' then
                                                                     graphql.build_node_query(
@@ -3189,6 +3195,7 @@ begin
                 '%L, %s',
                 graphql.alias_or_name_literal(x.sel),
                 case
+                    when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                     when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                     when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                     when nf.name = '__typename' then format('%L', nf.type_)
@@ -3250,6 +3257,7 @@ begin
         E'(\nselect\njsonb_build_object(\n'
         || string_agg(quote_literal(graphql.alias_or_name_literal(x.sel)) || E',\n' ||
             case
+                when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                 when nf.name = '__typename' then quote_literal(type_.name)
@@ -3432,6 +3440,7 @@ begin
                                             '%L, %s',
                                             graphql.alias_or_name_literal(x.sel),
                                             case
+                                                when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                                                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', nf.type_)
