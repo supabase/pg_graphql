@@ -1,22 +1,49 @@
 begin;
 
-    create table account(
+    create table blog_post(
         id bigserial primary key,
-        parent_id int references account(id)
+        title text not null,
+        parent_id bigint references blog_post(id)
     );
 
-    insert into account(id, parent_id)
-    values (1,1);
+
+    select graphql.resolve($$
+    mutation {
+      createBlogPost(object: {
+        title: "hello"
+        parentId: "1"
+      }) {
+        id
+        parentId
+      }
+    }
+    $$);
+
+    select graphql.resolve($$
+    mutation {
+      updateBlogPostCollection(set: {
+        title: "xx"
+      }) {
+        affectedCount
+        records {
+          id
+          parentId
+        }
+      }
+    }
+    $$);
 
     select graphql.resolve($$
     {
-      accountCollection {
+      blogPostCollection {
+        totalCount
         edges {
-          cursor
           node {
             id
+            parentId
             parent {
               id
+              parentId
             }
           }
         }

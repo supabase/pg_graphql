@@ -1,28 +1,63 @@
 begin;
-    create table account(
+    create table blog_post(
         id bigserial primary key,
-        parent_id int references account(id)
+        title text not null,
+        parent_id bigint references blog_post(id)
     );
-    insert into account(id, parent_id)
-    values (1,1);
+    select graphql.resolve($$
+    mutation {
+      createBlogPost(object: {
+        title: "hello"
+        parentId: "1"
+      }) {
+        id
+        parentId
+      }
+    }
+    $$);
+                                 resolve                                  
+--------------------------------------------------------------------------
+ {"data": {"createBlogPost": {"id": "1", "parentId": "1"}}, "errors": []}
+(1 row)
+
+    select graphql.resolve($$
+    mutation {
+      updateBlogPostCollection(set: {
+        title: "xx"
+      }) {
+        affectedCount
+        records {
+          id
+          parentId
+        }
+      }
+    }
+    $$);
+                                                        resolve                                                        
+-----------------------------------------------------------------------------------------------------------------------
+ {"data": {"updateBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}, "errors": []}
+(1 row)
+
     select graphql.resolve($$
     {
-      accountCollection {
+      blogPostCollection {
+        totalCount
         edges {
-          cursor
           node {
             id
+            parentId
             parent {
               id
+              parentId
             }
           }
         }
       }
     }
     $$);
-                                                                 resolve                                                                  
-------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1, "parent": {"id": "1"}}, "cursor": "WyJhY2NvdW50IiwgMV0="}]}}, "errors": []}
+                                                                           resolve                                                                            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"blogPostCollection": {"edges": [{"node": {"id": "1", "parent": {"id": "1", "parentId": "1"}, "parentId": "1"}}], "totalCount": 1}}, "errors": []}
 (1 row)
 
 rollback;
