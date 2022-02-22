@@ -28,16 +28,6 @@ as $$
 $$;
 
 
-create function graphql.sql_type_is_array(regtype)
-    returns boolean
-    immutable
-    language sql
-as
-$$
-    select pg_catalog.format_type($1, null) like '%[]'
-$$;
-
-
 create function graphql.type_name(rec graphql._type)
     returns text
     immutable
