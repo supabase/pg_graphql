@@ -54,6 +54,7 @@ as $$
             when rec.meta_kind='CreateNode'   then format('%sCreateInput',base_type_name)
             when rec.meta_kind='UpdateNode'   then format('%sUpdateInput',base_type_name)
             when rec.meta_kind='UpdateNodeResponse' then format('%sUpdateResponse',base_type_name)
+            when rec.meta_kind='CreateNodeResponse' then format('%sCreateResponse',base_type_name)
             when rec.meta_kind='DeleteNodeResponse' then format('%sDeleteResponse',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)

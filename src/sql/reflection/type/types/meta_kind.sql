@@ -41,6 +41,7 @@ create type graphql.meta_kind as enum (
     'FilterEntity',
     'CreateNode',
     'UpdateNode',
+    'CreateNodeResponse',
     'UpdateNodeResponse',
     'DeleteNodeResponse',
 

@@ -7,11 +7,11 @@ create type graphql.field_meta_kind as enum (
     'OrderBy.Column',
     'Filter.Column',
     'Function',
-    'Mutation.insert.one',
+    'Mutation.insert',
     'Mutation.delete',
     'Mutation.update',
     'UpdateSetArg',
-    'ObjectArg',
+    'ObjectsArg',
     'AtMostArg'
 );
 
@@ -95,7 +95,7 @@ as $$
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
             when rec.meta_kind = 'Query.collection' then format('%sCollection', graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')))
-            when rec.meta_kind = 'Mutation.insert.one' then format('create%s', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.insert' then format('upsertInto%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.update' then format('update%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
@@ -604,10 +604,10 @@ begin
             graphql.type node,
             lateral (
                 values
-                    ('Mutation.insert.one', node.id, false, false, false, format('Creates a single `%s`', node.name))
+                    ('Mutation.insert', node.id, false, false, false, format('Adds one or more `%s` records to the collection', node.name))
             ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
-            node.meta_kind = 'Node';
+            node.meta_kind = 'CreateNodeResponse';
 
     -- Mutation.updateAccountCollection
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
@@ -658,10 +658,10 @@ begin
             f.type_id as parent_type_id,
             tt.id type_id,
             t.entity,
-            'object' as constant_name,
+            x.constant_name as constant_name,
             true as is_not_null,
-            false as is_array,
-            false as is_array_not_null,
+            true as is_array,
+            true as is_array_not_null,
             true as is_arg,
             f.id parent_arg_field_id,
             null as description
@@ -669,13 +669,13 @@ begin
             graphql.type t
             inner join graphql._field f
                 on t.id = f.type_id
-                and f.meta_kind = 'Mutation.insert.one'
+                and f.meta_kind = 'Mutation.insert'
             inner join graphql.type tt
                 on t.entity = tt.entity
                 and tt.meta_kind = 'CreateNode',
             lateral (
                 values
-                    ('ObjectArg'::graphql.field_meta_kind, 'object')
+                    ('ObjectsArg'::graphql.field_meta_kind, 'objects')
             ) x(meta_kind, constant_name);
 
     -- Mutation.insertAccount(object: {<column> })
@@ -700,7 +700,7 @@ begin
             join graphql.entity_column ec
                 on gf.entity = ec.entity
         where
-            gf.meta_kind = 'ObjectArg'
+            gf.meta_kind = 'ObjectsArg'
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial -- skip (big)serial columns
             and not ec.is_array -- disallow arrays
@@ -711,6 +711,8 @@ begin
     -- AccountUpdateResponse.records
     -- AccountDeleteResponse.affectedCount
     -- AccountDeleteResponse.records
+    -- AccountCreateResponse.affectedCount
+    -- AccountCreateeResponse.records
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
     select
         t.id parent_type_id,
@@ -731,7 +733,7 @@ begin
                 ('affectedCount', graphql.type_id('Int'), true, false, null, 'Count of the records impacted by the mutation')
         ) x (constant_name, type_id, is_not_null, is_array, is_array_not_null, description)
     where
-        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse');
+        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse', 'CreateNodeResponse');
 
 
     -- Mutation.delete(... filter: {})
@@ -864,7 +866,7 @@ create view graphql.field as
         f.name ~ '^[_A-Za-z][_0-9A-Za-z]*$'
         -- Apply visibility rules
         and case
-            when f.meta_kind = 'Mutation.insert.one' then (
+            when f.meta_kind = 'Mutation.insert' then (
                 pg_catalog.has_any_column_privilege(current_user, f.entity, 'INSERT')
                 and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')
             )
@@ -877,7 +879,7 @@ create view graphql.field as
                 and pg_catalog.has_any_column_privilege(current_user, f.entity, 'SELECT')
             )
             -- When an input column, make sure role has insert and permission
-            when f_arg_parent.meta_kind = 'ObjectArg' then pg_catalog.has_column_privilege(
+            when f_arg_parent.meta_kind = 'ObjectsArg' then pg_catalog.has_column_privilege(
                 current_user,
                 f.entity,
                 f.column_name,

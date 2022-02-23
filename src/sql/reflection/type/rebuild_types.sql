@@ -68,6 +68,7 @@ begin
                     ('INPUT_OBJECT',              'FilterEntity',            null,       ent.entity),
                     ('INPUT_OBJECT',              'CreateNode',              null,       ent.entity),
                     ('INPUT_OBJECT',              'UpdateNode',              null,       ent.entity),
+                    ('OBJECT',                    'CreateNodeResponse',      null,       ent.entity),
                     ('OBJECT',                    'UpdateNodeResponse',      null,       ent.entity),
                     ('OBJECT',                    'DeleteNodeResponse',      null,       ent.entity)
             ) x(type_kind, meta_kind, description, entity);

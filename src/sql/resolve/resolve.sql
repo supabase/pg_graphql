@@ -74,7 +74,7 @@ begin
                 end if;
 
                 q = case field_meta_kind
-                    when 'Mutation.insert.one' then
+                    when 'Mutation.insert' then
                         graphql.build_insert(
                             ast := ast_operation,
                             variable_definitions := variable_definitions,
