@@ -1,0 +1,50 @@
+begin;
+    create table exotic(
+        id bigint primary key,
+        js json not null,
+        jsb jsonb not null
+    );
+    insert into exotic(id, js, jsb)
+    values (1, '{"hello": 1}', '["world", "other"]');
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              exoticCollection {
+                edges {
+                  node {
+                    id
+                    js
+                    jsb
+                  }
+                }
+              }
+            }
+        $$)
+    );
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "exoticCollection": {         +
+             "edges": [                +
+                 {                     +
+                     "node": {         +
+                         "id": "1",    +
+                         "js": {       +
+                             "hello": 1+
+                         },            +
+                         "jsb": [      +
+                             "world",  +
+                             "other"   +
+                         ]             +
+                     }                 +
+                 }                     +
+             ]                         +
+         }                             +
+     },                                +
+     "errors": [                       +
+     ]                                 +
+ }
+(1 row)
+
+rollback;

@@ -9,7 +9,9 @@ begin;
         id serial primary key,
         name varchar(255) not null,
         tags text[],
-        comps complex
+        comps complex,
+        js json,
+        jsb jsonb
     );
     select
         name, parent_type, type_, is_not_null, is_array, is_arg
@@ -24,6 +26,8 @@ begin;
  name |     parent_type      |      type_       | is_not_null | is_array | is_arg 
 ------+----------------------+------------------+-------------+----------+--------
  id   | Something            | Int              | t           | f        | f
+ js   | Something            | JSON             | f           | f        | f
+ jsb  | Something            | JSON             | f           | f        | f
  name | Something            | String           | t           | f        | f
  tags | Something            | String           | f           | t        | f
  id   | SomethingFilter      | IntFilter        | f           | f        | f
@@ -33,6 +37,6 @@ begin;
  name | SomethingOrderBy     | OrderByDirection | f           | f        | f
  tags | SomethingOrderBy     | OrderByDirection | f           | f        | f
  name | SomethingUpdateInput | String           | f           | f        | t
-(10 rows)
+(12 rows)
 
 rollback;

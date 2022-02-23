@@ -1,0 +1,45 @@
+begin;
+    create table exotic(
+        id bigint primary key,
+        tags text[] not null
+    );
+    insert into exotic(id, tags)
+    values (1, array['a', 'b']);
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              exoticCollection {
+                edges {
+                  node {
+                    id
+                    tags
+                  }
+                }
+              }
+            }
+        $$)
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "exoticCollection": {     +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": "1",+
+                         "tags": [ +
+                             "a",  +
+                             "b"   +
+                         ]         +
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     },                            +
+     "errors": [                   +
+     ]                             +
+ }
+(1 row)
+
+rollback;
