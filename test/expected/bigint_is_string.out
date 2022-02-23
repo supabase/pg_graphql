@@ -6,18 +6,21 @@ begin;
     );
     select graphql.resolve($$
     mutation {
-      createBlogPost(object: {
+      insertIntoBlogPostCollection(objects: [{
         title: "hello"
         parentId: "1"
-      }) {
-        id
-        parentId
+      }]) {
+        affectedCount
+        records {
+          id
+          parentId
+        }
       }
     }
     $$);
-                                 resolve                                  
---------------------------------------------------------------------------
- {"data": {"createBlogPost": {"id": "1", "parentId": "1"}}, "errors": []}
+                                                          resolve                                                          
+---------------------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}, "errors": []}
 (1 row)
 
     select graphql.resolve($$

@@ -6,15 +6,17 @@ begin;
         parent_id bigint references blog_post(id)
     );
 
-
     select graphql.resolve($$
     mutation {
-      createBlogPost(object: {
+      insertIntoBlogPostCollection(objects: [{
         title: "hello"
         parentId: "1"
-      }) {
-        id
-        parentId
+      }]) {
+        affectedCount
+        records {
+          id
+          parentId
+        }
       }
     }
     $$);

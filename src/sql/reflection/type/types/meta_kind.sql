@@ -39,9 +39,9 @@ create type graphql.meta_kind as enum (
     'Connection',
     'OrderBy',
     'FilterEntity',
-    'CreateNode',
+    'InsertNode',
     'UpdateNode',
-    'CreateNodeResponse',
+    'InsertNodeResponse',
     'UpdateNodeResponse',
     'DeleteNodeResponse',
 

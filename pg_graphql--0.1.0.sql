@@ -351,12 +351,29 @@ begin
     raise exception using errcode='22000', message=message;
 end;
 $$;
+create or replace function graphql.exception_required_argument(arg_name text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=format('Argument %L is required', arg_name);
+end;
+$$;
 create or replace function graphql.exception_unknown_field(field_name text, type_name text)
     returns text
     language plpgsql
 as $$
 begin
     raise exception using errcode='22000', message=format('Unknown field %L on type %L', field_name, type_name);
+end;
+$$;
+
+create or replace function graphql.exception_unknown_field(field_name text)
+    returns text
+    language plpgsql
+as $$
+begin
+    raise exception using errcode='22000', message=format('Unknown field %L', field_name);
 end;
 $$;
 create or replace function graphql.cursor_clause_for_literal(cursor_ text)
@@ -575,9 +592,9 @@ create type graphql.meta_kind as enum (
     'Connection',
     'OrderBy',
     'FilterEntity',
-    'CreateNode',
+    'InsertNode',
     'UpdateNode',
-    'CreateNodeResponse',
+    'InsertNodeResponse',
     'UpdateNodeResponse',
     'DeleteNodeResponse',
 
@@ -651,10 +668,10 @@ as $$
         case
             when (rec).is_builtin then rec.meta_kind::text
             when rec.meta_kind='Node'         then base_type_name
-            when rec.meta_kind='CreateNode'   then format('%sCreateInput',base_type_name)
+            when rec.meta_kind='InsertNode'   then format('%sInsertInput',base_type_name)
             when rec.meta_kind='UpdateNode'   then format('%sUpdateInput',base_type_name)
             when rec.meta_kind='UpdateNodeResponse' then format('%sUpdateResponse',base_type_name)
-            when rec.meta_kind='CreateNodeResponse' then format('%sCreateResponse',base_type_name)
+            when rec.meta_kind='InsertNodeResponse' then format('%sInsertResponse',base_type_name)
             when rec.meta_kind='DeleteNodeResponse' then format('%sDeleteResponse',base_type_name)
             when rec.meta_kind='Edge'         then format('%sEdge',       base_type_name)
             when rec.meta_kind='Connection'   then format('%sConnection', base_type_name)
@@ -772,7 +789,7 @@ create view graphql.type as
                                 t.entity,
                                 'DELETE'
                             )
-                    when meta_kind = 'CreateNode'
+                    when meta_kind = 'InsertNode'
                         then
                             pg_catalog.has_any_column_privilege(
                                 current_user,
@@ -989,9 +1006,9 @@ begin
                     ('OBJECT',                    'Connection',              null,       ent.entity),
                     ('INPUT_OBJECT',              'OrderBy',                 null,       ent.entity),
                     ('INPUT_OBJECT',              'FilterEntity',            null,       ent.entity),
-                    ('INPUT_OBJECT',              'CreateNode',              null,       ent.entity),
+                    ('INPUT_OBJECT',              'InsertNode',              null,       ent.entity),
                     ('INPUT_OBJECT',              'UpdateNode',              null,       ent.entity),
-                    ('OBJECT',                    'CreateNodeResponse',      null,       ent.entity),
+                    ('OBJECT',                    'InsertNodeResponse',      null,       ent.entity),
                     ('OBJECT',                    'UpdateNodeResponse',      null,       ent.entity),
                     ('OBJECT',                    'DeleteNodeResponse',      null,       ent.entity)
             ) x(type_kind, meta_kind, description, entity);
@@ -1170,7 +1187,7 @@ as $$
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
             when rec.meta_kind = 'Query.collection' then format('%sCollection', graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')))
-            when rec.meta_kind = 'Mutation.insert' then format('upsertInto%sCollection', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.insert' then format('insertInto%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.update' then format('update%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
@@ -1682,7 +1699,7 @@ begin
                     ('Mutation.insert', node.id, false, false, false, format('Adds one or more `%s` records to the collection', node.name))
             ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
-            node.meta_kind = 'CreateNodeResponse';
+            node.meta_kind = 'InsertNodeResponse';
 
     -- Mutation.updateAccountCollection
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
@@ -1747,7 +1764,7 @@ begin
                 and f.meta_kind = 'Mutation.insert'
             inner join graphql.type tt
                 on t.entity = tt.entity
-                and tt.meta_kind = 'CreateNode',
+                and tt.meta_kind = 'InsertNode',
             lateral (
                 values
                     ('ObjectsArg'::graphql.field_meta_kind, 'objects')
@@ -1786,8 +1803,8 @@ begin
     -- AccountUpdateResponse.records
     -- AccountDeleteResponse.affectedCount
     -- AccountDeleteResponse.records
-    -- AccountCreateResponse.affectedCount
-    -- AccountCreateeResponse.records
+    -- AccountInsertResponse.affectedCount
+    -- AccountInsertResponse.records
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
     select
         t.id parent_type_id,
@@ -1808,7 +1825,7 @@ begin
                 ('affectedCount', graphql.type_id('Int'), true, false, null, 'Count of the records impacted by the mutation')
         ) x (constant_name, type_id, is_not_null, is_array, is_array_not_null, description)
     where
-        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse', 'CreateNodeResponse');
+        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse', 'InsertNodeResponse');
 
 
     -- Mutation.delete(... filter: {})
@@ -3116,7 +3133,6 @@ declare
     arg_object graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'ObjectsArg';
     allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_object.id and meta_kind = 'Column';
 
-    object_arg_ix int = graphql.arg_index(arg_object.name, variable_definitions);
     object_arg jsonb = graphql.get_arg_by_name(arg_object.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
 
     block_name text = graphql.slug();
@@ -3125,24 +3141,21 @@ declare
     returning_clause text;
     result text;
 
-    values_var_name text; -- key for `objects` in variables
     values_var jsonb; -- value for `objects` from variables
     values_all_field_keys text[]; -- all field keys referenced in values_var
-    values_arr jsonb[];
 begin
-    /*
-    Iterate through variables and AST literals to create a single jsonb object
-    */
+    if object_arg is null then
+       perform graphql.exception_required_argument('objects');
+    end if;
+
     if graphql.is_variable(object_arg -> 'value') then
-        values_var_name = graphql.name_literal(object_arg);
-        values_var = variables -> values_var_name;
+        values_var = variables -> graphql.name_literal(object_arg -> 'value');
 
     elsif (object_arg -> 'value' ->> 'kind') = 'ListValue' then
         -- Literals and Column Variables
         select
             jsonb_agg(
                 case
-                    --when (graphql.exception(row_.ast::text) is not null) then ( -- bgraphql.is_variable(row_.ast) then (
                     when graphql.is_variable(row_.ast) then (
                         case
                             when jsonb_typeof(variables -> (graphql.name_literal(row_.ast))) <> 'object' then graphql.exception('Invalid value for objects record')::jsonb
@@ -3161,7 +3174,7 @@ begin
                         from
                             jsonb_array_elements(row_.ast -> 'fields') rec_vals(ast)
                     )
-                    else graphql.exception(row_.ast::text)::jsonb
+                    else graphql.exception('Invalid value for objects record')::jsonb
                 end
             )
         from
@@ -3169,7 +3182,7 @@ begin
         into
             values_var;
     else
-        perform graphql.exception('Invalid value passed for objects');
+        perform graphql.exception('Invalid value for objects record')::jsonb;
     end if;
 
     -- Confirm values is a list
@@ -3182,7 +3195,7 @@ begin
         select
             string_agg(
                 case jsonb_typeof(x.elem)
-                    when 'object' then ''
+                    when 'object' then 'irrelevant'
                     else graphql.exception('Invalid value for objects. Expected list of objects')
                 end,
                 ','
@@ -3203,8 +3216,8 @@ begin
     select
         string_agg(
             case
-                when ac.name is not null then ac.column_name
-                else graphql.exception_unknown_field(vfk.field_name, field_rec.type_)
+                when ac.name is not null then format('%I', ac.column_name)
+                else graphql.exception_unknown_field(vfk.field_name)
             end,
             ','
             order by vfk.field_name asc
@@ -3294,7 +3307,7 @@ begin
                                                     parent_type := top_fields.type_,
                                                     parent_block_name := block_name
                                                 )
-                                                else graphql.exception_unknown_field(graphql.name_literal(x.sel), top_fields.type_)
+                                                else graphql.exception_unknown_field(graphql.name_literal(x.sel))
                                             end
                                         ),
                                         ','

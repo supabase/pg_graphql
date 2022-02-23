@@ -95,7 +95,7 @@ as $$
                 graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
             )
             when rec.meta_kind = 'Query.collection' then format('%sCollection', graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')))
-            when rec.meta_kind = 'Mutation.insert' then format('upsertInto%sCollection', graphql.type_name(rec.entity, 'Node'))
+            when rec.meta_kind = 'Mutation.insert' then format('insertInto%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.update' then format('update%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
             when rec.meta_kind = 'Relationship.toMany' then coalesce(
@@ -607,7 +607,7 @@ begin
                     ('Mutation.insert', node.id, false, false, false, format('Adds one or more `%s` records to the collection', node.name))
             ) fs(field_meta_kind, type_id, is_not_null, is_array, is_array_not_null, description)
         where
-            node.meta_kind = 'CreateNodeResponse';
+            node.meta_kind = 'InsertNodeResponse';
 
     -- Mutation.updateAccountCollection
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
@@ -672,7 +672,7 @@ begin
                 and f.meta_kind = 'Mutation.insert'
             inner join graphql.type tt
                 on t.entity = tt.entity
-                and tt.meta_kind = 'CreateNode',
+                and tt.meta_kind = 'InsertNode',
             lateral (
                 values
                     ('ObjectsArg'::graphql.field_meta_kind, 'objects')
@@ -711,8 +711,8 @@ begin
     -- AccountUpdateResponse.records
     -- AccountDeleteResponse.affectedCount
     -- AccountDeleteResponse.records
-    -- AccountCreateResponse.affectedCount
-    -- AccountCreateeResponse.records
+    -- AccountInsertResponse.affectedCount
+    -- AccountInsertResponse.records
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
     select
         t.id parent_type_id,
@@ -733,7 +733,7 @@ begin
                 ('affectedCount', graphql.type_id('Int'), true, false, null, 'Count of the records impacted by the mutation')
         ) x (constant_name, type_id, is_not_null, is_array, is_array_not_null, description)
     where
-        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse', 'CreateNodeResponse');
+        t.meta_kind in ('DeleteNodeResponse', 'UpdateNodeResponse', 'InsertNodeResponse');
 
 
     -- Mutation.delete(... filter: {})
