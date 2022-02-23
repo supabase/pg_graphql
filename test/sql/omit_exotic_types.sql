@@ -12,7 +12,9 @@ begin;
         id serial primary key,
         name varchar(255) not null,
         tags text[],
-        comps complex
+        comps complex,
+        js json,
+        jsb jsonb
     );
 
 
