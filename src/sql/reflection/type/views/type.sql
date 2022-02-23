@@ -51,7 +51,7 @@ create view graphql.type as
                                 t.entity,
                                 'DELETE'
                             )
-                    when meta_kind = 'CreateNode'
+                    when meta_kind = 'InsertNode'
                         then
                             pg_catalog.has_any_column_privilege(
                                 current_user,

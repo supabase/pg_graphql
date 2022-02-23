@@ -9,13 +9,14 @@ begin;
 ---------------------------
  UserAccount
  UserAccountConnection
- UserAccountCreateInput
  UserAccountDeleteResponse
  UserAccountEdge
  UserAccountFilter
+ UserAccountInsertInput
+ UserAccountInsertResponse
  UserAccountOrderBy
  UserAccountUpdateInput
  UserAccountUpdateResponse
-(9 rows)
+(10 rows)
 
 rollback;

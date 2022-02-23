@@ -26,9 +26,9 @@ begin;
  id   | Something            | Int              | t           | f        | f
  name | Something            | String           | t           | f        | f
  tags | Something            | String           | f           | t        | f
- name | SomethingCreateInput | String           | f           | f        | t
  id   | SomethingFilter      | IntFilter        | f           | f        | f
  name | SomethingFilter      | StringFilter     | f           | f        | f
+ name | SomethingInsertInput | String           | f           | f        | t
  id   | SomethingOrderBy     | OrderByDirection | f           | f        | f
  name | SomethingOrderBy     | OrderByDirection | f           | f        | f
  tags | SomethingOrderBy     | OrderByDirection | f           | f        | f

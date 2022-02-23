@@ -19,14 +19,15 @@ begin;
 -----------------------+--------------------
  Account               | Node
  AccountConnection     | Connection
- AccountCreateInput    | CreateNode
  AccountDeleteResponse | DeleteNodeResponse
  AccountEdge           | Edge
  AccountFilter         | FilterEntity
+ AccountInsertInput    | InsertNode
+ AccountInsertResponse | InsertNodeResponse
  AccountOrderBy        | OrderBy
  AccountUpdateInput    | UpdateNode
  AccountUpdateResponse | UpdateNodeResponse
-(9 rows)
+(10 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
@@ -54,10 +55,10 @@ begin;
          "__type": {                                      +
              "fields": [                                  +
                  {                                        +
-                     "name": "createAccount"              +
+                     "name": "deleteFromAccountCollection"+
                  },                                       +
                  {                                        +
-                     "name": "deleteFromAccountCollection"+
+                     "name": "insertIntoAccountCollection"+
                  },                                       +
                  {                                        +
                      "name": "updateAccountCollection"    +
@@ -75,10 +76,11 @@ begin;
     revoke select on public.account from api;
     set role api;
     select name, meta_kind from graphql.type where entity is not null order by name asc;
-     name      |  meta_kind   
----------------+--------------
- AccountFilter | FilterEntity
-(1 row)
+         name          |     meta_kind      
+-----------------------+--------------------
+ AccountFilter         | FilterEntity
+ AccountInsertResponse | InsertNodeResponse
+(2 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
         jsonb_pretty        
@@ -120,10 +122,11 @@ begin;
  AccountDeleteResponse | DeleteNodeResponse
  AccountEdge           | Edge
  AccountFilter         | FilterEntity
+ AccountInsertResponse | InsertNodeResponse
  AccountOrderBy        | OrderBy
  AccountUpdateInput    | UpdateNode
  AccountUpdateResponse | UpdateNodeResponse
-(8 rows)
+(9 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
@@ -173,13 +176,14 @@ begin;
 -----------------------+--------------------
  Account               | Node
  AccountConnection     | Connection
- AccountCreateInput    | CreateNode
  AccountDeleteResponse | DeleteNodeResponse
  AccountEdge           | Edge
  AccountFilter         | FilterEntity
+ AccountInsertInput    | InsertNode
+ AccountInsertResponse | InsertNodeResponse
  AccountOrderBy        | OrderBy
  AccountUpdateResponse | UpdateNodeResponse
-(8 rows)
+(9 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
@@ -207,10 +211,10 @@ begin;
          "__type": {                                      +
              "fields": [                                  +
                  {                                        +
-                     "name": "createAccount"              +
+                     "name": "deleteFromAccountCollection"+
                  },                                       +
                  {                                        +
-                     "name": "deleteFromAccountCollection"+
+                     "name": "insertIntoAccountCollection"+
                  }                                        +
              ]                                            +
          }                                                +
@@ -229,14 +233,15 @@ begin;
 -----------------------+--------------------
  Account               | Node
  AccountConnection     | Connection
- AccountCreateInput    | CreateNode
  AccountDeleteResponse | DeleteNodeResponse
  AccountEdge           | Edge
  AccountFilter         | FilterEntity
+ AccountInsertInput    | InsertNode
+ AccountInsertResponse | InsertNodeResponse
  AccountOrderBy        | OrderBy
  AccountUpdateInput    | UpdateNode
  AccountUpdateResponse | UpdateNodeResponse
-(9 rows)
+(10 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
@@ -257,23 +262,23 @@ begin;
 (1 row)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
-                     jsonb_pretty                      
--------------------------------------------------------
- {                                                    +
-     "data": {                                        +
-         "__type": {                                  +
-             "fields": [                              +
-                 {                                    +
-                     "name": "createAccount"          +
-                 },                                   +
-                 {                                    +
-                     "name": "updateAccountCollection"+
-                 }                                    +
-             ]                                        +
-         }                                            +
-     },                                               +
-     "errors": [                                      +
-     ]                                                +
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": {                                            +
+         "__type": {                                      +
+             "fields": [                                  +
+                 {                                        +
+                     "name": "insertIntoAccountCollection"+
+                 },                                       +
+                 {                                        +
+                     "name": "updateAccountCollection"    +
+                 }                                        +
+             ]                                            +
+         }                                                +
+     },                                                   +
+     "errors": [                                          +
+     ]                                                    +
  }
 (1 row)
 

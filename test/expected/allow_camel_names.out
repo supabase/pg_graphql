@@ -120,20 +120,22 @@ begin;
     -- Insert
     select graphql.resolve($$
     mutation {
-      createAccountHolder(object: {
+      insertIntoAccountHolderCollection(objects: [{
         someId: 3
         accountHolderId: 2
-      }) {
-        someId
-        accountHolder {
+      }]) {
+        records {
           someId
+          accountHolder {
+            someId
+          }
         }
       }
     }
     $$);
-                                            resolve                                             
-------------------------------------------------------------------------------------------------
- {"data": {"createAccountHolder": {"someId": 3, "accountHolder": {"someId": 2}}}, "errors": []}
+                                                           resolve                                                           
+-----------------------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 2}}]}}, "errors": []}
 (1 row)
 
     -- Update

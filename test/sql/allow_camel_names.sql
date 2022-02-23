@@ -66,13 +66,15 @@ begin;
     -- Insert
     select graphql.resolve($$
     mutation {
-      createAccountHolder(object: {
+      insertIntoAccountHolderCollection(objects: [{
         someId: 3
         accountHolderId: 2
-      }) {
-        someId
-        accountHolder {
+      }]) {
+        records {
           someId
+          accountHolder {
+            someId
+          }
         }
       }
     }

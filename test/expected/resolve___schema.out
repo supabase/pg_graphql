@@ -62,10 +62,6 @@ begin;
                      "name": "AccountConnection"     +
                  },                                  +
                  {                                   +
-                     "kind": "INPUT_OBJECT",         +
-                     "name": "AccountCreateInput"    +
-                 },                                  +
-                 {                                   +
                      "kind": "OBJECT",               +
                      "name": "AccountDeleteResponse" +
                  },                                  +
@@ -76,6 +72,14 @@ begin;
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
                      "name": "AccountFilter"         +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "AccountInsertInput"    +
+                 },                                  +
+                 {                                   +
+                     "kind": "OBJECT",               +
+                     "name": "AccountInsertResponse" +
                  },                                  +
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
@@ -106,10 +110,6 @@ begin;
                      "name": "BlogConnection"        +
                  },                                  +
                  {                                   +
-                     "kind": "INPUT_OBJECT",         +
-                     "name": "BlogCreateInput"       +
-                 },                                  +
-                 {                                   +
                      "kind": "OBJECT",               +
                      "name": "BlogDeleteResponse"    +
                  },                                  +
@@ -120,6 +120,14 @@ begin;
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
                      "name": "BlogFilter"            +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "BlogInsertInput"       +
+                 },                                  +
+                 {                                   +
+                     "kind": "OBJECT",               +
+                     "name": "BlogInsertResponse"    +
                  },                                  +
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
@@ -134,10 +142,6 @@ begin;
                      "name": "BlogPostConnection"    +
                  },                                  +
                  {                                   +
-                     "kind": "INPUT_OBJECT",         +
-                     "name": "BlogPostCreateInput"   +
-                 },                                  +
-                 {                                   +
                      "kind": "OBJECT",               +
                      "name": "BlogPostDeleteResponse"+
                  },                                  +
@@ -148,6 +152,14 @@ begin;
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
                      "name": "BlogPostFilter"        +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "BlogPostInsertInput"   +
+                 },                                  +
+                 {                                   +
+                     "kind": "OBJECT",               +
+                     "name": "BlogPostInsertResponse"+
                  },                                  +
                  {                                   +
                      "kind": "INPUT_OBJECT",         +

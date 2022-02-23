@@ -20,9 +20,10 @@ begin;
  OBJECT       | Connection          | f          | account |                 | AccountConnection
  OBJECT       | DeleteNodeResponse  | f          | account |                 | AccountDeleteResponse
  OBJECT       | Edge                | f          | account |                 | AccountEdge
+ OBJECT       | InsertNodeResponse  | f          | account |                 | AccountInsertResponse
  OBJECT       | UpdateNodeResponse  | f          | account |                 | AccountUpdateResponse
- INPUT_OBJECT | CreateNode          | f          | account |                 | AccountCreateInput
  INPUT_OBJECT | FilterEntity        | f          | account |                 | AccountFilter
+ INPUT_OBJECT | InsertNode          | f          | account |                 | AccountInsertInput
  INPUT_OBJECT | OrderBy             | f          | account |                 | AccountOrderBy
  INPUT_OBJECT | UpdateNode          | f          | account |                 | AccountUpdateInput
  SCALAR       | BigInt              | t          |         |                 | BigInt
@@ -56,6 +57,6 @@ begin;
  INPUT_OBJECT | FilterType          | f          |         |               9 | JSONFilter
  INPUT_OBJECT | FilterType          | f          |         |               4 | StringFilter
  INPUT_OBJECT | FilterType          | f          |         |               8 | UUIDFilter
-(40 rows)
+(41 rows)
 
 rollback;
