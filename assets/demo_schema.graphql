@@ -28,14 +28,9 @@ type Account {
 type AccountConnection {
   edges: [AccountEdge!]!
   pageInfo: PageInfo!
-  totalCount: Int!
-}
 
-input AccountCreateInput {
-  email: String
-  encryptedPassword: String
-  createdAt: DateTime
-  updatedAt: DateTime
+  """The total number of records matching the `filter` criteria"""
+  totalCount: Int!
 }
 
 type AccountDeleteResponse {
@@ -57,6 +52,21 @@ input AccountFilter {
   encryptedPassword: StringFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
+}
+
+input AccountInsertInput {
+  email: String
+  encryptedPassword: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type AccountInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [Account!]!
 }
 
 input AccountOrderBy {
@@ -89,6 +99,11 @@ Boolean expression comparing fields on type "BigInt"
 """
 input BigIntFilter {
   eq: BigInt
+  gt: BigInt
+  gte: BigInt
+  lt: BigInt
+  lte: BigInt
+  neq: BigInt
 }
 
 type Blog {
@@ -123,15 +138,9 @@ type Blog {
 type BlogConnection {
   edges: [BlogEdge!]!
   pageInfo: PageInfo!
-  totalCount: Int!
-}
 
-input BlogCreateInput {
-  ownerId: Int
-  name: String
-  description: String
-  createdAt: DateTime
-  updatedAt: DateTime
+  """The total number of records matching the `filter` criteria"""
+  totalCount: Int!
 }
 
 type BlogDeleteResponse {
@@ -154,6 +163,22 @@ input BlogFilter {
   description: StringFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
+}
+
+input BlogInsertInput {
+  ownerId: Int
+  name: String
+  description: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type BlogInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [Blog!]!
 }
 
 input BlogOrderBy {
@@ -179,17 +204,9 @@ type BlogPost {
 type BlogPostConnection {
   edges: [BlogPostEdge!]!
   pageInfo: PageInfo!
-  totalCount: Int!
-}
 
-input BlogPostCreateInput {
-  id: UUID
-  blogId: Int
-  title: String
-  body: String
-  status: String
-  createdAt: DateTime
-  updatedAt: DateTime
+  """The total number of records matching the `filter` criteria"""
+  totalCount: Int!
 }
 
 type BlogPostDeleteResponse {
@@ -213,6 +230,24 @@ input BlogPostFilter {
   status: StringFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
+}
+
+input BlogPostInsertInput {
+  id: UUID
+  blogId: Int
+  title: String
+  body: String
+  status: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type BlogPostInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+
+  """Array of records impacted by the mutation"""
+  records: [BlogPost!]!
 }
 
 input BlogPostOrderBy {
@@ -269,6 +304,11 @@ Boolean expression comparing fields on type "Boolean"
 """
 input BooleanFilter {
   eq: Boolean
+  gt: Boolean
+  gte: Boolean
+  lt: Boolean
+  lte: Boolean
+  neq: Boolean
 }
 
 scalar Cursor
@@ -280,6 +320,11 @@ Boolean expression comparing fields on type "DateTime"
 """
 input DateTimeFilter {
   eq: DateTime
+  gt: DateTime
+  gte: DateTime
+  lt: DateTime
+  lte: DateTime
+  neq: DateTime
 }
 
 """
@@ -287,6 +332,11 @@ Boolean expression comparing fields on type "Float"
 """
 input FloatFilter {
   eq: Float
+  gt: Float
+  gte: Float
+  lt: Float
+  lte: Float
+  neq: Float
 }
 
 """
@@ -294,6 +344,11 @@ Boolean expression comparing fields on type "Int"
 """
 input IntFilter {
   eq: Int
+  gt: Int
+  gte: Int
+  lt: Int
+  lte: Int
+  neq: Int
 }
 
 scalar JSON
@@ -303,19 +358,11 @@ Boolean expression comparing fields on type "JSON"
 """
 input JSONFilter {
   eq: JSON
+  neq: JSON
 }
 
 """The root type for creating and mutating data"""
 type Mutation {
-  """Creates a single `Account`"""
-  createAccount(object: AccountCreateInput!): Account
-
-  """Creates a single `Blog`"""
-  createBlog(object: BlogCreateInput!): Blog
-
-  """Creates a single `BlogPost`"""
-  createBlogPost(object: BlogPostCreateInput!): BlogPost
-
   """Deletes zero or more records from the collection"""
   deleteFromAccountCollection(
     """Restricts the mutation's impact to records matching the critera"""
@@ -348,6 +395,15 @@ type Mutation {
     """
     atMost: Int! = 1
   ): BlogPostDeleteResponse!
+
+  """Adds one or more `AccountInsertResponse` records to the collection"""
+  insertIntoAccountCollection(objects: [AccountInsertInput!]!): AccountInsertResponse
+
+  """Adds one or more `BlogInsertResponse` records to the collection"""
+  insertIntoBlogCollection(objects: [BlogInsertInput!]!): BlogInsertResponse
+
+  """Adds one or more `BlogPostInsertResponse` records to the collection"""
+  insertIntoBlogPostCollection(objects: [BlogPostInsertInput!]!): BlogPostInsertResponse
 
   """Updates zero or more records in the collection"""
   updateAccountCollection(
@@ -484,6 +540,11 @@ Boolean expression comparing fields on type "String"
 """
 input StringFilter {
   eq: String
+  gt: String
+  gte: String
+  lt: String
+  lte: String
+  neq: String
 }
 
 scalar UUID
@@ -493,4 +554,5 @@ Boolean expression comparing fields on type "UUID"
 """
 input UUIDFilter {
   eq: UUID
+  neq: UUID
 }

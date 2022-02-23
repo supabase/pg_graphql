@@ -1051,7 +1051,69 @@
 <span class="normal">493</span>
 <span class="normal">494</span>
 <span class="normal">495</span>
-<span class="normal">496</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
@@ -1081,14 +1143,9 @@
 type<span class="w"> </span>AccountConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">edges</span><span class="n">: [AccountEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
 
-input<span class="w"> </span>AccountCreateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
-<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>AccountDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1110,6 +1167,21 @@ input<span class="w"> </span>AccountFilter<span class="w"> </span><span class="p
 <span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: StringFilter</span><span class="w"></span>
 <span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>AccountInsertInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>AccountInsertResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [Account</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 input<span class="w"> </span>AccountOrderBy<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1142,6 +1214,11 @@ scalar<span class="w"> </span>BigInt<span class="w"></span>
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>BigIntFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: BigInt</span><span class="w"></span>
+<span class="w">  </span><span class="na">gt</span><span class="n">: BigInt</span><span class="w"></span>
+<span class="w">  </span><span class="na">gte</span><span class="n">: BigInt</span><span class="w"></span>
+<span class="w">  </span><span class="na">lt</span><span class="n">: BigInt</span><span class="w"></span>
+<span class="w">  </span><span class="na">lte</span><span class="n">: BigInt</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: BigInt</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>Blog<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1176,15 +1253,9 @@ type<span class="w"> </span>Blog<span class="w"> </span><span class="p">{</span>
 type<span class="w"> </span>BlogConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">edges</span><span class="n">: [BlogEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
 
-input<span class="w"> </span>BlogCreateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">ownerId</span><span class="n">: Int</span><span class="w"></span>
-<span class="w">  </span><span class="na">name</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">description</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
-<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>BlogDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1207,6 +1278,22 @@ input<span class="w"> </span>BlogFilter<span class="w"> </span><span class="p">{
 <span class="w">  </span><span class="na">description</span><span class="n">: StringFilter</span><span class="w"></span>
 <span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogInsertInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">ownerId</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">name</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">description</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogInsertResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [Blog</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 input<span class="w"> </span>BlogOrderBy<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1232,17 +1319,9 @@ type<span class="w"> </span>BlogPost<span class="w"> </span><span class="p">{</s
 type<span class="w"> </span>BlogPostConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">edges</span><span class="n">: [BlogPostEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
 
-input<span class="w"> </span>BlogPostCreateInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">id</span><span class="n">: UUID</span><span class="w"></span>
-<span class="w">  </span><span class="na">blogId</span><span class="n">: Int</span><span class="w"></span>
-<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">status</span><span class="n">: String</span><span class="w"></span>
-<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
-<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>BlogPostDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1266,6 +1345,24 @@ input<span class="w"> </span>BlogPostFilter<span class="w"> </span><span class="
 <span class="w">  </span><span class="na">status</span><span class="n">: StringFilter</span><span class="w"></span>
 <span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
 <span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTimeFilter</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+input<span class="w"> </span>BlogPostInsertInput<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="na">id</span><span class="n">: UUID</span><span class="w"></span>
+<span class="w">  </span><span class="na">blogId</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">status</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">createdAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">updatedAt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+type<span class="w"> </span>BlogPostInsertResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">affectedCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="na">records</span><span class="n">: [BlogPost</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 input<span class="w"> </span>BlogPostOrderBy<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1322,6 +1419,11 @@ type<span class="w"> </span>BlogUpdateResponse<span class="w"> </span><span clas
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>BooleanFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: Boolean</span><span class="w"></span>
+<span class="w">  </span><span class="na">gt</span><span class="n">: Boolean</span><span class="w"></span>
+<span class="w">  </span><span class="na">gte</span><span class="n">: Boolean</span><span class="w"></span>
+<span class="w">  </span><span class="na">lt</span><span class="n">: Boolean</span><span class="w"></span>
+<span class="w">  </span><span class="na">lte</span><span class="n">: Boolean</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: Boolean</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 scalar<span class="w"> </span>Cursor<span class="w"></span>
@@ -1333,6 +1435,11 @@ scalar<span class="w"> </span>DateTime<span class="w"></span>
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>DateTimeFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">gt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">gte</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">lt</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">lte</span><span class="n">: DateTime</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: DateTime</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 <span class="s2">&quot;&quot;&quot;</span>
@@ -1340,6 +1447,11 @@ input<span class="w"> </span>DateTimeFilter<span class="w"> </span><span class="
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>FloatFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: Float</span><span class="w"></span>
+<span class="w">  </span><span class="na">gt</span><span class="n">: Float</span><span class="w"></span>
+<span class="w">  </span><span class="na">gte</span><span class="n">: Float</span><span class="w"></span>
+<span class="w">  </span><span class="na">lt</span><span class="n">: Float</span><span class="w"></span>
+<span class="w">  </span><span class="na">lte</span><span class="n">: Float</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: Float</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 <span class="s2">&quot;&quot;&quot;</span>
@@ -1347,6 +1459,11 @@ input<span class="w"> </span>FloatFilter<span class="w"> </span><span class="p">
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>IntFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">gt</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">gte</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">lt</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">lte</span><span class="n">: Int</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: Int</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 scalar<span class="w"> </span>JSON<span class="w"></span>
@@ -1356,19 +1473,11 @@ scalar<span class="w"> </span>JSON<span class="w"></span>
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>JSONFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: JSON</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: JSON</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 <span class="s2">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span><span class="w"></span>
 type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `Account`&quot;&quot;&quot;</span><span class="w"></span>
-<span class="w">  </span>createAccount<span class="p">(</span><span class="na">object</span><span class="n">: AccountCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: Account</span><span class="w"></span>
-
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `Blog`&quot;&quot;&quot;</span><span class="w"></span>
-<span class="w">  </span>createBlog<span class="p">(</span><span class="na">object</span><span class="n">: BlogCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: Blog</span><span class="w"></span>
-
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;Creates a single `BlogPost`&quot;&quot;&quot;</span><span class="w"></span>
-<span class="w">  </span>createBlogPost<span class="p">(</span><span class="na">object</span><span class="n">: BlogPostCreateInput</span><span class="o">!</span><span class="p">)</span><span class="n">: BlogPost</span><span class="w"></span>
-
 <span class="w">  </span><span class="s2">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>deleteFromAccountCollection<span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="s2">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span><span class="w"></span>
@@ -1401,6 +1510,15 @@ type<span class="w"> </span>Mutation<span class="w"> </span><span class="p">{</s
 <span class="s2">    &quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">    </span><span class="na">atMost</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
 <span class="w">  </span><span class="p">)</span><span class="n">: BlogPostDeleteResponse</span><span class="o">!</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Adds one or more `AccountInsertResponse` records to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>insertIntoAccountCollection<span class="p">(</span><span class="na">objects</span><span class="n">: [AccountInsertInput</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="p">)</span><span class="n">: AccountInsertResponse</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Adds one or more `BlogInsertResponse` records to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>insertIntoBlogCollection<span class="p">(</span><span class="na">objects</span><span class="n">: [BlogInsertInput</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="p">)</span><span class="n">: BlogInsertResponse</span><span class="w"></span>
+
+<span class="w">  </span><span class="s2">&quot;&quot;&quot;Adds one or more `BlogPostInsertResponse` records to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span>insertIntoBlogPostCollection<span class="p">(</span><span class="na">objects</span><span class="n">: [BlogPostInsertInput</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="p">)</span><span class="n">: BlogPostInsertResponse</span><span class="w"></span>
 
 <span class="w">  </span><span class="s2">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span>updateAccountCollection<span class="p">(</span><span class="w"></span>
@@ -1537,6 +1655,11 @@ type<span class="w"> </span>Query<span class="w"> </span><span class="p">{</span
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>StringFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">gt</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">gte</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">lt</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">lte</span><span class="n">: String</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: String</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 scalar<span class="w"> </span>UUID<span class="w"></span>
@@ -1546,6 +1669,7 @@ scalar<span class="w"> </span>UUID<span class="w"></span>
 <span class="s2">&quot;&quot;&quot;</span><span class="w"></span>
 input<span class="w"> </span>UUIDFilter<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">eq</span><span class="n">: UUID</span><span class="w"></span>
+<span class="w">  </span><span class="na">neq</span><span class="n">: UUID</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
