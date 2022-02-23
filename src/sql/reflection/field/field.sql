@@ -298,6 +298,7 @@ begin
                 on gt.entity = es.entity
         where
             gt.meta_kind = 'Node'
+            and not es.column_type in ('json', 'jsonb')
             and not es.is_composite;
 
     -- Node
