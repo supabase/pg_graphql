@@ -178,4 +178,17 @@ begin;
  {"data": null, "errors": ["Argument 'objects' is required"]}
 (1 row)
 
+    -- Empty call
+    select graphql.resolve($$
+    mutation {
+      insertIntoBlogCollection(objects: []) {
+        affectedCount
+      }
+    }
+    $$);
+                                    resolve                                    
+-------------------------------------------------------------------------------
+ {"data": null, "errors": ["At least one record must be provided to objects"]}
+(1 row)
+
 rollback;

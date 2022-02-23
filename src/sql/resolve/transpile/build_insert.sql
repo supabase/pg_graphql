@@ -67,6 +67,9 @@ begin
             jsonb_array_elements(object_arg -> 'value' -> 'values') row_(ast) -- one per "record" of data
         into
             values_var;
+
+        -- Handle empty list input
+        values_var = coalesce(values_var, jsonb_build_array());
     else
         perform graphql.exception('Invalid value for objects record')::jsonb;
     end if;
@@ -89,6 +92,10 @@ begin
         from
             jsonb_array_elements(values_var) x(elem)
     );
+
+    if not jsonb_array_length(values_var) > 0 then
+        perform graphql.exception('At least one record must be provided to objects');
+    end if;
 
     values_all_field_keys = (
         select

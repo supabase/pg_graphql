@@ -150,23 +150,13 @@ begin;
     }
     $$);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    -- Empty call
+    select graphql.resolve($$
+    mutation {
+      insertIntoBlogCollection(objects: []) {
+        affectedCount
+      }
+    }
+    $$);
 
 rollback;
