@@ -70,7 +70,7 @@ begin
             if field_meta_kind is null then
                 perform graphql.exception_unknown_field(
                     graphql.name_literal(ast_operation),
-                    operation
+                    operation::text
                 );
             end if;
 

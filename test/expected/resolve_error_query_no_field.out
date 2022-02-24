@@ -6,9 +6,9 @@ begin;
       }
     }
     $$);
-                                                    resolve                                                     
-----------------------------------------------------------------------------------------------------------------
- {"data": null, "errors": ["function graphql.exception_unknown_field(text, graphql.meta_kind) does not exist"]}
+                                resolve                                
+-----------------------------------------------------------------------
+ {"data": null, "errors": ["Unknown field 'account' on type 'Query'"]}
 (1 row)
 
 rollback;
