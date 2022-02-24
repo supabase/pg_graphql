@@ -12,7 +12,8 @@ create type graphql.field_meta_kind as enum (
     'Mutation.update',
     'UpdateSetArg',
     'ObjectsArg',
-    'AtMostArg'
+    'AtMostArg',
+    'Query.heartbeat'
 );
 
 create table graphql._field (
@@ -197,8 +198,11 @@ begin
         (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'name',              true,  false, null, false,  null),
         (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'description',       false, false, null, false,  null),
         (graphql.type_id('__EnumValue'),  graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
-        (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null);
+        (graphql.type_id('__EnumValue'),  graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null);
 
+    insert into graphql._field(parent_type_id, type_id, meta_kind, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    values
+        (graphql.type_id('Query'), graphql.type_id('DateTime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC DateTime from server');
 
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     select

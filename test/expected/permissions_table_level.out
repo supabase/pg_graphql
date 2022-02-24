@@ -38,6 +38,9 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
@@ -83,16 +86,20 @@ begin;
 (2 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
-        jsonb_pretty        
-----------------------------
- {                         +
-     "data": {             +
-         "__type": {       +
-             "fields": null+
-         }                 +
-     },                    +
-     "errors": [           +
-     ]                     +
+              jsonb_pretty               
+-----------------------------------------
+ {                                      +
+     "data": {                          +
+         "__type": {                    +
+             "fields": [                +
+                 {                      +
+                     "name": "heartbeat"+
+                 }                      +
+             ]                          +
+         }                              +
+     },                                 +
+     "errors": [                        +
+     ]                                  +
  }
 (1 row)
 
@@ -137,6 +144,9 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
@@ -194,6 +204,9 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
@@ -252,6 +265,9 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +

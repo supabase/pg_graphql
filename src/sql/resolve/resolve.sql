@@ -1,6 +1,3 @@
-create type graphql.operation as enum ('query', 'mutation');
-
-
 create or replace function graphql.resolve(stmt text, variables jsonb = '{}')
     returns jsonb
     volatile
@@ -21,7 +18,7 @@ declare
     data_ jsonb;
     errors_ text[] = case when parsed.error is null then '{}' else array[parsed.error] end;
 
-    operation graphql.operation;
+    operation graphql.meta_kind;
 
     ---------------------
     -- If not in cache --
@@ -55,46 +52,59 @@ begin
             end;
 
             -- Query or Mutation?
-            operation = ast_inlined -> 'definitions' -> 0 ->> 'operation';
+            operation = case ast_inlined -> 'definitions' -> 0 ->> 'operation'
+                when 'mutation' then 'Mutation'
+                when 'query' then 'Query'
+                else graphql.exception('Invalid operation')
+            end;
+
             ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;
 
-            if operation = 'mutation' then
-                field_meta_kind = f.meta_kind
-                    from
-                        graphql.field f
-                    where
-                        f.parent_type = 'Mutation'
-                        and f.name = graphql.name_literal(ast_operation);
+            field_meta_kind = f.meta_kind
+                from
+                    graphql.field f
+                where
+                    f.parent_type = operation::text
+                    and f.name = graphql.name_literal(ast_operation);
 
-                if field_meta_kind is null then
-                    perform graphql.exception_unknown_field(
-                        graphql.name_literal(ast_operation),
-                        'Mutation'
-                    );
-                end if;
+            if field_meta_kind is null then
+                perform graphql.exception_unknown_field(
+                    graphql.name_literal(ast_operation),
+                    operation
+                );
+            end if;
 
-                q = case field_meta_kind
-                    when 'Mutation.insert' then
-                        graphql.build_insert(
+            q = case field_meta_kind
+                when 'Mutation.insert' then
+                    graphql.build_insert(
+                        ast := ast_operation,
+                        variable_definitions := variable_definitions,
+                        variables := variables
+                    )
+                when 'Mutation.delete' then
+                    graphql.build_delete(
+                        ast := ast_operation,
+                        variable_definitions := variable_definitions,
+                        variables := variables
+                    )
+                when 'Mutation.update' then
+                    graphql.build_update(
+                        ast := ast_operation,
+                        variable_definitions := variable_definitions,
+                        variables := variables
+                    )
+                when 'Query.collection' then
+                        graphql.build_connection_query(
                             ast := ast_operation,
                             variable_definitions := variable_definitions,
-                            variables := variables
+                            variables := variables,
+                            parent_type :=  'Query',
+                            parent_block_name := null
                         )
-                    when 'Mutation.delete' then
-                        graphql.build_delete(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables
-                        )
-                    when 'Mutation.update' then
-                        graphql.build_update(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables
-                        )
-                end;
+                when 'Query.heartbeat' then graphql.build_heartbeat_query(ast_operation)
+            end;
 
-            elsif operation = 'query' then
+            if q is null and operation = 'Query' then
 
                 meta_kind = type_.meta_kind
                     from
@@ -111,18 +121,6 @@ begin
                         'Query'
                     );
                 end if;
-
-                q = case meta_kind
-                    when 'Connection' then
-                        graphql.build_connection_query(
-                            ast := ast_operation,
-                            variable_definitions := variable_definitions,
-                            variables := variables,
-                            parent_type :=  'Query',
-                            parent_block_name := null
-                        )
-                    else null::text
-                end;
 
                 data_ = case meta_kind
                     when '__Schema' then
