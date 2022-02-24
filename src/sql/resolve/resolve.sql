@@ -12,13 +12,25 @@ declare
     ast jsonb = parsed.ast;
     variable_definitions jsonb = coalesce(graphql.variable_definitions_sort(ast -> 'definitions' -> 0 -> 'variableDefinitions'), '[]');
 
-    prepared_statement_name text = graphql.cache_key(current_user::regrole, ast, variables);
+    -- Query or Mutation?
+    operation graphql.meta_kind = (
+        case (ast -> 'definitions' -> 0 ->> 'operation')
+            when 'mutation' then 'Mutation'
+            when 'query' then 'Query'
+        end
+    );
+
+    prepared_statement_name text = (
+        case
+            when operation = 'Query' then graphql.cache_key(current_user::regrole, ast, variables)
+            -- If not a query (mutation) don't attempt to cache
+            else graphql.sha1(format('%s%s%s',random(),random(),random()))
+        end
+    );
 
     q text;
     data_ jsonb;
     errors_ text[] = case when parsed.error is null then '{}' else array[parsed.error] end;
-
-    operation graphql.meta_kind;
 
     ---------------------
     -- If not in cache --
@@ -49,13 +61,6 @@ begin
             ast_inlined = case
                 when fragment_definitions = '[]'::jsonb then ast_locless
                 else graphql.ast_pass_fragments(ast_locless, fragment_definitions)
-            end;
-
-            -- Query or Mutation?
-            operation = case ast_inlined -> 'definitions' -> 0 ->> 'operation'
-                when 'mutation' then 'Mutation'
-                when 'query' then 'Query'
-                else graphql.exception('Invalid operation')
             end;
 
             ast_operation = ast_inlined -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0;

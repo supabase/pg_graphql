@@ -55,3 +55,14 @@ select graphql.cache_key_variable_component('{
  $,$."id",$."id"."eq",$."orderByObj",$."orderByObj"[0],$."orderByObj"[0]."email",$."orderByObj"[0]."email"="AscNullsFirst",$."orderByVal",$."orderByVal"="DescNullsFirst"
 (1 row)
 
+select graphql.cache_key_variable_component('
+    [
+        { "email": "foo@barsley.com", "priority": 1 },
+        { "email": "bar@foosworth.com" }
+    ]
+');
+             cache_key_variable_component              
+-------------------------------------------------------
+ $,$[0],$[0]."email",$[0]."priority",$[1],$[1]."email"
+(1 row)
+
