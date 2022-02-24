@@ -1290,7 +1290,7 @@ begin
         (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'name',              true,  false, null, false,  null),
         (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'description',       false, false, null, false,  null),
         (graphql.type_id('__EnumValue'),  graphql.type_id('Boolean'),             'isDeprecated',      true,  false, null, false,  null),
-        (graphql.type_id('__EnumValue'),  graphql.type_id('Boolean'),             'deprecationReason', true,  false, null, false,  null);
+        (graphql.type_id('__EnumValue'),  graphql.type_id('String'),              'deprecationReason', false, false, null, false,  null);
 
     insert into graphql._field(parent_type_id, type_id, meta_kind, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     values
