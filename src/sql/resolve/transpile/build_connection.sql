@@ -245,7 +245,7 @@ begin
     (
         with xyz as (
             select
-                count(*) over () __total_count,
+                %s as __total_count,
                 first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
                 last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
                 %s::text as __cursor,
@@ -276,6 +276,11 @@ begin
                 %s
         ) as %I
     )',
+            -- total count only computed if requested
+            case
+                when total_count_ast is not null then 'count(*) over ()'
+                else 'null'
+            end,
             -- __first_cursor
             graphql.cursor_encoded_clause(entity, block_name),
             graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
