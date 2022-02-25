@@ -2638,7 +2638,6 @@ declare
 
     arguments jsonb = graphql.jsonb_coalesce((ast -> 'arguments'), '[]');
 
-
     field_row graphql.field = f from graphql.field f where f.name = graphql.name_literal(ast) and f.parent_type = $4;
     first_ text = graphql.arg_clause(
         'first',
@@ -2653,6 +2652,38 @@ declare
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
     filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
+    total_count_ast jsonb = jsonb_path_query_first(
+        ast,
+        '$.selectionSet.selections ? ( @.name.value == $name )',
+        '{"name": "totalCount"}'
+    );
+
+    page_info_ast jsonb = jsonb_path_query_first(
+        ast,
+        '$.selectionSet.selections ? ( @.name.value == $name )',
+        '{"name": "pageInfo"}'
+    );
+
+    edges_ast jsonb = jsonb_path_query_first(
+        ast,
+        '$.selectionSet.selections ? ( @.name.value == $name )',
+        '{"name": "edges"}'
+    );
+
+    cursor_ast jsonb = jsonb_path_query_first(
+        edges_ast,
+        '$.selectionSet.selections ? ( @.name.value == $name )',
+        '{"name": "cursor"}'
+    );
+
+    node_ast jsonb = jsonb_path_query_first(
+        edges_ast,
+        '$.selectionSet.selections ? ( @.name.value == $name )',
+        '{"name": "node"}'
+    );
+
+    total_count_clause text;
+    page_info_clause text;
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
@@ -2664,25 +2695,57 @@ begin
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
+    total_count_clause = case
+        when total_count_ast is null then ''
+        else format(
+            '%L, coalesce(min(%I.%I), 0)',
+            graphql.alias_or_name_literal(total_count_ast),
+            block_name,
+            '__total_count'
+        )
+    end;
+
+    page_info_clause = case
+        when page_info_ast is null then ''
+        else (
+            select
+                format('%L, jsonb_build_object(%s)',
+                    graphql.alias_or_name_literal(page_info_ast),
+                    string_agg(
+                        format(
+                            '%L, %s',
+                            graphql.alias_or_name_literal(pi.sel),
+                            case graphql.name_literal(pi.sel)
+                                when '__typename' then format('%L', pit.name)
+                                when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
+                                when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
+                                when 'hasNextPage' then format(
+                                    'coalesce(graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor)), false)',
+                                    block_name,
+                                    block_name
+                                )
+                                when 'hasPreviousPage' then format(
+                                    'coalesce(graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor)), false)',
+                                    block_name,
+                                    block_name
+                                )
+                                else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
+
+                            end
+                        ),
+                        ','
+                    )
+                )
+                from
+                    jsonb_array_elements(page_info_ast -> 'selectionSet' -> 'selections') pi(sel),
+                    graphql.type pit
+                where
+                     pit.meta_kind = 'PageInfo'
+        )
+    end;
+
     with clauses as (
         select
-            (
-                array_remove(
-                    array_agg(
-                        case
-                            when graphql.name_literal(root.sel) = 'totalCount' then
-                                format(
-                                    '%L, coalesce(min(%I.%I), 0)',
-                                    graphql.alias_or_name_literal(root.sel),
-                                    block_name,
-                                    '__total_count'
-                                )
-                            else null::text
-                        end
-                    ),
-                    null
-                )
-            )[1] as total_count_clause,
             (
                 array_remove(
                     array_agg(
@@ -2699,6 +2762,7 @@ begin
                     null
                 )
             )[1] as typename_clause,
+            /*
             (
                 array_remove(
                     array_agg(
@@ -2746,6 +2810,7 @@ begin
                     null
                 )
             )[1] as page_info_clause,
+*/
 
 
             (
@@ -2884,21 +2949,13 @@ begin
         )
         select
             -- total count
-            jsonb_build_object(
-            %s
-            )
+            jsonb_build_object(%s)
             -- page info
-            || jsonb_build_object(
-            %s
-            )
+            || jsonb_build_object(%s)
             -- edges
-            || jsonb_build_object(
-            %s
-            )
+            || jsonb_build_object(%s)
             -- __typename
-            || jsonb_build_object(
-            %s
-            )
+            || jsonb_build_object(%s)
         from
         (
             select
@@ -2958,8 +3015,8 @@ begin
             -- limit: max 20
             least(coalesce(first_, last_), '30'),
             -- JSON selects
-            coalesce(clauses.total_count_clause, ''),
-            coalesce(clauses.page_info_clause, ''),
+            total_count_clause,
+            page_info_clause,
             coalesce(clauses.edges_clause, ''),
             coalesce(clauses.typename_clause, ''),
             -- final order by
