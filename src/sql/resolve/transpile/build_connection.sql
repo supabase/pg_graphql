@@ -9,7 +9,6 @@ create or replace function graphql.build_connection_query(
     language plpgsql
 as $$
 declare
-    result text;
     block_name text = graphql.slug();
     entity regclass = t.entity
         from
@@ -44,6 +43,12 @@ declare
         '{"name": "totalCount"}'
     );
 
+    __typename_ast jsonb = jsonb_path_query_first(
+        ast,
+        '$.selectionSet.selections ? ( @.name.value == $name )',
+        '{"name": "__typename"}'
+    );
+
     page_info_ast jsonb = jsonb_path_query_first(
         ast,
         '$.selectionSet.selections ? ( @.name.value == $name )',
@@ -68,8 +73,13 @@ declare
         '{"name": "node"}'
     );
 
+    __typename_clause text;
     total_count_clause text;
     page_info_clause text;
+    node_clause text;
+    edges_clause text;
+
+    result text;
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
@@ -81,234 +91,155 @@ begin
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
-    total_count_clause = case
-        when total_count_ast is null then ''
-        else format(
-            '%L, coalesce(min(%I.%I), 0)',
-            graphql.alias_or_name_literal(total_count_ast),
-            block_name,
-            '__total_count'
+    __typename_clause = format(
+        '%L, %L',
+        graphql.alias_or_name_literal(__typename_ast),
+        field_row.type_
+    ) where __typename_ast is not null;
+
+    total_count_clause = format(
+        '%L, coalesce(min(%I.%I), 0)',
+        graphql.alias_or_name_literal(total_count_ast),
+        block_name,
+        '__total_count'
+    ) where total_count_ast is not null;
+
+    page_info_clause = case
+        when page_info_ast is null then null
+        else (
+            select
+                format(
+                '%L, jsonb_build_object(%s)',
+                graphql.alias_or_name_literal(page_info_ast),
+                string_agg(
+                    format(
+                        '%L, %s',
+                        graphql.alias_or_name_literal(pi.sel),
+                        case graphql.name_literal(pi.sel)
+                            when '__typename' then format('%L', pit.name)
+                            when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
+                            when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
+                            when 'hasNextPage' then format(
+                                'coalesce(graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor)), false)',
+                                block_name,
+                                block_name
+                            )
+                            when 'hasPreviousPage' then format(
+                                'coalesce(graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor)), false)',
+                                block_name,
+                                block_name
+                            )
+                            else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
+                        end
+                    ),
+                    ','
+                )
+            )
+        from
+            jsonb_array_elements(page_info_ast -> 'selectionSet' -> 'selections') pi(sel)
+            join graphql.type pit
+                on true
+        where
+            pit.meta_kind = 'PageInfo'
         )
     end;
 
-    page_info_clause = case
-        when page_info_ast is null then ''
+
+    node_clause = case
+        when node_ast is null then null
         else (
             select
-                format('%L, jsonb_build_object(%s)',
-                    graphql.alias_or_name_literal(page_info_ast),
+                format(
+                    'jsonb_build_object(%s)',
                     string_agg(
                         format(
                             '%L, %s',
-                            graphql.alias_or_name_literal(pi.sel),
-                            case graphql.name_literal(pi.sel)
-                                when '__typename' then format('%L', pit.name)
-                                when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
-                                when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
-                                when 'hasNextPage' then format(
-                                    'coalesce(graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor)), false)',
+                            graphql.alias_or_name_literal(n.sel),
+                            case
+                                when gf_s.name = '__typename' then format('%L', gt.name)
+                                when gf_s.column_name is not null and gf_s.column_type = 'bigint'::regtype then format(
+                                    '(%I.%I)::text',
                                     block_name,
-                                    block_name
+                                    gf_s.column_name
                                 )
-                                when 'hasPreviousPage' then format(
-                                    'coalesce(graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor)), false)',
-                                    block_name,
-                                    block_name
-                                )
-                                else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
-
+                                when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
+                                when gf_s.local_columns is not null and gf_s.meta_kind = 'Relationship.toOne' then
+                                    graphql.build_node_query(
+                                        ast := n.sel,
+                                        variable_definitions := variable_definitions,
+                                        variables := variables,
+                                        parent_type := gt.name,
+                                        parent_block_name := block_name
+                                    )
+                                when gf_s.local_columns is not null and gf_s.meta_kind = 'Relationship.toMany' then
+                                    graphql.build_connection_query(
+                                        ast := n.sel,
+                                        variable_definitions := variable_definitions,
+                                        variables := variables,
+                                        parent_type := gt.name,
+                                        parent_block_name := block_name
+                                    )
+                                when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
+                                else graphql.exception_unknown_field(graphql.name_literal(n.sel), gt.name)
                             end
                         ),
                         ','
                     )
                 )
                 from
-                    jsonb_array_elements(page_info_ast -> 'selectionSet' -> 'selections') pi(sel),
-                    graphql.type pit
+                    jsonb_array_elements(node_ast -> 'selectionSet' -> 'selections') n(sel) -- node selection
+                    join graphql.type gt -- return type of node
+                        on true
+                    left join graphql.field gf_s -- node selections
+                        on gt.name = gf_s.parent_type
+                        and graphql.name_literal(n.sel) = gf_s.name
                 where
-                     pit.meta_kind = 'PageInfo'
+                    gt.meta_kind = 'Node'
+                    and gt.entity = ent
+                    and not coalesce(gf_s.is_arg, false)
         )
     end;
 
-    with clauses as (
-        select
-            (
-                array_remove(
-                    array_agg(
-                        case
-                            when graphql.name_literal(root.sel) = '__typename' then
-                                format(
-                                    '%L, %L',
-                                    graphql.alias_or_name_literal(root.sel),
-                                    field_row.type_
-                                )
-                            else null::text
-                        end
-                    ),
-                    null
+    edges_clause = case
+        when edges_ast is null then null
+        else (
+            select
+                format(
+                    '%L, coalesce(jsonb_agg(jsonb_build_object(%s)), jsonb_build_array())',
+                    graphql.alias_or_name_literal(edges_ast),
+                    string_agg(
+                        format(
+                            '%L, %s',
+                            graphql.alias_or_name_literal(ec.sel),
+                            case graphql.name_literal(ec.sel)
+                                when 'cursor' then format('%I.%I', block_name, '__cursor')
+                                when '__typename' then format('%L', gf_e.type_)
+                                when 'node' then node_clause
+                                else graphql.exception_unknown_field(graphql.name_literal(ec.sel), gf_e.type_)
+                            end
+                        ),
+                        E',\n'
+                    )
                 )
-            )[1] as typename_clause,
-            /*
-            (
-                array_remove(
-                    array_agg(
-                        case
-                            when graphql.name_literal(root.sel) = 'pageInfo' then
-                                format(
-                                    '%L, jsonb_build_object(%s)',
-                                    graphql.alias_or_name_literal(root.sel),
-                                    (
-                                        select
-                                            string_agg(
-                                                format(
-                                                    '%L, %s',
-                                                    graphql.alias_or_name_literal(pi.sel),
-                                                    case graphql.name_literal(pi.sel)
-                                                        when '__typename' then format('%L', pit.name)
-                                                        when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
-                                                        when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
-                                                        when 'hasNextPage' then format(
-                                                            'coalesce(graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor)), false)',
-                                                            block_name,
-                                                            block_name
-                                                        )
-                                                        when 'hasPreviousPage' then format(
-                                                            'coalesce(graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor)), false)',
-                                                            block_name,
-                                                            block_name
-                                                        )
-                                                        else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
+                from
+                    jsonb_array_elements(edges_ast -> 'selectionSet' -> 'selections') ec(sel)
+                    join graphql.field gf_e -- edge field
+                        on gf_e.parent_type = field_row.type_
+                        and gf_e.name = 'edges'
+        )
+    end;
 
-                                                    end
-                                                )
-                                                , E','
-                                            )
-                                        from
-                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel),
-                                            graphql.type pit
-                                        where
-                                             pit.meta_kind = 'PageInfo'
-                                    )
-                                )
-                            else null::text
-                        end
-                    ),
-                    null
-                )
-            )[1] as page_info_clause,
-*/
-
-
-            (
-                array_remove(
-                    array_agg(
-                        case
-                            when graphql.name_literal(root.sel) = 'edges' then
-                                format(
-                                    '%L, coalesce(jsonb_agg(%s %s), jsonb_build_array())',
-                                    graphql.alias_or_name_literal(root.sel),
-                                    (
-                                        select
-                                            coalesce(
-                                                string_agg(
-                                                    case graphql.name_literal(ec.sel)
-                                                        when 'cursor' then format('jsonb_build_object(%L, %I.%I)', graphql.alias_or_name_literal(ec.sel), block_name, '__cursor')
-                                                        when '__typename' then format('jsonb_build_object(%L, %L)', graphql.alias_or_name_literal(ec.sel), gf_e.type_)
-                                                        else graphql.exception_unknown_field(graphql.name_literal(ec.sel), gf_e.type_)
-                                                    end,
-                                                    '||'
-                                                ),
-                                                'jsonb_build_object()'
-                                            )
-                                        from
-                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') ec(sel)
-                                            join graphql.field gf_e -- edge field
-                                                on gf_e.parent_type = field_row.type_
-                                                and gf_e.name = 'edges'
-                                        where
-                                            graphql.name_literal(root.sel) = 'edges'
-                                            and graphql.name_literal(ec.sel) <> 'node'
-                                    ),
-                                    (
-                                        select
-                                            format(
-                                                '|| jsonb_build_object(%L, jsonb_build_object(%s))',
-                                                graphql.alias_or_name_literal(e.sel),
-                                                    string_agg(
-                                                        format(
-                                                            '%L, %s',
-                                                            graphql.alias_or_name_literal(n.sel),
-                                                            case
-                                                                when gf_s.name = '__typename' then format('%L', gf_n.type_)
-                                                                when gf_s.column_name is not null and gf_s.column_type = 'bigint'::regtype then format(
-                                                                    '(%I.%I)::text',
-                                                                    block_name,
-                                                                    gf_s.column_name
-                                                                )
-                                                                when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
-                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'Node' then
-                                                                    graphql.build_node_query(
-                                                                        ast := n.sel,
-                                                                        variable_definitions := variable_definitions,
-                                                                        variables := variables,
-                                                                        parent_type := gf_n.type_,
-                                                                        parent_block_name := block_name
-                                                                    )
-                                                                when gf_s.local_columns is not null and gf_st.meta_kind = 'Connection' then
-                                                                    graphql.build_connection_query(
-                                                                        ast := n.sel,
-                                                                        variable_definitions := variable_definitions,
-                                                                        variables := variables,
-                                                                        parent_type := gf_n.type_,
-                                                                        parent_block_name := block_name
-                                                                    )
-                                                                when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
-                                                                else graphql.exception_unknown_field(graphql.name_literal(n.sel), gf_n.type_)
-                                                            end
-                                                        ),
-                                                        E','
-                                                    )
-                                            )
-                                        from
-                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') e(sel), -- node (0 or 1)
-                                            lateral jsonb_array_elements(e.sel -> 'selectionSet' -> 'selections') n(sel) -- node selection
-                                            join graphql.field gf_e -- edge field
-                                                on field_row.type_ = gf_e.parent_type
-                                                and gf_e.name = 'edges'
-                                            join graphql.field gf_n -- node field
-                                                on gf_e.type_ = gf_n.parent_type
-                                                and gf_n.name = 'node'
-                                            left join graphql.field gf_s -- node selections
-                                                on gf_n.type_ = gf_s.parent_type
-                                                and graphql.name_literal(n.sel) = gf_s.name
-                                            left join graphql.type gf_st
-                                                on gf_s.type_ = gf_st.name
-                                        where
-                                            graphql.name_literal(e.sel) = 'node'
-                                        group by
-                                            e.sel
-                                )
-                            )
-                        else null::text
-                    end
-                ),
-                null
-            )
-        )[1] as edges_clause,
-
-        -- Error handling for unknown fields at top level
-        (
-            array_agg(
-                case
-                    when graphql.name_literal(root.sel) not in ('pageInfo', 'edges', 'totalCount', '__typename') then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
-                    else null::text
-                end
-            )
-        ) as error_handler
-
+    -- Error out on invalid top level selections
+    perform case
+                when (
+                    graphql.name_literal(root.sel)
+                    not in ('pageInfo', 'edges', 'totalCount', '__typename')
+                ) then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
+                else null::text
+            end
         from
-            jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel)
-    )
+            jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel);
+
     select
         format('
     (
@@ -334,14 +265,7 @@ begin
             limit %s
         )
         select
-            -- total count
             jsonb_build_object(%s)
-            -- page info
-            || jsonb_build_object(%s)
-            -- edges
-            || jsonb_build_object(%s)
-            -- __typename
-            || jsonb_build_object(%s)
         from
         (
             select
@@ -401,16 +325,12 @@ begin
             -- limit: max 20
             least(coalesce(first_, last_), '30'),
             -- JSON selects
-            total_count_clause,
-            page_info_clause,
-            coalesce(clauses.edges_clause, ''),
-            coalesce(clauses.typename_clause, ''),
+            concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
             -- final order by
             graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
             -- block name
             block_name
         )
-        from clauses
         into result;
 
     return result;
