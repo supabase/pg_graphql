@@ -100,7 +100,7 @@ begin
                                                     '%L, %s',
                                                     graphql.alias_or_name_literal(pi.sel),
                                                     case graphql.name_literal(pi.sel)
-                                                        when '__typename' then (select quote_literal(name) from graphql.type where meta_kind = 'PageInfo')
+                                                        when '__typename' then format('%L', pit.name)
                                                         when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                                                         when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
                                                         when 'hasNextPage' then format(
@@ -120,7 +120,10 @@ begin
                                                 , E','
                                             )
                                         from
-                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel)
+                                            jsonb_array_elements(root.sel -> 'selectionSet' -> 'selections') pi(sel),
+                                            graphql.type pit
+                                        where
+                                             pit.meta_kind = 'PageInfo'
                                     )
                                 )
                             else null::text
@@ -171,7 +174,7 @@ begin
                                                             '%L, %s',
                                                             graphql.alias_or_name_literal(n.sel),
                                                             case
-                                                                when gf_s.name = '__typename' then quote_literal(gf_n.type_)
+                                                                when gf_s.name = '__typename' then format('%L', gf_n.type_)
                                                                 when gf_s.column_name is not null and gf_s.column_type = 'bigint'::regtype then format(
                                                                     '(%I.%I)::text',
                                                                     block_name,
@@ -290,7 +293,7 @@ begin
                 xyz
             order by
                 %s
-        ) as %s
+        ) as %I
     )',
             -- __first_cursor
             graphql.cursor_encoded_clause(entity, block_name),
@@ -348,7 +351,7 @@ begin
             -- final order by
             graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
             -- block name
-            quote_ident(block_name)
+            block_name
         )
         from clauses
         into result;
