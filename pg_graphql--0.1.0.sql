@@ -2734,8 +2734,7 @@ begin
                             when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
                             when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
                             when 'hasNextPage' then format(
-                                'coalesce(graphql.array_last(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__last_cursor)), false)',
-                                block_name,
+                                'coalesce(bool_and(%I.__has_next_page), false)',
                                 block_name
                             )
                             when 'hasPreviousPage' then format(
@@ -2872,12 +2871,13 @@ begin
                 -- where clause
                 and %s
         ),
-        xyz as (
+        -- might contain 1 extra row
+        xyz_maybe_extra as (
             select
                 first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
                 last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
                 %s::text as __cursor,
-                %s -- all allowed columns
+                %s -- all requested columns
             from
                 %s as %I
             where
@@ -2891,6 +2891,22 @@ begin
             order by
                 %s
             limit
+                least(%s, 30) + 1
+        ),
+        xyz_has_next_page as (
+            select
+                count(1) > least(%s, 30) as __has_next_page
+            from
+                xyz_maybe_extra
+        ),
+        xyz as (
+            select
+                *
+            from
+                xyz_maybe_extra as %I
+            order by
+                %s
+            limit
                 least(%s, 30)
         )
         select
@@ -2901,8 +2917,8 @@ begin
                 *
             from
                 xyz,
-                xyz_tot
-
+                xyz_tot,
+                xyz_has_next_page
             order by
                 %s
         ) as %I
@@ -2919,7 +2935,6 @@ begin
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- total where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
-
             -- __first_cursor
             graphql.cursor_encoded_clause(entity, block_name),
             graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
@@ -2966,11 +2981,19 @@ begin
                 when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
                 else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
             end,
-            -- limit: max 20
+            -- limit
+            coalesce(first_, last_, '30'),
+            -- xyz_has_next_page limit
+            coalesce(first_, last_, '30'),
+            -- xyz
+            block_name,
+            case
+                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
+                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
+            end,
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
-
             -- final order by
             graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
             -- block name
