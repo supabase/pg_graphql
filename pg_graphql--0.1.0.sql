@@ -2739,9 +2739,12 @@ begin
                                 block_name
                             )
                             when 'hasPreviousPage' then format(
-                                'coalesce(graphql.array_first(array_agg(%I.__cursor)) <> graphql.array_first(array_agg(%I.__first_cursor)), false)',
-                                block_name,
-                                block_name
+                                'coalesce(bool_and(%s), false)',
+                                case
+                                    when first_ is not null and after_ is not null then 'true'
+                                    when last_ is not null and before_ is not null then 'true'
+                                    else 'false'
+                                end
                             )
                             else graphql.exception_unknown_field(graphql.name_literal(pi.sel), 'PageInfo')
                         end
@@ -2857,9 +2860,20 @@ begin
     select
         format('
     (
-        with xyz as (
+        with xyz_tot as (
             select
-                %s as __total_count,
+                count(1) as __total_count
+            from
+                %s as %I
+            where
+                %s
+                -- join clause
+                and %s
+                -- where clause
+                and %s
+        ),
+        xyz as (
+            select
                 first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
                 last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
                 %s::text as __cursor,
@@ -2876,7 +2890,8 @@ begin
                 and %s
             order by
                 %s
-            limit %s
+            limit
+                least(%s, 30)
         )
         select
             jsonb_build_object(%s)
@@ -2885,16 +2900,26 @@ begin
             select
                 *
             from
-                xyz
+                xyz,
+                xyz_tot
+
             order by
                 %s
         ) as %I
     )',
+            -- total from
+            entity,
+            block_name,
             -- total count only computed if requested
             case
-                when total_count_ast is not null then 'count(*) over ()'
-                else 'null'
+                when total_count_ast is null then 'false'
+                else 'true'
             end,
+            -- total join clause
+            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
+            -- total where
+            graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
+
             -- __first_cursor
             graphql.cursor_encoded_clause(entity, block_name),
             graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
@@ -2942,9 +2967,10 @@ begin
                 else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
             end,
             -- limit: max 20
-            least(coalesce(first_, last_), '30'),
+            coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
+
             -- final order by
             graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
             -- block name

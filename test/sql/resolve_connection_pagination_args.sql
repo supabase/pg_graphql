@@ -12,6 +12,7 @@ begin;
         graphql.resolve($$
             {
               accountCollection(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
+                totalCount
                 edges {
                   node {
                     id
