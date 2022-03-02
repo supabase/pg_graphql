@@ -260,8 +260,6 @@ begin
         -- might contain 1 extra row
         xyz_maybe_extra as (
             select
-                first_value(%s) over (order by %s range between unbounded preceding and current row)::text as __first_cursor,
-                last_value(%s) over (order by %s range between current row and unbounded following)::text as __last_cursor,
                 %s::text as __cursor,
                 %s -- all requested columns
             from
@@ -321,12 +319,6 @@ begin
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- total where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
-            -- __first_cursor
-            graphql.cursor_encoded_clause(entity, block_name),
-            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
-            -- __last_cursor
-            graphql.cursor_encoded_clause(entity, block_name),
-            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
             -- __cursor
             graphql.cursor_encoded_clause(entity, block_name),
             -- enumerate columns
