@@ -19,7 +19,7 @@ begin
             )
             limit 1;
 
-    field_rec = graphql.array_first(field_recs);
+    field_rec = field_recs[1];
 
     return
         coalesce(

@@ -1,22 +1,4 @@
 create schema if not exists graphql;
-create or replace function graphql.array_first(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- First element of an array
-    select arr[1];
-$$;
-create or replace function graphql.array_last(arr anyarray)
-    returns anyelement
-    language sql
-    immutable
-as
-$$
-    -- Last element of an array
-    select arr[array_length(arr, 1)];
-$$;
 create or replace function graphql.sha1(text)
     returns text
     strict
@@ -109,6 +91,18 @@ create or replace function graphql.slug()
 as $$
     select substr(md5(random()::text), 0, 12);
 $$;
+create or replace function graphql._first_agg(anyelement, anyelement)
+    returns anyelement
+    immutable
+    strict
+    language sql
+as $$ select $1; $$;
+
+create aggregate graphql.first(anyelement) (
+    sfunc    = graphql._first_agg,
+    stype    = anyelement,
+    parallel = safe
+);
 create function graphql.is_array(regtype)
     returns boolean
     immutable
@@ -2731,8 +2725,8 @@ begin
                         graphql.alias_or_name_literal(pi.sel),
                         case graphql.name_literal(pi.sel)
                             when '__typename' then format('%L', pit.name)
-                            when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name) -- todo
-                            when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)    -- todo (also remove array_first
+                            when 'startCursor' then format('graphql.first(%I.__cursor order by %I.__page_row_num asc )', block_name, block_name)
+                            when 'endCursor' then format('graphql.first(%I.__cursor order by %I.__page_row_num desc)', block_name, block_name)
                             when 'hasNextPage' then format(
                                 'coalesce(bool_and(%I.__has_next_page), false)',
                                 block_name
@@ -2875,7 +2869,7 @@ begin
         xyz_maybe_extra as (
             select
                 %s::text as __cursor,
-                row_number() over () as __page_row_num,
+                row_number() over () as __page_row_num_for_page_size,
                 %s -- all requested columns
             from
                 %s as %I
@@ -2895,7 +2889,8 @@ begin
         xyz as (
             select
                 *,
-                max(%I.__page_row_num) over () > least(%s, 30) as __has_next_page
+                max(%I.__page_row_num_for_page_size) over () > least(%s, 30) as __has_next_page,
+                row_number() over () as __page_row_num
             from
                 xyz_maybe_extra as %I
             order by
@@ -3753,7 +3748,7 @@ begin
             )
             limit 1;
 
-    field_rec = graphql.array_first(field_recs);
+    field_rec = field_recs[1];
 
     return
         coalesce(
