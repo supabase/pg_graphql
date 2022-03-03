@@ -38,6 +38,12 @@ as $$
     select pg_catalog.obj_description($1::oid, 'pg_proc')
 $$;
 
+create function graphql.comment(regnamespace)
+    returns text
+    language sql
+as $$
+    select pg_catalog.obj_description($1::oid, 'pg_namespace')
+$$;
 
 create function graphql.comment(regclass, column_name text)
     returns text
@@ -83,4 +89,15 @@ create function graphql.comment_directive_name(regproc)
     language sql
 as $$
     select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+create function graphql.comment_directive_inflect_names(regnamespace)
+    returns bool
+    language sql
+as $$
+    select
+        case
+            when (graphql.comment_directive(graphql.comment($1)) -> 'inflect_names') = to_jsonb(true) then true
+            else false
+        end
 $$;

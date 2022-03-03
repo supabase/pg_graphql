@@ -37,11 +37,12 @@ as $$
         select
             case
                 when rec.entity is not null then coalesce(
+                    -- Explicit name has firts priority
                     graphql.comment_directive_name(rec.entity),
-                    case
-                        -- when the name contains a capital do not attempt inflection
-                        when graphql.to_table_name(rec.entity) <> lower(graphql.to_table_name(rec.entity)) then graphql.to_table_name(rec.entity)
-                        else graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                    -- When the schema has "inflect_names: true then inflect. otherwise, use table name
+                    case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+                        when true then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
+                        else graphql.to_table_name(rec.entity)
                     end
                 )
                 else null
