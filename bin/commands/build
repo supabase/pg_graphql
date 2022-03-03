@@ -13,7 +13,6 @@ cli_log "Build starting"
 
 cat \
     src/sql/init.sql \
-    src/sql/array/*.sql \
     src/sql/hash/*.sql \
     src/sql/jsonb/*.sql \
     src/sql/random/*.sql \

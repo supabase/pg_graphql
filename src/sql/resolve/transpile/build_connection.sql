@@ -117,8 +117,8 @@ begin
                         graphql.alias_or_name_literal(pi.sel),
                         case graphql.name_literal(pi.sel)
                             when '__typename' then format('%L', pit.name)
-                            when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name) -- todo
-                            when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)    -- todo (also remove array_first
+                            when 'startCursor' then format('graphql.first(%I.__cursor order by %I.__page_row_num asc )', block_name, block_name)
+                            when 'endCursor' then format('graphql.first(%I.__cursor order by %I.__page_row_num desc)', block_name, block_name)
                             when 'hasNextPage' then format(
                                 'coalesce(bool_and(%I.__has_next_page), false)',
                                 block_name
@@ -261,7 +261,7 @@ begin
         xyz_maybe_extra as (
             select
                 %s::text as __cursor,
-                row_number() over () as __page_row_num,
+                row_number() over () as __page_row_num_for_page_size,
                 %s -- all requested columns
             from
                 %s as %I
@@ -281,7 +281,8 @@ begin
         xyz as (
             select
                 *,
-                max(%I.__page_row_num) over () > least(%s, 30) as __has_next_page
+                max(%I.__page_row_num_for_page_size) over () > least(%s, 30) as __has_next_page,
+                row_number() over () as __page_row_num
             from
                 xyz_maybe_extra as %I
             order by
