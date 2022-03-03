@@ -2872,9 +2872,10 @@ begin
                 and %s
         ),
         -- might contain 1 extra row
-        xyz_maybe_extra as materialized (
+        xyz_maybe_extra as (
             select
                 %s::text as __cursor,
+                row_number() over () as __page_row_num,
                 %s -- all requested columns
             from
                 %s as %I
@@ -2891,15 +2892,10 @@ begin
             limit
                 least(%s, 30) + 1
         ),
-        xyz_has_next_page as (
-            select
-                count(1) > least(%s, 30) as __has_next_page
-            from
-                xyz_maybe_extra
-        ),
         xyz as (
             select
-                *
+                *,
+                max(%I.__page_row_num) over () > least(%s, 30) as __has_next_page
             from
                 xyz_maybe_extra as %I
             order by
@@ -2915,8 +2911,7 @@ begin
                 *
             from
                 xyz,
-                xyz_tot,
-                xyz_has_next_page
+                xyz_tot
             order by
                 %s
         ) as %I
@@ -2975,6 +2970,8 @@ begin
             end,
             -- limit
             coalesce(first_, last_, '30'),
+            -- has_next_page block namex
+            block_name,
             -- xyz_has_next_page limit
             coalesce(first_, last_, '30'),
             -- xyz
