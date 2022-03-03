@@ -8,6 +8,7 @@ begin;
         graphql.resolve($$
             {
               accountCollection(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
+                totalCount
                 edges {
                   node {
                     id
@@ -33,7 +34,8 @@ begin;
                          "id": 5+
                      }          +
                  }              +
-             ]                  +
+             ],                 +
+             "totalCount": 5    +
          }                      +
      },                         +
      "errors": [                +
