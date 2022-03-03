@@ -73,3 +73,6 @@ values
     ((select id from account where email ilike 'a%'), 'A: Blog 2', 'a desc2', now(), now()),
     ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', now(), now()),
     ((select id from account where email ilike 'b%'), 'B: Blog 3', 'b desc1', now(), now());
+
+
+comment on schema public is '@graphql({"inflect_names": true})';
