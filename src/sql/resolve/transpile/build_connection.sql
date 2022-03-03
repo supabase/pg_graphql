@@ -117,8 +117,8 @@ begin
                         graphql.alias_or_name_literal(pi.sel),
                         case graphql.name_literal(pi.sel)
                             when '__typename' then format('%L', pit.name)
-                            when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name)
-                            when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)
+                            when 'startCursor' then format('graphql.array_first(array_agg(%I.__cursor))', block_name) -- todo
+                            when 'endCursor' then format('graphql.array_last(array_agg(%I.__cursor))', block_name)    -- todo (also remove array_first
                             when 'hasNextPage' then format(
                                 'coalesce(bool_and(%I.__has_next_page), false)',
                                 block_name
@@ -258,7 +258,7 @@ begin
                 and %s
         ),
         -- might contain 1 extra row
-        xyz_maybe_extra as (
+        xyz_maybe_extra as materialized (
             select
                 %s::text as __cursor,
                 %s -- all requested columns
