@@ -1220,13 +1220,10 @@ as $$
     select
         format(
             '%sCollection',
-            format(
-                '%s',
-                graphql.lowercase_first_letter(
-                    coalesce(
-                        graphql.comment_directive_name(entity),
-                        graphql.type_name(entity, 'Node')
-                    )
+            graphql.lowercase_first_letter(
+                coalesce(
+                    graphql.comment_directive_name(entity),
+                    graphql.type_name(entity, 'Node')
                 )
             )
         );
