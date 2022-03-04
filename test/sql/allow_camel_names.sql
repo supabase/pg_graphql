@@ -1,5 +1,7 @@
 begin;
 
+    comment on schema public is '@graphql({"inflect_names": false})';
+
     create table "AccountHolder"(
         "someId" int primary key,
         "accountHolderId" int references "AccountHolder"("someId")

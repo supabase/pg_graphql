@@ -63,16 +63,118 @@ create index ix_graphql_field_entity on graphql._field(entity);
 
 create or replace function graphql.field_name_for_column(entity regclass, column_name text)
     returns text
-    immutable
+    stable
     language sql
 as $$
     select
         coalesce(
             graphql.comment_directive_name($1, $2),
-            case
-                -- If contains a capital letter, do not inflect
-                when $2 <> lower($2) then $2
-                else graphql.to_camel_case($2)
+            case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+                when true then graphql.to_camel_case($2)
+                else $2
+            end
+        )
+$$;
+
+create or replace function graphql.lowercase_first_letter(text)
+    returns text
+    immutable
+    strict
+    language sql
+as $$
+    select format(
+        '%s%s',
+        substring(lower($1), 1, 1),
+        substring($1, 2, 999)
+    );
+$$;
+
+
+create or replace function graphql.field_name_for_to_many(foreign_entity regclass, foreign_name_override text)
+    returns text
+    stable
+    language sql
+as $$
+    select
+        coalesce(
+            foreign_name_override,
+            format(
+                '%sCollection',
+                graphql.lowercase_first_letter(
+                    graphql.type_name(foreign_entity, 'Node')
+                )
+            )
+        );
+$$;
+
+
+create or replace function graphql.field_name_for_query_collection(entity regclass)
+    returns text
+    stable
+    language sql
+as $$
+    select
+        format(
+            '%sCollection',
+            format(
+                '%s',
+                graphql.lowercase_first_letter(
+                    coalesce(
+                        graphql.comment_directive_name(entity),
+                        graphql.type_name(entity, 'Node')
+                    )
+                )
+            )
+        );
+$$;
+
+
+create or replace function graphql.field_name_for_to_one(foreign_entity regclass, foreign_name_override text, foreign_columns text[])
+    returns text
+    stable
+    language plpgsql
+as $$
+declare
+    is_inflection_on bool = graphql.comment_directive_inflect_names(current_schema::regnamespace);
+    -- owner_id -> owner
+    is_single_col_ending_id bool = array_length(foreign_columns, 1) = 1 and foreign_columns[1] like '%\_id';
+
+    base_single_col_name text = left(foreign_columns[1], -3);
+    base_name text = graphql.type_name(foreign_entity, 'Node');
+begin
+    return
+        coalesce(
+            -- comment directive override
+            foreign_name_override,
+            graphql.lowercase_first_letter(
+                case is_single_col_ending_id
+                    when true then (
+                        case
+                            when is_inflection_on then graphql.to_camel_case(base_single_col_name)
+                            else base_single_col_name
+                        end
+                    )
+                    else base_name
+                end
+            )
+        );
+end;
+$$;
+
+
+
+
+create or replace function graphql.field_name_for_function(func regproc)
+    returns text
+    stable
+    language sql
+as $$
+    select
+        coalesce(
+            graphql.comment_directive_name(func),
+            case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+                when true then graphql.to_camel_case(ltrim(graphql.to_function_name(func), '_'))
+                else ltrim(graphql.to_function_name(func), '_')
             end
         )
 $$;
@@ -83,40 +185,25 @@ create or replace function graphql.field_name(rec graphql._field)
     immutable
     language sql
 as $$
-
+    with base(name) as (
+        select graphql.type_name(rec.entity, 'Node')
+    )
     select
         case
             when rec.meta_kind = 'Constant' then rec.constant_name
-            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.field_name_for_column(
-                rec.entity,
-                rec.column_name
-            )
-            when rec.meta_kind = 'Function' then coalesce(
-                graphql.comment_directive_name(rec.func),
-                graphql.to_camel_case(ltrim(graphql.to_function_name(rec.func), '_'))
-            )
-            when rec.meta_kind = 'Query.collection' then format('%sCollection', graphql.to_camel_case(graphql.type_name(rec.entity, 'Node')))
-            when rec.meta_kind = 'Mutation.insert' then format('insertInto%sCollection', graphql.type_name(rec.entity, 'Node'))
-            when rec.meta_kind = 'Mutation.update' then format('update%sCollection', graphql.type_name(rec.entity, 'Node'))
-            when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', graphql.type_name(rec.entity, 'Node'))
-            when rec.meta_kind = 'Relationship.toMany' then coalesce(
-                rec.foreign_name_override,
-                graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node')) || 'Collection'
-            )
-            when rec.meta_kind = 'Relationship.toOne' then coalesce(
-                -- comment directive override
-                rec.foreign_name_override,
-                -- owner_id -> owner
-                case array_length(rec.foreign_columns, 1) = 1 and rec.foreign_columns[1] like '%\_id'
-                    when true then graphql.to_camel_case(left(rec.foreign_columns[1], -3))
-                    else null
-                end,
-                -- default
-                graphql.to_camel_case(graphql.type_name(rec.foreign_entity, 'Node'))
-            )
+            when rec.meta_kind in ('Column', 'OrderBy.Column', 'Filter.Column') then graphql.field_name_for_column(rec.entity, rec.column_name)
+            when rec.meta_kind = 'Function' then graphql.field_name_for_function(rec.func)
+            when rec.meta_kind = 'Query.collection' then graphql.field_name_for_query_collection(rec.entity)
+            when rec.meta_kind = 'Mutation.insert' then format('insertInto%sCollection', base.name)
+            when rec.meta_kind = 'Mutation.update' then format('update%sCollection', base.name)
+            when rec.meta_kind = 'Mutation.delete' then format('deleteFrom%sCollection', base.name)
+            when rec.meta_kind = 'Relationship.toMany' then graphql.field_name_for_to_many(rec.foreign_entity, rec.foreign_name_override)
+            when rec.meta_kind = 'Relationship.toOne' then graphql.field_name_for_to_one(rec.foreign_entity, rec.foreign_name_override, rec.foreign_columns)
             when rec.constant_name is not null then rec.constant_name
             else graphql.exception(format('could not determine field name, %s', $1))
         end
+    from
+        base
 $$;
 
 
