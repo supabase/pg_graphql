@@ -1,3 +1,6 @@
+-- Turn on automatic inflection of type names
+comment on schema public is '@graphql({"inflect_names": true})';
+
 create table account(
     id serial primary key,
     email varchar(255) not null,
