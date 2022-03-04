@@ -5,14 +5,22 @@ begin;
         from
             graphql.field
         where
-            column_name in ('id', 'name_with_underscore')
+            func is not null
         order by
             name;
 
     create table account (
-        id int primary key,
-        name_with_underscore text
+        id int primary key
     );
+
+    create function _full_name(rec public.account)
+        returns text
+        immutable
+        strict
+        language sql
+    as $$
+        select 'Foo';
+    $$;
 
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
@@ -21,8 +29,7 @@ begin;
     savepoint a;
 
     -- Inflection off, Overrides: on
-    comment on column account.id is e'@graphql({"name": "IddD"})';
-    comment on column account.name_with_underscore is e'@graphql({"name": "nAMe"})';
+    comment on function public._full_name(public.account) is E'@graphql({"name": "wholeName"})';
     select * from f;
 
     rollback to savepoint a;
@@ -32,8 +39,7 @@ begin;
     select * from f;
 
     -- Inflection on, Overrides: on
-    comment on column account.id is e'@graphql({"name": "IddD"})';
-    comment on column account.name_with_underscore is e'@graphql({"name": "nAMe"})';
+    comment on function public._full_name(public.account) is E'@graphql({"name": "WholeName"})';
     select * from f;
 
 rollback;

@@ -8,9 +8,9 @@ begin;
             local_columns is not null
         order by
             name;
+    savepoint o;
     create table account (
-        id int primary key,
-        name_with_underscore text
+        id int primary key
     );
     create table blog_post(
         id int primary key,
@@ -22,10 +22,12 @@ begin;
     savepoint a;
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
+    -- test that first letter of capital type name is lower cased when used as a field
+    alter table account rename to "AccOnunt";
     select * from r;
         name         
 ---------------------
- account
+ accOnunt
  author
  blog_postCollection
 (3 rows)
@@ -53,7 +55,7 @@ begin;
     select * from r;
         name        
 --------------------
- account
+ acconunt
  author
  blogPostCollection
 (3 rows)

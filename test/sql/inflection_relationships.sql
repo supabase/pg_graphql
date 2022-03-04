@@ -9,9 +9,10 @@ begin;
         order by
             name;
 
+    savepoint o;
+
     create table account (
-        id int primary key,
-        name_with_underscore text
+        id int primary key
     );
 
     create table blog_post(
@@ -27,6 +28,8 @@ begin;
 
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
+    -- test that first letter of capital type name is lower cased when used as a field
+    alter table account rename to "AccOnunt";
     select * from r;
 
     savepoint a;

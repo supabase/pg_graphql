@@ -43,12 +43,12 @@ begin;
 (2 rows)
 
     -- Inflection on, Overrides: on
-    comment on column account.id is e'@graphql({"name": "iIIIDDDD"})';
+    comment on column account.id is e'@graphql({"name": "IddD"})';
     comment on column account.name_with_underscore is e'@graphql({"name": "nAMe"})';
     select * from f;
-   name   
-----------
- iIIIDDDD
+ name 
+------
+ IddD
  nAMe
 (2 rows)
 

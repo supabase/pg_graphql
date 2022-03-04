@@ -1205,10 +1205,7 @@ as $$
             format(
                 '%sCollection',
                 graphql.lowercase_first_letter(
-                    coalesce(
-                        foreign_name_override,
-                        graphql.type_name(foreign_entity, 'Node')
-                    )
+                    graphql.type_name(foreign_entity, 'Node')
                 )
             )
         );
@@ -1247,21 +1244,23 @@ declare
     is_single_col_ending_id bool = array_length(foreign_columns, 1) = 1 and foreign_columns[1] like '%\_id';
 
     base_single_col_name text = left(foreign_columns[1], -3);
-    base_name text = graphql.lowercase_first_letter(graphql.type_name(foreign_entity, 'Node'));
+    base_name text = graphql.type_name(foreign_entity, 'Node');
 begin
     return
         coalesce(
             -- comment directive override
             foreign_name_override,
-            case is_single_col_ending_id
-                when true then (
-                    case
-                        when is_inflection_on then graphql.to_camel_case(base_single_col_name)
-                        else base_single_col_name
-                    end
-                )
-                else base_name
-            end
+            graphql.lowercase_first_letter(
+                case is_single_col_ending_id
+                    when true then (
+                        case
+                            when is_inflection_on then graphql.to_camel_case(base_single_col_name)
+                            else base_single_col_name
+                        end
+                    )
+                    else base_name
+                end
+            )
         );
 end;
 $$;
