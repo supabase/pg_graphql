@@ -2,6 +2,7 @@ begin;
     create table account(
         id int primary key
     );
+    comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
 
 
     insert into public.account(id)

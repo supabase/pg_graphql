@@ -475,6 +475,9 @@ as $$
         )[1]::jsonb
 $$;
 
+-------------------
+-- Read Comments --
+-------------------
 
 create function graphql.comment(regclass)
     returns text
@@ -520,36 +523,11 @@ as $$
         and not attisdropped
 $$;
 
+----------------
+-- Directives --
+----------------
 
-create function graphql.comment_directive_name(regclass, column_name text)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1, column_name)) ->> 'name'
-$$;
-
-
-create function graphql.comment_directive_name(regclass)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
-$$;
-
-
-create function graphql.comment_directive_name(regtype)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
-$$;
-
-create function graphql.comment_directive_name(regproc)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
-$$;
+-- Schema Level
 
 create function graphql.comment_directive_inflect_names(regnamespace)
     returns bool
@@ -560,6 +538,51 @@ as $$
             when (graphql.comment_directive(graphql.comment($1)) -> 'inflect_names') = to_jsonb(true) then true
             else false
         end
+$$;
+
+-- Table Level
+
+create function graphql.comment_directive_name(regclass)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+create function graphql.comment_directive_totalCount_enabled(regclass)
+    -- Should totalCount be enabled on connections?
+    -- @graphql({"totalCount": {"enabled": true}})
+    returns boolean
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) -> 'totalCount' -> 'enabled' = to_jsonb(true)
+$$;
+
+-- Column Level
+
+create function graphql.comment_directive_name(regclass, column_name text)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1, column_name)) ->> 'name'
+$$;
+
+-- Type Level
+
+create function graphql.comment_directive_name(regtype)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+-- Function Level
+
+create function graphql.comment_directive_name(regproc)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
 $$;
 create type graphql.cardinality as enum ('ONE', 'MANY');
 create type graphql.meta_kind as enum (
@@ -1417,7 +1440,6 @@ begin
 
 
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
-
         select
             fs.field_meta_kind::graphql.field_meta_kind,
             conn.entity,
@@ -1437,11 +1459,9 @@ begin
                 on edge.entity = node.entity,
             lateral (
                 values
-                    -- TODO replace constant names
                     ('Constant', edge.id, node.id,                     'node',       false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
                     ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
-                    ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, 'The total number of records matching the `filter` criteria', null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
                     ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null,
                         format('A pagable collection of type `%s`', graphql.type_name(conn.entity, 'Node')), null, null, null, false)
@@ -1450,6 +1470,23 @@ begin
             conn.meta_kind = 'Connection'
             and edge.meta_kind = 'Edge'
             and node.meta_kind = 'Node';
+
+    -- Connection.totalCount (opt in)
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, description)
+        select
+            'Constant'::graphql.field_meta_kind,
+            conn.entity,
+            conn.id parent_type_id,
+            graphql.type_id('Int') type_id,
+            'totalCount',
+            true as is_not_null,
+            false as is_array,
+            'The total number of records matching the `filter` criteria'
+        from
+            graphql.type conn
+        where
+            conn.meta_kind = 'Connection'
+            and graphql.comment_directive_totalCount_enabled(conn.entity);
 
     -- Object.__typename
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_hidden_from_schema)
@@ -2943,14 +2980,14 @@ begin
 
     -- Error out on invalid top level selections
     perform case
-                when (
-                    graphql.name_literal(root.sel)
-                    not in ('pageInfo', 'edges', 'totalCount', '__typename')
-                ) then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
-                else null::text
+                when gf.name is not null then ''
+                else graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
             end
         from
-            jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel);
+            jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel)
+            left join graphql.field gf
+                on gf.parent_type = field_row.type_
+                and gf.name = graphql.name_literal(root.sel);
 
     select
         format('

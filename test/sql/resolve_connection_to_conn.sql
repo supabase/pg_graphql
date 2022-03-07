@@ -20,6 +20,7 @@ begin;
         owner_id integer not null references account(id),
         name varchar(255) not null
     );
+    comment on table blog is e'@graphql({"totalCount": {"enabled": true}})';
 
 
     insert into blog(owner_id, name)

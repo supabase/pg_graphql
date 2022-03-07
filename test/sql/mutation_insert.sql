@@ -10,6 +10,7 @@ begin;
         id serial primary key,
         owner_id integer not null references account(id)
     );
+    comment on table blog is e'@graphql({"totalCount": {"enabled": true}})';
 
     -- Make sure functions still work
     create function _echo_email(account)

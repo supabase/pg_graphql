@@ -313,7 +313,6 @@ begin
 
 
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
-
         select
             fs.field_meta_kind::graphql.field_meta_kind,
             conn.entity,
@@ -333,11 +332,9 @@ begin
                 on edge.entity = node.entity,
             lateral (
                 values
-                    -- TODO replace constant names
                     ('Constant', edge.id, node.id,                     'node',       false, false, null::boolean, null::text, null::text, null::text[], null::text[], false),
                     ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
-                    ('Constant', conn.id, graphql.type_id('Int'),      'totalCount', true,  false, null, 'The total number of records matching the `filter` criteria', null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
                     ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null,
                         format('A pagable collection of type `%s`', graphql.type_name(conn.entity, 'Node')), null, null, null, false)
@@ -346,6 +343,23 @@ begin
             conn.meta_kind = 'Connection'
             and edge.meta_kind = 'Edge'
             and node.meta_kind = 'Node';
+
+    -- Connection.totalCount (opt in)
+    insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, description)
+        select
+            'Constant'::graphql.field_meta_kind,
+            conn.entity,
+            conn.id parent_type_id,
+            graphql.type_id('Int') type_id,
+            'totalCount',
+            true as is_not_null,
+            false as is_array,
+            'The total number of records matching the `filter` criteria'
+        from
+            graphql.type conn
+        where
+            conn.meta_kind = 'Connection'
+            and graphql.comment_directive_totalCount_enabled(conn.entity);
 
     -- Object.__typename
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_hidden_from_schema)

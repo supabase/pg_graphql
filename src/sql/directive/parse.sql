@@ -15,6 +15,9 @@ as $$
         )[1]::jsonb
 $$;
 
+-------------------
+-- Read Comments --
+-------------------
 
 create function graphql.comment(regclass)
     returns text
@@ -60,36 +63,11 @@ as $$
         and not attisdropped
 $$;
 
+----------------
+-- Directives --
+----------------
 
-create function graphql.comment_directive_name(regclass, column_name text)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1, column_name)) ->> 'name'
-$$;
-
-
-create function graphql.comment_directive_name(regclass)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
-$$;
-
-
-create function graphql.comment_directive_name(regtype)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
-$$;
-
-create function graphql.comment_directive_name(regproc)
-    returns text
-    language sql
-as $$
-    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
-$$;
+-- Schema Level
 
 create function graphql.comment_directive_inflect_names(regnamespace)
     returns bool
@@ -100,4 +78,49 @@ as $$
             when (graphql.comment_directive(graphql.comment($1)) -> 'inflect_names') = to_jsonb(true) then true
             else false
         end
+$$;
+
+-- Table Level
+
+create function graphql.comment_directive_name(regclass)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+create function graphql.comment_directive_totalCount_enabled(regclass)
+    -- Should totalCount be enabled on connections?
+    -- @graphql({"totalCount": {"enabled": true}})
+    returns boolean
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) -> 'totalCount' -> 'enabled' = to_jsonb(true)
+$$;
+
+-- Column Level
+
+create function graphql.comment_directive_name(regclass, column_name text)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1, column_name)) ->> 'name'
+$$;
+
+-- Type Level
+
+create function graphql.comment_directive_name(regtype)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
+$$;
+
+-- Function Level
+
+create function graphql.comment_directive_name(regproc)
+    returns text
+    language sql
+as $$
+    select graphql.comment_directive(graphql.comment($1)) ->> 'name'
 $$;

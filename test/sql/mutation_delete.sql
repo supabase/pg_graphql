@@ -30,6 +30,7 @@ begin;
         (1, 'A: Blog 2'),
         (2, 'A: Blog 3'),
         (2, 'B: Blog 3');
+    comment on table blog is e'@graphql({"totalCount": {"enabled": true}})';
 
     savepoint a;
 
