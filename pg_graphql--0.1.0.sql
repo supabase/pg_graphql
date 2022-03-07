@@ -162,9 +162,16 @@ $$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
 create function graphql.to_function_name(regproc)
     returns text
     language sql
-    immutable
+    stable
 as
-$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
+$$
+    select
+        proname
+    from
+        pg_proc
+    where
+        oid = $1::oid
+$$;
 create function graphql.to_regclass(schema_ text, name_ text)
     returns regclass
     language sql
@@ -2928,7 +2935,7 @@ begin
                                         parent_type := gt.name,
                                         parent_block_name := block_name
                                     )
-                                when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
+                                when gf_s.meta_kind = 'Function' then format('%I.%s', block_name, gf_s.func)
                                 else graphql.exception_unknown_field(graphql.name_literal(n.sel), gt.name)
                             end
                         ),
@@ -3071,7 +3078,7 @@ begin
                         string_agg(
                             case f.meta_kind
                                 when 'Column' then format('%I.%I', block_name, column_name)
-                                when 'Function' then format('%I(%I) as %I', f.func, block_name, f.func)
+                                when 'Function' then format('%s(%I) as %s', f.func, block_name, f.func)
                                 else graphql.exception('Unexpected meta_kind in select')
                             end,
                             ', '
@@ -3190,7 +3197,7 @@ begin
                                             graphql.alias_or_name_literal(x.sel),
                                             case
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
-                                                when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
+                                                when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', nf.type_)
                                                 when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                                                     ast := x.sel,
@@ -3472,7 +3479,7 @@ begin
                                             case
                                                 when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
-                                                when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
+                                                when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', nf.type_)
                                                 when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                                                     ast := x.sel,
@@ -3567,7 +3574,7 @@ as $$
                     case
                         when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                         when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
-                        when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
+                        when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                         when nf.name = '__typename' then format('%L', (c.type_).name)
                         when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                             ast := x.sel,

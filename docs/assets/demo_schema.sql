@@ -9,6 +9,9 @@ create table account(
     updated_at timestamp not null
 );
 
+-- enable a `totalCount` field on the `account` query type
+comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
+
 create table blog(
     id serial primary key,
     owner_id integer not null references account(id),

@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is '@graphql({"inflect_names": true})';
 
     create table public.account(
         id serial primary key,
@@ -8,7 +9,7 @@ begin;
     );
 
     -- Extend with function
-    create function public._full_name(rec public.account)
+    create function public."_fullName"(rec public.account)
         returns text
         immutable
         strict

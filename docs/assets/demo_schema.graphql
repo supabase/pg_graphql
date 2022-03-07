@@ -138,9 +138,6 @@ type Blog {
 type BlogConnection {
   edges: [BlogEdge!]!
   pageInfo: PageInfo!
-
-  """The total number of records matching the `filter` criteria"""
-  totalCount: Int!
 }
 
 type BlogDeleteResponse {
@@ -204,9 +201,6 @@ type BlogPost {
 type BlogPostConnection {
   edges: [BlogPostEdge!]!
   pageInfo: PageInfo!
-
-  """The total number of records matching the `filter` criteria"""
-  totalCount: Int!
 }
 
 type BlogPostDeleteResponse {

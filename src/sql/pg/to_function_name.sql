@@ -1,6 +1,13 @@
 create function graphql.to_function_name(regproc)
     returns text
     language sql
-    immutable
+    stable
 as
-$$ select coalesce(nullif(split_part($1::text, '.', 2), ''), $1::text) $$;
+$$
+    select
+        proname
+    from
+        pg_proc
+    where
+        oid = $1::oid
+$$;

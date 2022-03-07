@@ -61,7 +61,7 @@ begin
                                             graphql.alias_or_name_literal(x.sel),
                                             case
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
-                                                when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
+                                                when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', nf.type_)
                                                 when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                                                     ast := x.sel,
