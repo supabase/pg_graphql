@@ -360,21 +360,6 @@
   
   
     <li class="md-nav__item">
-      <a href="roadmap/" class="md-nav__link">
-        Roadmap
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
       <a href="installation/" class="md-nav__link">
         Installation
       </a>
@@ -514,7 +499,10 @@
 <span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
-<span class="normal">31</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Turn on automatic inflection of type names</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Turn on automatic inflection of type names</span>
 <span class="k">comment</span> <span class="k">on</span> <span class="k">schema</span> <span class="k">public</span> <span class="k">is</span> <span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span>
 
 <span class="k">create</span> <span class="k">table</span> <span class="n">account</span><span class="p">(</span>
@@ -524,6 +512,9 @@
     <span class="n">created_at</span> <span class="k">timestamp</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
     <span class="n">updated_at</span> <span class="k">timestamp</span> <span class="k">not</span> <span class="k">null</span>
 <span class="p">);</span>
+
+<span class="c1">-- enable a `totalCount` field on the `account` query type</span>
+<span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="n">account</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span>
 
 <span class="k">create</span> <span class="k">table</span> <span class="n">blog</span><span class="p">(</span>
     <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>

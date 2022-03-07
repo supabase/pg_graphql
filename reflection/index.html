@@ -376,21 +376,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../roadmap/" class="md-nav__link">
-        Roadmap
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../installation/" class="md-nav__link">
         Installation
       </a>
@@ -492,9 +477,9 @@
 
 <p>SQL tables are reflected into GraphQL types with columns and foreign keys represented as fields on those types.</p>
 <h2 id="naming">Naming</h2>
-<p>PostgreSQL tables/column names are automatically converted to pascal case for type names and camel case for field names.</p>
-<p>For example, an <code>account</code> table has GraphQL type name <code>Account</code> and can be queried via the <code>accountCollection</code> field of the <code>Query</code> type.</p>
-<p>Table, column, and relationship type and field names may be <a href="/pg_graphql/configuration/#rename-a-tables-type">manually overridden</a> as needed.</p>
+<p>By default, PostgreSQL table and column names are not adjusted when reflecting GraphQL type and field names. For example, an <code>account_holder</code> table has GraphQL type name <code>account_holder</code> and can be queried via the <code>account_holderCollection</code> field of the <code>Query</code> type.</p>
+<p>In cases, like the previous example, where the SQL name is <code>snake_case</code>, you may want to <a href="/pg_graphql/configuration/#inflection">enable inflection</a> so types are reflected as <code>AccountHolder</code> and <code>accountHolderCollection</code>.</p>
+<p>Table, column, and relationship type and field names may also be <a href="/pg_graphql/configuration/#tables-type">manually overridden</a> as needed.</p>
 <h2 id="type-conversion">Type Conversion</h2>
 <h3 id="connection-types">Connection Types</h3>
 <p>Connection types hande pagination best practices according to the <a href="https://relay.dev/graphql/connections.htm#">relay spec</a>. <code>pg_graphql</code> paginates via keyset pagination to enable consistent retrival times on every page.</p>
@@ -529,7 +514,10 @@
 <span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
-<span class="normal">31</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Turn on automatic inflection of type names</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Turn on automatic inflection of type names</span>
 <span class="k">comment</span> <span class="k">on</span> <span class="k">schema</span> <span class="k">public</span> <span class="k">is</span> <span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span>
 
 <span class="k">create</span> <span class="k">table</span> <span class="n">account</span><span class="p">(</span>
@@ -539,6 +527,9 @@
     <span class="n">created_at</span> <span class="k">timestamp</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
     <span class="n">updated_at</span> <span class="k">timestamp</span> <span class="k">not</span> <span class="k">null</span>
 <span class="p">);</span>
+
+<span class="c1">-- enable a `totalCount` field on the `account` query type</span>
+<span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="n">account</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span>
 
 <span class="k">create</span> <span class="k">table</span> <span class="n">blog</span><span class="p">(</span>
     <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
@@ -1113,13 +1104,7 @@
 <span class="normal">549</span>
 <span class="normal">550</span>
 <span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="normal">552</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">email</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">encryptedPassword</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
@@ -1259,9 +1244,6 @@ type<span class="w"> </span>Blog<span class="w"> </span><span class="p">{</span>
 type<span class="w"> </span>BlogConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">edges</span><span class="n">: [BlogEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
-
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>BlogDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1325,9 +1307,6 @@ type<span class="w"> </span>BlogPost<span class="w"> </span><span class="p">{</s
 type<span class="w"> </span>BlogPostConnection<span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">  </span><span class="na">edges</span><span class="n">: [BlogPostEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
 <span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
-
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
 type<span class="w"> </span>BlogPostDeleteResponse<span class="w"> </span><span class="p">{</span><span class="w"></span>
