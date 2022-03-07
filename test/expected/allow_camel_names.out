@@ -4,6 +4,7 @@ begin;
         "someId" int primary key,
         "accountHolderId" int references "AccountHolder"("someId")
     );
+    comment on table "AccountHolder" is e'@graphql({"totalCount": {"enabled": true}})';
     insert into public."AccountHolder"("someId", "accountHolderId")
     values
         (1, 1),

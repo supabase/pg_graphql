@@ -233,14 +233,14 @@ begin
 
     -- Error out on invalid top level selections
     perform case
-                when (
-                    graphql.name_literal(root.sel)
-                    not in ('pageInfo', 'edges', 'totalCount', '__typename')
-                ) then graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
-                else null::text
+                when gf.name is not null then ''
+                else graphql.exception_unknown_field(graphql.name_literal(root.sel), field_row.type_)
             end
         from
-            jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel);
+            jsonb_array_elements((ast -> 'selectionSet' -> 'selections')) root(sel)
+            left join graphql.field gf
+                on gf.parent_type = field_row.type_
+                and gf.name = graphql.name_literal(root.sel);
 
     select
         format('

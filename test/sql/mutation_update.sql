@@ -15,6 +15,7 @@ begin;
         owner_id integer not null references account(id) on delete cascade,
         name varchar(255) not null
     );
+    comment on table blog is e'@graphql({"totalCount": {"enabled": true}})';
 
     insert into public.account(email)
     values

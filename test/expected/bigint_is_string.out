@@ -4,6 +4,7 @@ begin;
         title text not null,
         parent_id bigint references blog_post(id)
     );
+    comment on table blog_post is e'@graphql({"totalCount": {"enabled": true}})';
     select graphql.resolve($$
     mutation {
       insertIntoBlogPostCollection(objects: [{

@@ -7,6 +7,7 @@ begin;
         created_at timestamp not null,
         updated_at timestamp not null
     );
+    comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
 
 
     create table blog(
