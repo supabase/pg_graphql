@@ -2,11 +2,12 @@ SQL tables are reflected into GraphQL types with columns and foreign keys repres
 
 ## Naming
 
-PostgreSQL tables/column names are automatically converted to pascal case for type names and camel case for field names.
+By default, PostgreSQL table and column names are not adjusted when reflecting GraphQL type and field names. For example, an `account_holder` table has GraphQL type name `account_holder` and can be queried via the `account_holderCollection` field of the `Query` type.
 
-For example, an `account` table has GraphQL type name `Account` and can be queried via the `accountCollection` field of the `Query` type.
+In cases, like the previous example, where the SQL name is `snake_case`, you may want to [enable inflection](/pg_graphql/configuration/#inflection) so types are reflected as `AccountHolder` and `accountHolderCollection`.
 
-Table, column, and relationship type and field names may be [manually overridden](/pg_graphql/configuration/#rename-a-tables-type) as needed.
+
+Table, column, and relationship type and field names may also be [manually overridden](/pg_graphql/configuration/#tables-type) as needed.
 
 ## Type Conversion
 

@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is '@graphql({"inflect_names": true})';
 
     create table public.account(
         id serial primary key,

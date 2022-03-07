@@ -181,7 +181,7 @@ begin
                                         parent_type := gt.name,
                                         parent_block_name := block_name
                                     )
-                                when gf_s.meta_kind = 'Function' then format('%I.%I', block_name, gf_s.func)
+                                when gf_s.meta_kind = 'Function' then format('%I.%s', block_name, gf_s.func)
                                 else graphql.exception_unknown_field(graphql.name_literal(n.sel), gt.name)
                             end
                         ),
@@ -324,7 +324,7 @@ begin
                         string_agg(
                             case f.meta_kind
                                 when 'Column' then format('%I.%I', block_name, column_name)
-                                when 'Function' then format('%I(%I) as %I', f.func, block_name, f.func)
+                                when 'Function' then format('%s(%I) as %s', f.func, block_name, f.func)
                                 else graphql.exception('Unexpected meta_kind in select')
                             end,
                             ', '
