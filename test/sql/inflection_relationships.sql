@@ -9,53 +9,90 @@ begin;
         order by
             name;
 
-    savepoint o;
+    savepoint a;
 
-    create table account (
-        id int primary key
-    );
+    -- Inflection true, Overrides: off, Ends with '_id'
+    comment on schema public is e'@graphql({"inflect_names": true})';
 
-    create table blog_post(
+    create table account_holder (
         id int primary key,
-        author_id  int,
-        account_no  int,
-
-        constraint fkey_author_id foreign key (author_id) references account(id),
-        constraint fkey_author_no foreign key (account_no) references account(id)
+        author_id int,
+        constraint fkey_author_id foreign key (author_id) references account_holder(id)
     );
 
-    savepoint a;
-
-    -- Inflection off, Overrides: off
-    comment on schema public is e'@graphql({"inflect_names": false})';
-    -- test that first letter of capital type name is lower cased when used as a field
-    alter table account rename to "AccOnunt";
     select * from r;
 
-    savepoint a;
-
-    -- Inflection off, Overrides: on
-    comment on constraint fkey_author_id
-        on blog_post
-        is E'@graphql({"foreign_name": "ownerOO", "local_name": "Blogzzz"})';
-    comment on constraint fkey_author_no
-        on blog_post
-        is E'@graphql({"foreign_name": "accountNO", "local_name": "NOblogz"})';
-    select * from r;
-
+    -- Inflection true, Overrides: off, does not end with '_id'
     rollback to savepoint a;
 
-    -- Inflection on, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": true})';
+
+    create table account_holder (
+        id int primary key,
+        author int,
+        constraint fkey_author_id foreign key (author) references account_holder(id)
+    );
+
     select * from r;
 
-    -- Inflection on, Overrides: on
-    comment on constraint fkey_author_id
-        on blog_post
-        is E'@graphql({"foreign_name": "ownerOO", "local_name": "Blogzzz"})';
-    comment on constraint fkey_author_no
-        on blog_post
-        is E'@graphql({"foreign_name": "accountNO", "local_name": "NOblogz"})';
+    -- Inflection true, Overrides: true
+    rollback to savepoint a;
+
+    comment on schema public is e'@graphql({"inflect_names": true})';
+
+    create table account_holder (
+        id int primary key,
+        account_id int,
+        constraint fkey_account_id foreign key (account_id) references account_holder(id)
+    );
+
+    comment on constraint fkey_account_id
+    on account_holder
+    is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
+
+    select * from r;
+
+    -- Inflection false, Overrides: off, Ends with 'Id'
+    rollback to savepoint a;
+
+    comment on schema public is e'@graphql({"inflect_names": false})';
+
+    create table "AccountHolder" (
+        id int primary key,
+        "authorId" int,
+        constraint fkey_author_id foreign key ("authorId") references "AccountHolder"(id)
+    );
+
+    select * from r;
+
+    -- Inflection false, Overrides: off, does not end with 'Id'
+    rollback to savepoint a;
+
+    comment on schema public is e'@graphql({"inflect_names": false})';
+
+    create table "AccountHolder" (
+        id int primary key,
+        author int,
+        constraint fkey_author_id foreign key (author) references "AccountHolder"(id)
+    );
+
+    select * from r;
+
+    -- Inflection false, Overrides: true
+    rollback to savepoint a;
+
+    comment on schema public is e'@graphql({"inflect_names": false})';
+
+    create table "AccountHolder"(
+        id int primary key,
+        "accountId" int,
+        constraint fkey_account_id foreign key ("accountId") references "AccountHolder"(id)
+    );
+
+    comment on constraint fkey_account_id
+    on "AccountHolder"
+    is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
+
     select * from r;
 
 rollback;

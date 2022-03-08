@@ -133,10 +133,27 @@ create or replace function graphql.field_name_for_to_one(foreign_entity regclass
 as $$
 declare
     is_inflection_on bool = graphql.comment_directive_inflect_names(current_schema::regnamespace);
-    -- owner_id -> owner
-    is_single_col_ending_id bool = array_length(foreign_columns, 1) = 1 and foreign_columns[1] like '%\_id';
 
-    base_single_col_name text = left(foreign_columns[1], -3);
+    has_req_suffix text = case is_inflection_on
+        when true then '\_id'
+        when false then 'Id'
+    end;
+
+    req_suffix_len int = case is_inflection_on
+        when true then 3
+        when false then 2
+    end;
+
+    -- owner_id -> owner (inflection off); ownerId -> owner (inflection on)
+    is_single_col_ending_id bool = (
+        array_length(foreign_columns, 1) = 1
+        and foreign_columns[1] like format('%%%s', has_req_suffix)
+    );
+
+    base_single_col_name text = left(
+        foreign_columns[1],
+        0-req_suffix_len
+    );
     base_name text = graphql.type_name(foreign_entity, 'Node');
 begin
     return
