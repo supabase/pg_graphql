@@ -4101,6 +4101,20 @@ begin
                             and not f.is_hidden_from_schema
                             and gt.type_kind = 'OBJECT'
                             and not f.is_arg
+                            and (
+                                -- heartbeat is not visible unless the query type is empty
+                                gt.meta_kind <> 'Query'
+                                or f.meta_kind <> 'Query.heartbeat'
+                                or not exists(
+                                    select 1
+                                    from graphql.field fin
+                                    where
+                                        fin.parent_type = gt.name -- 'Query'
+                                        and not fin.is_hidden_from_schema
+                                        and fin.meta_kind <> 'Query.heartbeat'
+                                    limit 1
+                                )
+                            )
                     )
                     when selection_name = 'interfaces' and not has_modifiers then (
                         case

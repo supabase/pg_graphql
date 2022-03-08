@@ -38,9 +38,6 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
-                 },                             +
-                 {                              +
-                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
@@ -144,9 +141,6 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
-                 },                             +
-                 {                              +
-                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
@@ -204,9 +198,6 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
-                 },                             +
-                 {                              +
-                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
@@ -265,9 +256,6 @@ begin;
              "fields": [                        +
                  {                              +
                      "name": "accountCollection"+
-                 },                             +
-                 {                              +
-                     "name": "heartbeat"        +
                  }                              +
              ]                                  +
          }                                      +
