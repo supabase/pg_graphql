@@ -36,7 +36,7 @@ services:
     environment:
       PGRST_DB_URI: postgres://postgres:password@db:5432/graphqldb
       PGRST_DB_SCHEMA: public, graphql
-      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_ANON_ROLE: anon
 
   graphiql:
     container_name: graphiql

@@ -2,18 +2,18 @@ create role anon;
 create extension if not exists "uuid-ossp";
 create extension if not exists pg_graphql cascade;
 
+grant usage on schema public to anon;
+alter default privileges in schema public grant all on tables to anon;
+alter default privileges in schema public grant all on functions to anon;
+alter default privileges in schema public grant all on sequences to anon;
 
-grant usage on schema public to postgres, anon;
-alter default privileges in schema public grant all on tables to postgres, anon;
-alter default privileges in schema public grant all on functions to postgres, anon;
-alter default privileges in schema public grant all on sequences to postgres, anon;
+grant usage on schema graphql to anon;
+grant select on graphql.field, graphql.type, graphql.enum_value to anon;
+grant all on function graphql.resolve to anon;
 
-grant usage on schema graphql to postgres, anon;
-grant all on function graphql.resolve to postgres, anon;
-
-alter default privileges in schema graphql grant all on tables to postgres, anon;
-alter default privileges in schema graphql grant all on functions to postgres, anon;
-alter default privileges in schema graphql grant all on sequences to postgres, anon;
+alter default privileges in schema graphql grant all on tables to anon;
+alter default privileges in schema graphql grant all on functions to anon;
+alter default privileges in schema graphql grant all on sequences to anon;
 
 
 -- GraphQL Entrypoint
