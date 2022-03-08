@@ -45,6 +45,7 @@ create index ix_entity_column_entity_column_name
 create materialized view graphql.entity_unique_columns as
     select distinct
         ec.entity,
+        pi.indexrelid::regclass::name index_name,
         array_agg(ec.column_name order by array_position(pi.indkey, ec.column_attribute_num)) unique_column_set
     from
         graphql.entity_column ec
@@ -57,4 +58,23 @@ create materialized view graphql.entity_unique_columns as
         and pi.indisvalid
         and pi.indpred is null -- exclude partial indexes
     group by
-        ec.entity;
+        ec.entity,
+        pi.indexrelid;
+
+
+create function graphql.column_set_is_unique(regclass, columns text[])
+    returns bool
+    language sql
+    immutable
+as $$
+    select exists(
+        select
+            1
+        from
+            graphql.entity_unique_columns euc
+        where
+            euc.entity = $1
+            -- unique set is contained by columns list
+            and euc.unique_column_set <@ $2
+    )
+$$;
