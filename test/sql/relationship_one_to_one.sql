@@ -35,6 +35,5 @@ begin;
             }
         $$)
     );
-    rollback to savepoint a;
 
 rollback;
