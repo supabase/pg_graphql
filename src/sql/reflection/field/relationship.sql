@@ -5,7 +5,10 @@ create materialized view graphql.relationship as
             const.oid as constraint_oid,
             e.entity as local_entity,
             array_agg(local_.attname::text order by l.col_ix asc) as local_columns,
-            'MANY'::graphql.cardinality as local_cardinality,
+            case graphql.column_set_is_unique(e.entity, array_agg(local_.attname::text))
+                when true then 'ONE'
+                else 'MANY'
+            end::graphql.cardinality as local_cardinality,
             const.confrelid::regclass as foreign_entity,
             array_agg(ref_.attname::text order by r.col_ix asc) as foreign_columns,
             'ONE'::graphql.cardinality as foreign_cardinality,
