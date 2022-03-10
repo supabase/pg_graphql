@@ -5,7 +5,7 @@ create or replace function graphql.cache_key(role regrole, ast jsonb, variables 
 as $$
     select
         -- Different roles may have different levels of access
-        graphql.sha1(
+        md5(
             $1::text
             -- Parsed query hash
             || ast::text
