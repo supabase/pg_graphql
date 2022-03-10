@@ -24,7 +24,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Versions:**
- - PostgreSQL: [e.g. 13.1]
+ - PostgreSQL: [e.g. 14.1]
  - pg_graphql commit ref: ea2ab60
 
 **Additional context**

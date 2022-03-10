@@ -1,4 +1,4 @@
-Tested with PostgreSQL 13.
+Tested with PostgreSQL 14.
 
 ## Direct Server Access
 

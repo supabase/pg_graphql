@@ -10,8 +10,8 @@ mkShell {
       libgraphqlparser = callPackage ./nix/libgraphqlparser {};
 
       pgWithExt = { pg }: pg.withPackages (p: [ (callPackage ./nix/pg_graphql { postgresql = pg; libgraphqlparser = libgraphqlparser; }) ]);
-      pg13WithExt = pgWithExt { pg = postgresql_13; };
-      pg_w_pg_graphql = callPackage ./nix/pg_graphql/pgScript.nix { postgresql = pg13WithExt; };
+      pg14WithExt = pgWithExt { pg = postgresql_14; };
+      pg_w_pg_graphql = callPackage ./nix/pg_graphql/pgScript.nix { postgresql = pg14WithExt; };
     in
     [ pg_w_pg_graphql ];
 }
