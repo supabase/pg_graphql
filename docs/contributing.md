@@ -13,7 +13,7 @@ To run tests locally, execute:
 
 ```bash
 # might take a few minutes downloading dependencies on the first run
-$ nix-shell --run "pg_13_graphql make installcheck"
+$ nix-shell --run "pg_14_graphql make installcheck"
 ```
 
 
@@ -22,7 +22,7 @@ $ nix-shell --run "pg_13_graphql make installcheck"
 To reduce the iteration cycle, you may want to launch a psql prompt with `pg_graphql` installed to experiment
 
 ```bash
-nix-shell --run "pg_13_graphql psql"
+nix-shell --run "pg_14_graphql psql"
 ```
 
 Try out the commands below to spin up a database with the extension installed & query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.

@@ -1,4 +1,4 @@
-FROM postgres:13 as build
+FROM postgres:14 as build
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -6,7 +6,7 @@ RUN apt-get update \
       ca-certificates \
       cmake \
       git \
-      postgresql-server-dev-13 \
+      postgresql-server-dev-14 \
       python2 \
     && rm -rf "/var/lib/apt/lists/*"
 
@@ -23,7 +23,7 @@ WORKDIR /pg_graphql
 RUN ./bin/pgc build
 RUN make install
 
-FROM postgres:13 as main
+FROM postgres:14 as main
 
 # libgraphqlparser
 ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"

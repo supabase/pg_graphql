@@ -13,4 +13,4 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
     - name: Run tests
-      run: nix-shell --run "pg_13_graphql make installcheck"
+      run: nix-shell --run "pg_14_graphql make installcheck"

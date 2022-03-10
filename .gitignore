@@ -1,4 +1,5 @@
 results/
+debug/
 __pycache__/
 ex/
 .python-version

@@ -10,6 +10,6 @@ Usage:
   exit 1
 }
 
-nix-shell --run "pg_13_graphql make installcheck"
+nix-shell --run "pg_14_graphql make installcheck"
 
 cli_log "Test complete"
