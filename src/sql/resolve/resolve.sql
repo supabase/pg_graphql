@@ -24,7 +24,7 @@ declare
         case
             when operation = 'Query' then graphql.cache_key(current_user::regrole, ast, variables)
             -- If not a query (mutation) don't attempt to cache
-            else graphql.sha1(format('%s%s%s',random(),random(),random()))
+            else md5(format('%s%s%s',random(),random(),random()))
         end
     );
 

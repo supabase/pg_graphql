@@ -1,6 +1,8 @@
+create schema if not exists extensions;
+
 create role anon;
 create extension if not exists "uuid-ossp";
-create extension if not exists pg_graphql cascade;
+create extension if not exists pg_graphql with schema extensions cascade;
 
 grant usage on schema public to anon;
 alter default privileges in schema public grant all on tables to anon;

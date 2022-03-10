@@ -1,12 +1,4 @@
 create schema if not exists graphql;
-create or replace function graphql.sha1(text)
-    returns text
-    strict
-    immutable
-    language sql
-as $$
-    select encode(digest($1, 'sha1'), 'hex')
-$$;
 create or replace function graphql.jsonb_coalesce(val jsonb, default_ jsonb)
     returns jsonb
     strict
@@ -4228,7 +4220,7 @@ create or replace function graphql.cache_key(role regrole, ast jsonb, variables 
 as $$
     select
         -- Different roles may have different levels of access
-        graphql.sha1(
+        md5(
             $1::text
             -- Parsed query hash
             || ast::text
@@ -4357,7 +4349,7 @@ declare
         case
             when operation = 'Query' then graphql.cache_key(current_user::regrole, ast, variables)
             -- If not a query (mutation) don't attempt to cache
-            else graphql.sha1(format('%s%s%s',random(),random(),random()))
+            else md5(format('%s%s%s',random(),random(),random()))
         end
     );
 
