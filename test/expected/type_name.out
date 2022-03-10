@@ -29,12 +29,14 @@ begin;
  SCALAR       | BigInt              | t          |         |                 | BigInt
  SCALAR       | Boolean             | t          |         |                 | Boolean
  SCALAR       | Cursor              | t          |         |                 | Cursor
- SCALAR       | DateTime            | t          |         |                 | DateTime
+ SCALAR       | Date                | t          |         |                 | Date
+ SCALAR       | Datetime            | t          |         |                 | Datetime
  SCALAR       | Float               | t          |         |                 | Float
  SCALAR       | ID                  | t          |         |                 | ID
  SCALAR       | Int                 | t          |         |                 | Int
  SCALAR       | JSON                | t          |         |                 | JSON
  SCALAR       | String              | t          |         |                 | String
+ SCALAR       | Time                | t          |         |                 | Time
  SCALAR       | UUID                | t          |         |                 | UUID
  OBJECT       | Mutation            | t          |         |                 | Mutation
  OBJECT       | PageInfo            | t          |         |                 | PageInfo
@@ -49,14 +51,16 @@ begin;
  ENUM         | Enum                | f          |         |                 | PostStatus
  ENUM         | __DirectiveLocation | t          |         |                 | __DirectiveLocation
  ENUM         | __TypeKind          | t          |         |                 | __TypeKind
- INPUT_OBJECT | FilterType          | f          |         |               7 | BigIntFilter
+ INPUT_OBJECT | FilterType          | f          |         |               9 | BigIntFilter
  INPUT_OBJECT | FilterType          | f          |         |               5 | BooleanFilter
- INPUT_OBJECT | FilterType          | f          |         |               6 | DateTimeFilter
+ INPUT_OBJECT | FilterType          | f          |         |               6 | DateFilter
+ INPUT_OBJECT | FilterType          | f          |         |               8 | DatetimeFilter
  INPUT_OBJECT | FilterType          | f          |         |               3 | FloatFilter
  INPUT_OBJECT | FilterType          | f          |         |               2 | IntFilter
- INPUT_OBJECT | FilterType          | f          |         |               9 | JSONFilter
+ INPUT_OBJECT | FilterType          | f          |         |              11 | JSONFilter
  INPUT_OBJECT | FilterType          | f          |         |               4 | StringFilter
- INPUT_OBJECT | FilterType          | f          |         |               8 | UUIDFilter
-(41 rows)
+ INPUT_OBJECT | FilterType          | f          |         |               7 | TimeFilter
+ INPUT_OBJECT | FilterType          | f          |         |              10 | UUIDFilter
+(45 rows)
 
 rollback;

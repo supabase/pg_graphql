@@ -199,11 +199,19 @@ begin;
                  },                                  +
                  {                                   +
                      "kind": "SCALAR",               +
-                     "name": "DateTime"              +
+                     "name": "Date"                  +
                  },                                  +
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
-                     "name": "DateTimeFilter"        +
+                     "name": "DateFilter"            +
+                 },                                  +
+                 {                                   +
+                     "kind": "SCALAR",               +
+                     "name": "Datetime"              +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "DatetimeFilter"        +
                  },                                  +
                  {                                   +
                      "kind": "SCALAR",               +
@@ -256,6 +264,14 @@ begin;
                  {                                   +
                      "kind": "INPUT_OBJECT",         +
                      "name": "StringFilter"          +
+                 },                                  +
+                 {                                   +
+                     "kind": "SCALAR",               +
+                     "name": "Time"                  +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "TimeFilter"            +
                  },                                  +
                  {                                   +
                      "kind": "SCALAR",               +

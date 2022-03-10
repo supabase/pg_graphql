@@ -303,7 +303,7 @@ begin
 
     insert into graphql._field(parent_type_id, type_id, meta_kind, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     values
-        (graphql.type_id('Query'), graphql.type_id('DateTime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC DateTime from server');
+        (graphql.type_id('Query'), graphql.type_id('Datetime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC Datetime from server');
 
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     select

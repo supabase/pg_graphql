@@ -58,9 +58,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                                      resolve                                      
------------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid symbol \";\" while decoding base64 sequence"]}
+                                         resolve                                         
+-----------------------------------------------------------------------------------------
+ {"data": null, "errors": ["invalid symbol \";\" found while decoding base64 sequence"]}
 (1 row)
 
     rollback to savepoint a;

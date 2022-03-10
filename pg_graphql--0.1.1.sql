@@ -683,12 +683,16 @@ create type graphql.meta_kind as enum (
     'String',
     'Int',
     'Boolean',
-    'DateTime',
+
+
+    -- Custom Scalar
+    'Date',
+    'Time',
+    'Datetime',
     'BigInt',
     'UUID',
     'JSON',
 
-    -- Custom Scalar
     'OrderByDirection',
     'PageInfo',
     'Cursor',
@@ -943,30 +947,51 @@ create view graphql.type as
                 and tp.typnamespace::regnamespace::name = any(current_schemas(false))
             )
         );
-create function graphql.sql_type_to_graphql_type(sql_type text)
+create function graphql.sql_type_to_graphql_type(regtype)
     returns text
     language sql
 as
 $$
-    -- SQL type from pg_catalog.format_type
     select
-        case
-            when sql_type like 'bigint%' then 'BigInt'
-            when sql_type like 'int%' then 'Int'
-            when sql_type like 'bool%' then 'Boolean'
-            when sql_type like 'float%' then 'Float'
-            when sql_type like 'numeric%' then 'Float' -- unsafe
-            when sql_type = 'json' then 'JSON'
-            when sql_type = 'jsonb' then 'JSON'
-            when sql_type like 'json%' then 'JSON'
-            when sql_type = 'uuid' then 'UUID'
-            when sql_type = 'daterange' then 'String'
-            when sql_type like 'date%' then 'DateTime'
-            when sql_type like 'timestamp%' then 'DateTime'
-            when sql_type like 'time%' then 'DateTime'
-            --when sql_type = 'inet' then 'InternetAddress'
-            --when sql_type = 'cidr' then 'InternetAddress'
-            --when sql_type = 'macaddr' then 'MACAddress'
+        case $1
+            when 'smallint'          ::regtype then 'Int'
+            when 'smallint[]'        ::regtype then 'Int'
+
+            when 'integer'           ::regtype then 'Int'
+            when 'integer[]'         ::regtype then 'Int'
+
+            when 'bigint'            ::regtype then 'BigInt'
+            when 'bigint[]'          ::regtype then 'BigInt'
+
+            when 'boolean'           ::regtype then 'Boolean'
+            when 'boolean[]'         ::regtype then 'Boolean'
+
+            when 'real'              ::regtype then 'Float'
+            when 'real[]'            ::regtype then 'Float'
+
+            when 'double precision'  ::regtype then 'Float'
+            when 'double precision[]'::regtype then 'Float'
+
+            when 'json'              ::regtype  then 'JSON'
+            when 'json[]'            ::regtype  then 'JSON'
+
+            when 'jsonb'             ::regtype  then 'JSON'
+            when 'jsonb[]'           ::regtype  then 'JSON'
+
+            when 'uuid'              ::regtype  then 'UUID'
+            when 'uuid[]'            ::regtype  then 'UUID'
+
+            when 'date'              ::regtype  then 'Date'
+            when 'date[]'            ::regtype  then 'Date'
+
+            when 'time'              ::regtype  then 'Time'
+            when 'time[]'            ::regtype  then 'Time'
+
+            when 'timestamp'         ::regtype then 'Datetime'
+            when 'timestamp[]'       ::regtype then 'Datetime'
+
+            when 'timestamptz'       ::regtype then 'Datetime'
+            when 'timestamptz[]'     ::regtype then 'Datetime'
         else 'String'
     end;
 $$;
@@ -981,16 +1006,7 @@ create function graphql.type_id(regtype)
 as
 $$
     select
-        graphql.type_id(
-            graphql.sql_type_to_graphql_type(
-                -- strip trailing [] for array types
-                regexp_replace(
-                    pg_catalog.format_type($1, null),
-                    '\[\]$',
-                    ''
-                )
-            )
-        )
+        graphql.type_id(graphql.sql_type_to_graphql_type($1))
 $$;
 create or replace function graphql.rebuild_types()
     returns void
@@ -1013,7 +1029,9 @@ begin
             ('Float',    'SCALAR', true, null),
             ('String',   'SCALAR', true, null),
             ('Boolean',  'SCALAR', true, null),
-            ('DateTime', 'SCALAR', true, null),
+            ('Date',     'SCALAR', true, null),
+            ('Time',     'SCALAR', true, null),
+            ('Datetime', 'SCALAR', true, null),
             ('BigInt',   'SCALAR', true, null),
             ('UUID',     'SCALAR', true, null),
             ('JSON',     'SCALAR', true, null),
@@ -1041,7 +1059,9 @@ begin
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Float"',    graphql.type_id('Float')),
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "String"',   graphql.type_id('String')),
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Boolean"',  graphql.type_id('Boolean')),
-            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "DateTime"', graphql.type_id('DateTime')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Date"',     graphql.type_id('Date')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Time"',     graphql.type_id('Time')),
+            ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "Datetime"', graphql.type_id('Datetime')),
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "BigInt"',   graphql.type_id('BigInt')),
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "UUID"',     graphql.type_id('UUID')),
             ('INPUT_OBJECT', 'FilterType', 'Boolean expression comparing fields on type "JSON"',     graphql.type_id('JSON'));
@@ -1452,7 +1472,7 @@ begin
 
     insert into graphql._field(parent_type_id, type_id, meta_kind, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     values
-        (graphql.type_id('Query'), graphql.type_id('DateTime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC DateTime from server');
+        (graphql.type_id('Query'), graphql.type_id('Datetime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC Datetime from server');
 
     insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     select

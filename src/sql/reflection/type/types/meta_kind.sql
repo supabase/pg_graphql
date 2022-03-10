@@ -17,12 +17,16 @@ create type graphql.meta_kind as enum (
     'String',
     'Int',
     'Boolean',
-    'DateTime',
+
+
+    -- Custom Scalar
+    'Date',
+    'Time',
+    'Datetime',
     'BigInt',
     'UUID',
     'JSON',
 
-    -- Custom Scalar
     'OrderByDirection',
     'PageInfo',
     'Cursor',

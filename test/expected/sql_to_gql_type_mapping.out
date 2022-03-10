@@ -2,132 +2,36 @@
 Monitor if the SQL -> GQL type map changes
 */
 select
-    pt.typname sql_type,
-    graphql.sql_type_to_graphql_type(pt.typname) as graphql_type
+    pt.oid::regtype,
+    graphql.sql_type_to_graphql_type(pt.oid::regtype) as graphql_type
 from
     pg_type pt
     join pg_namespace pn
         on pt.typnamespace = pn.oid
 where
-    substring(pt.typname, 1, 1) <> '_'
-    and pt.typname not like '%[]'
-    and pt.typname not like 'pg_%'
-    and pt.typname not like 'view_%'
-    and pt.typname not like 'any%'
-    and pt.typname not like 'sql_%'
-    and pt.typname not like 'foreign_%'
-    and pt.typname not like 'role_%'
-    and pt.typname not like 'account%'
-    and pt.typname not like 'blog%'
-    and pt.typname not like 'collation%'
-    and pt.typname not like 'cardinal%'
-    and pt.typname not like 'reg%' -- e.g. regclass, regrole
-    and pt.typname not like 'table%'
-    and pt.typname not like 'trigger%'
-    and pt.typname not like 'column%'
-    and pt.typname not like 'check%'
-    and pn.nspname <> 'graphql'
+    pt.typname not like '\_%'
+    and graphql.sql_type_to_graphql_type(pt.oid::regtype) <> 'String'
+    or pt.typname similar to '(text|varchar|char)'
 order by
-    graphql.sql_type_to_graphql_type(pt.typname) = 'String',
-    graphql.sql_type_to_graphql_type(pt.typname),
+    graphql.sql_type_to_graphql_type(pt.oid::regtype),
     pt.typname
-             sql_type              | graphql_type 
------------------------------------+--------------
- bool                              | Boolean
- date                              | DateTime
- time                              | DateTime
- time_stamp                        | DateTime
- timestamp                         | DateTime
- timestamptz                       | DateTime
- timetz                            | DateTime
- float4                            | Float
- float8                            | Float
- numeric                           | Float
- int2                              | Int
- int2vector                        | Int
- int4                              | Int
- int4range                         | Int
- int8                              | Int
- int8range                         | Int
- internal                          | Int
- interval                          | Int
- json                              | JSON
- jsonb                             | JSON
- jsonpath                          | JSON
- uuid                              | UUID
- aclitem                           | String
- administrable_role_authorizations | String
- applicable_roles                  | String
- attributes                        | String
- bit                               | String
- box                               | String
- bpchar                            | String
- bytea                             | String
- char                              | String
- character_data                    | String
- character_sets                    | String
- cid                               | String
- cidr                              | String
- circle                            | String
- constraint_column_usage           | String
- constraint_table_usage            | String
- cstring                           | String
- data_type_privileges              | String
- daterange                         | String
- domain_constraints                | String
- domain_udt_usage                  | String
- domains                           | String
- element_types                     | String
- enabled_roles                     | String
- event_trigger                     | String
- fdw_handler                       | String
- gtsvector                         | String
- index_am_handler                  | String
- inet                              | String
- information_schema_catalog_name   | String
- key_column_usage                  | String
- language_handler                  | String
- line                              | String
- lseg                              | String
- macaddr                           | String
- macaddr8                          | String
- money                             | String
- name                              | String
- numrange                          | String
- oid                               | String
- oidvector                         | String
- parameters                        | String
- path                              | String
- point                             | String
- polygon                           | String
- record                            | String
- refcursor                         | String
- referential_constraints           | String
- routine_privileges                | String
- routines                          | String
- schemata                          | String
- sequences                         | String
- text                              | String
- tid                               | String
- transforms                        | String
- tsm_handler                       | String
- tsquery                           | String
- tsrange                           | String
- tstzrange                         | String
- tsvector                          | String
- txid_snapshot                     | String
- udt_privileges                    | String
- unknown                           | String
- usage_privileges                  | String
- user_defined_types                | String
- user_mapping_options              | String
- user_mappings                     | String
- varbit                            | String
- varchar                           | String
- void                              | String
- xid                               | String
- xid8                              | String
- xml                               | String
- yes_or_no                         | String
-(96 rows)
+             oid             | graphql_type 
+-----------------------------+--------------
+ bigint                      | BigInt
+ boolean                     | Boolean
+ date                        | Date
+ timestamp without time zone | Datetime
+ timestamp with time zone    | Datetime
+ real                        | Float
+ double precision            | Float
+ smallint                    | Int
+ integer                     | Int
+ json                        | JSON
+ jsonb                       | JSON
+ "char"                      | String
+ text                        | String
+ character varying           | String
+ time without time zone      | Time
+ uuid                        | UUID
+(16 rows)
 
