@@ -5,6 +5,7 @@ begin;
         id serial primary key,
         first_name varchar(255) not null,
         last_name varchar(255) not null,
+        -- Computed Column
         full_name text generated always as (first_name || ' ' ||  last_name) stored
     );
 

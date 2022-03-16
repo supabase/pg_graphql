@@ -15,24 +15,17 @@
 
 ---
 
-Query your existing PostgreSQL database with GraphQL
+`pg_graphql` adds GraphQL support to your PostgreSQL database.
 
-`pg_graphql` inspects your PostgreSQL schema and reflects a GraphQL schema with resolvers.
+- [x] __Performant__
+- [x] __Consistent__
+- [x] __Serverless__
+- [x] __Open Source__
 
-- [x] __Performant__: [+2k requests/second](performance.md)
-- [x] __Always up-to-date__: Reflected from the SQL schema
-- [x] __Pagination__: Relay compliant
-- [x] __Serverless__: Runs in your database with no *additional* server required
-- [x] __Open Source__: Apache License 2.0
+### Overview
+`pg_graphql` reflects a GraphQL schema from the existing SQL schema.
 
-!!! warning
-    pg_graphql is pre-alpha software under active development
-
-
-### Motivation
-`pg_graphql` provides an SQL schema -> GraphQL schema reflection engine and an associated GraphQL query -> SQL query transpiler.
-
-The extension keeps schema generation, query parsing, and resolvers all neatly contained on your database. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.
+The extension keeps schema translation and query resolution neatly contained on your database server. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.
 
 
 ### TL;DR
@@ -40,7 +33,36 @@ The extension keeps schema generation, query parsing, and resolvers all neatly c
 The SQL schema
 
 ```sql
---8<-- "docs/assets/demo_schema.sql"
+create table account(
+    id serial primary key,
+    email varchar(255) not null,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create table blog(
+    id serial primary key,
+    owner_id integer not null references account(id),
+    name varchar(255) not null,
+    description varchar(255),
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create type blog_post_status as enum ('PENDING', 'RELEASED');
+
+create table blog_post(
+    id uuid not null default uuid_generate_v4() primary key,
+    blog_id integer not null references blog(id),
+    title varchar(255) not null,
+    body varchar(10000),
+    status blog_post_status not null,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
 ```
-Translates into a GraphQL schema exposing each table as a pageable collection with relationships defined by the foreign keys.
+Translates into a GraphQL schema displayed below.
+
+Each table receives an entrypoint in the top level `Query` type that is a pageable collection with relationships defined by its foreign keys. Tables similarly recieve entrypoints in the `Mutation` schema that enable bulk operations for insert, update, and delete.
+
 ![GraphiQL](./assets/quickstart_graphiql.png)

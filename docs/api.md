@@ -1,11 +1,9 @@
-The public API consists of a single function to resolve GraphQL queries. All other entities in the `graphql` schema are private.
+The public facing API consists of a single SQL function that resolves GraphQL queries. All other entities in the `graphql` schema are private.
 
 ### graphql.resolve
 
 ##### description
 Resolves a GraphQL query, returning JSONB.
-
-
 
 ##### signature
 ```sql
@@ -26,17 +24,19 @@ graphql.resolve(
 ##### usage
 
 ```sql
--- Setup
+-- Create the extension
 graphqldb= create extension pg_graphql cascade;
 CREATE EXTENSION
 
+-- Create an example table
 graphqldb= create table book(id int primary key, title text);
 CREATE TABLE
 
+-- Insert a record
 graphqldb= insert into book(id, title) values (1, 'book 1');
 INSERT 0 1
 
--- Example
+-- Query the table via GraphQL
 graphqldb= select graphql.resolve($$
 query {
   bookCollection {

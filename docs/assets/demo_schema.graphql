@@ -1,7 +1,6 @@
 type Account {
   id: Int!
   email: String!
-  encryptedPassword: String!
   createdAt: DateTime!
   updatedAt: DateTime!
   blogCollection(
@@ -49,14 +48,12 @@ type AccountEdge {
 input AccountFilter {
   id: IntFilter
   email: StringFilter
-  encryptedPassword: StringFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
 
 input AccountInsertInput {
   email: String
-  encryptedPassword: String
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -72,14 +69,12 @@ type AccountInsertResponse {
 input AccountOrderBy {
   id: OrderByDirection
   email: OrderByDirection
-  encryptedPassword: OrderByDirection
   createdAt: OrderByDirection
   updatedAt: OrderByDirection
 }
 
 input AccountUpdateInput {
   email: String
-  encryptedPassword: String
   createdAt: DateTime
   updatedAt: DateTime
 }
