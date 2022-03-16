@@ -1,26 +1,8 @@
-## Table/Column Visibility
-Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking `SELECT` access from the user/role executing queries removes that entity from the visible schema.
-
-For example:
-```sql
-revoke all privileges on public."Account" from api_user;
-```
-
-removes the `Account` GraphQL type.
-
-Similarly, revoking `SELECT` access on a table's column will remove that field from the associated GraphQL type/s.
-
-The permissions `SELECT`, `INSERT`, `UPDATE`, and `DELETE` all impact the relevant sections of the GraphQL schema.
-
-
-## Row Visibilty
-
-Visibility of rows in a given table can be configured using PostgreSQL's built-in [row level security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) policies.
-
+Extra configuration options can be set on SQL entities using comment directives.
 
 ## Comment Directives
 
-Comment directives are snippets of configuration associated with SQL entities that alter if/how those entities are reflected into the GraphQL schema.
+Comment directives are snippets of configuration associated with SQL entities that alter how those entities behave.
 
 The format of a comment directive is
 
@@ -49,7 +31,7 @@ BlogPostConnection
 
 Since snake case is a common casing structure for SQL types, `pg_graphql` support basic inflection from `snake_case` to `PascalCase` for type names, and `snake_case` to `camelCase` for field names to match Javascript conventions.
 
-The inflection directive is applied at the schema level and can be enable with:
+The inflection directive can be applied at the schema level with:
 
 
 ```sql
@@ -79,7 +61,7 @@ For more fine grained adjustments to reflected names, see [renaming](#renaming).
 
 ### totalCount
 
-`totalCount` is an opt-in field that is applied to each query type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.
+`totalCount` is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.
 
 ```graphql
 type BlogPostConnection {
@@ -94,7 +76,7 @@ type BlogPostConnection {
 to enable `totalCount` for a table, use the directive
 
 ```sql
-comment on table blog_post is e'@graphql({"totalCount": {"enabled": true}})';
+comment on table "BlogPost" is e'@graphql({"totalCount": {"enabled": true}})';
 ```
 for example
 ```sql
