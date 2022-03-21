@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#postgresql-builtin" class="md-skip">
+        <a href="#postgresql-builtin-preferred" class="md-skip">
           Skip to content
         </a>
       
@@ -297,8 +297,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#postgresql-builtin" class="md-nav__link">
-    PostgreSQL Builtin
+  <a href="#postgresql-builtin-preferred" class="md-nav__link">
+    PostgreSQL Builtin (Preferred)
   </a>
   
 </li>
@@ -314,6 +314,21 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        Security
+      </a>
     </li>
   
 
@@ -403,8 +418,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#postgresql-builtin" class="md-nav__link">
-    PostgreSQL Builtin
+  <a href="#postgresql-builtin-preferred" class="md-nav__link">
+    PostgreSQL Builtin (Preferred)
   </a>
   
 </li>
@@ -435,8 +450,8 @@
 
   <h1>Computed Fields</h1>
 
-<h2 id="postgresql-builtin">PostgreSQL Builtin</h2>
-<p>PostgreSQL has a builtin feature for adding <a href="https://www.postgresql.org/docs/14/ddl-generated-columns.html">generated columns</a> to tables. Generated columns are reflected identically to non-generated columns. This is the reccomended approach to adding computed fields when your computation meets the restrictions. The most significant restrictions of generated columns are:</p>
+<h2 id="postgresql-builtin-preferred">PostgreSQL Builtin (Preferred)</h2>
+<p>PostgreSQL has a builtin method for adding <a href="https://www.postgresql.org/docs/14/ddl-generated-columns.html">generated columns</a> to tables. Generated columns are reflected identically to non-generated columns. This is the reccomended approach to adding computed fields when your computation meets the restrictions. Namely:</p>
 <ul>
 <li>expression must be immutable</li>
 <li>expression may only reference the current row</li>
@@ -491,12 +506,14 @@
 <span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
-<span class="normal">50</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">begin</span><span class="p">;</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">begin</span><span class="p">;</span>
     <span class="k">comment</span> <span class="k">on</span> <span class="k">schema</span> <span class="k">public</span> <span class="k">is</span> <span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span>
     <span class="k">create</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span>
         <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
         <span class="n">first_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
         <span class="n">last_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
+        <span class="c1">-- Computed Column</span>
         <span class="n">full_name</span> <span class="nb">text</span> <span class="k">generated</span> <span class="n">always</span> <span class="k">as</span> <span class="p">(</span><span class="n">first_name</span> <span class="o">||</span> <span class="s1">&#39; &#39;</span> <span class="o">||</span>  <span class="n">last_name</span><span class="p">)</span> <span class="n">stored</span>
     <span class="p">);</span>
     <span class="k">insert</span> <span class="k">into</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">(</span><span class="n">first_name</span><span class="p">,</span> <span class="n">last_name</span><span class="p">)</span>
@@ -709,13 +726,13 @@
       
       
         
-        <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration" rel="next">
+        <a href="../security/" class="md-footer__link md-footer__link--next" aria-label="Next: Security" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Configuration
+              Security
             </div>
           </div>
           <div class="md-footer__button md-icon">

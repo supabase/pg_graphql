@@ -65,11 +65,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#direct-server-access" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -282,6 +277,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration/" class="md-nav__link">
         Configuration
       </a>
@@ -319,45 +329,9 @@
       
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Installation
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Installation
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#direct-server-access" class="md-nav__link">
-    Direct Server Access
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hosted-databases-eg-rds-cloud-sql" class="md-nav__link">
-    Hosted Databases e.g. RDS, Cloud SQL
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -385,44 +359,6 @@
               </div>
             
             
-              
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#direct-server-access" class="md-nav__link">
-    Direct Server Access
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hosted-databases-eg-rds-cloud-sql" class="md-nav__link">
-    Hosted Databases e.g. RDS, Cloud SQL
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
           
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
@@ -435,8 +371,6 @@
 
   <h1>Installation</h1>
 
-<p>Tested with PostgreSQL 13.</p>
-<h2 id="direct-server-access">Direct Server Access</h2>
 <p>First, install <a href="https://github.com/graphql/libgraphqlparser">libgraphqlparser</a></p>
 <p>Then clone the repo and install using</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -450,10 +384,6 @@ make install
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
 </code></pre></div>
 </td></tr></table>
-<h2 id="hosted-databases-eg-rds-cloud-sql">Hosted Databases e.g. RDS, Cloud SQL</h2>
-<p>Hosted database vendors do not provide the level of server access required to install <code>pg_graphql</code> at this time.</p>
-<p>Given that third-party hosted databases are increasingly common, we are exploring including SQL implementations of <code>pg_graphql</code>'s C components so it can be installed as a single-file SQL script.</p>
-<p>Stay tuned</p>
 
               
             </article>

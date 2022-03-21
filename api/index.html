@@ -346,6 +346,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration/" class="md-nav__link">
         Configuration
       </a>
@@ -475,7 +490,7 @@
 
   <h1>API</h1>
 
-<p>The public API consists of a single function to resolve GraphQL queries. All other entities in the <code>graphql</code> schema are private.</p>
+<p>The public facing API consists of a single SQL function that resolves GraphQL queries. All other entities in the <code>graphql</code> schema are private.</p>
 <h3 id="graphqlresolve">graphql.resolve</h3>
 <h5 id="description">description</h5>
 <p>Resolves a GraphQL query, returning JSONB.</p>
@@ -531,17 +546,21 @@
 <span class="normal">23</span>
 <span class="normal">24</span>
 <span class="normal">25</span>
-<span class="normal">26</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Setup</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Create the extension</span>
 <span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="n">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
 <span class="k">CREATE</span> <span class="n">EXTENSION</span>
 
+<span class="c1">-- Create an example table</span>
 <span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="k">table</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span> <span class="n">title</span> <span class="nb">text</span><span class="p">);</span>
 <span class="k">CREATE</span> <span class="k">TABLE</span>
 
+<span class="c1">-- Insert a record</span>
 <span class="n">graphqldb</span><span class="o">=</span> <span class="k">insert</span> <span class="k">into</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;book 1&#39;</span><span class="p">);</span>
 <span class="k">INSERT</span> <span class="mi">0</span> <span class="mi">1</span>
 
-<span class="c1">-- Example</span>
+<span class="c1">-- Query the table via GraphQL</span>
 <span class="n">graphqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
 <span class="n">query</span> <span class="err">{</span>
   <span class="n">bookCollection</span> <span class="err">{</span>

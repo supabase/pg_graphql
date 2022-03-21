@@ -10,19 +10,21 @@
       
       
       
-      <link rel="icon" href="/pg_graphql/assets/favicon.ico">
+        <link rel="canonical" href="https://supabase.github.io/pg_graphql/security/">
+      
+      <link rel="icon" href="../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
     
     
       
-        <title>pg_graphql</title>
+        <title>Security - pg_graphql</title>
       
     
     
-      <link rel="stylesheet" href="/pg_graphql/assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
       
         
-        <link rel="stylesheet" href="/pg_graphql/assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
         
           
           
@@ -40,7 +42,7 @@
       
     
     
-    <script>__md_scope=new URL("/pg_graphql/",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -63,6 +65,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#tablecolumn-visbility" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -73,9 +80,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/pg_graphql/." title="pg_graphql" class="md-header__button md-logo" aria-label="pg_graphql" data-md-component="logo">
+    <a href=".." title="pg_graphql" class="md-header__button md-logo" aria-label="pg_graphql" data-md-component="logo">
       
-  <img src="/pg_graphql/assets/favicon.ico" alt="logo">
+  <img src="../assets/favicon.ico" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -91,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Security
             
           </span>
         </div>
@@ -170,9 +177,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/pg_graphql/." title="pg_graphql" class="md-nav__button md-logo" aria-label="pg_graphql" data-md-component="logo">
+    <a href=".." title="pg_graphql" class="md-nav__button md-logo" aria-label="pg_graphql" data-md-component="logo">
       
-  <img src="/pg_graphql/assets/favicon.ico" alt="logo">
+  <img src="../assets/favicon.ico" alt="logo">
 
     </a>
     pg_graphql
@@ -200,7 +207,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         Welcome
       </a>
     </li>
@@ -215,7 +222,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/quickstart/" class="md-nav__link">
+      <a href="../quickstart/" class="md-nav__link">
         Quickstart
       </a>
     </li>
@@ -230,7 +237,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/api/" class="md-nav__link">
+      <a href="../api/" class="md-nav__link">
         API
       </a>
     </li>
@@ -245,7 +252,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/reflection/" class="md-nav__link">
+      <a href="../reflection/" class="md-nav__link">
         Reflection
       </a>
     </li>
@@ -260,7 +267,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/computed_fields/" class="md-nav__link">
+      <a href="../computed_fields/" class="md-nav__link">
         Computed Fields
       </a>
     </li>
@@ -273,11 +280,55 @@
 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="/pg_graphql/security/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Security
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Security
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tablecolumn-visbility" class="md-nav__link">
+    Table/Column Visbility
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#row-visibilty" class="md-nav__link">
+    Row Visibilty
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -290,7 +341,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/configuration/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         Configuration
       </a>
     </li>
@@ -305,7 +356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/performance/" class="md-nav__link">
+      <a href="../performance/" class="md-nav__link">
         Performance
       </a>
     </li>
@@ -320,7 +371,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -335,7 +386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pg_graphql/contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         Contributing
       </a>
     </li>
@@ -349,12 +400,70 @@
               </div>
             
             
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tablecolumn-visbility" class="md-nav__link">
+    Table/Column Visbility
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#row-visibilty" class="md-nav__link">
+    Row Visibilty
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
               
-  <h1>404 - Not found</h1>
+                
+<a href="https://github.com/supabase/pg_graphql/edit/master/docs/security.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
 
+
+  <h1>Security</h1>
+
+<p><code>pg_graphql</code> fully respects builtin PostgreSQL role and row security.</p>
+<h2 id="tablecolumn-visbility">Table/Column Visbility</h2>
+<p>Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL role permissions. Revoking <code>SELECT</code> access from the user/role executing queries removes that entity from the visible schema.</p>
+<p>For example:
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">revoke</span> <span class="k">all</span> <span class="k">privileges</span> <span class="k">on</span> <span class="k">public</span><span class="p">.</span><span class="ss">&quot;Account&quot;</span> <span class="k">from</span> <span class="n">api_user</span><span class="p">;</span>
+</code></pre></div>
+</td></tr></table></p>
+<p>removes the <code>Account</code> GraphQL type.</p>
+<p>Similarly, revoking <code>SELECT</code> access on a table's column will remove that field from the associated GraphQL type/s.</p>
+<p>The permissions <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> all impact the relevant sections of the GraphQL schema.</p>
+<h2 id="row-visibilty">Row Visibilty</h2>
+<p>Visibility of rows in a given table can be configured using PostgreSQL's built-in <a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html">row level security</a> policies.</p>
+
+              
             </article>
           </div>
         </div>
@@ -362,6 +471,41 @@
       </main>
       
         <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../computed_fields/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Computed Fields" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Computed Fields
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Configuration
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -383,10 +527,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "/pg_graphql/", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "/pg_graphql/assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
     
     
-      <script src="/pg_graphql/assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
       
     
   </body>

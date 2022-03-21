@@ -282,6 +282,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration/" class="md-nav__link">
         Configuration
       </a>
@@ -523,12 +538,12 @@
 <p>To run tests locally, execute:</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1"># might take a few minutes downloading dependencies on the first run</span>
-$ nix-shell --run <span class="s2">&quot;pg_13_graphql make installcheck&quot;</span>
+$ nix-shell --run <span class="s2">&quot;pg_14_graphql make installcheck&quot;</span>
 </code></pre></div>
 </td></tr></table>
 <h3 id="interactive-psql-development">Interactive PSQL Development</h3>
 <p>To reduce the iteration cycle, you may want to launch a psql prompt with <code>pg_graphql</code> installed to experiment</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>nix-shell --run <span class="s2">&quot;pg_13_graphql psql&quot;</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>nix-shell --run <span class="s2">&quot;pg_14_graphql psql&quot;</span>
 </code></pre></div>
 </td></tr></table>
 <p>Try out the commands below to spin up a database with the extension installed &amp; query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.</p>

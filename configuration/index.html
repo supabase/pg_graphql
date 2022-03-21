@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tablecolumn-visibility" class="md-skip">
+        <a href="#comment-directives" class="md-skip">
           Skip to content
         </a>
       
@@ -280,6 +280,21 @@
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -310,20 +325,6 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#tablecolumn-visibility" class="md-nav__link">
-    Table/Column Visibility
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#row-visibilty" class="md-nav__link">
-    Row Visibilty
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#comment-directives" class="md-nav__link">
@@ -471,20 +472,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tablecolumn-visibility" class="md-nav__link">
-    Table/Column Visibility
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#row-visibilty" class="md-nav__link">
-    Row Visibilty
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#comment-directives" class="md-nav__link">
     Comment Directives
   </a>
@@ -571,19 +558,9 @@
 
   <h1>Configuration</h1>
 
-<h2 id="tablecolumn-visibility">Table/Column Visibility</h2>
-<p>Table and column visibility in the GraphQL schema are controlled by standard PostgreSQL permissions. Revoking <code>SELECT</code> access from the user/role executing queries removes that entity from the visible schema.</p>
-<p>For example:
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">revoke</span> <span class="k">all</span> <span class="k">privileges</span> <span class="k">on</span> <span class="k">public</span><span class="p">.</span><span class="ss">&quot;Account&quot;</span> <span class="k">from</span> <span class="n">api_user</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table></p>
-<p>removes the <code>Account</code> GraphQL type.</p>
-<p>Similarly, revoking <code>SELECT</code> access on a table's column will remove that field from the associated GraphQL type/s.</p>
-<p>The permissions <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> all impact the relevant sections of the GraphQL schema.</p>
-<h2 id="row-visibilty">Row Visibilty</h2>
-<p>Visibility of rows in a given table can be configured using PostgreSQL's built-in <a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html">row level security</a> policies.</p>
+<p>Extra configuration options can be set on SQL entities using comment directives.</p>
 <h2 id="comment-directives">Comment Directives</h2>
-<p>Comment directives are snippets of configuration associated with SQL entities that alter if/how those entities are reflected into the GraphQL schema.</p>
+<p>Comment directives are snippets of configuration associated with SQL entities that alter how those entities behave.</p>
 <p>The format of a comment directive is</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="o">@</span><span class="n">graphql</span><span class="p">(</span><span class="o">&lt;</span><span class="n">JSON</span><span class="o">&gt;</span><span class="p">)</span>
 </code></pre></div>
@@ -610,7 +587,7 @@ BlogPostConnection
 </code></pre></div>
 </td></tr></table></p>
 <p>Since snake case is a common casing structure for SQL types, <code>pg_graphql</code> support basic inflection from <code>snake_case</code> to <code>PascalCase</code> for type names, and <code>snake_case</code> to <code>camelCase</code> for field names to match Javascript conventions.</p>
-<p>The inflection directive is applied at the schema level and can be enable with:</p>
+<p>The inflection directive can be applied at the schema level with:</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">comment</span> <span class="k">on</span> <span class="k">schema</span> <span class="o">&lt;</span><span class="k">schema_name</span><span class="o">&gt;</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span>
 </code></pre></div>
 </td></tr></table>
@@ -640,7 +617,7 @@ BlogPostConnection
 </td></tr></table></p>
 <p>For more fine grained adjustments to reflected names, see <a href="#renaming">renaming</a>.</p>
 <h3 id="totalcount">totalCount</h3>
-<p><code>totalCount</code> is an opt-in field that is applied to each query type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.</p>
+<p><code>totalCount</code> is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -657,7 +634,7 @@ BlogPostConnection
 </code></pre></div>
 </td></tr></table>
 <p>to enable <code>totalCount</code> for a table, use the directive</p>
-<p><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="n">blog_post</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span>
+<p><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="ss">&quot;BlogPost&quot;</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span>
 </code></pre></div>
 </td></tr></table>
 for example
@@ -860,7 +837,7 @@ for example
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../computed_fields/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Computed Fields" rel="prev">
+        <a href="../security/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Security" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -869,7 +846,7 @@ for example
               <span class="md-footer__direction">
                 Previous
               </span>
-              Computed Fields
+              Security
             </div>
           </div>
         </a>
