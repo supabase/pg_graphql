@@ -2840,6 +2840,21 @@ declare
     before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
     after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
 
+    -- If before or after is provided as a variable, and the value of the variable
+    -- is explicitly null, we must treat it as though the value were not provided
+    cursor_arg_ast jsonb = coalesce(
+        graphql.get_arg_by_name('before', graphql.jsonb_coalesce(arguments, '[]')),
+        graphql.get_arg_by_name('after', graphql.jsonb_coalesce(arguments, '[]'))
+    );
+    cursor_var_name text = case graphql.is_variable(
+            coalesce(cursor_arg_ast,'{}'::jsonb) -> 'value'
+        )
+        when true then graphql.name_literal(cursor_arg_ast -> 'value')
+        else null
+    end;
+    cursor_var_ix int = graphql.arg_index(cursor_var_name, variable_definitions);
+
+
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
     filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
@@ -3074,7 +3089,7 @@ begin
             where
                 true
                 --pagination_clause
-                and %s %s %s
+                and ((%s is null) or (%s %s %s))
                 -- join clause
                 and %s
                 -- where clause
@@ -3149,6 +3164,7 @@ begin
             entity,
             block_name,
             -- pagination
+            case when cursor_var_ix is null then '1' else format('$%s', cursor_var_ix) end,
             case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
             case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
             case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
