@@ -83,11 +83,3 @@ end;
 $$;
 
 select graphql.rebuild_schema();
-
-create event trigger graphql_watch_ddl
-    on ddl_command_end
-    execute procedure graphql.rebuild_on_ddl();
-
-create event trigger graphql_watch_drop
-    on sql_drop
-    execute procedure graphql.rebuild_on_drop();
