@@ -1,5 +1,5 @@
 EXTENSION = pg_graphql
-DATA = pg_graphql--0.1.2.sql
+DATA = pg_graphql--0.1.3.sql
 
 PG_CONFIG = pg_config
 SHLIB_LINK = -lgraphqlparser
