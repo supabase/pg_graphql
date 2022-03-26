@@ -78,3 +78,6 @@ values
 
 
 comment on schema public is '@graphql({"inflect_names": true})';
+
+-- Sync the GraphQL schema
+select graphql.rebuild_schema();

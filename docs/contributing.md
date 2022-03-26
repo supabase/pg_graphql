@@ -36,6 +36,12 @@ CREATE TABLE
 
 graphqldb= insert into book(id, title) values (1, 'book 1');
 INSERT 0 1
+
+graphqldb= select graphql.rebuild_schema();
+
+ rebuild_schema
+----------------
+(1 row)
 ```
 
 Finally, execute some graphql queries against the table.
