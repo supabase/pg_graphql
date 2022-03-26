@@ -82,6 +82,83 @@ begin;
  }
 (1 row)
 
+    -- First with after = null same as omitting after
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(first: 2, after: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
+    -- First with after = null as variable same as omitting after
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              accountCollection(first: 2, after: $afterCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"afterCursor": null}'
+    ));
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
     -- last before
     select jsonb_pretty(
         graphql.resolve($$

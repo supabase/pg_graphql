@@ -39,6 +39,37 @@ begin;
         $$)
     );
 
+    -- First with after = null same as omitting after
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(first: 2, after: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- First with after = null as variable same as omitting after
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              accountCollection(first: 2, after: $afterCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"afterCursor": null}'
+    ));
+
     -- last before
     select jsonb_pretty(
         graphql.resolve($$
