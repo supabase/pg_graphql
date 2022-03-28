@@ -49,7 +49,20 @@ declare
     cursor_var_ix int = graphql.arg_index(cursor_var_name, variable_definitions);
 
 
+    -- ast
+    before_ast jsonb = graphql.get_arg_by_name('before', arguments);
+    after_ast jsonb = graphql.get_arg_by_name('after',  arguments);
+
+    -- ordering is part of the cache key, so it is safe to extract it from
+    -- variables or arguments
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    column_ordering graphql.column_order[] = graphql.to_column_orders(
+        order_by_arg,
+        entity,
+        variables
+    );
+
+
     filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
     total_count_ast jsonb = jsonb_path_query_first(
@@ -106,6 +119,13 @@ begin
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
+    -------------
+    -- ORDER BY CLAUSE
+    -------------
+    raise exception '%', column_ordering;
+    -------------
+    -- ORDER BY CLAUSE
+    -------------
     __typename_clause = format(
         '%L, %L',
         graphql.alias_or_name_literal(__typename_ast),
