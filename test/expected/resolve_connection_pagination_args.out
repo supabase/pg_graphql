@@ -236,11 +236,11 @@ begin;
  }
 (1 row)
 
-    -- First with after variable
+    -- Last with after variable
     select jsonb_pretty(
         graphql.resolve($$
-            query ABC($beforeCursor: Cursor){
-              accountCollection(last: 2, after: $beforeCursor) {
+            query ABC($afterCursor: Cursor){
+              accountCollection(last: 2, before: $afterCursor) {
                 edges {
                   node {
                     id
@@ -249,15 +249,29 @@ begin;
               }
             }
         $$,
-        variables := '{"beforeCursor": "WzNd"}'
+        variables := '{"afterCursor": "WzNd"}'
     ));
-                    jsonb_pretty                     
------------------------------------------------------
- {                                                  +
-     "data": null,                                  +
-     "errors": [                                    +
-         "\"last\" may only be used with \"before\""+
-     ]                                              +
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
  }
 (1 row)
 
@@ -455,6 +469,7 @@ begin;
  20 |        0 | b
 (20 rows)
 
+    -- First after w/ complex order
     select jsonb_pretty(
         graphql.resolve($$
             query ABC($afterCursor: Cursor){
@@ -484,13 +499,6 @@ begin;
              "edges": [                +
                  {                     +
                      "node": {         +
-                         "id": 12,     +
-                         "title": null,+
-                         "reversed": 3 +
-                     }                 +
-                 },                    +
-                 {                     +
-                     "node": {         +
                          "id": 2,      +
                          "title": "b", +
                          "reversed": 3 +
@@ -515,6 +523,84 @@ begin;
                          "id": 1,      +
                          "title": "a", +
                          "reversed": 4 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 16,     +
+                         "title": "a", +
+                         "reversed": 4 +
+                     }                 +
+                 }                     +
+             ]                         +
+         }                             +
+     },                                +
+     "errors": [                       +
+     ]                                 +
+ }
+(1 row)
+
+    -- Last before w/ complex order
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor){
+              blogCollection(
+                last: 5
+                before: $beforeCursor
+                orderBy: [{reversed: AscNullsLast}, {title: AscNullsFirst}]
+              ) {
+                edges {
+                  node {
+                    id
+                    reversed
+                    title
+                  }
+                }
+              }
+            }
+        $$,
+        jsonb_build_object('beforeCursor', graphql.encode('[3, "a"]'::jsonb))
+        )
+    );
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "blogCollection": {           +
+             "edges": [                +
+                 {                     +
+                     "node": {         +
+                         "id": 3,      +
+                         "title": null,+
+                         "reversed": 2 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 18,     +
+                         "title": null,+
+                         "reversed": 2 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 13,     +
+                         "title": "a", +
+                         "reversed": 2 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 8,      +
+                         "title": "b", +
+                         "reversed": 2 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 7,      +
+                         "title": "a", +
+                         "reversed": 3 +
                      }                 +
                  }                     +
              ]                         +

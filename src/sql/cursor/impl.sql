@@ -126,7 +126,7 @@ as $$
             when array_length(column_orders, 1) > (depth_ - 1)
                 then format(
                 '(
-                    (     %I.%I %s %s or (%I.%I is null and %s is not null and %s))
+                    (     %I.%I %s %s or (%I.%I is not null and %s is null and %s))
                      or ((%I.%I = %s  or (%I.%I is null and %s is null))            and %s)
                 )',
                 block_name,

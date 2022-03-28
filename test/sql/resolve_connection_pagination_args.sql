@@ -101,11 +101,11 @@ begin;
         $$)
     );
 
-    -- First with after variable
+    -- Last with after variable
     select jsonb_pretty(
         graphql.resolve($$
-            query ABC($beforeCursor: Cursor){
-              accountCollection(last: 2, after: $beforeCursor) {
+            query ABC($afterCursor: Cursor){
+              accountCollection(last: 2, before: $afterCursor) {
                 edges {
                   node {
                     id
@@ -114,7 +114,7 @@ begin;
               }
             }
         $$,
-        variables := '{"beforeCursor": "WzNd"}'
+        variables := '{"afterCursor": "WzNd"}'
     ));
 
     -- last without an after clause
@@ -199,6 +199,7 @@ begin;
 
     select * from public.blog;
 
+    -- First after w/ complex order
     select jsonb_pretty(
         graphql.resolve($$
             query ABC($afterCursor: Cursor){
@@ -218,6 +219,29 @@ begin;
             }
         $$,
         jsonb_build_object('afterCursor', graphql.encode('[3, "a"]'::jsonb))
+        )
+    );
+
+    -- Last before w/ complex order
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor){
+              blogCollection(
+                last: 5
+                before: $beforeCursor
+                orderBy: [{reversed: AscNullsLast}, {title: AscNullsFirst}]
+              ) {
+                edges {
+                  node {
+                    id
+                    reversed
+                    title
+                  }
+                }
+              }
+            }
+        $$,
+        jsonb_build_object('beforeCursor', graphql.encode('[3, "a"]'::jsonb))
         )
     );
 
