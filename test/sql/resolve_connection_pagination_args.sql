@@ -12,7 +12,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(first: 2, after: "WzNd") {
                 totalCount
                 edges {
                   node {
@@ -74,7 +74,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(last: 2, before: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(last: 2, before: "WzNd") {
                 edges {
                   node {
                     id
@@ -119,7 +119,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(before: "WyJhY2NvdW50IiwgM10=", after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(before: "WzNd", after: "WzNd") {
                 totalCount
               }
             }
@@ -130,7 +130,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(first: 2, before: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(first: 2, before: "WzNd") {
                 totalCount
               }
             }
@@ -141,7 +141,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(last: 2, after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(last: 2, after: "WzNd") {
                 totalCount
               }
             }

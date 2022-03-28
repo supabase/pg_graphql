@@ -9,6 +9,38 @@ create type graphql.column_order_w_type as(
 );
 
 
+create or replace function graphql.reverse(
+    column_orders graphql.column_order_w_type[]
+)
+    returns graphql.column_order_w_type[]
+    immutable
+    language sql
+as $$
+    select
+        array_agg(
+            (
+                (co).column_name,
+                case
+                    when not reverse then (co).direction::text
+                    when reverse and (co).direction = 'asc' then 'desc'
+                    when reverse and (co).direction = 'desc' then 'asc'
+                    else graphql.exception('Unreachable exception in orderBy clause')
+                end,
+                case
+                    when not reverse and (co).nulls_first then 'nulls first'
+                    when not reverse and not (co).nulls_first then 'nulls last'
+                    when reverse and (co).nulls_first then 'nulls last'
+                    when reverse and not (co).nulls_first then 'nulls first'
+                    else graphql.exception('Unreachable exception 2 in orderBy clause')
+                end
+            )::graphql.column_order_w_type
+        )
+    from
+        unnest(column_orders) co
+$$;
+
+
+
 create or replace function graphql.to_cursor_clause(
     alias_name text,
     column_orders graphql.column_order_w_type[]

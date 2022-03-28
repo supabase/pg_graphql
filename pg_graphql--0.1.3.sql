@@ -460,6 +460,38 @@ create type graphql.column_order_w_type as(
 );
 
 
+create or replace function graphql.reverse(
+    column_orders graphql.column_order_w_type[]
+)
+    returns graphql.column_order_w_type[]
+    immutable
+    language sql
+as $$
+    select
+        array_agg(
+            (
+                (co).column_name,
+                case
+                    when not reverse then (co).direction::text
+                    when reverse and (co).direction = 'asc' then 'desc'
+                    when reverse and (co).direction = 'desc' then 'asc'
+                    else graphql.exception('Unreachable exception in orderBy clause')
+                end,
+                case
+                    when not reverse and (co).nulls_first then 'nulls first'
+                    when not reverse and not (co).nulls_first then 'nulls last'
+                    when reverse and (co).nulls_first then 'nulls last'
+                    when reverse and not (co).nulls_first then 'nulls first'
+                    else graphql.exception('Unreachable exception 2 in orderBy clause')
+                end
+            )::graphql.column_order_w_type
+        )
+    from
+        unnest(column_orders) co
+$$;
+
+
+
 create or replace function graphql.to_cursor_clause(
     alias_name text,
     column_orders graphql.column_order_w_type[]
@@ -2412,151 +2444,30 @@ $$
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
 create or replace function graphql.order_by_clause(
-    order_by_arg jsonb,
-    entity regclass,
     alias_name text,
-    reverse bool default false,
-    variables jsonb default '{}'
+    column_orders graphql.column_order_w_type[]
 )
     returns text
-    language plpgsql
+    language sql
     immutable
     as
 $$
-declare
-    claues text;
-    variable_value jsonb;
-begin
-    -- No order by clause was specified
-    if order_by_arg is null then
-        return graphql.primary_key_clause(entity, alias_name) || case when reverse then ' desc' else ' asc' end;
-        -- todo handle no primary key
-    end if;
-
-    if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
-
-        -- Expect [{"fieldName", "DescNullsFirst"}]
-        variable_value = variables -> (order_by_arg -> 'value' -> 'name' ->> 'value');
-
-        if jsonb_typeof(variable_value) <> 'array' or jsonb_array_length(variable_value) = 0 then
-            return graphql.exception('Invalid value for ordering variable');
-        end if;
-
-        -- name of the variable
-        return string_agg(
+    select
+        string_agg(
             format(
-                '%I.%I %s',
+                '%I.%I %s %s',
                 alias_name,
+                (co).column_name,
+                (co).direction::text,
                 case
-                    when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
-                    when f.column_name is not null then f.column_name
-                    else graphql.exception_unknown_field(x.key_, t.name)
-                end,
-                graphql.order_by_enum_to_clause(val_)
+                    when (co).nulls_first then 'nulls first'
+                    else 'nulls last'
+                end
             ),
             ', '
         )
-        from
-            jsonb_array_elements(variable_value) jae(obj),
-            lateral (
-                select
-                    jet.key_,
-                    jet.val_
-                from
-                    jsonb_each_text( jae.obj )  jet(key_, val_)
-            ) x
-            join graphql.type t
-                on t.entity = $2
-                and t.meta_kind = 'Node'
-            left join graphql.field f
-                on t.name = f.parent_type
-                and f.name = x.key_;
-
-
-    elsif (order_by_arg -> 'value' ->> 'kind') = 'ListValue' then
-        return (
-            with obs as (
-                select
-                    *
-                from
-                    jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
-            ),
-            norm as (
-                -- Literal
-                select
-                    ext.field_name,
-                    ext.direction_val,
-                    obs.ix,
-                    case
-                        when field_name is null then graphql.exception('Invalid order clause')
-                        when direction_val is null then graphql.exception('Invalid order clause')
-                        else null
-                    end as errors
-                from
-                    obs,
-                    lateral (
-                        select
-                            graphql.name_literal(sel -> 'fields' -> 0) field_name,
-                            graphql.value_literal(sel -> 'fields' -> 0) direction_val
-                    ) ext
-                where
-                    not graphql.is_variable(obs.sel)
-                union all
-                -- Variable
-                select
-                    v.field_name,
-                    v.direction_val,
-                    obs.ix,
-                    case
-                        when v.field_name is null then graphql.exception('Invalid order clause')
-                        when v.direction_val is null then graphql.exception('Invalid order clause')
-                        else null
-                    end as errors
-                from
-                    obs,
-                    lateral (
-                        select
-                            field_name,
-                            direction_val
-                        from
-                            jsonb_each_text(
-                                case jsonb_typeof(variables -> graphql.name_literal(obs.sel))
-                                    when 'object' then variables -> graphql.name_literal(obs.sel)
-                                    else graphql.exception('Invalid order clause')::jsonb
-                                end
-                            ) jv(field_name, direction_val)
-                        ) v
-                where
-                    graphql.is_variable(obs.sel)
-            )
-            select
-                string_agg(
-                    format(
-                        '%I.%I %s',
-                        alias_name,
-                        case
-                            when f.column_name is not null then f.column_name
-                            else graphql.exception('Invalid order clause')
-                        end,
-                        graphql.order_by_enum_to_clause(norm.direction_val)
-                    ),
-                    ', '
-                    order by norm.ix asc
-                )
-            from
-                norm
-                join graphql.type t
-                    on t.entity = $2
-                    and t.meta_kind = 'Node'
-                left join graphql.field f
-                    on t.name = f.parent_type
-                    and f.name = norm.field_name
-        );
-
-    else
-        return graphql.exception('Invalid type for order clause');
-    end if;
-end;
+    from
+        unnest(column_orders) co
 $$;
 create or replace function graphql.order_by_enum_to_clause(order_by_enum_val text)
     returns text
@@ -2695,7 +2606,7 @@ begin
                     (
                         f.column_name,
                         case when norm.direction_val like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                        case when norm.direction_val like 'First%' then true else false end, -- nulls_first?
+                        case when norm.direction_val like '%First' then true else false end, -- nulls_first?
                         f.column_type
                     )::graphql.column_order_w_type
                     order by norm.ix asc
@@ -3319,7 +3230,6 @@ begin
                     column_orders
                 )
             ),
-            --format()graphql.cursor_encoded_clause(entity, block_name),
             -- enumerate columns
             (
                 select
@@ -3363,11 +3273,7 @@ begin
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            --case
-                --when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                --else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            --end,
-            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
+            graphql.order_by_clause(block_name, column_orders),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
@@ -3376,15 +3282,12 @@ begin
             coalesce(first_, last_, '30'),
             -- xyz
             block_name,
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            graphql.order_by_clause(block_name, column_orders),
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
             -- final order by
-            graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
+            graphql.order_by_clause('xyz', column_orders),
             -- block name
             block_name
         )

@@ -120,7 +120,7 @@ begin
                     (
                         f.column_name,
                         case when norm.direction_val like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                        case when norm.direction_val like 'First%' then true else false end, -- nulls_first?
+                        case when norm.direction_val like '%First' then true else false end, -- nulls_first?
                         f.column_type
                     )::graphql.column_order_w_type
                     order by norm.ix asc

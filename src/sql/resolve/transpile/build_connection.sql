@@ -349,7 +349,6 @@ begin
                     column_orders
                 )
             ),
-            --format()graphql.cursor_encoded_clause(entity, block_name),
             -- enumerate columns
             (
                 select
@@ -393,11 +392,7 @@ begin
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            --case
-                --when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                --else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            --end,
-            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
+            graphql.order_by_clause(block_name, column_orders),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
@@ -406,15 +401,12 @@ begin
             coalesce(first_, last_, '30'),
             -- xyz
             block_name,
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            graphql.order_by_clause(block_name, column_orders),
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
             -- final order by
-            graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
+            graphql.order_by_clause('xyz', column_orders),
             -- block name
             block_name
         )
