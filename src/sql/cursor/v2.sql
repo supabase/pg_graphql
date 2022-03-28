@@ -35,12 +35,11 @@ as $$
                         co.elems
                     ),
                     ', '
-                    order by co_ix
                 )
             )
         )
     from
-        unnest(column_orders) with ordinality co(elems, co_ix)
+        unnest(column_orders) co(elems)
 $$;
 
 

@@ -37,36 +37,36 @@ begin;
             }
         $$)
     );
-                                  jsonb_pretty                                  
---------------------------------------------------------------------------------
- {                                                                             +
-     "data": {                                                                 +
-         "accountHolderCollection": {                                          +
-             "edges": [                                                        +
-                 {                                                             +
-                     "node": {                                                 +
-                         "someId": 1,                                          +
-                         "accountHolder": {                                    +
-                             "someId": 1                                       +
-                         },                                                    +
-                         "accountHolderId": 1,                                 +
-                         "accountHolderCollection": {                          +
-                             "totalCount": 1                                   +
-                         }                                                     +
-                     },                                                        +
-                     "cursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0="  +
-                 }                                                             +
-             ],                                                                +
-             "pageInfo": {                                                     +
-                 "endCursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=",  +
-                 "hasNextPage": true,                                          +
-                 "startCursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=",+
-                 "hasPreviousPage": false                                      +
-             }                                                                 +
-         }                                                                     +
-     },                                                                        +
-     "errors": [                                                               +
-     ]                                                                         +
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "accountHolderCollection": {                +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "someId": 1,                +
+                         "accountHolder": {          +
+                             "someId": 1             +
+                         },                          +
+                         "accountHolderId": 1,       +
+                         "accountHolderCollection": {+
+                             "totalCount": 1         +
+                         }                           +
+                     },                              +
+                     "cursor": "WzFd"                +
+                 }                                   +
+             ],                                      +
+             "pageInfo": {                           +
+                 "endCursor": "WzFd",                +
+                 "hasNextPage": true,                +
+                 "startCursor": "WzFd",              +
+                 "hasPreviousPage": false            +
+             }                                       +
+         }                                           +
+     },                                              +
+     "errors": [                                     +
+     ]                                               +
  }
 (1 row)
 
@@ -74,7 +74,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountHolderCollection(first: 1 after: "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=" ) {
+              accountHolderCollection(first: 1 after: "WzFd" ) {
                 edges {
                   cursor
                   node {
@@ -92,30 +92,30 @@ begin;
             }
         $$)
     );
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": {                                                               +
-         "accountHolderCollection": {                                        +
-             "edges": [                                                      +
-                 {                                                           +
-                     "node": {                                               +
-                         "someId": 2,                                        +
-                         "accountHolder": {                                  +
-                             "someId": 2                                     +
-                         },                                                  +
-                         "accountHolderId": 2,                               +
-                         "accountHolderCollection": {                        +
-                             "totalCount": 1                                 +
-                         }                                                   +
-                     },                                                      +
-                     "cursor": "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMl0="+
-                 }                                                           +
-             ]                                                               +
-         }                                                                   +
-     },                                                                      +
-     "errors": [                                                             +
-     ]                                                                       +
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "accountHolderCollection": {                +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "someId": 2,                +
+                         "accountHolder": {          +
+                             "someId": 2             +
+                         },                          +
+                         "accountHolderId": 2,       +
+                         "accountHolderCollection": {+
+                             "totalCount": 1         +
+                         }                           +
+                     },                              +
+                     "cursor": "WzJd"                +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     },                                              +
+     "errors": [                                     +
+     ]                                               +
  }
 (1 row)
 

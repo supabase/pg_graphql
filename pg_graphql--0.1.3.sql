@@ -574,12 +574,11 @@ as $$
                         co.elems
                     ),
                     ', '
-                    order by co_ix
                 )
             )
         )
     from
-        unnest(column_orders) with ordinality co(elems, co_ix)
+        unnest(column_orders) co(elems)
 $$;
 
 
@@ -3453,7 +3452,7 @@ begin
             case
                 -- no variable or literal. do not restrict
                 when cursor_var_ix is null and cursor_literal is null then 'null'
-                when cursor_var_ix is null is null then '1'
+                when cursor_literal is not null then '1'
                 else format('$%s', cursor_var_ix)
             end,
             graphql.cursor_where_clause(
