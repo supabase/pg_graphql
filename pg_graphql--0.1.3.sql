@@ -472,18 +472,15 @@ as $$
             (
                 (co).column_name,
                 case
-                    when not reverse then (co).direction::text
-                    when reverse and (co).direction = 'asc' then 'desc'
-                    when reverse and (co).direction = 'desc' then 'asc'
+                    when (co).direction = 'asc'::graphql.column_order_direction then 'desc'
+                    when (co).direction = 'desc'::graphql.column_order_direction then 'asc'
                     else graphql.exception('Unreachable exception in orderBy clause')
                 end,
                 case
-                    when not reverse and (co).nulls_first then 'nulls first'
-                    when not reverse and not (co).nulls_first then 'nulls last'
-                    when reverse and (co).nulls_first then 'nulls last'
-                    when reverse and not (co).nulls_first then 'nulls first'
-                    else graphql.exception('Unreachable exception 2 in orderBy clause')
-                end
+                    when (co).nulls_first then false
+                    else true
+                end,
+                (co).type_
             )::graphql.column_order_w_type
         )
     from
@@ -3264,7 +3261,10 @@ begin
             end,
             graphql.cursor_where_clause(
                 block_name := block_name,
-                column_orders := column_orders,
+                column_orders := case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end,
                 cursor_ := cursor_literal,
                 cursor_var_ix := cursor_var_ix
             ),
@@ -3273,7 +3273,13 @@ begin
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            graphql.order_by_clause(block_name, column_orders),
+            graphql.order_by_clause(
+                block_name,
+                case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end
+            ),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
@@ -3282,7 +3288,13 @@ begin
             coalesce(first_, last_, '30'),
             -- xyz
             block_name,
-            graphql.order_by_clause(block_name, column_orders),
+            graphql.order_by_clause(
+                block_name,
+                case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end
+            ),
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
