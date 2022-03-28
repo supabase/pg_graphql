@@ -44,6 +44,45 @@ begin;
  }
 (1 row)
 
+    -- First with after variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              accountCollection(first: 2, after: $afterCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"afterCursor": "WzNd"}'
+    ));
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 4+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 5+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
     -- First without an after clause
     select jsonb_pretty(
         graphql.resolve($$
@@ -197,6 +236,146 @@ begin;
  }
 (1 row)
 
+    -- First with after variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor){
+              accountCollection(last: 2, after: $beforeCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"beforeCursor": "WzNd"}'
+    ));
+                    jsonb_pretty                     
+-----------------------------------------------------
+ {                                                  +
+     "data": null,                                  +
+     "errors": [                                    +
+         "\"last\" may only be used with \"before\""+
+     ]                                              +
+ }
+(1 row)
+
+    -- last without an after clause
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(last: 2) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 4+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 5+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
+    -- last with before = null same as omitting after
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(last: 2, before: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 4+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 5+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
+    -- First with before variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor){
+              accountCollection(last: 2, before: $beforeCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"beforeCursor": "WzNd"}'
+    ));
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     },                         +
+     "errors": [                +
+     ]                          +
+ }
+(1 row)
+
     -- Last without a before clause
     select jsonb_pretty(
         graphql.resolve($$
@@ -232,6 +411,117 @@ begin;
      },                         +
      "errors": [                +
      ]                          +
+ }
+(1 row)
+
+    -- Test interactions with orderBy
+    create table blog(
+        id int primary key,
+        reversed int,
+        title text
+    );
+    insert into public.blog(id, reversed, title)
+    select
+        x.id,
+        (20 - id) % 5,
+        case id % 3
+            when 1 then 'a'
+            when 2 then 'b'
+            when 3 then null
+        end
+    from generate_series(1,20) x(id);
+    select * from public.blog;
+ id | reversed | title 
+----+----------+-------
+  1 |        4 | a
+  2 |        3 | b
+  3 |        2 | 
+  4 |        1 | a
+  5 |        0 | b
+  6 |        4 | 
+  7 |        3 | a
+  8 |        2 | b
+  9 |        1 | 
+ 10 |        0 | a
+ 11 |        4 | b
+ 12 |        3 | 
+ 13 |        2 | a
+ 14 |        1 | b
+ 15 |        0 | 
+ 16 |        4 | a
+ 17 |        3 | b
+ 18 |        2 | 
+ 19 |        1 | a
+ 20 |        0 | b
+(20 rows)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              blogCollection(
+                first: 5
+                after: $afterCursor
+                orderBy: [{reversed: AscNullsLast}, {title: AscNullsFirst}]
+              ) {
+                edges {
+                  node {
+                    id
+                    reversed
+                    title
+                  }
+                }
+              }
+            }
+        $$,
+        jsonb_build_object('afterCursor', graphql.encode('[3, "a"]'::jsonb))
+        )
+    );
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "blogCollection": {           +
+             "edges": [                +
+                 {                     +
+                     "node": {         +
+                         "id": 12,     +
+                         "title": null,+
+                         "reversed": 3 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 2,      +
+                         "title": "b", +
+                         "reversed": 3 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 17,     +
+                         "title": "b", +
+                         "reversed": 3 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 6,      +
+                         "title": null,+
+                         "reversed": 4 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
+                         "id": 1,      +
+                         "title": "a", +
+                         "reversed": 4 +
+                     }                 +
+                 }                     +
+             ]                         +
+         }                             +
+     },                                +
+     "errors": [                       +
+     ]                                 +
  }
 (1 row)
 

@@ -558,37 +558,43 @@ create or replace function graphql.cursor_where_clause(
     immutable
     language sql
 as $$
+    with v as (
+        select
+            format(
+                '((graphql.decode(%s)) ->> %s)::%s',
+                case
+                    when cursor_ is not null then format('%L', cursor_)
+                    when cursor_var_ix is not null then format('$%s', cursor_var_ix)
+                    -- both are null
+                    else 'null'
+                end,
+                depth_ - 1,
+                (column_orders[depth_]).type_
+            ) as val
+    )
     select
         case
-            when array_length(column_orders, 1) > (depth_ - 1) then format(
-                '((%I.%I %s %s) or ((%I.%I = %s) and %s))',
+            when array_length(column_orders, 1) > (depth_ - 1)
+                then format(
+                '(
+                    (     %I.%I %s %s or (%I.%I is null and %s is not null and %s))
+                     or ((%I.%I = %s  or (%I.%I is null and %s is null))            and %s)
+                )',
                 block_name,
                 column_orders[depth_].column_name,
                 case when column_orders[depth_].direction = 'asc' then '>' else '<' end,
-                format(
-                    '((graphql.decode(%s)) ->> %s)::%s',
-                    case
-                        when cursor_ is not null then format('%L', cursor_)
-                        when cursor_var_ix is not null then format('$%s', cursor_var_ix)
-                        -- both are null
-                        else 'null'
-                    end,
-                    depth_ - 1,
-                    (column_orders[depth_]).type_
-                ),
+                v.val,
                 block_name,
                 column_orders[depth_].column_name,
-                format(
-                    '((graphql.decode(%s)) ->> %s)::%s',
-                    case
-                        when cursor_ is not null then format('%L', cursor_)
-                        when cursor_var_ix is not null then format('$%s', cursor_var_ix)
-                        -- both are null
-                        else 'null'
-                    end,
-                    depth_ - 1,
-                    (column_orders[depth_]).type_
-                ),
+                v.val,
+                case column_orders[depth_].nulls_first when true then 'true' else 'false' end,
+                --
+                block_name,
+                column_orders[depth_].column_name,
+                v.val,
+                block_name,
+                column_orders[depth_].column_name,
+                v.val,
                 graphql.cursor_where_clause(
                     block_name,
                     column_orders,
@@ -599,7 +605,8 @@ as $$
             )
             else 'false'
         end
-end;
+    from
+        v;
 $$;
 create function graphql.comment_directive(comment_ text)
     returns jsonb
