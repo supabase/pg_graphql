@@ -449,94 +449,6 @@ begin
     raise exception using errcode='22000', message=format('Unknown field %L', field_name);
 end;
 $$;
-create or replace function graphql.cursor_clause_for_literal(cursor_ text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    -- SQL string
-    -- Example:
-    --        select graphql.cursor_clause_for_literal('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
-    --        row('public','account','2')
-    -- Note:
-    --         Type casts are not necessary because the values are visible to the planner allowing coercion
-    select 'row(' || string_agg(quote_literal(x), ',') || ')'
-    from jsonb_array_elements_text(convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb) y(x)
-$$;
-create or replace function graphql.cursor_clause_for_variable(entity regclass, variable_idx int)
-    returns text
-    language sql
-    immutable
-    strict
-as $$
-    -- SQL string to decode a cursor and convert it to a record for equality or pagination
-    -- Example:
-    --        select graphql.cursor_clause_for_variable('public.account', 1)
-    --        row(graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::integer)
-    select
-        'row(' || string_agg(format('(graphql.cursor_decode($%s) ->> %s)::%s', variable_idx, ctype.idx-1, ctype.val), ', ') || ')'
-    from
-        unnest(array['text'::regtype] || graphql.primary_key_types(entity)) with ordinality ctype(val, idx);
-$$;
-create or replace function graphql.cursor_decode(cursor_ text)
-    returns jsonb
-    language sql
-    immutable
-    strict
-as $$
-    -- Decodes a base64 encoded jsonb array of [schema_name, table_name, pkey_val1, pkey_val2, ...]
-    -- Example:
-    --        select graphql.cursor_decode('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
-    --        ["public", "account", 1]
-    select convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb
-$$;
-create or replace function graphql.cursor_encode(contents jsonb)
-    returns text
-    language sql
-    immutable
-    strict
-as $$
-    -- Encodes a jsonb array of [schema_name, table_name, pkey_val1, pkey_val2, ...] to a base64 encoded string
-    -- Example:
-    --        select graphql.cursor_encode('["public", "account", 1]'::jsonb)
-    --        'WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd'
-    select encode(convert_to(contents::text, 'utf-8'), 'base64')
-$$;
-create or replace function graphql.cursor_encoded_clause(entity regclass, alias_name text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    -- SQL string returning encoded cursor for an aliased table
-    -- Example:
-    --        select graphql.cursor_encoded_clause('public.account', 'abcxyz')
-    --        graphql.cursor_encode(jsonb_build_array('public', 'account', abcxyz.id))
-    select
-        'graphql.cursor_encode(jsonb_build_array('
-        || format('%L::text,', quote_ident(entity::text))
-        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
-        ||'))'
-    from unnest(graphql.primary_key_columns(entity)) pk(x)
-$$;
-create or replace function graphql.cursor_row_clause(entity regclass, alias_name text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    -- SQL string returning decoded cursor for an aliased table
-    -- Example:
-    --        select graphql.cursor_row_clause('public.account', 'abcxyz')
-    --        row('public', 'account', abcxyz.id)
-    select
-        'row('
-        || format('%L::text,', quote_ident(entity::text))
-        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
-        ||')'
-    from unnest(graphql.primary_key_columns(entity)) pk(x)
-$$;
 create type graphql.column_order_direction as enum ('asc', 'desc');
 
 
@@ -2435,8 +2347,6 @@ as $$
 declare
     arg jsonb = graphql.get_arg_by_name(name, graphql.jsonb_coalesce(arguments, '[]'));
 
-    is_opaque boolean = name in ('before', 'after');
-
     res text;
 
     cast_to regtype = case
@@ -2462,22 +2372,11 @@ begin
             perform graphql.exception(format("unknown variable %s", var_name));
         end if;
 
-        if is_opaque then
-            return graphql.cursor_clause_for_variable(
-                entity,
-                var_ix
-            );
-
-        else
-            return format(
-                '$%s::%s',
-                var_ix,
-                cast_to
-            );
-        end if;
-
-    elsif is_opaque then
-        return graphql.cursor_clause_for_literal(graphql.value_literal(arg));
+        return format(
+            '$%s::%s',
+            var_ix,
+            cast_to
+        );
 
     -- Non-special literal
     else
@@ -3102,8 +3001,6 @@ declare
         entity
     );
     last_ text = graphql.arg_clause('last',   arguments, variable_definitions, entity);
-    before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
-    after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
 
     -- If before or after is provided as a variable, and the value of the variable
     -- is explicitly null, we must treat it as though the value were not provided
@@ -3181,11 +3078,11 @@ declare
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
-    elsif before_ is not null and after_ is not null then
+    elsif before_ast is not null and after_ast is not null then
         perform graphql.exception('only one of "before" and "after" may be provided');
-    elsif first_ is not null and before_ is not null then
+    elsif first_ is not null and before_ast is not null then
         perform graphql.exception('"first" may only be used with "after"');
-    elsif last_ is not null and after_ is not null then
+    elsif last_ is not null and after_ast is not null then
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
@@ -3224,8 +3121,8 @@ begin
                             when 'hasPreviousPage' then format(
                                 'coalesce(bool_and(%s), false)',
                                 case
-                                    when first_ is not null and after_ is not null then 'true'
-                                    when last_ is not null and before_ is not null then 'true'
+                                    when first_ is not null and after_ast is not null then 'true'
+                                    when last_ is not null and before_ast is not null then 'true'
                                     else 'false'
                                 end
                             )
@@ -3461,21 +3358,16 @@ begin
                 cursor_ := cursor_literal,
                 cursor_var_ix := cursor_var_ix
             ),
-            -- TODO RE-WRITE
-            --case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
-            --case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
-            --case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
-            -- TODO RE-WRITE
-
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            --case
+                --when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
+                --else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
+            --end,
+            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex

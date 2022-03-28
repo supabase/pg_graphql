@@ -31,8 +31,6 @@ declare
         entity
     );
     last_ text = graphql.arg_clause('last',   arguments, variable_definitions, entity);
-    before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
-    after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
 
     -- If before or after is provided as a variable, and the value of the variable
     -- is explicitly null, we must treat it as though the value were not provided
@@ -110,11 +108,11 @@ declare
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
-    elsif before_ is not null and after_ is not null then
+    elsif before_ast is not null and after_ast is not null then
         perform graphql.exception('only one of "before" and "after" may be provided');
-    elsif first_ is not null and before_ is not null then
+    elsif first_ is not null and before_ast is not null then
         perform graphql.exception('"first" may only be used with "after"');
-    elsif last_ is not null and after_ is not null then
+    elsif last_ is not null and after_ast is not null then
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
@@ -153,8 +151,8 @@ begin
                             when 'hasPreviousPage' then format(
                                 'coalesce(bool_and(%s), false)',
                                 case
-                                    when first_ is not null and after_ is not null then 'true'
-                                    when last_ is not null and before_ is not null then 'true'
+                                    when first_ is not null and after_ast is not null then 'true'
+                                    when last_ is not null and before_ast is not null then 'true'
                                     else 'false'
                                 end
                             )
@@ -390,21 +388,16 @@ begin
                 cursor_ := cursor_literal,
                 cursor_var_ix := cursor_var_ix
             ),
-            -- TODO RE-WRITE
-            --case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
-            --case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
-            --case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
-            -- TODO RE-WRITE
-
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            --case
+                --when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
+                --else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
+            --end,
+            graphql.order_by_clause(order_by_arg, entity, block_name, false, variables),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
