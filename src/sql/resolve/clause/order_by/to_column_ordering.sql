@@ -3,18 +3,21 @@ create or replace function graphql.to_column_orders(
     entity regclass,
     variables jsonb default '{}'
 )
-    returns graphql.column_order[]
+    returns graphql.column_order_w_type[]
     language plpgsql
     immutable
     as
 $$
 declare
-    pkey_ordering graphql.column_order[] = array_agg((column_name, 'asc', false))
-        from unnest(graphql.primary_key_columns(entity)) x(column_name);
+    pkey_ordering graphql.column_order_w_type[] = array_agg((column_name, 'asc', false, y.column_type))
+        from
+            unnest(graphql.primary_key_columns(entity)) with ordinality x(column_name, ix)
+            join unnest(graphql.primary_key_types(entity)) with ordinality y(column_type, ix)
+                on x.ix = y.ix;
     claues text;
     variable_value jsonb;
 
-    variable_ordering graphql.column_order[];
+    variable_ordering graphql.column_order_w_type[];
 begin
     -- No order by clause was specified
     if order_by_arg is null then
@@ -32,9 +35,10 @@ begin
                     else graphql.exception_unknown_field(x.key_, t.name)
                 end,
                 case when jet.val_ like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                case when jet.val_ like '%First' then true else false end -- nulls_first?
-            )::graphql.column_order
-        )
+                case when jet.val_ like '%First' then true else false end, -- nulls_first?
+                f.column_type
+            )::graphql.column_order_w_type
+        ) || pkey_ordering
         from
             jsonb_array_elements(variable_value) jae(obj),
             lateral (
@@ -112,10 +116,11 @@ begin
                     (
                         f.column_name,
                         case when norm.direction_val like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                        case when norm.direction_val like 'First%' then true else false end -- nulls_first?
-                    )::graphql.column_order
+                        case when norm.direction_val like 'First%' then true else false end, -- nulls_first?
+                        f.column_type
+                    )::graphql.column_order_w_type
                     order by norm.ix asc
-                )
+                ) || pkey_ordering
             from
                 norm
                 join graphql.type t

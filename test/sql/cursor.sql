@@ -2,7 +2,7 @@ begin;
     -- Check SQL output
     select graphql.to_cursor_clause(
         'abc',
-        array[('email', 'asc', true), ('id', 'asc', false)]::graphql.column_order[]
+        array[('email', 'asc', true), ('id', 'asc', false)]::graphql.column_order_w_type[]
     );
 
 
