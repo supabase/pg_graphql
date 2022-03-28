@@ -53,7 +53,7 @@ begin;
 
     -- Literal cursor: decodes, but invalid
     with curs(x) as (
-        select graphql.cursor_encode('[" $$ '' ", " $$ '' "]'::jsonb)
+        select graphql.encode('[" $$ '' ", " $$ '' "]'::jsonb)
     )
     select
         graphql.resolve(

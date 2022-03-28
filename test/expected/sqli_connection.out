@@ -66,7 +66,7 @@ begin;
     rollback to savepoint a;
     -- Literal cursor: decodes, but invalid
     with curs(x) as (
-        select graphql.cursor_encode('[" $$ '' ", " $$ '' "]'::jsonb)
+        select graphql.encode('[" $$ '' ", " $$ '' "]'::jsonb)
     )
     select
         graphql.resolve(
@@ -165,9 +165,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                               resolve                               
----------------------------------------------------------------------
- {"data": null, "errors": ["Invalid value for ordering \" $$;' \""]}
+                           resolve                            
+--------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}, "errors": []}
 (1 row)
 
     rollback to savepoint a;
@@ -333,9 +333,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": [{"email": " $$;'' "}]}'::jsonb);
-                               resolve                               
----------------------------------------------------------------------
- {"data": null, "errors": ["Invalid value for ordering \" $$;' \""]}
+                           resolve                            
+--------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}, "errors": []}
 (1 row)
 
     rollback to savepoint a;

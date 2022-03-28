@@ -31,8 +31,6 @@ declare
         entity
     );
     last_ text = graphql.arg_clause('last',   arguments, variable_definitions, entity);
-    before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
-    after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
 
     -- If before or after is provided as a variable, and the value of the variable
     -- is explicitly null, we must treat it as though the value were not provided
@@ -40,6 +38,7 @@ declare
         graphql.get_arg_by_name('before', graphql.jsonb_coalesce(arguments, '[]')),
         graphql.get_arg_by_name('after', graphql.jsonb_coalesce(arguments, '[]'))
     );
+    cursor_literal text = graphql.value_literal(cursor_arg_ast);
     cursor_var_name text = case graphql.is_variable(
             coalesce(cursor_arg_ast,'{}'::jsonb) -> 'value'
         )
@@ -48,8 +47,19 @@ declare
     end;
     cursor_var_ix int = graphql.arg_index(cursor_var_name, variable_definitions);
 
+    -- ast
+    before_ast jsonb = graphql.get_arg_by_name('before', arguments);
+    after_ast jsonb = graphql.get_arg_by_name('after',  arguments);
 
+    -- ordering is part of the cache key, so it is safe to extract it from
+    -- variables or arguments
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    column_orders graphql.column_order_w_type[] = graphql.to_column_orders(
+        order_by_arg,
+        entity,
+        variables
+    );
+
     filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
     total_count_ast jsonb = jsonb_path_query_first(
@@ -98,11 +108,11 @@ declare
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
-    elsif before_ is not null and after_ is not null then
+    elsif before_ast is not null and after_ast is not null then
         perform graphql.exception('only one of "before" and "after" may be provided');
-    elsif first_ is not null and before_ is not null then
+    elsif first_ is not null and before_ast is not null then
         perform graphql.exception('"first" may only be used with "after"');
-    elsif last_ is not null and after_ is not null then
+    elsif last_ is not null and after_ast is not null then
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
@@ -141,8 +151,8 @@ begin
                             when 'hasPreviousPage' then format(
                                 'coalesce(bool_and(%s), false)',
                                 case
-                                    when first_ is not null and after_ is not null then 'true'
-                                    when last_ is not null and before_ is not null then 'true'
+                                    when first_ is not null and after_ast is not null then 'true'
+                                    when last_ is not null and before_ast is not null then 'true'
                                     else 'false'
                                 end
                             )
@@ -283,7 +293,7 @@ begin
             where
                 true
                 --pagination_clause
-                and ((%s is null) or (%s %s %s))
+                and ((%s is null) or (%s))
                 -- join clause
                 and %s
                 -- where clause
@@ -317,7 +327,8 @@ begin
             order by
                 %s
         ) as %I
-    )',
+    )
+    ',
             -- total from
             entity,
             block_name,
@@ -331,7 +342,13 @@ begin
             -- total where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- __cursor
-            graphql.cursor_encoded_clause(entity, block_name),
+            format(
+                'graphql.encode(%s)',
+                graphql.to_cursor_clause(
+                    block_name,
+                    column_orders
+                )
+            ),
             -- enumerate columns
             (
                 select
@@ -358,19 +375,33 @@ begin
             entity,
             block_name,
             -- pagination
-            case when cursor_var_ix is null then '1' else format('$%s', cursor_var_ix) end,
-            case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
-            case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
-            case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
+            case
+                -- no variable or literal. do not restrict
+                when cursor_var_ix is null and cursor_literal is null then 'null'
+                when cursor_literal is not null then '1'
+                else format('$%s', cursor_var_ix)
+            end,
+            graphql.cursor_where_clause(
+                block_name := block_name,
+                column_orders := case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end,
+                cursor_ := cursor_literal,
+                cursor_var_ix := cursor_var_ix
+            ),
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            graphql.order_by_clause(
+                block_name,
+                case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end
+            ),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
@@ -379,15 +410,18 @@ begin
             coalesce(first_, last_, '30'),
             -- xyz
             block_name,
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            graphql.order_by_clause(
+                block_name,
+                case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end
+            ),
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
             -- final order by
-            graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
+            graphql.order_by_clause('xyz', column_orders),
             -- block name
             block_name
         )

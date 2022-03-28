@@ -36,9 +36,9 @@ begin;
       }
     }
     $$);
-                                                                       resolve                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"cursor": "WyJhY2NvdW50IiwgMV0="}, {"cursor": "WyJhY2NvdW50IiwgMl0="}], "totalCount": 2}}, "errors": []}
+                                                       resolve                                                       
+---------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"cursor": "WzFd"}, {"cursor": "WzJd"}], "totalCount": 2}}, "errors": []}
 (1 row)
 
 rollback;

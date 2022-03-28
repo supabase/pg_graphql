@@ -6,8 +6,6 @@ as $$
 declare
     arg jsonb = graphql.get_arg_by_name(name, graphql.jsonb_coalesce(arguments, '[]'));
 
-    is_opaque boolean = name in ('before', 'after');
-
     res text;
 
     cast_to regtype = case
@@ -33,22 +31,11 @@ begin
             perform graphql.exception(format("unknown variable %s", var_name));
         end if;
 
-        if is_opaque then
-            return graphql.cursor_clause_for_variable(
-                entity,
-                var_ix
-            );
-
-        else
-            return format(
-                '$%s::%s',
-                var_ix,
-                cast_to
-            );
-        end if;
-
-    elsif is_opaque then
-        return graphql.cursor_clause_for_literal(graphql.value_literal(arg));
+        return format(
+            '$%s::%s',
+            var_ix,
+            cast_to
+        );
 
     -- Non-special literal
     else

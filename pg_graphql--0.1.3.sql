@@ -449,93 +449,164 @@ begin
     raise exception using errcode='22000', message=format('Unknown field %L', field_name);
 end;
 $$;
-create or replace function graphql.cursor_clause_for_literal(cursor_ text)
-    returns text
-    language sql
+create type graphql.column_order_direction as enum ('asc', 'desc');
+
+
+create type graphql.column_order_w_type as(
+    column_name text,
+    direction graphql.column_order_direction,
+    nulls_first bool,
+    type_ regtype
+);
+
+
+create or replace function graphql.reverse(
+    column_orders graphql.column_order_w_type[]
+)
+    returns graphql.column_order_w_type[]
     immutable
-    as
-$$
-    -- SQL string
-    -- Example:
-    --        select graphql.cursor_clause_for_literal('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
-    --        row('public','account','2')
-    -- Note:
-    --         Type casts are not necessary because the values are visible to the planner allowing coercion
-    select 'row(' || string_agg(quote_literal(x), ',') || ')'
-    from jsonb_array_elements_text(convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb) y(x)
-$$;
-create or replace function graphql.cursor_clause_for_variable(entity regclass, variable_idx int)
-    returns text
     language sql
-    immutable
-    strict
 as $$
-    -- SQL string to decode a cursor and convert it to a record for equality or pagination
-    -- Example:
-    --        select graphql.cursor_clause_for_variable('public.account', 1)
-    --        row(graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::text, graphql.cursor_decode($1)::integer)
     select
-        'row(' || string_agg(format('(graphql.cursor_decode($%s) ->> %s)::%s', variable_idx, ctype.idx-1, ctype.val), ', ') || ')'
+        array_agg(
+            (
+                (co).column_name,
+                case
+                    when (co).direction = 'asc'::graphql.column_order_direction then 'desc'
+                    when (co).direction = 'desc'::graphql.column_order_direction then 'asc'
+                    else graphql.exception('Unreachable exception in orderBy clause')
+                end,
+                case
+                    when (co).nulls_first then false
+                    else true
+                end,
+                (co).type_
+            )::graphql.column_order_w_type
+        )
     from
-        unnest(array['text'::regtype] || graphql.primary_key_types(entity)) with ordinality ctype(val, idx);
+        unnest(column_orders) co
 $$;
-create or replace function graphql.cursor_decode(cursor_ text)
+
+
+
+create or replace function graphql.to_cursor_clause(
+    alias_name text,
+    column_orders graphql.column_order_w_type[]
+)
+    returns text
+    immutable
+    language sql
+as $$
+/*
+    -- Produces the SQL to create a cursor
+    select graphql.to_cursor_clause(
+        'abc',
+        array[('email', 'asc', true, 'text'::regtype), ('id', 'asc', false, 'int'::regtype)]::graphql.column_order[]
+    )
+*/
+    select
+        format(
+            'jsonb_build_array(%s)',
+            (
+                string_agg(
+                    format(
+                        'to_jsonb(%I.%I)',
+                        alias_name,
+                        co.elems
+                    ),
+                    ', '
+                )
+            )
+        )
+    from
+        unnest(column_orders) co(elems)
+$$;
+
+
+create or replace function graphql.encode(jsonb)
+    returns text
+    language sql
+    immutable
+as $$
+/*
+    select graphql.encode('("{""(email,asc,t)"",""(id,asc,f)""}","[""aardvark@x.com"", 1]")'::graphql.cursor)
+*/
+    select encode(convert_to($1::text, 'utf-8'), 'base64')
+$$;
+
+create or replace function graphql.decode(text)
     returns jsonb
     language sql
     immutable
     strict
 as $$
-    -- Decodes a base64 encoded jsonb array of [schema_name, table_name, pkey_val1, pkey_val2, ...]
-    -- Example:
-    --        select graphql.cursor_decode('WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd')
-    --        ["public", "account", 1]
-    select convert_from(decode(cursor_, 'base64'), 'utf-8')::jsonb
+/*
+    select graphql.decode(graphql.encode('("{""(email,asc,t)"",""(id,asc,f)""}","[""aardvark@x.com"", 1]")'::graphql.cursor))
+*/
+    select convert_from(decode($1, 'base64'), 'utf-8')::jsonb
 $$;
-create or replace function graphql.cursor_encode(contents jsonb)
+
+
+create or replace function graphql.cursor_where_clause(
+    block_name text,
+    column_orders graphql.column_order_w_type[],
+    cursor_ text,
+    cursor_var_ix int,
+    depth_ int = 1
+)
     returns text
-    language sql
     immutable
-    strict
+    language sql
 as $$
-    -- Encodes a jsonb array of [schema_name, table_name, pkey_val1, pkey_val2, ...] to a base64 encoded string
-    -- Example:
-    --        select graphql.cursor_encode('["public", "account", 1]'::jsonb)
-    --        'WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd'
-    select encode(convert_to(contents::text, 'utf-8'), 'base64')
-$$;
-create or replace function graphql.cursor_encoded_clause(entity regclass, alias_name text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    -- SQL string returning encoded cursor for an aliased table
-    -- Example:
-    --        select graphql.cursor_encoded_clause('public.account', 'abcxyz')
-    --        graphql.cursor_encode(jsonb_build_array('public', 'account', abcxyz.id))
+    with v as (
+        select
+            format(
+                '((graphql.decode(%s)) ->> %s)::%s',
+                case
+                    when cursor_ is not null then format('%L', cursor_)
+                    when cursor_var_ix is not null then format('$%s', cursor_var_ix)
+                    -- both are null
+                    else 'null'
+                end,
+                depth_ - 1,
+                (column_orders[depth_]).type_
+            ) as val
+    )
     select
-        'graphql.cursor_encode(jsonb_build_array('
-        || format('%L::text,', quote_ident(entity::text))
-        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
-        ||'))'
-    from unnest(graphql.primary_key_columns(entity)) pk(x)
-$$;
-create or replace function graphql.cursor_row_clause(entity regclass, alias_name text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    -- SQL string returning decoded cursor for an aliased table
-    -- Example:
-    --        select graphql.cursor_row_clause('public.account', 'abcxyz')
-    --        row('public', 'account', abcxyz.id)
-    select
-        'row('
-        || format('%L::text,', quote_ident(entity::text))
-        || string_agg(quote_ident(alias_name) || '.' || quote_ident(x), ',')
-        ||')'
-    from unnest(graphql.primary_key_columns(entity)) pk(x)
+        case
+            when array_length(column_orders, 1) > (depth_ - 1)
+                then format(
+                '(
+                    (     %I.%I %s %s or (%I.%I is not null and %s is null and %s))
+                     or ((%I.%I = %s  or (%I.%I is null and %s is null))            and %s)
+                )',
+                block_name,
+                column_orders[depth_].column_name,
+                case when column_orders[depth_].direction = 'asc' then '>' else '<' end,
+                v.val,
+                block_name,
+                column_orders[depth_].column_name,
+                v.val,
+                case column_orders[depth_].nulls_first when true then 'true' else 'false' end,
+                --
+                block_name,
+                column_orders[depth_].column_name,
+                v.val,
+                block_name,
+                column_orders[depth_].column_name,
+                v.val,
+                graphql.cursor_where_clause(
+                    block_name,
+                    column_orders,
+                    cursor_,
+                    cursor_var_ix,
+                    depth_ + 1
+                )
+            )
+            else 'false'
+        end
+    from
+        v;
 $$;
 create function graphql.comment_directive(comment_ text)
     returns jsonb
@@ -2312,8 +2383,6 @@ as $$
 declare
     arg jsonb = graphql.get_arg_by_name(name, graphql.jsonb_coalesce(arguments, '[]'));
 
-    is_opaque boolean = name in ('before', 'after');
-
     res text;
 
     cast_to regtype = case
@@ -2339,22 +2408,11 @@ begin
             perform graphql.exception(format("unknown variable %s", var_name));
         end if;
 
-        if is_opaque then
-            return graphql.cursor_clause_for_variable(
-                entity,
-                var_ix
-            );
-
-        else
-            return format(
-                '$%s::%s',
-                var_ix,
-                cast_to
-            );
-        end if;
-
-    elsif is_opaque then
-        return graphql.cursor_clause_for_literal(graphql.value_literal(arg));
+        return format(
+            '$%s::%s',
+            var_ix,
+            cast_to
+        );
 
     -- Non-special literal
     else
@@ -2390,29 +2448,72 @@ $$
     from unnest(graphql.primary_key_columns(entity)) pk(x)
 $$;
 create or replace function graphql.order_by_clause(
-    order_by_arg jsonb,
-    entity regclass,
     alias_name text,
-    reverse bool default false,
-    variables jsonb default '{}'
+    column_orders graphql.column_order_w_type[]
 )
     returns text
+    language sql
+    immutable
+    as
+$$
+    select
+        string_agg(
+            format(
+                '%I.%I %s %s',
+                alias_name,
+                (co).column_name,
+                (co).direction::text,
+                case
+                    when (co).nulls_first then 'nulls first'
+                    else 'nulls last'
+                end
+            ),
+            ', '
+        )
+    from
+        unnest(column_orders) co
+$$;
+create or replace function graphql.order_by_enum_to_clause(order_by_enum_val text)
+    returns text
+    language sql
+    immutable
+    as
+$$
+    select
+        case order_by_enum_val
+            when 'AscNullsFirst' then 'asc nulls first'
+            when 'AscNullsLast' then 'asc nulls last'
+            when 'DescNullsFirst' then 'desc nulls first'
+            when 'DescNullsLast' then 'desc nulls last'
+            else graphql.exception(format('Invalid value for ordering "%s"', coalesce(order_by_enum_val, 'null')))
+        end
+$$;
+create or replace function graphql.to_column_orders(
+    order_by_arg jsonb,
+    entity regclass,
+    variables jsonb default '{}'
+)
+    returns graphql.column_order_w_type[]
     language plpgsql
     immutable
     as
 $$
 declare
+    pkey_ordering graphql.column_order_w_type[] = array_agg((column_name, 'asc', false, y.column_type))
+        from
+            unnest(graphql.primary_key_columns(entity)) with ordinality x(column_name, ix)
+            join unnest(graphql.primary_key_types(entity)) with ordinality y(column_type, ix)
+                on x.ix = y.ix;
     claues text;
     variable_value jsonb;
+
+    variable_ordering graphql.column_order_w_type[];
 begin
     -- No order by clause was specified
     if order_by_arg is null then
-        return graphql.primary_key_clause(entity, alias_name) || case when reverse then ' desc' else ' asc' end;
-        -- todo handle no primary key
-    end if;
+        return pkey_ordering;
 
-    if (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
-
+    elsif (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
         -- Expect [{"fieldName", "DescNullsFirst"}]
         variable_value = variables -> (order_by_arg -> 'value' -> 'name' ->> 'value');
 
@@ -2420,20 +2521,18 @@ begin
             return graphql.exception('Invalid value for ordering variable');
         end if;
 
-        -- name of the variable
-        return string_agg(
-            format(
-                '%I.%I %s',
-                alias_name,
+        return array_agg(
+            (
                 case
                     when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
                     when f.column_name is not null then f.column_name
                     else graphql.exception_unknown_field(x.key_, t.name)
                 end,
-                graphql.order_by_enum_to_clause(val_)
-            ),
-            ', '
-        )
+                case when x.val_ like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
+                case when x.val_ like '%First' then true else false end, -- nulls_first?
+                f.column_type
+            )::graphql.column_order_w_type
+        ) || pkey_ordering
         from
             jsonb_array_elements(variable_value) jae(obj),
             lateral (
@@ -2449,7 +2548,6 @@ begin
             left join graphql.field f
                 on t.name = f.parent_type
                 and f.name = x.key_;
-
 
     elsif (order_by_arg -> 'value' ->> 'kind') = 'ListValue' then
         return (
@@ -2508,19 +2606,15 @@ begin
                     graphql.is_variable(obs.sel)
             )
             select
-                string_agg(
-                    format(
-                        '%I.%I %s',
-                        alias_name,
-                        case
-                            when f.column_name is not null then f.column_name
-                            else graphql.exception('Invalid order clause')
-                        end,
-                        graphql.order_by_enum_to_clause(norm.direction_val)
-                    ),
-                    ', '
+                array_agg(
+                    (
+                        f.column_name,
+                        case when norm.direction_val like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
+                        case when norm.direction_val like '%First' then true else false end, -- nulls_first?
+                        f.column_type
+                    )::graphql.column_order_w_type
                     order by norm.ix asc
-                )
+                ) || pkey_ordering
             from
                 norm
                 join graphql.type t
@@ -2535,21 +2629,6 @@ begin
         return graphql.exception('Invalid type for order clause');
     end if;
 end;
-$$;
-create or replace function graphql.order_by_enum_to_clause(order_by_enum_val text)
-    returns text
-    language sql
-    immutable
-    as
-$$
-    select
-        case order_by_enum_val
-            when 'AscNullsFirst' then 'asc nulls first'
-            when 'AscNullsLast' then 'asc nulls last'
-            when 'DescNullsFirst' then 'desc nulls first'
-            when 'DescNullsLast' then 'desc nulls last'
-            else graphql.exception(format('Invalid value for ordering "%s"', coalesce(order_by_enum_val, 'null')))
-        end
 $$;
 create type graphql.comparison_op as enum ('=', '<', '<=', '<>', '>=', '>');
 create or replace function graphql.text_to_comparison_op(text)
@@ -2837,8 +2916,6 @@ declare
         entity
     );
     last_ text = graphql.arg_clause('last',   arguments, variable_definitions, entity);
-    before_ text = graphql.arg_clause('before', arguments, variable_definitions, entity);
-    after_ text = graphql.arg_clause('after',  arguments, variable_definitions, entity);
 
     -- If before or after is provided as a variable, and the value of the variable
     -- is explicitly null, we must treat it as though the value were not provided
@@ -2846,6 +2923,7 @@ declare
         graphql.get_arg_by_name('before', graphql.jsonb_coalesce(arguments, '[]')),
         graphql.get_arg_by_name('after', graphql.jsonb_coalesce(arguments, '[]'))
     );
+    cursor_literal text = graphql.value_literal(cursor_arg_ast);
     cursor_var_name text = case graphql.is_variable(
             coalesce(cursor_arg_ast,'{}'::jsonb) -> 'value'
         )
@@ -2854,8 +2932,19 @@ declare
     end;
     cursor_var_ix int = graphql.arg_index(cursor_var_name, variable_definitions);
 
+    -- ast
+    before_ast jsonb = graphql.get_arg_by_name('before', arguments);
+    after_ast jsonb = graphql.get_arg_by_name('after',  arguments);
 
+    -- ordering is part of the cache key, so it is safe to extract it from
+    -- variables or arguments
     order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    column_orders graphql.column_order_w_type[] = graphql.to_column_orders(
+        order_by_arg,
+        entity,
+        variables
+    );
+
     filter_arg jsonb = graphql.get_arg_by_name('filter',  arguments);
 
     total_count_ast jsonb = jsonb_path_query_first(
@@ -2904,11 +2993,11 @@ declare
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
-    elsif before_ is not null and after_ is not null then
+    elsif before_ast is not null and after_ast is not null then
         perform graphql.exception('only one of "before" and "after" may be provided');
-    elsif first_ is not null and before_ is not null then
+    elsif first_ is not null and before_ast is not null then
         perform graphql.exception('"first" may only be used with "after"');
-    elsif last_ is not null and after_ is not null then
+    elsif last_ is not null and after_ast is not null then
         perform graphql.exception('"last" may only be used with "before"');
     end if;
 
@@ -2947,8 +3036,8 @@ begin
                             when 'hasPreviousPage' then format(
                                 'coalesce(bool_and(%s), false)',
                                 case
-                                    when first_ is not null and after_ is not null then 'true'
-                                    when last_ is not null and before_ is not null then 'true'
+                                    when first_ is not null and after_ast is not null then 'true'
+                                    when last_ is not null and before_ast is not null then 'true'
                                     else 'false'
                                 end
                             )
@@ -3089,7 +3178,7 @@ begin
             where
                 true
                 --pagination_clause
-                and ((%s is null) or (%s %s %s))
+                and ((%s is null) or (%s))
                 -- join clause
                 and %s
                 -- where clause
@@ -3123,7 +3212,8 @@ begin
             order by
                 %s
         ) as %I
-    )',
+    )
+    ',
             -- total from
             entity,
             block_name,
@@ -3137,7 +3227,13 @@ begin
             -- total where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- __cursor
-            graphql.cursor_encoded_clause(entity, block_name),
+            format(
+                'graphql.encode(%s)',
+                graphql.to_cursor_clause(
+                    block_name,
+                    column_orders
+                )
+            ),
             -- enumerate columns
             (
                 select
@@ -3164,19 +3260,33 @@ begin
             entity,
             block_name,
             -- pagination
-            case when cursor_var_ix is null then '1' else format('$%s', cursor_var_ix) end,
-            case when coalesce(after_, before_) is null then 'true' else graphql.cursor_row_clause(entity, block_name) end,
-            case when after_ is not null then '>' when before_ is not null then '<' else '=' end,
-            case when coalesce(after_, before_) is null then 'true' else coalesce(after_, before_) end,
+            case
+                -- no variable or literal. do not restrict
+                when cursor_var_ix is null and cursor_literal is null then 'null'
+                when cursor_literal is not null then '1'
+                else format('$%s', cursor_var_ix)
+            end,
+            graphql.cursor_where_clause(
+                block_name := block_name,
+                column_orders := case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end,
+                cursor_ := cursor_literal,
+                cursor_var_ix := cursor_var_ix
+            ),
             -- join
             coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
             -- where
             graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
             -- order
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            graphql.order_by_clause(
+                block_name,
+                case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end
+            ),
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
@@ -3185,15 +3295,18 @@ begin
             coalesce(first_, last_, '30'),
             -- xyz
             block_name,
-            case
-                when last_ is not null then graphql.order_by_clause(order_by_arg, entity, block_name, true, variables)
-                else graphql.order_by_clause(order_by_arg, entity, block_name, false, variables)
-            end,
+            graphql.order_by_clause(
+                block_name,
+                case
+                    when last_ is not null then graphql.reverse(column_orders)
+                    else column_orders
+                end
+            ),
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
             -- final order by
-            graphql.order_by_clause(order_by_arg, entity, 'xyz', false, variables),
+            graphql.order_by_clause('xyz', column_orders),
             -- block name
             block_name
         )

@@ -47,7 +47,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountHolderCollection(first: 1 after: "WyJcIlwiXCJBY2NvdW50SG9sZGVyXCJcIlwiIiwgMV0=" ) {
+              accountHolderCollection(first: 1 after: "WzFd" ) {
                 edges {
                   cursor
                   node {

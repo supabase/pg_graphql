@@ -12,7 +12,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(first: 2, after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(first: 2, after: "WzNd") {
                 totalCount
                 edges {
                   node {
@@ -23,6 +23,22 @@ begin;
             }
         $$)
     );
+
+    -- First with after variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              accountCollection(first: 2, after: $afterCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"afterCursor": "WzNd"}'
+    ));
 
     -- First without an after clause
     select jsonb_pretty(
@@ -74,7 +90,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(last: 2, before: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(last: 2, before: "WzNd") {
                 edges {
                   node {
                     id
@@ -84,6 +100,68 @@ begin;
             }
         $$)
     );
+
+    -- Last with after variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              accountCollection(last: 2, before: $afterCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"afterCursor": "WzNd"}'
+    ));
+
+    -- last without an after clause
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(last: 2) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- last with before = null same as omitting after
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(last: 2, before: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- First with before variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor){
+              accountCollection(last: 2, before: $beforeCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"beforeCursor": "WzNd"}'
+    ));
 
     -- Last without a before clause
     select jsonb_pretty(
@@ -98,6 +176,73 @@ begin;
               }
             }
         $$)
+    );
+
+
+    -- Test interactions with orderBy
+    create table blog(
+        id int primary key,
+        reversed int,
+        title text
+    );
+
+    insert into public.blog(id, reversed, title)
+    select
+        x.id,
+        (20 - id) % 5,
+        case id % 3
+            when 1 then 'a'
+            when 2 then 'b'
+            when 3 then null
+        end
+    from generate_series(1,20) x(id);
+
+    select * from public.blog;
+
+    -- First after w/ complex order
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($afterCursor: Cursor){
+              blogCollection(
+                first: 5
+                after: $afterCursor
+                orderBy: [{reversed: AscNullsLast}, {title: AscNullsFirst}]
+              ) {
+                edges {
+                  node {
+                    id
+                    reversed
+                    title
+                  }
+                }
+              }
+            }
+        $$,
+        jsonb_build_object('afterCursor', graphql.encode('[3, "a"]'::jsonb))
+        )
+    );
+
+    -- Last before w/ complex order
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor){
+              blogCollection(
+                last: 5
+                before: $beforeCursor
+                orderBy: [{reversed: AscNullsLast}, {title: AscNullsFirst}]
+              ) {
+                edges {
+                  node {
+                    id
+                    reversed
+                    title
+                  }
+                }
+              }
+            }
+        $$,
+        jsonb_build_object('beforeCursor', graphql.encode('[3, "a"]'::jsonb))
+        )
     );
 
     /*
@@ -119,7 +264,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(before: "WyJhY2NvdW50IiwgM10=", after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(before: "WzNd", after: "WzNd") {
                 totalCount
               }
             }
@@ -130,7 +275,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(first: 2, before: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(first: 2, before: "WzNd") {
                 totalCount
               }
             }
@@ -141,7 +286,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(last: 2, after: "WyJhY2NvdW50IiwgM10=") {
+              accountCollection(last: 2, after: "WzNd") {
                 totalCount
               }
             }
