@@ -81,9 +81,9 @@ begin;
         )
     from
         curs;
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid input syntax for type integer: \" $$ ' \""]}
+                           resolve                           
+-------------------------------------------------------------
+ {"data": null, "errors": ["syntax error at or near \"$\""]}
 (1 row)
 
     rollback to savepoint a;

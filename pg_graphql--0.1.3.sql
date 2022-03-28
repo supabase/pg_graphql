@@ -2704,6 +2704,10 @@ begin
         -- Expect [{"fieldName", "DescNullsFirst"}]
         variable_value = variables -> (order_by_arg -> 'value' -> 'name' ->> 'value');
 
+        if jsonb_typeof(variable_value) <> 'array' or jsonb_array_length(variable_value) = 0 then
+            return graphql.exception('Invalid value for ordering variable');
+        end if;
+
         return array_agg(
             (
                 case
@@ -2711,8 +2715,8 @@ begin
                     when f.column_name is not null then f.column_name
                     else graphql.exception_unknown_field(x.key_, t.name)
                 end,
-                case when jet.val_ like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                case when jet.val_ like '%First' then true else false end, -- nulls_first?
+                case when x.val_ like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
+                case when x.val_ like '%First' then true else false end, -- nulls_first?
                 f.column_type
             )::graphql.column_order_w_type
         ) || pkey_ordering
