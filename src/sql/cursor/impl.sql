@@ -118,7 +118,11 @@ as $$
                     else 'null'
                 end,
                 depth_ - 1,
-                (column_orders[depth_]).type_
+                case
+                    -- Solves issue with `select 0.996461 > '0.996461'::real` being true resulting in failed pagination
+                    when (column_orders[depth_]).type_ in ('real'::regtype, 'double precision'::regtype) then 'numeric'::regtype
+                    else (column_orders[depth_]).type_
+                end
             ) as val
     )
     select
