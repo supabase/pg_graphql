@@ -19,11 +19,21 @@ alter default privileges in schema graphql grant all on sequences to anon;
 
 
 -- GraphQL Entrypoint
-create function graphql("operationName" text default null, query text default null, variables jsonb default null)
+create function graphql(
+    "operationName" text default null,
+    query text default null,
+    variables jsonb default null,
+    extensions jsonb default null
+)
     returns jsonb
     language sql
 as $$
-    select graphql.resolve(query, coalesce(variables, '{}'));
+    select graphql.resolve(
+        query := query,
+        variables := coalesce(variables, '{}'),
+        "operationName" := "operationName",
+        extensions := extensions
+    );
 $$;
 
 
