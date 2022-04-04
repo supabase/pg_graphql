@@ -1,19 +1,46 @@
-create or replace function graphql.resolve(stmt text, variables jsonb = '{}')
+create or replace function graphql.resolve(
+    query text = null,
+    variables jsonb = '{}',
+    "operationName" text = null,
+    extensions jsonb = null
+)
     returns jsonb
     volatile
-    strict
     language plpgsql
 as $$
 declare
     ---------------------
     -- Always required --
     ---------------------
-    parsed graphql.parse_result = graphql.parse(stmt);
+    parsed graphql.parse_result = graphql.parse(coalesce(query, ''));
     ast jsonb = parsed.ast;
-    n_statements int = jsonb_array_length(ast -> 'definitions' -> 0 -> 'selectionSet' -> 'selections');
+
+
+    n_operation_defs int = jsonb_array_length(
+        jsonb_path_query_array(
+            ast,
+            '$.definitions[*] ? (@.kind == "OperationDefinition")'
+        )
+    );
 
     -- AST for the operation part of the def, not e.g. fragments
-    ast_operation jsonb = jsonb_path_query_first(ast, '$.definitions[*] ? (@.kind == "OperationDefinition")');
+    ast_operation jsonb = case
+        when "operationName" is not null then jsonb_path_query_first(
+            ast,
+            '$.definitions[*] ? (@.kind == "OperationDefinition" && @.name.value == $op_name)',
+            jsonb_build_object(
+                'op_name',
+                "operationName"
+            )
+        )
+        when n_operation_defs = 1 then jsonb_path_query_first(
+            ast,
+            '$.definitions[*] ? (@.kind == "OperationDefinition")'
+        )
+        else null
+    end;
+
+    n_statements int = jsonb_array_length(ast_operation -> 'selectionSet' -> 'selections');
 
     variable_definitions jsonb = coalesce(graphql.variable_definitions_sort(ast_operation -> 'variableDefinitions'), '[]');
 
@@ -30,7 +57,11 @@ declare
     q text;
     data_ jsonb;
     request_data jsonb;
-    errors_ text[] = case when parsed.error is null then '{}' else array[parsed.error] end;
+    errors_ text[] = case
+        when parsed.error is not null then array[parsed.error]
+        when ast_operation is null then array['unknown operation']
+        else '{}'
+    end;
 
     ---------------------
     -- If not in cache --
