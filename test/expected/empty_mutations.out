@@ -34,9 +34,7 @@ begin;
              },                  +
              "mutationType": null+
          }                       +
-     },                          +
-     "errors": [                 +
-     ]                           +
+     }                           +
  }
 (1 row)
 

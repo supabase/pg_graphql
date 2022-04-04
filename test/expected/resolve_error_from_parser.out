@@ -4,8 +4,8 @@ select graphql.resolve($$
   }
 }
 $$);
-                            resolve                            
----------------------------------------------------------------
- {"data": null, "errors": ["2.3: syntax error, unexpected {"]}
+                           resolve                            
+--------------------------------------------------------------
+ {"errors": [{"message": "2.3: syntax error, unexpected {"}]}
 (1 row)
 

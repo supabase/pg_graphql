@@ -44,9 +44,7 @@ begin;
                  }                       +
              ]                           +
          }                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+     }                                   +
  }
 (1 row)
 
@@ -92,9 +90,7 @@ begin;
              ],                          +
              "affectedCount": 1          +
          }                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+     }                                   +
  }
 (1 row)
 
@@ -128,9 +124,7 @@ begin;
                  }                       +
              ]                           +
          }                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+     }                                   +
  }
 (1 row)
 
@@ -163,13 +157,14 @@ begin;
             $$
         )
     );
-        jsonb_pretty         
------------------------------
- {                          +
-     "data": null,          +
-     "errors": [            +
-         "unknown operation"+
-     ]                      +
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "errors": [                           +
+         {                                 +
+             "message": "unknown operation"+
+         }                                 +
+     ]                                     +
  }
 (1 row)
 
@@ -203,13 +198,14 @@ begin;
             $$
         )
     );
-        jsonb_pretty         
------------------------------
- {                          +
-     "data": null,          +
-     "errors": [            +
-         "unknown operation"+
-     ]                      +
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "errors": [                           +
+         {                                 +
+             "message": "unknown operation"+
+         }                                 +
+     ]                                     +
  }
 (1 row)
 

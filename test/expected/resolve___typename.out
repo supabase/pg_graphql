@@ -48,9 +48,7 @@ begin;
              },                                     +
              "__typename": "AccountConnection"      +
          }                                          +
-     },                                             +
-     "errors": [                                    +
-     ]                                              +
+     }                                              +
  }
 (1 row)
 

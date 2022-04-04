@@ -64,9 +64,7 @@ begin;
                  "hasPreviousPage": false            +
              }                                       +
          }                                           +
-     },                                              +
-     "errors": [                                     +
-     ]                                               +
+     }                                               +
  }
 (1 row)
 
@@ -113,9 +111,7 @@ begin;
                  }                                   +
              ]                                       +
          }                                           +
-     },                                              +
-     "errors": [                                     +
-     ]                                               +
+     }                                               +
  }
 (1 row)
 
@@ -135,9 +131,9 @@ begin;
       }
     }
     $$);
-                                                           resolve                                                           
------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 2}}]}}, "errors": []}
+                                                    resolve                                                    
+---------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 2}}]}}}
 (1 row)
 
     -- Update
@@ -157,9 +153,9 @@ begin;
       }
     }
     $$);
-                                                                   resolve                                                                   
----------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"updateAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 3}}], "affectedCount": 1}}, "errors": []}
+                                                            resolve                                                            
+-------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"updateAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 3}}], "affectedCount": 1}}}
 (1 row)
 
     -- Delete
@@ -178,9 +174,9 @@ begin;
       }
     }
     $$);
-                                                                     resolve                                                                     
--------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"deleteFromAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 3}}], "affectedCount": 1}}, "errors": []}
+                                                              resolve                                                              
+-----------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"deleteFromAccountHolderCollection": {"records": [{"someId": 3, "accountHolder": {"someId": 3}}], "affectedCount": 1}}}
 (1 row)
 
 rollback;

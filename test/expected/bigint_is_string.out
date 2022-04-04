@@ -19,9 +19,9 @@ begin;
       }
     }
     $$);
-                                                          resolve                                                          
----------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}, "errors": []}
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}}
 (1 row)
 
     select graphql.resolve($$
@@ -37,9 +37,9 @@ begin;
       }
     }
     $$);
-                                                        resolve                                                        
------------------------------------------------------------------------------------------------------------------------
- {"data": {"updateBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}, "errors": []}
+                                                 resolve                                                 
+---------------------------------------------------------------------------------------------------------
+ {"data": {"updateBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}}
 (1 row)
 
     select graphql.resolve($$
@@ -59,9 +59,9 @@ begin;
       }
     }
     $$);
-                                                                           resolve                                                                            
---------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"blogPostCollection": {"edges": [{"node": {"id": "1", "parent": {"id": "1", "parentId": "1"}, "parentId": "1"}}], "totalCount": 1}}, "errors": []}
+                                                                    resolve                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"blogPostCollection": {"edges": [{"node": {"id": "1", "parent": {"id": "1", "parentId": "1"}, "parentId": "1"}}], "totalCount": 1}}}
 (1 row)
 
 rollback;

@@ -53,9 +53,9 @@ begin;
       }
     }
     $$);
-                            resolve                            
----------------------------------------------------------------
- {"data": null, "errors": ["delete impacts too many records"]}
+                                  resolve                                   
+----------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "delete impacts too many records"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -116,9 +116,7 @@ begin;
              ],                               +
              "affectedCount": 1               +
          }                                    +
-     },                                       +
-     "errors": [                              +
-     ]                                        +
+     }                                        +
  }
 (1 row)
 
@@ -148,9 +146,7 @@ begin;
                  }                       +
              ]                           +
          }                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+     }                                   +
  }
 (1 row)
 
@@ -178,9 +174,7 @@ begin;
              "records": [+
              ]           +
          }               +
-     },                  +
-     "errors": [         +
-     ]                   +
+     }                   +
  }
 (1 row)
 
@@ -220,9 +214,7 @@ begin;
                  }                       +
              ]                           +
          }                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+     }                                   +
  }
 (1 row)
 
