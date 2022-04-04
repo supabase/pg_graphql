@@ -51,9 +51,7 @@ begin;
              ],                                  +
              "affectedCount": 1                  +
          }                                       +
-     },                                          +
-     "errors": [                                 +
-     ]                                           +
+     }                                           +
  }
 (1 row)
 
@@ -87,13 +85,15 @@ begin;
       }
     }
     $$));
-             jsonb_pretty             
---------------------------------------
- {                                   +
-     "data": null,                   +
-     "errors": [                     +
-         "Unknown field 'invalidKey'"+
-     ]                               +
+                    jsonb_pretty                     
+-----------------------------------------------------
+ {                                                  +
+     "data": null,                                  +
+     "errors": [                                    +
+         {                                          +
+             "message": "Unknown field 'invalidKey'"+
+         }                                          +
+     ]                                              +
  }
 (1 row)
 
@@ -125,13 +125,15 @@ begin;
       }
     }
     $$));
-             jsonb_pretty             
---------------------------------------
- {                                   +
-     "data": null,                   +
-     "errors": [                     +
-         "Unknown field 'invalidKey'"+
-     ]                               +
+                    jsonb_pretty                     
+-----------------------------------------------------
+ {                                                  +
+     "data": null,                                  +
+     "errors": [                                    +
+         {                                          +
+             "message": "Unknown field 'invalidKey'"+
+         }                                          +
+     ]                                              +
  }
 (1 row)
 

@@ -43,9 +43,9 @@ begin;
       }
     }
     $$);
-                            resolve                            
----------------------------------------------------------------
- {"data": null, "errors": ["update impacts too many records"]}
+                                  resolve                                   
+----------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "update impacts too many records"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -72,9 +72,9 @@ begin;
           }
         }
     $$);
-                                                                               resolve                                                                                
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"updateAccountCollection": {"records": [{"id": 2, "echoEmail": "new@email.com", "blogCollection": {"totalCount": 2}}], "affectedCount": 1}}, "errors": []}
+                                                                        resolve                                                                         
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"updateAccountCollection": {"records": [{"id": 2, "echoEmail": "new@email.com", "blogCollection": {"totalCount": 2}}], "affectedCount": 1}}}
 (1 row)
 
     rollback to savepoint a;
@@ -104,9 +104,7 @@ begin;
              "records": [+
              ]           +
          }               +
-     },                  +
-     "errors": [         +
-     ]                   +
+     }                   +
  }
 (1 row)
 
@@ -149,9 +147,7 @@ begin;
                  }                   +
              ]                       +
          }                           +
-     },                              +
-     "errors": [                     +
-     ]                               +
+     }                               +
  }
 (1 row)
 
@@ -171,13 +167,15 @@ begin;
             }
         $$)
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": null,                 +
-     "errors": [                   +
-         "missing argument \"set\""+
-     ]                             +
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": null,                                +
+     "errors": [                                  +
+         {                                        +
+             "message": "missing argument \"set\""+
+         }                                        +
+     ]                                            +
  }
 (1 row)
 
@@ -196,9 +194,9 @@ begin;
           }
         }
     $$);
-                                    resolve                                    
--------------------------------------------------------------------------------
- {"data": {"updateAccountCollection": {"records": [{"id": 2}]}}, "errors": []}
+                             resolve                             
+-----------------------------------------------------------------
+ {"data": {"updateAccountCollection": {"records": [{"id": 2}]}}}
 (1 row)
 
 rollback;

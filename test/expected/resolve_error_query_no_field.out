@@ -6,9 +6,9 @@ begin;
       }
     }
     $$);
-                                resolve                                
------------------------------------------------------------------------
- {"data": null, "errors": ["Unknown field 'account' on type 'Query'"]}
+                                      resolve                                       
+------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Unknown field 'account' on type 'Query'"}]}
 (1 row)
 
 rollback;

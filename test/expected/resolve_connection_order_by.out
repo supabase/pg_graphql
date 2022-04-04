@@ -53,9 +53,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -101,9 +99,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -149,9 +145,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -197,9 +191,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -220,13 +212,15 @@ begin;
         variables:= '{"direction": "AscNullsFirst"}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -247,13 +241,15 @@ begin;
         variables:= '{"direction": "AscNullsLast"}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -274,13 +270,15 @@ begin;
         variables:= '{"direction": "DescNullsFirst"}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -301,13 +299,15 @@ begin;
         variables:= '{"direction": "DescNullsLast"}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -328,13 +328,15 @@ begin;
         variables:= '{"direction": "InvalidChoice"}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -355,13 +357,15 @@ begin;
         variables:= '{}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -410,9 +414,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -461,9 +463,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -512,9 +512,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -563,9 +561,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -586,13 +582,15 @@ begin;
         variables:= '{"direction": null}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         "Invalid value for ordering variable"+
-     ]                                        +
+                         jsonb_pretty                         
+--------------------------------------------------------------
+ {                                                           +
+     "data": null,                                           +
+     "errors": [                                             +
+         {                                                   +
+             "message": "Invalid value for ordering variable"+
+         }                                                   +
+     ]                                                       +
  }
 (1 row)
 
@@ -613,13 +611,15 @@ begin;
         variables:= '{"direction": []}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         "Invalid value for ordering variable"+
-     ]                                        +
+                         jsonb_pretty                         
+--------------------------------------------------------------
+ {                                                           +
+     "data": null,                                           +
+     "errors": [                                             +
+         {                                                   +
+             "message": "Invalid value for ordering variable"+
+         }                                                   +
+     ]                                                       +
  }
 (1 row)
 
@@ -668,9 +668,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -719,9 +717,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -770,9 +766,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -821,9 +815,7 @@ begin;
                  }                 +
              ]                     +
          }                         +
-     },                            +
-     "errors": [                   +
-     ]                             +
+     }                             +
  }
 (1 row)
 
@@ -844,13 +836,15 @@ begin;
         variables:= '{}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -871,13 +865,15 @@ begin;
         variables:= '{"ent": "[]"}'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid order clause"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid order clause"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 

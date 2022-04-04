@@ -31,9 +31,7 @@ begin;
                  "hasPreviousPage": false+
              }                           +
          }                               +
-     },                                  +
-     "errors": [                         +
-     ]                                   +
+     }                                   +
  }
 (1 row)
 

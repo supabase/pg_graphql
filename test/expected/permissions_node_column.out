@@ -38,9 +38,7 @@ begin;
                  }                                             +
              ]                                                 +
          }                                                     +
-     },                                                        +
-     "errors": [                                               +
-     ]                                                         +
+     }                                                         +
  }
 (1 row)
 
@@ -85,9 +83,7 @@ begin;
                  }                  +
              ]                      +
          }                          +
-     },                             +
-     "errors": [                    +
-     ]                              +
+     }                              +
  }
 (1 row)
 
@@ -107,13 +103,15 @@ begin;
             }
         $$)
     );
-                         jsonb_pretty                          
----------------------------------------------------------------
- {                                                            +
-     "data": null,                                            +
-     "errors": [                                              +
-         "Unknown field 'encryptedPassword' on type 'Account'"+
-     ]                                                        +
+                                 jsonb_pretty                                 
+------------------------------------------------------------------------------
+ {                                                                           +
+     "data": null,                                                           +
+     "errors": [                                                             +
+         {                                                                   +
+             "message": "Unknown field 'encryptedPassword' on type 'Account'"+
+         }                                                                   +
+     ]                                                                       +
  }
 (1 row)
 

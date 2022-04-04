@@ -21,9 +21,9 @@ begin;
         }
         $$
     );
-                                                       resolve                                                       
----------------------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1, "encryptedPassword": "hidden_hash"}}]}}, "errors": []}
+                                                resolve                                                
+-------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1, "encryptedPassword": "hidden_hash"}}]}}}
 (1 row)
 
     create role api;
@@ -50,9 +50,9 @@ begin;
         }
         $$
     );
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}]}}}
 (1 row)
 
     -- Attempt select on revoked column
@@ -70,9 +70,9 @@ begin;
         }
         $$
     );
-                                      resolve                                      
------------------------------------------------------------------------------------
- {"data": null, "errors": ["Unknown field 'encryptedPassword' on type 'Account'"]}
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Unknown field 'encryptedPassword' on type 'Account'"}]}
 (1 row)
 
 rollback;

@@ -38,9 +38,7 @@ begin;
              ],                 +
              "totalCount": 5    +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -77,9 +75,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -115,9 +111,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -153,9 +147,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -192,9 +184,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -230,9 +220,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -269,9 +257,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -307,9 +293,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -345,9 +329,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -384,9 +366,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -422,9 +402,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -534,9 +512,7 @@ begin;
                  }                     +
              ]                         +
          }                             +
-     },                                +
-     "errors": [                       +
-     ]                                 +
+     }                                 +
  }
 (1 row)
 
@@ -605,9 +581,7 @@ begin;
                  }                     +
              ]                         +
          }                             +
-     },                                +
-     "errors": [                       +
-     ]                                 +
+     }                                 +
  }
 (1 row)
 
@@ -624,13 +598,15 @@ begin;
             }
         $$)
     );
-                         jsonb_pretty                         
---------------------------------------------------------------
- {                                                           +
-     "data": null,                                           +
-     "errors": [                                             +
-         "only one of \"first\" and \"last\" may be provided"+
-     ]                                                       +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "data": null,                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "only one of \"first\" and \"last\" may be provided"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -644,13 +620,15 @@ begin;
             }
         $$)
     );
-                          jsonb_pretty                          
-----------------------------------------------------------------
- {                                                             +
-     "data": null,                                             +
-     "errors": [                                               +
-         "only one of \"before\" and \"after\" may be provided"+
-     ]                                                         +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "data": null,                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "only one of \"before\" and \"after\" may be provided"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -664,13 +642,15 @@ begin;
             }
         $$)
     );
-                    jsonb_pretty                     
------------------------------------------------------
- {                                                  +
-     "data": null,                                  +
-     "errors": [                                    +
-         "\"first\" may only be used with \"after\""+
-     ]                                              +
+                            jsonb_pretty                            
+--------------------------------------------------------------------
+ {                                                                 +
+     "data": null,                                                 +
+     "errors": [                                                   +
+         {                                                         +
+             "message": "\"first\" may only be used with \"after\""+
+         }                                                         +
+     ]                                                             +
  }
 (1 row)
 
@@ -684,13 +664,15 @@ begin;
             }
         $$)
     );
-                    jsonb_pretty                     
------------------------------------------------------
- {                                                  +
-     "data": null,                                  +
-     "errors": [                                    +
-         "\"last\" may only be used with \"before\""+
-     ]                                              +
+                            jsonb_pretty                            
+--------------------------------------------------------------------
+ {                                                                 +
+     "data": null,                                                 +
+     "errors": [                                                   +
+         {                                                         +
+             "message": "\"last\" may only be used with \"before\""+
+         }                                                         +
+     ]                                                             +
  }
 (1 row)
 

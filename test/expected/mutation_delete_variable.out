@@ -21,9 +21,9 @@ begin;
       }
     }
     $$, '{"email": "bat@x.com"}');
-                                      resolve                                      
------------------------------------------------------------------------------------
- {"data": {"deleteFromAccountCollection": {"records": [{"id": 2}]}}, "errors": []}
+                               resolve                               
+---------------------------------------------------------------------
+ {"data": {"deleteFromAccountCollection": {"records": [{"id": 2}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -40,9 +40,9 @@ begin;
         $$,
         variables:= '{"afilt": {"id": {"eq": 1}} }'
     );
-                                      resolve                                      
------------------------------------------------------------------------------------
- {"data": {"deleteFromAccountCollection": {"records": [{"id": 1}]}}, "errors": []}
+                               resolve                               
+---------------------------------------------------------------------
+ {"data": {"deleteFromAccountCollection": {"records": [{"id": 1}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -59,9 +59,9 @@ begin;
         $$,
         variables:= '{"atMost": 0 }'
     );
-                            resolve                            
----------------------------------------------------------------
- {"data": null, "errors": ["delete impacts too many records"]}
+                                  resolve                                   
+----------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "delete impacts too many records"}]}
 (1 row)
 
     rollback to savepoint a;

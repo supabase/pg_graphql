@@ -16,9 +16,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                           resolve                            
---------------------------------------------------------------
- {"data": {"accountCollection": {"edges": []}}, "errors": []}
+                    resolve                     
+------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}}
 (1 row)
 
     rollback to savepoint a;
@@ -30,9 +30,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                                      resolve                                      
------------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid input syntax for type integer: \" ; ' $$ \""]}
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "invalid input syntax for type integer: \" ; ' $$ \""}]}
 (1 row)
 
     rollback to savepoint a;
@@ -44,9 +44,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                                      resolve                                      
------------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid input syntax for type integer: \" ; ' $$ \""]}
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "invalid input syntax for type integer: \" ; ' $$ \""}]}
 (1 row)
 
     rollback to savepoint a;
@@ -58,9 +58,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                                         resolve                                         
------------------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid symbol \";\" found while decoding base64 sequence"]}
+                                               resolve                                                
+------------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "invalid symbol \";\" found while decoding base64 sequence"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -81,9 +81,9 @@ begin;
         )
     from
         curs;
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid input syntax for type integer: \" $$ ' \""]}
+                                           resolve                                            
+----------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "invalid input syntax for type integer: \" $$ ' \""}]}
 (1 row)
 
     rollback to savepoint a;
@@ -95,9 +95,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                        resolve                        
--------------------------------------------------------
- {"data": null, "errors": ["Invalid filter argument"]}
+                              resolve                               
+--------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid filter argument"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -109,9 +109,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                   resolve                    
-----------------------------------------------
- {"data": null, "errors": ["Invalid filter"]}
+                          resolve                          
+-----------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid filter"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -123,9 +123,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                           resolve                            
---------------------------------------------------------------
- {"data": {"accountCollection": {"edges": []}}, "errors": []}
+                    resolve                     
+------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}}
 (1 row)
 
     rollback to savepoint a;
@@ -137,9 +137,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                           resolve                           
--------------------------------------------------------------
- {"data": null, "errors": ["Invalid type for order clause"]}
+                                 resolve                                  
+--------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid type for order clause"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -151,9 +151,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                      resolve                       
-----------------------------------------------------
- {"data": null, "errors": ["Invalid order clause"]}
+                             resolve                             
+-----------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid order clause"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -165,9 +165,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                           resolve                            
---------------------------------------------------------------
- {"data": {"accountCollection": {"edges": []}}, "errors": []}
+                    resolve                     
+------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}}
 (1 row)
 
     rollback to savepoint a;
@@ -179,9 +179,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": " $$;'' "}'::jsonb);
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid input syntax for type integer: \" $$;' \""]}
+                                           resolve                                            
+----------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "invalid input syntax for type integer: \" $$;' \""}]}
 (1 row)
 
     rollback to savepoint a;
@@ -193,9 +193,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": " $$;'' "}'::jsonb);
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": null, "errors": ["invalid input syntax for type integer: \" $$;' \""]}
+                                           resolve                                            
+----------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "invalid input syntax for type integer: \" $$;' \""}]}
 (1 row)
 
     rollback to savepoint a;
@@ -207,9 +207,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": " $$;'' "}'::jsonb);
-                        resolve                        
--------------------------------------------------------
- {"data": null, "errors": ["Invalid filter argument"]}
+                              resolve                               
+--------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid filter argument"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -221,9 +221,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": [" $$;'' "]}'::jsonb);
-                        resolve                        
--------------------------------------------------------
- {"data": null, "errors": ["Invalid filter argument"]}
+                              resolve                               
+--------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid filter argument"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -235,9 +235,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": {"email": " $$;'' "}}'::jsonb);
-                      resolve                       
-----------------------------------------------------
- {"data": null, "errors": ["Invalid filter field"]}
+                             resolve                             
+-----------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid filter field"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -249,9 +249,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": {"email": {"eq": " $$;'' "}}}'::jsonb);
-                           resolve                            
---------------------------------------------------------------
- {"data": {"accountCollection": {"edges": []}}, "errors": []}
+                    resolve                     
+------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}}
 (1 row)
 
     rollback to savepoint a;
@@ -263,9 +263,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": " $$;'' "}'::jsonb);
-                              resolve                              
--------------------------------------------------------------------
- {"data": null, "errors": ["Invalid value for ordering variable"]}
+                                    resolve                                     
+--------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid value for ordering variable"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -277,9 +277,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": " $$;'' "}'::jsonb);
-                           resolve                           
--------------------------------------------------------------
- {"data": null, "errors": ["Invalid type for order clause"]}
+                                 resolve                                  
+--------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid type for order clause"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -291,9 +291,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": [" $$;'' "]}'::jsonb);
-                                  resolve                                  
----------------------------------------------------------------------------
- {"data": null, "errors": ["cannot call jsonb_each_text on a non-object"]}
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "cannot call jsonb_each_text on a non-object"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -305,9 +305,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": {"email": " $$;'' "}}'::jsonb);
-                              resolve                              
--------------------------------------------------------------------
- {"data": null, "errors": ["Invalid value for ordering variable"]}
+                                    resolve                                     
+--------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid value for ordering variable"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -319,9 +319,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": [{" ;'' ": "AscNullsFirst"}]}'::jsonb);
-                                   resolve                                    
-------------------------------------------------------------------------------
- {"data": null, "errors": ["Invalid list entry field name for order clause"]}
+                                          resolve                                          
+-------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid list entry field name for order clause"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -333,9 +333,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": [{"email": " $$;'' "}]}'::jsonb);
-                           resolve                            
---------------------------------------------------------------
- {"data": {"accountCollection": {"edges": []}}, "errors": []}
+                    resolve                     
+------------------------------------------------
+ {"data": {"accountCollection": {"edges": []}}}
 (1 row)
 
     rollback to savepoint a;
