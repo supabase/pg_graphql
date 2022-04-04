@@ -4706,6 +4706,7 @@ as $$
 $$;
 create or replace function graphql.rebuild_schema()
     returns void
+    security definer
     language plpgsql
 as $$
 begin
