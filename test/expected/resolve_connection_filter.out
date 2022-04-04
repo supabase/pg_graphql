@@ -36,9 +36,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -70,9 +68,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -99,50 +95,48 @@ begin;
              "edges": [        +
              ]                 +
          }                     +
-     },                        +
-     "errors": [               +
-     ]                         +
+     }                         +
  }
 (1 row)
 
     rollback to savepoint a;
     -- neq
     select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) { edges { node { id } } }}$$);
-                                               resolve                                                
-------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 3}}]}}, "errors": []}
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 3}}]}}}
 (1 row)
 
     rollback to savepoint a;
     -- lt
     select graphql.resolve($${accountCollection(filter: {id: {lt: 2}}) { edges { node { id } } }}$$);
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}]}}}
 (1 row)
 
     rollback to savepoint a;
     -- lte
     select graphql.resolve($${accountCollection(filter: {id: {lte: 2}}) { edges { node { id } } }}$$);
-                                               resolve                                                
-------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}, "errors": []}
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}}
 (1 row)
 
     rollback to savepoint a;
     -- gte
     select graphql.resolve($${accountCollection(filter: {id: {gte: 2}}) { edges { node { id } } }}$$);
-                                               resolve                                                
-------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 2}}, {"node": {"id": 3}}]}}, "errors": []}
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 2}}, {"node": {"id": 3}}]}}}
 (1 row)
 
     rollback to savepoint a;
     -- gt
     select graphql.resolve($${accountCollection(filter: {id: {gt: 2}}) { edges { node { id } } }}$$);
-                                     resolve                                     
----------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}]}}, "errors": []}
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -176,9 +170,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -213,9 +205,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -250,9 +240,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -287,9 +275,7 @@ begin;
                  }              +
              ]                  +
          }                      +
-     },                         +
-     "errors": [                +
-     ]                          +
+     }                          +
  }
 (1 row)
 
@@ -319,9 +305,7 @@ begin;
              "edges": [        +
              ]                 +
          }                     +
-     },                        +
-     "errors": [               +
-     ]                         +
+     }                         +
  }
 (1 row)
 
@@ -343,13 +327,15 @@ begin;
         variables:= '{"afilt": {"dne_id": 2} }'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid filter field"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid filter field"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -371,13 +357,15 @@ begin;
         variables:= '{"afilt": {"id": 2} }'
       )
     );
-          jsonb_pretty          
---------------------------------
- {                             +
-     "data": null,             +
-     "errors": [               +
-         "Invalid filter field"+
-     ]                         +
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": null,                            +
+     "errors": [                              +
+         {                                    +
+             "message": "Invalid filter field"+
+         }                                    +
+     ]                                        +
  }
 (1 row)
 
@@ -399,13 +387,15 @@ begin;
         variables:= '{"afilt": {"id": {"eq": true}} }'
       )
     );
-                       jsonb_pretty                        
------------------------------------------------------------
- {                                                        +
-     "data": null,                                        +
-     "errors": [                                          +
-         "invalid input syntax for type integer: \"true\""+
-     ]                                                    +
+                               jsonb_pretty                               
+--------------------------------------------------------------------------
+ {                                                                       +
+     "data": null,                                                       +
+     "errors": [                                                         +
+         {                                                               +
+             "message": "invalid input syntax for type integer: \"true\""+
+         }                                                               +
+     ]                                                                   +
  }
 (1 row)
 

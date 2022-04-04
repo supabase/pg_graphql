@@ -8,9 +8,9 @@ begin;
       }
     }
     $$);
-                                  resolve                                   
-----------------------------------------------------------------------------
- {"data": null, "errors": ["Unknown field 'insertDNE' on type 'Mutation'"]}
+                                         resolve                                         
+-----------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Unknown field 'insertDNE' on type 'Mutation'"}]}
 (1 row)
 
 rollback;

@@ -34,9 +34,9 @@ begin;
       }
     }
     $$);
-                                                                                                                           resolve                                                                                                                            
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountCollection": {"records": [{"id": 1, "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}, {"id": 2, "echoEmail": "bar@foosworth.com", "blogCollection": {"totalCount": 0}}], "affectedCount": 2}}, "errors": []}
+                                                                                                                    resolve                                                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 1, "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}, {"id": 2, "echoEmail": "bar@foosworth.com", "blogCollection": {"totalCount": 0}}], "affectedCount": 2}}}
 (1 row)
 
     select graphql.resolve($$
@@ -53,9 +53,9 @@ begin;
       }
     }
     $$);
-                                              resolve                                               
-----------------------------------------------------------------------------------------------------
- {"data": {"insertIntoBlogCollection": {"records": [{"id": 1, "owner": {"id": 1}}]}}, "errors": []}
+                                       resolve                                        
+--------------------------------------------------------------------------------------
+ {"data": {"insertIntoBlogCollection": {"records": [{"id": 1, "owner": {"id": 1}}]}}}
 (1 row)
 
     /*
@@ -77,9 +77,9 @@ begin;
     $$,
     variables := '{"emailAddress": "foo@bar.com"}'::jsonb
     );
-                                                                   resolve                                                                    
-----------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"xyz": {"records": [{"id": 3, "email": "foo@bar.com"}, {"id": 4, "email": "other@email.com"}], "affectedCount": 2}}, "errors": []}
+                                                            resolve                                                             
+--------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"xyz": {"records": [{"id": 3, "email": "foo@bar.com"}, {"id": 4, "email": "other@email.com"}], "affectedCount": 2}}}
 (1 row)
 
     select graphql.resolve($$
@@ -95,9 +95,9 @@ begin;
     $$,
     variables := '{"acc": {"email": "bar@foo.com"}}'::jsonb
     );
-                                                            resolve                                                            
--------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountCollection": {"records": [{"id": 5, "email": "bar@foo.com"}], "affectedCount": 1}}, "errors": []}
+                                                     resolve                                                     
+-----------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 5, "email": "bar@foo.com"}], "affectedCount": 1}}}
 (1 row)
 
     select graphql.resolve($$
@@ -113,9 +113,9 @@ begin;
     $$,
     variables := '{"accs": [{"email": "bar@foo.com"}]}'::jsonb
     );
-                                                            resolve                                                            
--------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountCollection": {"records": [{"id": 6, "email": "bar@foo.com"}], "affectedCount": 1}}, "errors": []}
+                                                     resolve                                                     
+-----------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 6, "email": "bar@foo.com"}], "affectedCount": 1}}}
 (1 row)
 
     /*
@@ -135,9 +135,9 @@ begin;
     $$,
     variables := '{"acc": {"doesNotExist": "other"}}'::jsonb
     );
-                          resolve                           
-------------------------------------------------------------
- {"data": null, "errors": ["Unknown field 'doesNotExist'"]}
+                                 resolve                                 
+-------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Unknown field 'doesNotExist'"}]}
 (1 row)
 
     -- Wrong input type (object vs list)
@@ -148,9 +148,9 @@ begin;
       }
     }
     $$);
-                            resolve                             
-----------------------------------------------------------------
- {"data": null, "errors": ["Invalid value for objects record"]}
+                                   resolve                                   
+-----------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid value for objects record"}]}
 (1 row)
 
     -- Wrong input type (list of string, not list of object)
@@ -161,9 +161,9 @@ begin;
       }
     }
     $$);
-                            resolve                             
-----------------------------------------------------------------
- {"data": null, "errors": ["Invalid value for objects record"]}
+                                   resolve                                   
+-----------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid value for objects record"}]}
 (1 row)
 
     -- objects argument is missing
@@ -174,9 +174,9 @@ begin;
       }
     }
     $$);
-                           resolve                            
---------------------------------------------------------------
- {"data": null, "errors": ["Argument 'objects' is required"]}
+                                  resolve                                  
+---------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Argument 'objects' is required"}]}
 (1 row)
 
     -- Empty call
@@ -187,9 +187,9 @@ begin;
       }
     }
     $$);
-                                    resolve                                    
--------------------------------------------------------------------------------
- {"data": null, "errors": ["At least one record must be provided to objects"]}
+                                          resolve                                           
+--------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "At least one record must be provided to objects"}]}
 (1 row)
 
 rollback;
