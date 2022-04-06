@@ -958,6 +958,8 @@ create view graphql.type as
                         'Edge',
                         'Connection',
                         'OrderBy',
+                        'FilterEntity',
+                        'InsertNodeResponse',
                         'UpdateNodeResponse',
                         'DeleteNodeResponse'
                     )
