@@ -52,4 +52,102 @@ begin;
  }
 (1 row)
 
+    select jsonb_pretty(
+        graphql.resolve($$
+    mutation {
+      insertIntoAccountCollection(objects: [
+        { id: 2, parentId: 1 }
+      ]) {
+        __typename
+        records {
+          __typename
+        }
+      }
+    }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "insertIntoAccountCollection": {         +
+             "records": [                         +
+                 {                                +
+                     "__typename": "Account"      +
+                 }                                +
+             ],                                   +
+             "__typename": "AccountInsertResponse"+
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+    mutation {
+      updateAccountCollection(
+        set: { parentId: 1 }
+        atMost: 100
+      ) {
+        __typename
+        records {
+          id
+          __typename
+        }
+      }
+    }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "updateAccountCollection": {             +
+             "records": [                         +
+                 {                                +
+                     "id": 1,                     +
+                     "__typename": "Account"      +
+                 },                               +
+                 {                                +
+                     "id": 2,                     +
+                     "__typename": "Account"      +
+                 }                                +
+             ],                                   +
+             "__typename": "AccountUpdateResponse"+
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+    mutation {
+      deleteFromAccountCollection(atMost: 100) {
+        __typename
+        records {
+          __typename
+        }
+      }
+    }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "deleteFromAccountCollection": {         +
+             "records": [                         +
+                 {                                +
+                     "__typename": "Account"      +
+                 },                               +
+                 {                                +
+                     "__typename": "Account"      +
+                 }                                +
+             ],                                   +
+             "__typename": "AccountDeleteResponse"+
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
 rollback;
