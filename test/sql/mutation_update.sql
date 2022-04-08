@@ -150,4 +150,22 @@ begin;
         }
     $$);
 
+    -- pass integer as a variable to `set`
+    -- https://twitter.com/aiji42_dev/status/1512305435017023489
+    select graphql.resolve($$
+        mutation SetVar($ownerId: Int) {
+          updateBlogCollection(
+            set: {
+              ownerId: $ownerId
+            }
+            atMost: 10
+          ) {
+            records { ownerId }
+          }
+        }
+    $$,
+    '{"ownerId": 1}'
+);
+
+
 rollback;
