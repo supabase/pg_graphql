@@ -48,7 +48,7 @@ begin
         select
             string_agg(
                 format(
-                    '%I = $%s::jsonb -> %L',
+                    '%I = ($%s::jsonb -> %L)::%s',
                     case
                         when ac.column_name is not null then ac.column_name
                         else graphql.exception_unknown_field(x.key_, f.type_)
@@ -57,7 +57,8 @@ begin
                         graphql.name_literal(set_arg -> 'value'),
                         variable_definitions
                     ),
-                    x.key_
+                    x.key_,
+                    ac.column_type
                 ),
                 ', '
             )
@@ -74,7 +75,7 @@ begin
             string_agg(
                 case
                     when graphql.is_variable(val -> 'value') then format(
-                        '%I = $%s',
+                        '%I = ($%s)::%s',
                         case
                             when ac.meta_kind = 'Column' then ac.column_name
                             else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
@@ -82,15 +83,18 @@ begin
                         graphql.arg_index(
                             (val -> 'value' -> 'name' ->> 'value'),
                             variable_definitions
-                        )
+                        ),
+                        ac.column_type
+
                     )
                     else format(
-                        '%I = %L',
+                        '%I = (%L)::%s',
                         case
                             when ac.meta_kind = 'Column' then ac.column_name
                             else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
                         end,
-                        graphql.value_literal(val)
+                        graphql.value_literal(val),
+                        ac.column_type
                     )
                 end,
                 ', '
