@@ -152,6 +152,90 @@ begin;
 (1 row)
 
     rollback to savepoint a;
+    -- set is variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation SomeMut($setArg: AccountUpdateInput!) {
+              updateAccountCollection(
+                set: $setArg
+                atMost: 8
+              ) {
+                records { id }
+              }
+            }
+        $$,
+        '{"setArg": {"email": "new@email.com"}}'
+    ));
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "updateAccountCollection": {+
+             "records": [            +
+                 {                   +
+                     "id": 1         +
+                 },                  +
+                 {                   +
+                     "id": 2         +
+                 },                  +
+                 {                   +
+                     "id": 3         +
+                 },                  +
+                 {                   +
+                     "id": 4         +
+                 },                  +
+                 {                   +
+                     "id": 5         +
+                 }                   +
+             ]                       +
+         }                           +
+     }                               +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- set contains variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation SomeMut($setArg: String!) {
+              updateAccountCollection(
+                set: {email: $setArg}
+                atMost: 8
+              ) {
+                records { id }
+              }
+            }
+        $$,
+        '{"setArg": "new@email.com"}'
+    ));
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "updateAccountCollection": {+
+             "records": [            +
+                 {                   +
+                     "id": 1         +
+                 },                  +
+                 {                   +
+                     "id": 2         +
+                 },                  +
+                 {                   +
+                     "id": 3         +
+                 },                  +
+                 {                   +
+                     "id": 4         +
+                 },                  +
+                 {                   +
+                     "id": 5         +
+                 }                   +
+             ]                       +
+         }                           +
+     }                               +
+ }
+(1 row)
+
+    rollback to savepoint a;
     -- forgot `set` arg
     select jsonb_pretty(
         graphql.resolve($$

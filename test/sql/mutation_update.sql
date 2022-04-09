@@ -118,6 +118,42 @@ begin;
 
     rollback to savepoint a;
 
+    -- set is variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation SomeMut($setArg: AccountUpdateInput!) {
+              updateAccountCollection(
+                set: $setArg
+                atMost: 8
+              ) {
+                records { id }
+              }
+            }
+        $$,
+        '{"setArg": {"email": "new@email.com"}}'
+    ));
+
+    rollback to savepoint a;
+
+    -- set contains variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation SomeMut($setArg: String!) {
+              updateAccountCollection(
+                set: {email: $setArg}
+                atMost: 8
+              ) {
+                records { id }
+              }
+            }
+        $$,
+        '{"setArg": "new@email.com"}'
+    ));
+
+    rollback to savepoint a;
+
+
+
     -- forgot `set` arg
     select jsonb_pretty(
         graphql.resolve($$

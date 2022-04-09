@@ -3866,10 +3866,10 @@ begin
         select
             string_agg(
                 format(
-                    '%I = ($%s::jsonb -> %L)::%s',
+                    '%I = ($%s::jsonb ->> %L)::%s',
                     case
                         when ac.column_name is not null then ac.column_name
-                        else graphql.exception_unknown_field(x.key_, f.type_)
+                        else graphql.exception_unknown_field(x.key_, ac.type_)
                     end,
                     graphql.arg_index(
                         graphql.name_literal(set_arg -> 'value'),
