@@ -2,7 +2,8 @@ begin;
 
     create table account(
         id serial primary key,
-        email varchar(255) not null
+        email varchar(255) not null,
+        team_id int
     );
 
     create function _echo_email(account)
@@ -85,7 +86,7 @@ begin;
             mutation {
               xyz: updateAccountCollection(
                 set: {
-                  email: "new@email.com"
+                  email: "new@email.com", teamId: 1
                 }
                 filter: {
                   email: {eq: "no@match.com"}
@@ -126,11 +127,11 @@ begin;
                 set: $setArg
                 atMost: 8
               ) {
-                records { id }
+                records { id email teamId }
               }
             }
         $$,
-        '{"setArg": {"email": "new@email.com"}}'
+        '{"setArg": {"email": "new1@email.com", "teamId": 1}}'
     ));
 
     rollback to savepoint a;
@@ -138,16 +139,19 @@ begin;
     -- set contains variable
     select jsonb_pretty(
         graphql.resolve($$
-            mutation SomeMut($setArg: String!) {
+            mutation SomeMut($setEmail: String!, $setTeamId: Int!) {
               updateAccountCollection(
-                set: {email: $setArg}
+                set: {
+                    email: $setEmail
+                    teamId: $setTeamId
+                }
                 atMost: 8
               ) {
-                records { id }
+                records { id email teamId }
               }
             }
         $$,
-        '{"setArg": "new@email.com"}'
+        '{"setEmail": "new2@email.com", "setTeamId": 2}'
     ));
 
     rollback to savepoint a;

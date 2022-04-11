@@ -1,7 +1,8 @@
 begin;
     create table account(
         id serial primary key,
-        email varchar(255) not null
+        email varchar(255) not null,
+        team_id int
     );
     create function _echo_email(account)
         returns text
@@ -84,7 +85,7 @@ begin;
             mutation {
               xyz: updateAccountCollection(
                 set: {
-                  email: "new@email.com"
+                  email: "new@email.com", teamId: 1
                 }
                 filter: {
                   email: {eq: "no@match.com"}
@@ -160,36 +161,46 @@ begin;
                 set: $setArg
                 atMost: 8
               ) {
-                records { id }
+                records { id email teamId }
               }
             }
         $$,
-        '{"setArg": {"email": "new@email.com"}}'
+        '{"setArg": {"email": "new1@email.com", "teamId": 1}}'
     ));
-             jsonb_pretty             
---------------------------------------
- {                                   +
-     "data": {                       +
-         "updateAccountCollection": {+
-             "records": [            +
-                 {                   +
-                     "id": 1         +
-                 },                  +
-                 {                   +
-                     "id": 2         +
-                 },                  +
-                 {                   +
-                     "id": 3         +
-                 },                  +
-                 {                   +
-                     "id": 4         +
-                 },                  +
-                 {                   +
-                     "id": 5         +
-                 }                   +
-             ]                       +
-         }                           +
-     }                               +
+                  jsonb_pretty                  
+------------------------------------------------
+ {                                             +
+     "data": {                                 +
+         "updateAccountCollection": {          +
+             "records": [                      +
+                 {                             +
+                     "id": 1,                  +
+                     "email": "new1@email.com",+
+                     "teamId": 1               +
+                 },                            +
+                 {                             +
+                     "id": 2,                  +
+                     "email": "new1@email.com",+
+                     "teamId": 1               +
+                 },                            +
+                 {                             +
+                     "id": 3,                  +
+                     "email": "new1@email.com",+
+                     "teamId": 1               +
+                 },                            +
+                 {                             +
+                     "id": 4,                  +
+                     "email": "new1@email.com",+
+                     "teamId": 1               +
+                 },                            +
+                 {                             +
+                     "id": 5,                  +
+                     "email": "new1@email.com",+
+                     "teamId": 1               +
+                 }                             +
+             ]                                 +
+         }                                     +
+     }                                         +
  }
 (1 row)
 
@@ -197,41 +208,54 @@ begin;
     -- set contains variable
     select jsonb_pretty(
         graphql.resolve($$
-            mutation SomeMut($setArg: String!) {
+            mutation SomeMut($setEmail: String!, $setTeamId: Int!) {
               updateAccountCollection(
-                set: {email: $setArg}
+                set: {
+                    email: $setEmail
+                    teamId: $setTeamId
+                }
                 atMost: 8
               ) {
-                records { id }
+                records { id email teamId }
               }
             }
         $$,
-        '{"setArg": "new@email.com"}'
+        '{"setEmail": "new2@email.com", "setTeamId": 2}'
     ));
-             jsonb_pretty             
---------------------------------------
- {                                   +
-     "data": {                       +
-         "updateAccountCollection": {+
-             "records": [            +
-                 {                   +
-                     "id": 1         +
-                 },                  +
-                 {                   +
-                     "id": 2         +
-                 },                  +
-                 {                   +
-                     "id": 3         +
-                 },                  +
-                 {                   +
-                     "id": 4         +
-                 },                  +
-                 {                   +
-                     "id": 5         +
-                 }                   +
-             ]                       +
-         }                           +
-     }                               +
+                  jsonb_pretty                  
+------------------------------------------------
+ {                                             +
+     "data": {                                 +
+         "updateAccountCollection": {          +
+             "records": [                      +
+                 {                             +
+                     "id": 1,                  +
+                     "email": "new2@email.com",+
+                     "teamId": 2               +
+                 },                            +
+                 {                             +
+                     "id": 2,                  +
+                     "email": "new2@email.com",+
+                     "teamId": 2               +
+                 },                            +
+                 {                             +
+                     "id": 3,                  +
+                     "email": "new2@email.com",+
+                     "teamId": 2               +
+                 },                            +
+                 {                             +
+                     "id": 4,                  +
+                     "email": "new2@email.com",+
+                     "teamId": 2               +
+                 },                            +
+                 {                             +
+                     "id": 5,                  +
+                     "email": "new2@email.com",+
+                     "teamId": 2               +
+                 }                             +
+             ]                                 +
+         }                                     +
+     }                                         +
  }
 (1 row)
 
