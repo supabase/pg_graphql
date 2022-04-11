@@ -2,7 +2,8 @@ begin;
 
     create table account(
         id serial primary key,
-        email varchar(255) not null
+        email varchar(255) not null,
+        team_id int
     );
 
     create function _echo_email(account)
@@ -85,7 +86,7 @@ begin;
             mutation {
               xyz: updateAccountCollection(
                 set: {
-                  email: "new@email.com"
+                  email: "new@email.com", teamId: 1
                 }
                 filter: {
                   email: {eq: "no@match.com"}
@@ -118,6 +119,45 @@ begin;
 
     rollback to savepoint a;
 
+    -- set is variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation SomeMut($setArg: AccountUpdateInput!) {
+              updateAccountCollection(
+                set: $setArg
+                atMost: 8
+              ) {
+                records { id email teamId }
+              }
+            }
+        $$,
+        '{"setArg": {"email": "new1@email.com", "teamId": 1}}'
+    ));
+
+    rollback to savepoint a;
+
+    -- set contains variable
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation SomeMut($setEmail: String!, $setTeamId: Int!) {
+              updateAccountCollection(
+                set: {
+                    email: $setEmail
+                    teamId: $setTeamId
+                }
+                atMost: 8
+              ) {
+                records { id email teamId }
+              }
+            }
+        $$,
+        '{"setEmail": "new2@email.com", "setTeamId": 2}'
+    ));
+
+    rollback to savepoint a;
+
+
+
     -- forgot `set` arg
     select jsonb_pretty(
         graphql.resolve($$
@@ -149,5 +189,23 @@ begin;
           }
         }
     $$);
+
+    -- pass integer as a variable to `set`
+    -- https://twitter.com/aiji42_dev/status/1512305435017023489
+    select graphql.resolve($$
+        mutation SetVar($ownerId: Int) {
+          updateBlogCollection(
+            set: {
+              ownerId: $ownerId
+            }
+            atMost: 10
+          ) {
+            records { ownerId }
+          }
+        }
+    $$,
+    '{"ownerId": 1}'
+);
+
 
 rollback;

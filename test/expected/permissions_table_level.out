@@ -72,11 +72,9 @@ begin;
     revoke select on public.account from api;
     set role api;
     select name, meta_kind from graphql.type where entity is not null order by name asc;
-         name          |     meta_kind      
------------------------+--------------------
- AccountFilter         | FilterEntity
- AccountInsertResponse | InsertNodeResponse
-(2 rows)
+ name | meta_kind 
+------+-----------
+(0 rows)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
               jsonb_pretty               

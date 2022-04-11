@@ -48,16 +48,17 @@ begin
         select
             string_agg(
                 format(
-                    '%I = $%s::jsonb -> %L',
+                    '%I = ($%s::jsonb ->> %L)::%s',
                     case
                         when ac.column_name is not null then ac.column_name
-                        else graphql.exception_unknown_field(x.key_, f.type_)
+                        else graphql.exception_unknown_field(x.key_, ac.type_)
                     end,
                     graphql.arg_index(
                         graphql.name_literal(set_arg -> 'value'),
                         variable_definitions
                     ),
-                    x.key_
+                    x.key_,
+                    ac.column_type
                 ),
                 ', '
             )
@@ -74,7 +75,7 @@ begin
             string_agg(
                 case
                     when graphql.is_variable(val -> 'value') then format(
-                        '%I = $%s',
+                        '%I = ($%s)::%s',
                         case
                             when ac.meta_kind = 'Column' then ac.column_name
                             else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
@@ -82,15 +83,18 @@ begin
                         graphql.arg_index(
                             (val -> 'value' -> 'name' ->> 'value'),
                             variable_definitions
-                        )
+                        ),
+                        ac.column_type
+
                     )
                     else format(
-                        '%I = %L',
+                        '%I = (%L)::%s',
                         case
                             when ac.meta_kind = 'Column' then ac.column_name
                             else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
                         end,
-                        graphql.value_literal(val)
+                        graphql.value_literal(val),
+                        ac.column_type
                     )
                 end,
                 ', '
@@ -113,7 +117,7 @@ begin
                         when top_fields.name = '__typename' then format(
                             '%L, %L',
                             graphql.alias_or_name_literal(top.sel),
-                            top_fields.type_
+                            field_rec.type_
                         )
                         when top_fields.name = 'affectedCount' then format(
                             '%L, %s',
@@ -133,7 +137,7 @@ begin
                                                 when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                                                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
-                                                when nf.name = '__typename' then format('%L', nf.type_)
+                                                when nf.name = '__typename' then format('%L', top_fields.type_)
                                                 when nf.local_columns is not null and nf.meta_kind = 'Relationship.toMany' then graphql.build_connection_query(
                                                     ast := x.sel,
                                                     variable_definitions := variable_definitions,
