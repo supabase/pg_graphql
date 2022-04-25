@@ -11,6 +11,12 @@ begin;
     -- Allow access to public.account.id but nothing else
     grant usage on schema public to api;
     grant all on all tables in schema public to api;
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     savepoint a;
     -- Nothing is excluded
     set role api;

@@ -4575,6 +4575,9 @@ begin
        );
     end if;
 
+    -- Rebuild the schema cache if the SQL schema has changed
+    perform graphql.rebuild_schema();
+
     begin
 
         -- Build query if not in cache
@@ -4768,20 +4771,43 @@ as $$
             end
         ) jae(f)
 $$;
+-- Is updated every time the schema changes
+create sequence if not exists graphql.seq_schema_version as int cycle;
+
+-- Tracks the most recently built schema version
+-- Contains 1 row
+create table graphql.schema_version(ver int primary key);
+insert into graphql.schema_version(ver) values (nextval('graphql.seq_schema_version'));
+
 create or replace function graphql.rebuild_schema()
     returns void
     security definer
     language plpgsql
 as $$
+declare
+    cur_schema_version int = last_value from graphql.seq_schema_version;
+    built_schema_version int = ver from graphql.schema_version;
 begin
-    truncate table graphql._field;
-    delete from graphql._type;
-    refresh materialized view graphql.entity with data;
-    refresh materialized view graphql.entity_column with data;
-    refresh materialized view graphql.entity_unique_columns with data;
-    refresh materialized view graphql.relationship with data;
-    perform graphql.rebuild_types();
-    perform graphql.rebuild_fields();
+    if built_schema_version <> cur_schema_version then
+        -- Lock the row to avoid concurrent access
+        built_schema_version = ver from graphql.schema_version for update;
+
+        -- Recheck condition now that we have aquired a row lock to avoid racing & stacking requests
+        if built_schema_version <> cur_schema_version then
+            truncate table graphql._field;
+            delete from graphql._type;
+            refresh materialized view graphql.entity with data;
+            refresh materialized view graphql.entity_column with data;
+            refresh materialized view graphql.entity_unique_columns with data;
+            refresh materialized view graphql.relationship with data;
+            perform graphql.rebuild_types();
+            perform graphql.rebuild_fields();
+
+            -- Update the stored schema version value
+            update graphql.schema_version set ver = cur_schema_version;
+
+        end if;
+    end if;
 end;
 $$;
 
@@ -4818,7 +4844,7 @@ begin
         )
         and cmd.schema_name is distinct from 'pg_temp'
         then
-            perform graphql.rebuild_schema();
+            perform nextval('graphql.seq_schema_version');
         end if;
     end loop;
 end;
@@ -4847,10 +4873,20 @@ begin
             )
             and obj.is_temporary IS false
             then
-                perform graphql.rebuild_schema();
+                perform nextval('graphql.seq_schema_version');
             end if;
     end loop;
 end;
 $$;
 
 select graphql.rebuild_schema();
+
+
+-- On DDL event, increment the schema version number
+create event trigger graphql_watch_ddl
+    on ddl_command_end
+    execute procedure graphql.rebuild_on_ddl();
+
+create event trigger graphql_watch_drop
+    on sql_drop
+    execute procedure graphql.rebuild_on_drop();

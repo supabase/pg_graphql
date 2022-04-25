@@ -16,6 +16,8 @@ begin;
     grant usage on schema public to api;
     grant all on all tables in schema public to api;
 
+    select graphql.rebuild_schema();
+
     savepoint a;
 
     -- Nothing is excluded

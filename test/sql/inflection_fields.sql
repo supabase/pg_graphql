@@ -16,6 +16,7 @@ begin;
 
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
+    select graphql.rebuild_schema();
     select * from f;
 
     savepoint a;
@@ -23,17 +24,20 @@ begin;
     -- Inflection off, Overrides: on
     comment on column account.id is e'@graphql({"name": "IddD"})';
     comment on column account.name_with_underscore is e'@graphql({"name": "nAMe"})';
+    select graphql.rebuild_schema();
     select * from f;
 
     rollback to savepoint a;
 
     -- Inflection on, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": true})';
+    select graphql.rebuild_schema();
     select * from f;
 
     -- Inflection on, Overrides: on
     comment on column account.id is e'@graphql({"name": "IddD"})';
     comment on column account.name_with_underscore is e'@graphql({"name": "nAMe"})';
+    select graphql.rebuild_schema();
     select * from f;
 
 rollback;

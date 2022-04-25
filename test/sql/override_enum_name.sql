@@ -1,6 +1,7 @@
 begin;
     create type account_priority as enum ('high', 'standard');
     comment on type public.account_priority is E'@graphql({"name": "CustomerValue"})';
+    select graphql.rebuild_schema();
 
     select name from graphql.type where enum = 'public.account_priority'::regtype;
 

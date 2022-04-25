@@ -13,6 +13,9 @@ begin;
     on blog
     is E'@graphql({"foreign_name": "author", "local_name": "blogz"})';
 
+
+    select graphql.rebuild_schema();
+
     -- expect: 'author'
     select
         name

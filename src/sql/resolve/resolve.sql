@@ -90,6 +90,9 @@ begin
        );
     end if;
 
+    -- Rebuild the schema cache if the SQL schema has changed
+    perform graphql.rebuild_schema();
+
     begin
 
         -- Build query if not in cache

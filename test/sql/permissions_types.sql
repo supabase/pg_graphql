@@ -5,6 +5,8 @@ begin;
     create schema xyz;
     create type xyz.light as enum ('red');
 
+    select graphql.rebuild_schema();
+
     -- expect nothing b/c not in search_path
     select name from graphql.type t where t.enum is not null;
 

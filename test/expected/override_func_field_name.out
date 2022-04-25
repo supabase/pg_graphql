@@ -14,6 +14,12 @@ begin;
         select format('%s %s', rec.first_name, rec.last_name)
     $$;
     comment on function public._full_name(public.account) is E'@graphql({"name": "wholeName"})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select
         name
     from

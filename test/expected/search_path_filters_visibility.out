@@ -6,6 +6,12 @@ begin;
     create table other.bar(
         id serial primary key
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     -- public.foo is visible, other.bar is not
     select
         name
