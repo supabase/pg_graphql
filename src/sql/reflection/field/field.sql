@@ -13,7 +13,8 @@ create type graphql.field_meta_kind as enum (
     'UpdateSetArg',
     'ObjectsArg',
     'AtMostArg',
-    'Query.heartbeat'
+    'Query.heartbeat',
+    '__Typename'
 );
 
 create table graphql._field (
@@ -381,7 +382,7 @@ begin
     -- Object.__typename
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_hidden_from_schema)
         select
-            'Constant'::graphql.field_meta_kind,
+            '__Typename'::graphql.field_meta_kind,
             t.entity,
             t.id,
             graphql.type_id('String'),
