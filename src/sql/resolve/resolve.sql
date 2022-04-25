@@ -93,6 +93,10 @@ begin
     -- Rebuild the schema cache if the SQL schema has changed
     perform graphql.rebuild_schema();
 
+    fragment_definitions = graphql.ast_pass_strip_loc(
+        jsonb_path_query_array(ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")')
+    );
+
     begin
 
         -- Build query if not in cache
@@ -104,7 +108,16 @@ begin
 
             prepared_statement_name = (
                 case
-                    when operation = 'Query' then graphql.cache_key(current_user::regrole, ast_statement, variables)
+                    when operation = 'Query' then graphql.cache_key(
+                        current_user::regrole,
+                        current_schemas(false),
+                        graphql.get_built_schema_version(),
+                        jsonb_build_object(
+                            'statement', ast_statement,
+                            'fragment_defs', fragment_definitions
+                        ),
+                        variables
+                    )
                     -- If not a query (mutation) don't attempt to cache
                     else md5(format('%s%s%s',random(),random(),random()))
                 end
@@ -113,9 +126,7 @@ begin
             if errors_ = '{}' and not graphql.prepared_statement_exists(prepared_statement_name) then
 
                     ast_locless = graphql.ast_pass_strip_loc(ast_statement);
-                    fragment_definitions = graphql.ast_pass_strip_loc(
-                        jsonb_path_query_array(ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")')
-                    );
+
                     -- Skip fragment inline when no fragments are present
                     ast_inlined = case
                         when fragment_definitions = '[]'::jsonb then ast_locless
@@ -197,29 +208,35 @@ begin
                             );
                         end if;
 
-                        data_ = case meta_kind
-                            when '__Schema' then
-                                graphql."resolve___Schema"(
-                                    ast := ast_inlined,
-                                    variable_definitions := variable_definitions
-                                )
-                            when '__Type' then
-                                jsonb_build_object(
-                                    graphql.alias_or_name_literal(ast_statement),
-                                    graphql."resolve___Type"(
-                                        (
-                                            select
-                                                name
-                                            from
-                                                graphql.type type_
-                                            where
-                                                name = graphql.argument_value_by_name('name', ast_inlined)
-                                        ),
-                                        ast_inlined
+
+                        if graphql.get_introspection_cache(prepared_statement_name) is not null then
+                            data_ = graphql.get_introspection_cache(prepared_statement_name);
+                        else
+                            data_ = case meta_kind
+                                when '__Schema' then
+                                    graphql."resolve___Schema"(
+                                        ast := ast_inlined,
+                                        variable_definitions := variable_definitions
                                     )
-                                )
-                            else null::jsonb
-                        end;
+                                when '__Type' then
+                                    jsonb_build_object(
+                                        graphql.alias_or_name_literal(ast_statement),
+                                        graphql."resolve___Type"(
+                                            (
+                                                select
+                                                    name
+                                                from
+                                                    graphql.type type_
+                                                where
+                                                    name = graphql.argument_value_by_name('name', ast_inlined)
+                                            ),
+                                            ast_inlined
+                                        )
+                                    )
+                                else null::jsonb
+                            end;
+                            perform graphql.set_introspection_cache(prepared_statement_name, data_);
+                        end if;
                     end if;
             end if;
 
