@@ -9,7 +9,6 @@ begin;
  
 (1 row)
 
-    
     -- expect nothing b/c not in search_path
     select name from graphql.type t where t.enum is not null;
  name 
