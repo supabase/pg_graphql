@@ -161,6 +161,19 @@ begin
                                     parent_block_name := null
                                 )
                         when 'Query.heartbeat' then graphql.build_heartbeat_query(ast_inlined)
+                        when '__Typename' then format(
+                            $typename_stmt$ select to_jsonb(%L::text) $typename_stmt$,
+                            (
+                                select
+                                    f.parent_type
+                                from
+                                    graphql.field f
+                                where
+                                    f.parent_type = operation::text
+                                    and f.name = graphql.name_literal(ast_inlined)
+                                limit 1
+                            )
+                        )
                     end;
 
                     if q is null and operation = 'Query' then
@@ -189,7 +202,7 @@ begin
                                 )
                             when '__Type' then
                                 jsonb_build_object(
-                                    graphql.name_literal(ast_inlined),
+                                    graphql.alias_or_name_literal(ast_statement),
                                     graphql."resolve___Type"(
                                         (
                                             select
