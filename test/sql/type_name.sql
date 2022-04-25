@@ -2,6 +2,8 @@ begin;
     create table account(id int primary key);
     create type post_status as enum ('published', 'unpublished');
 
+    select graphql.rebuild_schema();
+
     select
         (rec).type_kind,
         (rec).meta_kind,

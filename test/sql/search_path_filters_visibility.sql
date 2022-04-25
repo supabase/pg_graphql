@@ -10,6 +10,8 @@ begin;
         id serial primary key
     );
 
+    select graphql.rebuild_schema();
+
     -- public.foo is visible, other.bar is not
     select
         name

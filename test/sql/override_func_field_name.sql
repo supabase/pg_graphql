@@ -17,6 +17,8 @@ begin;
 
     comment on function public._full_name(public.account) is E'@graphql({"name": "wholeName"})';
 
+    select graphql.rebuild_schema();
+
     select
         name
     from

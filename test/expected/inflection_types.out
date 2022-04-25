@@ -15,6 +15,12 @@ begin;
     savepoint a;
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from t;
           name           
 -------------------------
@@ -32,6 +38,12 @@ begin;
 
     -- Inflection off, Overrides: on
     comment on table blog_post is e'@graphql({"name": "BlogZZZ"})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from t;
          name          
 -----------------------
@@ -50,6 +62,12 @@ begin;
     rollback to savepoint a;
     -- Inflection on, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": true})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select name from graphql.type where entity is not null order by entity, name;
           name          
 ------------------------
@@ -67,6 +85,12 @@ begin;
 
     -- Inflection on, Overrides: on
     comment on table blog_post is e'@graphql({"name": "BlogZZZ"})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select name from graphql.type where entity is not null order by entity, name;
          name          
 -----------------------

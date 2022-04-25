@@ -24,22 +24,26 @@ begin;
 
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
+    select graphql.rebuild_schema();
     select * from f;
 
     savepoint a;
 
     -- Inflection off, Overrides: on
     comment on function public._full_name(public.account) is E'@graphql({"name": "wholeName"})';
+    select graphql.rebuild_schema();
     select * from f;
 
     rollback to savepoint a;
 
     -- Inflection on, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": true})';
+    select graphql.rebuild_schema();
     select * from f;
 
     -- Inflection on, Overrides: on
     comment on function public._full_name(public.account) is E'@graphql({"name": "WholeName"})';
+    select graphql.rebuild_schema();
     select * from f;
 
 rollback;
