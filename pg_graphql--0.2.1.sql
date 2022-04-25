@@ -4373,7 +4373,13 @@ begin
         gt.name = type_;
 end;
 $$;
-create or replace function graphql.cache_key(role regrole, ast jsonb, variables jsonb)
+create or replace function graphql.cache_key(
+    role regrole,
+    schemas text[],
+    schema_version int,
+    ast jsonb,
+    variables jsonb
+)
     returns text
     language sql
     immutable
@@ -4382,6 +4388,8 @@ as $$
         -- Different roles may have different levels of access
         md5(
             $1::text
+            || $2::text
+            || $3::text
             -- Parsed query hash
             || ast::text
             || graphql.cache_key_variable_component(variables)
@@ -4432,6 +4440,36 @@ While false positives are possible, the cost of false positives is low
             union all
             select x from order_clause
         ) y(x)
+$$;
+create table graphql.introspection_query_cache(
+    cache_key text primary key, -- equivalent to prepared statement name
+    response_data jsonb
+);
+
+create or replace function graphql.get_introspection_cache(cache_key text)
+    returns jsonb
+    security definer
+    language sql
+as $$
+    select
+        response_data
+    from
+        graphql.introspection_query_cache
+    where
+        cache_key = $1
+    limit 1
+$$;
+
+create or replace function graphql.set_introspection_cache(cache_key text, response_data jsonb)
+    returns void
+    security definer
+    language sql
+as $$
+    insert into
+        graphql.introspection_query_cache(cache_key, response_data)
+    values
+        ($1, $2)
+    on conflict (cache_key) do nothing;
 $$;
 create or replace function graphql.prepared_statement_create_clause(statement_name text, variable_definitions jsonb, query_ text)
     returns text
@@ -4578,6 +4616,10 @@ begin
     -- Rebuild the schema cache if the SQL schema has changed
     perform graphql.rebuild_schema();
 
+    fragment_definitions = graphql.ast_pass_strip_loc(
+        jsonb_path_query_array(ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")')
+    );
+
     begin
 
         -- Build query if not in cache
@@ -4589,7 +4631,16 @@ begin
 
             prepared_statement_name = (
                 case
-                    when operation = 'Query' then graphql.cache_key(current_user::regrole, ast_statement, variables)
+                    when operation = 'Query' then graphql.cache_key(
+                        current_user::regrole,
+                        current_schemas(false),
+                        graphql.get_built_schema_version(),
+                        jsonb_build_object(
+                            'statement', ast_statement,
+                            'fragment_defs', fragment_definitions
+                        ),
+                        variables
+                    )
                     -- If not a query (mutation) don't attempt to cache
                     else md5(format('%s%s%s',random(),random(),random()))
                 end
@@ -4598,9 +4649,7 @@ begin
             if errors_ = '{}' and not graphql.prepared_statement_exists(prepared_statement_name) then
 
                     ast_locless = graphql.ast_pass_strip_loc(ast_statement);
-                    fragment_definitions = graphql.ast_pass_strip_loc(
-                        jsonb_path_query_array(ast, '$.definitions[*] ? (@.kind == "FragmentDefinition")')
-                    );
+
                     -- Skip fragment inline when no fragments are present
                     ast_inlined = case
                         when fragment_definitions = '[]'::jsonb then ast_locless
@@ -4682,29 +4731,35 @@ begin
                             );
                         end if;
 
-                        data_ = case meta_kind
-                            when '__Schema' then
-                                graphql."resolve___Schema"(
-                                    ast := ast_inlined,
-                                    variable_definitions := variable_definitions
-                                )
-                            when '__Type' then
-                                jsonb_build_object(
-                                    graphql.alias_or_name_literal(ast_statement),
-                                    graphql."resolve___Type"(
-                                        (
-                                            select
-                                                name
-                                            from
-                                                graphql.type type_
-                                            where
-                                                name = graphql.argument_value_by_name('name', ast_inlined)
-                                        ),
-                                        ast_inlined
+
+                        if graphql.get_introspection_cache(prepared_statement_name) is not null then
+                            data_ = graphql.get_introspection_cache(prepared_statement_name);
+                        else
+                            data_ = case meta_kind
+                                when '__Schema' then
+                                    graphql."resolve___Schema"(
+                                        ast := ast_inlined,
+                                        variable_definitions := variable_definitions
                                     )
-                                )
-                            else null::jsonb
-                        end;
+                                when '__Type' then
+                                    jsonb_build_object(
+                                        graphql.alias_or_name_literal(ast_statement),
+                                        graphql."resolve___Type"(
+                                            (
+                                                select
+                                                    name
+                                                from
+                                                    graphql.type type_
+                                                where
+                                                    name = graphql.argument_value_by_name('name', ast_inlined)
+                                            ),
+                                            ast_inlined
+                                        )
+                                    )
+                                else null::jsonb
+                            end;
+                            perform graphql.set_introspection_cache(prepared_statement_name, data_);
+                        end if;
                     end if;
             end if;
 
@@ -4779,6 +4834,14 @@ create sequence if not exists graphql.seq_schema_version as int cycle;
 create table graphql.schema_version(ver int primary key);
 insert into graphql.schema_version(ver) values (nextval('graphql.seq_schema_version'));
 
+create or replace function graphql.get_built_schema_version()
+    returns int
+    security definer
+    language sql
+as $$
+    select ver from graphql.schema_version limit 1;
+$$;
+
 create or replace function graphql.rebuild_schema()
     returns void
     security definer
@@ -4786,7 +4849,7 @@ create or replace function graphql.rebuild_schema()
 as $$
 declare
     cur_schema_version int = last_value from graphql.seq_schema_version;
-    built_schema_version int = ver from graphql.schema_version;
+    built_schema_version int = graphql.get_built_schema_version();
 begin
     if built_schema_version <> cur_schema_version then
         -- Lock the row to avoid concurrent access
@@ -4802,6 +4865,7 @@ begin
             refresh materialized view graphql.relationship with data;
             perform graphql.rebuild_types();
             perform graphql.rebuild_fields();
+            truncate table graphql.introspection_query_cache;
 
             -- Update the stored schema version value
             update graphql.schema_version set ver = cur_schema_version;

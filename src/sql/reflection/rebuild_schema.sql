@@ -6,6 +6,14 @@ create sequence if not exists graphql.seq_schema_version as int cycle;
 create table graphql.schema_version(ver int primary key);
 insert into graphql.schema_version(ver) values (nextval('graphql.seq_schema_version'));
 
+create or replace function graphql.get_built_schema_version()
+    returns int
+    security definer
+    language sql
+as $$
+    select ver from graphql.schema_version limit 1;
+$$;
+
 create or replace function graphql.rebuild_schema()
     returns void
     security definer
@@ -13,7 +21,7 @@ create or replace function graphql.rebuild_schema()
 as $$
 declare
     cur_schema_version int = last_value from graphql.seq_schema_version;
-    built_schema_version int = ver from graphql.schema_version;
+    built_schema_version int = graphql.get_built_schema_version();
 begin
     if built_schema_version <> cur_schema_version then
         -- Lock the row to avoid concurrent access
@@ -29,6 +37,7 @@ begin
             refresh materialized view graphql.relationship with data;
             perform graphql.rebuild_types();
             perform graphql.rebuild_fields();
+            truncate table graphql.introspection_query_cache;
 
             -- Update the stored schema version value
             update graphql.schema_version set ver = cur_schema_version;
