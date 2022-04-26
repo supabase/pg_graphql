@@ -4,7 +4,7 @@ create sequence if not exists graphql.seq_schema_version as int cycle;
 -- Tracks the most recently built schema version
 -- Contains 1 row
 create table graphql.schema_version(ver int primary key);
-insert into graphql.schema_version(ver) values (nextval('graphql.seq_schema_version'));
+insert into graphql.schema_version(ver) values (nextval('graphql.seq_schema_version') - 1);
 
 create or replace function graphql.get_built_schema_version()
     returns int
