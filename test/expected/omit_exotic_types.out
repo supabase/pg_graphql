@@ -13,6 +13,12 @@ begin;
         js json,
         jsb jsonb
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select
         name, parent_type, type_, is_not_null, is_array, is_arg
     from

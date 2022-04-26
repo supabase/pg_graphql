@@ -3,6 +3,12 @@ begin;
     --set log_min_messages to panic;
     create schema xyz;
     create type xyz.light as enum ('red');
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     -- expect nothing b/c not in search_path
     select name from graphql.type t where t.enum is not null;
  name 

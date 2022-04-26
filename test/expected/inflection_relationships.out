@@ -16,6 +16,12 @@ begin;
         author_id int,
         constraint fkey_author_id foreign key (author_id) references account_holder(id)
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from r;
           name           
 -------------------------
@@ -31,6 +37,12 @@ begin;
         author int,
         constraint fkey_author_id foreign key (author) references account_holder(id)
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from r;
           name           
 -------------------------
@@ -49,6 +61,12 @@ begin;
     comment on constraint fkey_account_id
     on account_holder
     is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from r;
    name   
 ----------
@@ -64,6 +82,12 @@ begin;
         "authorId" int,
         constraint fkey_author_id foreign key ("authorId") references "AccountHolder"(id)
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from r;
           name           
 -------------------------
@@ -79,6 +103,12 @@ begin;
         author int,
         constraint fkey_author_id foreign key (author) references "AccountHolder"(id)
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from r;
           name           
 -------------------------
@@ -97,6 +127,12 @@ begin;
     comment on constraint fkey_account_id
     on "AccountHolder"
     is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     select * from r;
    name   
 ----------

@@ -20,6 +20,7 @@ begin;
         constraint fkey_author_id foreign key (author_id) references account_holder(id)
     );
 
+    select graphql.rebuild_schema();
     select * from r;
 
     -- Inflection true, Overrides: off, does not end with '_id'
@@ -33,6 +34,7 @@ begin;
         constraint fkey_author_id foreign key (author) references account_holder(id)
     );
 
+    select graphql.rebuild_schema();
     select * from r;
 
     -- Inflection true, Overrides: true
@@ -50,6 +52,7 @@ begin;
     on account_holder
     is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
 
+    select graphql.rebuild_schema();
     select * from r;
 
     -- Inflection false, Overrides: off, Ends with 'Id'
@@ -63,6 +66,7 @@ begin;
         constraint fkey_author_id foreign key ("authorId") references "AccountHolder"(id)
     );
 
+    select graphql.rebuild_schema();
     select * from r;
 
     -- Inflection false, Overrides: off, does not end with 'Id'
@@ -76,6 +80,7 @@ begin;
         constraint fkey_author_id foreign key (author) references "AccountHolder"(id)
     );
 
+    select graphql.rebuild_schema();
     select * from r;
 
     -- Inflection false, Overrides: true
@@ -93,6 +98,7 @@ begin;
     on "AccountHolder"
     is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
 
+    select graphql.rebuild_schema();
     select * from r;
 
 rollback;

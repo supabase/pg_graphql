@@ -3,6 +3,12 @@ begin;
     create table account(
         id serial primary key
     );
+    select graphql.rebuild_schema();
+ rebuild_schema 
+----------------
+ 
+(1 row)
+
     -- Should be visible because it has a primary ky
     select * from graphql.entity;
  entity  

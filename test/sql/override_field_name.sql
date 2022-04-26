@@ -6,6 +6,8 @@ begin;
 
     comment on column public.account.email is E'@graphql({"name": "emailAddress"})';
 
+    select graphql.rebuild_schema();
+
     select
         name
     from

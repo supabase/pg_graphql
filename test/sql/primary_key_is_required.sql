@@ -6,6 +6,8 @@ begin;
         id serial primary key
     );
 
+    select graphql.rebuild_schema();
+
     -- Should be visible because it has a primary ky
     select * from graphql.entity;
 

@@ -12,7 +12,8 @@ begin;
 
     select jsonb_pretty(
         graphql.resolve($$
-    {
+    query Abc {
+      __typename
       accountCollection {
         __typename
         pageInfo {
@@ -34,7 +35,8 @@ begin;
 
     select jsonb_pretty(
         graphql.resolve($$
-    mutation {
+    mutation Abc {
+      __typename
       insertIntoAccountCollection(objects: [
         { id: 2, parentId: 1 }
       ]) {

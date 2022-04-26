@@ -17,6 +17,7 @@ begin;
         jsb jsonb
     );
 
+    select graphql.rebuild_schema();
 
     select
         name, parent_type, type_, is_not_null, is_array, is_arg

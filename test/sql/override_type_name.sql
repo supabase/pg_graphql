@@ -6,6 +6,8 @@ begin;
 
     comment on table public.account is E'@graphql({"name": "UserAccount"})';
 
+    select graphql.rebuild_schema();
+
     select name from graphql.type where entity = 'public.account'::regclass order by name;
 
 rollback;
