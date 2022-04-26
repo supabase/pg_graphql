@@ -30,7 +30,7 @@ begin
         -- Recheck condition now that we have aquired a row lock to avoid racing & stacking requests
         if built_schema_version <> cur_schema_version then
             truncate table graphql._field;
-            delete from graphql._type;
+            delete from graphql._type where true; -- satisfy safedelete
             refresh materialized view graphql.entity with data;
             refresh materialized view graphql.entity_column with data;
             refresh materialized view graphql.entity_unique_columns with data;
@@ -40,7 +40,7 @@ begin
             truncate table graphql.introspection_query_cache;
 
             -- Update the stored schema version value
-            update graphql.schema_version set ver = cur_schema_version;
+            update graphql.schema_version set ver = cur_schema_version where true; -- satisfy safedelete
 
         end if;
     end if;
