@@ -1,16 +1,8 @@
 drop extension pg_graphql;
 create extension pg_graphql;
-select jsonb_pretty(
-    graphql.resolve($$
-    { heartbeat }
-    $$)
-);
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": {                                    +
-         "heartbeat": "2022-04-26T16:11:30.088137"+
-     }                                            +
- }
+select graphql.resolve($${ heartbeat }$$) -> 'data' ->> 'heartbeat' like '2%';
+ ?column? 
+----------
+ t
 (1 row)
 
