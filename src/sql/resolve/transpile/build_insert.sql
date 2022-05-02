@@ -1,8 +1,7 @@
 create or replace function graphql.build_insert(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql

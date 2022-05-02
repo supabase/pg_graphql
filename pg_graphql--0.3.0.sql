@@ -3341,9 +3341,7 @@ $$;
 create or replace function graphql.build_delete(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null,
-    parent_block_name text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql
@@ -3500,8 +3498,7 @@ $$;
 create or replace function graphql.build_insert(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql
@@ -3804,9 +3801,7 @@ $$;
 create or replace function graphql.build_update(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null,
-    parent_block_name text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql
@@ -3836,80 +3831,41 @@ declare
     );
 
     arg_set graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'UpdateSetArg';
-    allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_set.id and meta_kind = 'Column';
-    set_arg_ix int = graphql.arg_index(arg_set.name, variable_definitions);
-    set_arg jsonb = graphql.get_arg_by_name(arg_set.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
+    set_arg jsonb = graphql.arg_to_jsonb(
+            graphql.get_arg_by_name(
+                'set',
+                graphql.jsonb_coalesce(ast -> 'arguments', '[]')
+            ),
+            variables
+        );
+
     set_clause text;
+    allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_set.id and meta_kind = 'Column';
 begin
 
     if set_arg is null then
         perform graphql.exception('missing argument "set"');
     end if;
 
-    if graphql.is_variable(set_arg -> 'value') then
-        -- `set` is variable
-        select
-            string_agg(
-                format(
-                    '%I = ($%s::jsonb ->> %L)::%s',
-                    case
-                        when ac.column_name is not null then ac.column_name
-                        else graphql.exception_unknown_field(x.key_, ac.type_)
-                    end,
-                    graphql.arg_index(
-                        graphql.name_literal(set_arg -> 'value'),
-                        variable_definitions
-                    ),
-                    x.key_,
-                    ac.column_type
-                ),
-                ', '
-            )
-        from
-            jsonb_each(variables -> graphql.name_literal(set_arg -> 'value')) x(key_, val)
-            left join unnest(allowed_columns) ac
-                on x.key_ = ac.name
-        into
-            set_clause;
-
-    else
-        -- Literals and Column Variables
-        select
-            string_agg(
+    select
+        string_agg(
+            format(
+                '%I = (%L)::%s',
                 case
-                    when graphql.is_variable(val -> 'value') then format(
-                        '%I = ($%s)::%s',
-                        case
-                            when ac.meta_kind = 'Column' then ac.column_name
-                            else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
-                        end,
-                        graphql.arg_index(
-                            (val -> 'value' -> 'name' ->> 'value'),
-                            variable_definitions
-                        ),
-                        ac.column_type
-
-                    )
-                    else format(
-                        '%I = (%L)::%s',
-                        case
-                            when ac.meta_kind = 'Column' then ac.column_name
-                            else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
-                        end,
-                        graphql.value_literal(val),
-                        ac.column_type
-                    )
+                    when ac.column_name is not null then ac.column_name
+                    else graphql.exception_unknown_field(x.key_, ac.type_)
                 end,
-                ', '
-            )
-        from
-            jsonb_array_elements(set_arg -> 'value' -> 'fields') arg_cols(val)
-            left join unnest(allowed_columns) ac
-                on graphql.name_literal(arg_cols.val) = ac.name
-        into
-            set_clause;
-
-    end if;
+                x.val #>> '{}',
+                ac.column_type
+            ),
+            ', '
+        )
+    from
+        jsonb_each(set_arg) x(key_, val)
+        left join unnest(allowed_columns) ac
+            on x.key_ = ac.name
+    into
+        set_clause;
 
     returning_clause = (
         select
