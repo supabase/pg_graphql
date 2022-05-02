@@ -16,17 +16,25 @@ $$
             when 'StringValue'  then to_jsonb(arg ->> 'value')
             when 'EnumValue'    then to_jsonb(arg ->> 'value')
             when 'ListValue'    then (
-                select
-                    jsonb_agg(
-                        graphql.arg_to_jsonb(je.x, variables)
-                    )
-                from
-                    jsonb_array_elements((arg -> 'values')) je(x)
+                coalesce(
+                    (
+                        select
+                            jsonb_agg(
+                                graphql.arg_to_jsonb(je.x, variables)
+                            )
+                        from
+                            jsonb_array_elements((arg -> 'values')) je(x)
+                    ),
+                    jsonb_build_array()
+                )
             )
             when 'ObjectField'  then (
-                jsonb_build_object(
-                    arg -> 'name' -> 'value',
-                    graphql.arg_to_jsonb(arg -> 'value', variables)
+                coalesce(
+                    jsonb_build_object(
+                        arg -> 'name' -> 'value',
+                        graphql.arg_to_jsonb(arg -> 'value', variables)
+                    ),
+                    jsonb_build_object()
                 )
             )
             when 'ObjectValue'  then (

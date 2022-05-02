@@ -105,6 +105,17 @@ begin;
     variables := '{"accs": [{"email": "bar@foo.com"}]}'::jsonb
     );
 
+    -- Single object coerces to a list
+    select graphql.resolve($$
+    mutation {
+      insertIntoBlogCollection(objects: {ownerId: 1}) {
+        affectedCount
+      }
+    }
+    $$);
+
+
+
     /*
         Errors
     */
@@ -123,15 +134,6 @@ begin;
     $$,
     variables := '{"acc": {"doesNotExist": "other"}}'::jsonb
     );
-
-    -- Wrong input type (object vs list)
-    select graphql.resolve($$
-    mutation {
-      insertIntoBlogCollection(objects: {ownerId: 1}) {
-        affectedCount
-      }
-    }
-    $$);
 
     -- Wrong input type (list of string, not list of object)
     select graphql.resolve($$

@@ -19,7 +19,17 @@ declare
     arg_object graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'ObjectsArg';
     allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_object.id and meta_kind = 'Column';
 
-    object_arg jsonb = graphql.get_arg_by_name(arg_object.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
+    object_arg jsonb = graphql.get_arg_by_name(
+        arg_object.name,
+        graphql.jsonb_coalesce(ast -> 'arguments', '[]')
+    );
+    values_var jsonb = graphql.arg_coerce_list(
+        graphql.arg_to_jsonb(
+            object_arg,
+            variables
+        )
+    ); -- value for `objects` from variables
+    values_all_field_keys text[]; -- all field keys referenced in values_var
 
     block_name text = graphql.slug();
     column_clause text;
@@ -27,51 +37,9 @@ declare
     returning_clause text;
     result text;
 
-    values_var jsonb; -- value for `objects` from variables
-    values_all_field_keys text[]; -- all field keys referenced in values_var
 begin
     if object_arg is null then
        perform graphql.exception_required_argument('objects');
-    end if;
-
-    if graphql.is_variable(object_arg -> 'value') then
-        values_var = variables -> graphql.name_literal(object_arg -> 'value');
-
-    elsif (object_arg -> 'value' ->> 'kind') = 'ListValue' then
-        -- Literals and Column Variables
-        select
-            jsonb_agg(
-                case
-                    when graphql.is_variable(row_.ast) then (
-                        case
-                            when jsonb_typeof(variables -> (graphql.name_literal(row_.ast))) <> 'object' then graphql.exception('Invalid value for objects record')::jsonb
-                            else variables -> (graphql.name_literal(row_.ast))
-                        end
-                    )
-                    when row_.ast ->> 'kind' = 'ObjectValue' then (
-                        select
-                            jsonb_object_agg(
-                                graphql.name_literal(rec_vals.ast),
-                                case
-                                    when graphql.is_variable(rec_vals.ast -> 'value') then (variables ->> (graphql.name_literal(rec_vals.ast -> 'value')))
-                                    else graphql.value_literal(rec_vals.ast)
-                                end
-                            )
-                        from
-                            jsonb_array_elements(row_.ast -> 'fields') rec_vals(ast)
-                    )
-                    else graphql.exception('Invalid value for objects record')::jsonb
-                end
-            )
-        from
-            jsonb_array_elements(object_arg -> 'value' -> 'values') row_(ast) -- one per "record" of data
-        into
-            values_var;
-
-        -- Handle empty list input
-        values_var = coalesce(values_var, jsonb_build_array());
-    else
-        perform graphql.exception('Invalid value for objects record')::jsonb;
     end if;
 
     -- Confirm values is a list
