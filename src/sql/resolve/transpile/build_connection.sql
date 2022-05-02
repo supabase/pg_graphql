@@ -53,7 +53,13 @@ declare
 
     -- ordering is part of the cache key, so it is safe to extract it from
     -- variables or arguments
-    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    -- Ex: [{"id": "AscNullsLast"}, {"name": "DescNullsFirst"}]
+    order_by_arg jsonb = graphql.arg_coerce_list(
+        graphql.arg_to_jsonb(
+            graphql.get_arg_by_name('orderBy',  arguments),
+            variables
+        )
+    );
     column_orders graphql.column_order_w_type[] = graphql.to_column_orders(
         order_by_arg,
         entity,

@@ -1,5 +1,5 @@
 create or replace function graphql.arg_to_jsonb(
-    arg jsonb, -- has 
+    arg jsonb, -- has
     variables jsonb default '{}'
 )
     returns jsonb
@@ -20,12 +20,12 @@ $$
                     jsonb_agg(
                         graphql.arg_to_jsonb(je.x, variables)
                     )
-                from 
+                from
                     jsonb_array_elements((arg -> 'values')) je(x)
             )
             when 'ObjectField'  then (
                 jsonb_build_object(
-                    arg -> 'name' -> 'value', 
+                    arg -> 'name' -> 'value',
                     graphql.arg_to_jsonb(arg -> 'value', variables)
                 )
             )
@@ -35,19 +35,19 @@ $$
                         je.elem -> 'name' ->> 'value',
                         graphql.arg_to_jsonb(je.elem -> 'value', variables)
                     )
-                from 
+                from
                     jsonb_array_elements((arg -> 'fields')) je(elem)
             )
             when 'Variable'     then (
-                case 
+                case
                     -- null value should be treated as missing in all cases.
                     when jsonb_typeof((variables -> (arg -> 'name' ->> 'value'))) = 'null' then null
                     else (variables -> (arg -> 'name' ->> 'value'))
                 end
             )
         else (
-            case 
-                when arg is null then null 
+            case
+                when arg is null then null
                 else  graphql.exception('unhandled argument kind')::jsonb
             end
         )
@@ -71,5 +71,3 @@ $$
             else jsonb_build_array(arg)
         end;
 $$;
-
-

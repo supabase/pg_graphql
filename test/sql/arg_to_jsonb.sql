@@ -1,9 +1,9 @@
 select
     graphql.arg_to_jsonb(arg_ast.arg, x.vars),
     arg_ast.arg
-from 
+from
     (
-        values 
+        values
             ('{ abc (int_val: 1) { x } }', null::jsonb),
             ('{ abc (float_val: 1.1) { x } }', null),
             ('{ abc (bool_val: false) { x } }', null),
