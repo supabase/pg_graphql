@@ -1,0 +1,39 @@
+select
+    graphql.arg_to_jsonb(arg_ast.arg, x.vars),
+    arg_ast.arg
+from
+    (
+        values
+            ('{ abc (int_val: 1) { x } }', null::jsonb),
+            ('{ abc (float_val: 1.1) { x } }', null),
+            ('{ abc (bool_val: false) { x } }', null),
+            ('{ abc (string_val: "my string") { x } }', null),
+            ('{ abc (enum_val: customEnum) { x } }', null),
+            ('{ abc (list_val: [1, 2]) { x } }', null),
+            ('{ abc (object_val: {key: "val"}) { x } }', null),
+            ('query Abc($v: Int!) { abc(int_val: $v)  { x } }', '{"v": 1}'),
+            ('query Abc($v: XFilter!) { abc(obj_val: $v) { x } }', '{"v": {"id": {"eq": "aghle"}}}'),
+            ('query Mixed($v: Obj!) { abc(list_obj_val: [{abc: $v}]) { x } }', '{"v": {"id": {"eq": 1}}}')
+    ) x(q, vars),
+    lateral (
+        select
+            graphql.ast_pass_strip_loc(
+                (
+                    graphql.parse(x.q)
+                ).ast::jsonb
+            ) -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0 -> 'arguments' -> 0
+    ) arg_ast(arg);
+         arg_to_jsonb         |                                                                                                                                                arg                                                                                                                                                 
+------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 1                            | {"kind": "Argument", "name": {"kind": "Name", "value": "int_val"}, "value": {"kind": "IntValue", "value": "1"}}
+ 1.1                          | {"kind": "Argument", "name": {"kind": "Name", "value": "float_val"}, "value": {"kind": "FloatValue", "value": "1.1"}}
+ false                        | {"kind": "Argument", "name": {"kind": "Name", "value": "bool_val"}, "value": {"kind": "BooleanValue", "value": false}}
+ "my string"                  | {"kind": "Argument", "name": {"kind": "Name", "value": "string_val"}, "value": {"kind": "StringValue", "value": "my string"}}
+ "customEnum"                 | {"kind": "Argument", "name": {"kind": "Name", "value": "enum_val"}, "value": {"kind": "EnumValue", "value": "customEnum"}}
+ [1, 2]                       | {"kind": "Argument", "name": {"kind": "Name", "value": "list_val"}, "value": {"kind": "ListValue", "values": [{"kind": "IntValue", "value": "1"}, {"kind": "IntValue", "value": "2"}]}}
+ {"key": "val"}               | {"kind": "Argument", "name": {"kind": "Name", "value": "object_val"}, "value": {"kind": "ObjectValue", "fields": [{"kind": "ObjectField", "name": {"kind": "Name", "value": "key"}, "value": {"kind": "StringValue", "value": "val"}}]}}
+ 1                            | {"kind": "Argument", "name": {"kind": "Name", "value": "int_val"}, "value": {"kind": "Variable", "name": {"kind": "Name", "value": "v"}}}
+ {"id": {"eq": "aghle"}}      | {"kind": "Argument", "name": {"kind": "Name", "value": "obj_val"}, "value": {"kind": "Variable", "name": {"kind": "Name", "value": "v"}}}
+ [{"abc": {"id": {"eq": 1}}}] | {"kind": "Argument", "name": {"kind": "Name", "value": "list_obj_val"}, "value": {"kind": "ListValue", "values": [{"kind": "ObjectValue", "fields": [{"kind": "ObjectField", "name": {"kind": "Name", "value": "abc"}, "value": {"kind": "Variable", "name": {"kind": "Name", "value": "v"}}}]}]}}
+(10 rows)
+

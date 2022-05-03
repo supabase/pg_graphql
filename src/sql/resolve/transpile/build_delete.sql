@@ -1,9 +1,7 @@
 create or replace function graphql.build_delete(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null,
-    parent_block_name text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql

@@ -118,6 +118,19 @@ begin;
  {"data": {"insertIntoAccountCollection": {"records": [{"id": 6, "email": "bar@foo.com"}], "affectedCount": 1}}}
 (1 row)
 
+    -- Single object coerces to a list
+    select graphql.resolve($$
+    mutation {
+      insertIntoBlogCollection(objects: {ownerId: 1}) {
+        affectedCount
+      }
+    }
+    $$);
+                           resolve                            
+--------------------------------------------------------------
+ {"data": {"insertIntoBlogCollection": {"affectedCount": 1}}}
+(1 row)
+
     /*
         Errors
     */
@@ -140,19 +153,6 @@ begin;
  {"data": null, "errors": [{"message": "Unknown field 'doesNotExist'"}]}
 (1 row)
 
-    -- Wrong input type (object vs list)
-    select graphql.resolve($$
-    mutation {
-      insertIntoBlogCollection(objects: {ownerId: 1}) {
-        affectedCount
-      }
-    }
-    $$);
-                                   resolve                                   
------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Invalid value for objects record"}]}
-(1 row)
-
     -- Wrong input type (list of string, not list of object)
     select graphql.resolve($$
     mutation {
@@ -161,9 +161,9 @@ begin;
       }
     }
     $$);
-                                   resolve                                   
------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Invalid value for objects record"}]}
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid value for objects. Expected list of objects"}]}
 (1 row)
 
     -- objects argument is missing

@@ -299,6 +299,87 @@ create or replace function graphql.alias_or_name_literal(field jsonb)
 as $$
     select coalesce(field -> 'alias' ->> 'value', field -> 'name' ->> 'value')
 $$;
+create or replace function graphql.arg_to_jsonb(
+    arg jsonb, -- has
+    variables jsonb default '{}'
+)
+    returns jsonb
+    language sql
+    immutable
+    as
+$$
+    select
+        case arg ->> 'kind'
+            when 'Argument'     then graphql.arg_to_jsonb(arg -> 'value', variables)
+            when 'IntValue'     then to_jsonb((arg ->> 'value')::int)
+            when 'FloatValue'   then to_jsonb((arg ->> 'value')::float)
+            when 'BooleanValue' then to_jsonb((arg ->> 'value')::bool)
+            when 'StringValue'  then to_jsonb(arg ->> 'value')
+            when 'EnumValue'    then to_jsonb(arg ->> 'value')
+            when 'ListValue'    then (
+                coalesce(
+                    (
+                        select
+                            jsonb_agg(
+                                graphql.arg_to_jsonb(je.x, variables)
+                            )
+                        from
+                            jsonb_array_elements((arg -> 'values')) je(x)
+                    ),
+                    jsonb_build_array()
+                )
+            )
+            when 'ObjectField'  then (
+                coalesce(
+                    jsonb_build_object(
+                        arg -> 'name' -> 'value',
+                        graphql.arg_to_jsonb(arg -> 'value', variables)
+                    ),
+                    jsonb_build_object()
+                )
+            )
+            when 'ObjectValue'  then (
+                select
+                    jsonb_object_agg(
+                        je.elem -> 'name' ->> 'value',
+                        graphql.arg_to_jsonb(je.elem -> 'value', variables)
+                    )
+                from
+                    jsonb_array_elements((arg -> 'fields')) je(elem)
+            )
+            when 'Variable'     then (
+                case
+                    -- null value should be treated as missing in all cases.
+                    when jsonb_typeof((variables -> (arg -> 'name' ->> 'value'))) = 'null' then null
+                    else (variables -> (arg -> 'name' ->> 'value'))
+                end
+            )
+        else (
+            case
+                when arg is null then null
+                else  graphql.exception('unhandled argument kind')::jsonb
+            end
+        )
+        end;
+$$;
+
+
+create or replace function graphql.arg_coerce_list(arg jsonb)
+returns jsonb
+    language sql
+    immutable
+    as
+$$
+    -- Wraps jsonb value with a list if its not already a list
+    -- If null, returns null
+    select
+        case
+            when jsonb_typeof(arg) is null then arg -- sql null
+            when jsonb_typeof(arg) = 'null' then null-- json null
+            when jsonb_typeof(arg) = 'array' then arg
+            else jsonb_build_array(arg)
+        end;
+$$;
 create or replace function graphql.ast_pass_fragments(ast jsonb, fragment_defs jsonb = '{}')
     returns jsonb
     language sql
@@ -2496,7 +2577,7 @@ $$
         end
 $$;
 create or replace function graphql.to_column_orders(
-    order_by_arg jsonb,
+    order_by_arg jsonb, -- Ex: [{"id": "AscNullsLast"}, {"name": "DescNullsFirst"}]
     entity regclass,
     variables jsonb default '{}'
 )
@@ -2506,135 +2587,64 @@ create or replace function graphql.to_column_orders(
     as
 $$
 declare
-    pkey_ordering graphql.column_order_w_type[] = array_agg((column_name, 'asc', false, y.column_type))
+    pkey_ordering graphql.column_order_w_type[] = array_agg(
+            (column_name, 'asc', false, y.column_type)::graphql.column_order_w_type
+        )
         from
             unnest(graphql.primary_key_columns(entity)) with ordinality x(column_name, ix)
             join unnest(graphql.primary_key_types(entity)) with ordinality y(column_type, ix)
                 on x.ix = y.ix;
-    claues text;
-    variable_value jsonb;
-
-    variable_ordering graphql.column_order_w_type[];
 begin
+
     -- No order by clause was specified
     if order_by_arg is null then
         return pkey_ordering;
-
-    elsif (order_by_arg -> 'value' ->> 'kind') = 'Variable' then
-        -- Expect [{"fieldName", "DescNullsFirst"}]
-        variable_value = variables -> (order_by_arg -> 'value' -> 'name' ->> 'value');
-
-        if jsonb_typeof(variable_value) <> 'array' or jsonb_array_length(variable_value) = 0 then
-            return graphql.exception('Invalid value for ordering variable');
-        end if;
-
-        return array_agg(
-            (
-                case
-                    when f.column_name is null then graphql.exception('Invalid list entry field name for order clause')
-                    when f.column_name is not null then f.column_name
-                    else graphql.exception_unknown_field(x.key_, t.name)
-                end,
-                case when x.val_ like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                case when x.val_ like '%First' then true else false end, -- nulls_first?
-                f.column_type
-            )::graphql.column_order_w_type
-        ) || pkey_ordering
-        from
-            jsonb_array_elements(variable_value) jae(obj),
-            lateral (
-                select
-                    jet.key_,
-                    jet.val_
-                from
-                    jsonb_each_text( jae.obj )  jet(key_, val_)
-            ) x
-            join graphql.type t
-                on t.entity = $2
-                and t.meta_kind = 'Node'
-            left join graphql.field f
-                on t.name = f.parent_type
-                and f.name = x.key_;
-
-    elsif (order_by_arg -> 'value' ->> 'kind') = 'ListValue' then
-        return (
-            with obs as (
-                select
-                    *
-                from
-                    jsonb_array_elements( order_by_arg -> 'value' -> 'values') with ordinality oba(sel, ix)
-            ),
-            norm as (
-                -- Literal
-                select
-                    ext.field_name,
-                    ext.direction_val,
-                    obs.ix,
-                    case
-                        when field_name is null then graphql.exception('Invalid order clause')
-                        when direction_val is null then graphql.exception('Invalid order clause')
-                        else null
-                    end as errors
-                from
-                    obs,
-                    lateral (
-                        select
-                            graphql.name_literal(sel -> 'fields' -> 0) field_name,
-                            graphql.value_literal(sel -> 'fields' -> 0) direction_val
-                    ) ext
-                where
-                    not graphql.is_variable(obs.sel)
-                union all
-                -- Variable
-                select
-                    v.field_name,
-                    v.direction_val,
-                    obs.ix,
-                    case
-                        when v.field_name is null then graphql.exception('Invalid order clause')
-                        when v.direction_val is null then graphql.exception('Invalid order clause')
-                        else null
-                    end as errors
-                from
-                    obs,
-                    lateral (
-                        select
-                            field_name,
-                            direction_val
-                        from
-                            jsonb_each_text(
-                                case jsonb_typeof(variables -> graphql.name_literal(obs.sel))
-                                    when 'object' then variables -> graphql.name_literal(obs.sel)
-                                    else graphql.exception('Invalid order clause')::jsonb
-                                end
-                            ) jv(field_name, direction_val)
-                        ) v
-                where
-                    graphql.is_variable(obs.sel)
-            )
-            select
-                array_agg(
-                    (
-                        f.column_name,
-                        case when norm.direction_val like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
-                        case when norm.direction_val like '%First' then true else false end, -- nulls_first?
-                        f.column_type
-                    )::graphql.column_order_w_type
-                    order by norm.ix asc
-                ) || pkey_ordering
-            from
-                norm
-                join graphql.type t
-                    on t.entity = $2
-                    and t.meta_kind = 'Node'
-                left join graphql.field f
-                    on t.name = f.parent_type
-                    and f.name = norm.field_name
-        );
-
-    else
-        return graphql.exception('Invalid type for order clause');
     end if;
+
+    return array_agg(
+        (
+            case
+                when f.column_name is null then graphql.exception(
+                    'Invalid list entry field name for order clause'
+                )
+                when f.column_name is not null then f.column_name
+                else graphql.exception_unknown_field(x.key_, t.name)
+            end,
+            case when x.val_ like 'Asc%' then 'asc' else 'desc' end, -- asc or desc
+            case when x.val_ like '%First' then true else false end, -- nulls_first?
+            f.column_type
+        )::graphql.column_order_w_type
+    ) || pkey_ordering
+    from
+        jsonb_array_elements(order_by_arg) jae(obj),
+        lateral (
+            select
+                case jsonb_typeof(jae.obj)
+                    when 'object' then ''
+                    else graphql.exception('Invalid order clause')
+                end
+        ) _validate_elem_is_object, -- unused
+        lateral (
+            select
+                jet.key_,
+                case
+                    when jet.val_ in (
+                        'AscNullsFirst',
+                        'AscNullsLast',
+                        'DescNullsFirst',
+                        'DescNullsLast'
+                    ) then jet.val_
+                    else graphql.exception('Invalid order clause')
+                end as val_
+            from
+                jsonb_each_text( jae.obj )  jet(key_, val_)
+        ) x
+        join graphql.type t
+            on t.entity = $2
+            and t.meta_kind = 'Node'
+        left join graphql.field f
+            on t.name = f.parent_type
+            and f.name = x.key_;
 end;
 $$;
 create type graphql.comparison_op as enum ('=', '<', '<=', '<>', '>=', '>');
@@ -2945,7 +2955,13 @@ declare
 
     -- ordering is part of the cache key, so it is safe to extract it from
     -- variables or arguments
-    order_by_arg jsonb = graphql.get_arg_by_name('orderBy',  arguments);
+    -- Ex: [{"id": "AscNullsLast"}, {"name": "DescNullsFirst"}]
+    order_by_arg jsonb = graphql.arg_coerce_list(
+        graphql.arg_to_jsonb(
+            graphql.get_arg_by_name('orderBy',  arguments),
+            variables
+        )
+    );
     column_orders graphql.column_order_w_type[] = graphql.to_column_orders(
         order_by_arg,
         entity,
@@ -3325,9 +3341,7 @@ $$;
 create or replace function graphql.build_delete(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null,
-    parent_block_name text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql
@@ -3484,8 +3498,7 @@ $$;
 create or replace function graphql.build_insert(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql
@@ -3502,7 +3515,17 @@ declare
     arg_object graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'ObjectsArg';
     allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_object.id and meta_kind = 'Column';
 
-    object_arg jsonb = graphql.get_arg_by_name(arg_object.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
+    object_arg jsonb = graphql.get_arg_by_name(
+        arg_object.name,
+        graphql.jsonb_coalesce(ast -> 'arguments', '[]')
+    );
+    values_var jsonb = graphql.arg_coerce_list(
+        graphql.arg_to_jsonb(
+            object_arg,
+            variables
+        )
+    ); -- value for `objects` from variables
+    values_all_field_keys text[]; -- all field keys referenced in values_var
 
     block_name text = graphql.slug();
     column_clause text;
@@ -3510,51 +3533,9 @@ declare
     returning_clause text;
     result text;
 
-    values_var jsonb; -- value for `objects` from variables
-    values_all_field_keys text[]; -- all field keys referenced in values_var
 begin
     if object_arg is null then
        perform graphql.exception_required_argument('objects');
-    end if;
-
-    if graphql.is_variable(object_arg -> 'value') then
-        values_var = variables -> graphql.name_literal(object_arg -> 'value');
-
-    elsif (object_arg -> 'value' ->> 'kind') = 'ListValue' then
-        -- Literals and Column Variables
-        select
-            jsonb_agg(
-                case
-                    when graphql.is_variable(row_.ast) then (
-                        case
-                            when jsonb_typeof(variables -> (graphql.name_literal(row_.ast))) <> 'object' then graphql.exception('Invalid value for objects record')::jsonb
-                            else variables -> (graphql.name_literal(row_.ast))
-                        end
-                    )
-                    when row_.ast ->> 'kind' = 'ObjectValue' then (
-                        select
-                            jsonb_object_agg(
-                                graphql.name_literal(rec_vals.ast),
-                                case
-                                    when graphql.is_variable(rec_vals.ast -> 'value') then (variables ->> (graphql.name_literal(rec_vals.ast -> 'value')))
-                                    else graphql.value_literal(rec_vals.ast)
-                                end
-                            )
-                        from
-                            jsonb_array_elements(row_.ast -> 'fields') rec_vals(ast)
-                    )
-                    else graphql.exception('Invalid value for objects record')::jsonb
-                end
-            )
-        from
-            jsonb_array_elements(object_arg -> 'value' -> 'values') row_(ast) -- one per "record" of data
-        into
-            values_var;
-
-        -- Handle empty list input
-        values_var = coalesce(values_var, jsonb_build_array());
-    else
-        perform graphql.exception('Invalid value for objects record')::jsonb;
     end if;
 
     -- Confirm values is a list
@@ -3820,9 +3801,7 @@ $$;
 create or replace function graphql.build_update(
     ast jsonb,
     variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
-    parent_type text = null,
-    parent_block_name text = null
+    variables jsonb = '{}'
 )
     returns text
     language plpgsql
@@ -3852,80 +3831,41 @@ declare
     );
 
     arg_set graphql.field = field from graphql.field where parent_arg_field_id = field_rec.id and meta_kind = 'UpdateSetArg';
-    allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_set.id and meta_kind = 'Column';
-    set_arg_ix int = graphql.arg_index(arg_set.name, variable_definitions);
-    set_arg jsonb = graphql.get_arg_by_name(arg_set.name, graphql.jsonb_coalesce(ast -> 'arguments', '[]'));
+    set_arg jsonb = graphql.arg_to_jsonb(
+            graphql.get_arg_by_name(
+                'set',
+                graphql.jsonb_coalesce(ast -> 'arguments', '[]')
+            ),
+            variables
+        );
+
     set_clause text;
+    allowed_columns graphql.field[] = array_agg(field) from graphql.field where parent_arg_field_id = arg_set.id and meta_kind = 'Column';
 begin
 
     if set_arg is null then
         perform graphql.exception('missing argument "set"');
     end if;
 
-    if graphql.is_variable(set_arg -> 'value') then
-        -- `set` is variable
-        select
-            string_agg(
-                format(
-                    '%I = ($%s::jsonb ->> %L)::%s',
-                    case
-                        when ac.column_name is not null then ac.column_name
-                        else graphql.exception_unknown_field(x.key_, ac.type_)
-                    end,
-                    graphql.arg_index(
-                        graphql.name_literal(set_arg -> 'value'),
-                        variable_definitions
-                    ),
-                    x.key_,
-                    ac.column_type
-                ),
-                ', '
-            )
-        from
-            jsonb_each(variables -> graphql.name_literal(set_arg -> 'value')) x(key_, val)
-            left join unnest(allowed_columns) ac
-                on x.key_ = ac.name
-        into
-            set_clause;
-
-    else
-        -- Literals and Column Variables
-        select
-            string_agg(
+    select
+        string_agg(
+            format(
+                '%I = (%L)::%s',
                 case
-                    when graphql.is_variable(val -> 'value') then format(
-                        '%I = ($%s)::%s',
-                        case
-                            when ac.meta_kind = 'Column' then ac.column_name
-                            else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
-                        end,
-                        graphql.arg_index(
-                            (val -> 'value' -> 'name' ->> 'value'),
-                            variable_definitions
-                        ),
-                        ac.column_type
-
-                    )
-                    else format(
-                        '%I = (%L)::%s',
-                        case
-                            when ac.meta_kind = 'Column' then ac.column_name
-                            else graphql.exception_unknown_field(graphql.name_literal(val), field_rec.type_)
-                        end,
-                        graphql.value_literal(val),
-                        ac.column_type
-                    )
+                    when ac.column_name is not null then ac.column_name
+                    else graphql.exception_unknown_field(x.key_, ac.type_)
                 end,
-                ', '
-            )
-        from
-            jsonb_array_elements(set_arg -> 'value' -> 'fields') arg_cols(val)
-            left join unnest(allowed_columns) ac
-                on graphql.name_literal(arg_cols.val) = ac.name
-        into
-            set_clause;
-
-    end if;
+                x.val #>> '{}',
+                ac.column_type
+            ),
+            ', '
+        )
+    from
+        jsonb_each(set_arg) x(key_, val)
+        left join unnest(allowed_columns) ac
+            on x.key_ = ac.name
+    into
+        set_clause;
 
     returning_clause = (
         select

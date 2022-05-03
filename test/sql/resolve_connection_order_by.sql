@@ -12,7 +12,6 @@ begin;
         (3, 'aardvark'),
         (null, 'cat');
 
-
     -- Single sort
 
     -- AscNullsFirst
@@ -260,7 +259,7 @@ begin;
     );
 
 
-    -- Variable Whole Param: Invalid, null
+    -- Variable Whole Param: null defaults to primary key asc
     select jsonb_pretty(
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
@@ -278,7 +277,40 @@ begin;
       )
     );
 
-    -- Variable Whole Param: Invalid, empty list
+    -- Variable Whole Param: Single elem coerced to list
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsOrdered($direction: [AccountOrderBy])
+           {
+             accountCollection(orderBy: $direction) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"direction": {"id": "DescNullsLast"}}'
+      )
+    );
+
+    -- Single elem  coerced to list
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(orderBy: {id: DescNullsLast}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- Variable Whole Param: empty list defaults to primary key asc
     select jsonb_pretty(
         graphql.resolve($$
            query AccountsOrdered($direction: [AccountOrderBy])
