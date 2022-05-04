@@ -1,0 +1,3 @@
+[submodule "pg_graphql/submodules/libgraphqlparser"]
+    path = pg_graphql/submodules/libgraphqlparser
+    url = https://github.com/graphql/libgraphqlparser
