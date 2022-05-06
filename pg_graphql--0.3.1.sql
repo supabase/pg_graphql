@@ -4817,6 +4817,7 @@ $$;
 
 create or replace function graphql.rebuild_on_ddl()
     returns event_trigger
+    security definer
     language plpgsql
 as $$
 declare
@@ -4857,6 +4858,7 @@ $$;
 
 create or replace function graphql.rebuild_on_drop()
     returns event_trigger
+    security definer
     language plpgsql
 as $$
 declare
