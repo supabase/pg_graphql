@@ -1,5 +1,4 @@
 use pgx::*;
-use serde::{Deserialize, Serialize};
 use serde_json;
 use std::ffi::{CStr, CString};
 use std::ptr;
@@ -8,18 +7,12 @@ mod parser;
 
 pg_module_magic!();
 
-#[pg_extern]
-fn hello_pg_graphql() -> &'static str {
-    "Hello, pg_graphql"
-}
-
-#[derive(PostgresType, Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ParseResult {
     pub ast: Option<serde_json::Value>,
     pub errors: Option<String>,
 }
 
-#[pg_extern]
 fn parse(query: &str) -> ParseResult {
     let q = CString::new(query).unwrap();
     let q_ptr = q.as_ptr();
@@ -66,15 +59,24 @@ fn parse(query: &str) -> ParseResult {
     }
 }
 
+#[pg_extern]
+fn parse_query(query: &str) -> Option<pgx::JsonB> {
+    let parse_result = parse(query);
+    parse_result.ast.map(|x| pgx::JsonB(x))
+}
+
+#[pg_extern]
+fn parse_query_errors(query: &str) -> Option<String> {
+    let parse_result = parse(query);
+    parse_result.errors
+}
+
+extension_sql_file!("");
+
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
     use pgx::*;
-
-    #[pg_test]
-    fn test_hello_pg_graphql() {
-        assert_eq!("Hello, pg_graphql", crate::hello_pg_graphql());
-    }
 
     #[pg_test]
     fn test_parse_success() {
