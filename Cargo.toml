@@ -12,8 +12,8 @@ pg13 = ["pgx/pg13", "pgx-tests/pg13" ]
 pg14 = ["pgx/pg14", "pgx-tests/pg14" ]
 pg_test = []
 
-[build-dependencies]
-bindgen = "0.59.2"
+#[build-dependencies]
+#bindgen = "0.59.2"
 
 [dependencies]
 pgx = "0.4.2"

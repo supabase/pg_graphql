@@ -1,9 +1,9 @@
 // build.rs
 // Build and link libgraphqlparser
 
-extern crate bindgen;
+// extern crate bindgen;
+// use std::path::PathBuf;
 use std::env;
-use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
@@ -23,12 +23,12 @@ fn main() {
 
     println!("cargo:rustc-link-search=native={}", out_dir);
     println!("cargo:rustc-link-lib=dylib=graphqlparser");
-    //println!("cargo:rerun-if-changed=submodule/libgraphqlparser");
-
+    println!("cargo:rerun-if-changed=submodules/libgraphqlparser");
     println!("cargo:rustc-link-lib=graphqlparser");
 
+    /*
     // Rust Wrapper
-    println!("cargo:rerun-if-changed=c/lib.h");
+    println!("cargo:rerun-if-changed=src/c/lib.h");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
@@ -36,7 +36,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
-        .header("c/lib.h")
+        .header("src/c/lib.h")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -50,4 +50,5 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+    */
 }

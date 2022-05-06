@@ -1,5 +1,5 @@
 select jsonb_pretty(
-    (graphql.parse($$
+    (graphql.parse_query($$
 
         query {
           account(id: 1) {
@@ -7,5 +7,5 @@ select jsonb_pretty(
           }
         }
 
-    $$)).ast::jsonb
+    $$))
 )

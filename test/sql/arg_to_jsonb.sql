@@ -20,7 +20,7 @@ from
         select
             graphql.ast_pass_strip_loc(
                 (
-                    graphql.parse(x.q)
-                ).ast::jsonb
+                    graphql.parse_query(x.q)
+                )
             ) -> 'definitions' -> 0 -> 'selectionSet' -> 'selections' -> 0 -> 'arguments' -> 0
     ) arg_ast(arg);

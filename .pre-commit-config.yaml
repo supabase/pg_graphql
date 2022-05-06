@@ -7,14 +7,6 @@ repos:
         name: Tabs-to-Spaces
         exclude: ^test/expected
 
--   repo: local
-    hooks:
-    -   id: inline-pylint-with-bash
-        name: build
-        entry: bash -c './bin/pgc build'
-        language: system
-        pass_filenames: false
-
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:

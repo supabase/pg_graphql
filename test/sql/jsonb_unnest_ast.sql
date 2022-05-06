@@ -1,5 +1,5 @@
 with doc(x) as (
-    select (graphql.parse(
+    select (graphql.parse_query(
         $$
             {
               accountConnection(last: 2, before: "WyJhY2NvdW50IiwgM10=") {
@@ -12,13 +12,13 @@ with doc(x) as (
               }
             }
         $$
-    )).ast
+    ))
 )
 select
     jkr.jpath,
     jkr.obj
 from
     doc,
-    graphql.jsonb_unnest_recursive_with_jsonpath(graphql.ast_pass_strip_loc(doc.x::jsonb)) jkr(jpath, obj)
+    graphql.jsonb_unnest_recursive_with_jsonpath(graphql.ast_pass_strip_loc(doc.x)) jkr(jpath, obj)
 where
     jkr.jpath::text not ilike '%."loc"%'

@@ -18,3 +18,9 @@ docs/graphql_lexer/
 perf.txt
 query.txt
 schema.graphql
+.DS_Store
+.idea/
+/target
+*.iml
+**/*.rs.bk
+Cargo.lock

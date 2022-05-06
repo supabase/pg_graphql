@@ -480,16 +480,6 @@ create or replace function graphql.name_literal(ast jsonb)
 as $$
     select ast -> 'name' ->> 'value';
 $$;
-create type graphql.parse_result AS (
-    ast text,
-    error text
-);
-
-create function graphql.parse(text)
-    returns graphql.parse_result
-    language c
-    immutable
-as 'pg_graphql', 'parse';
 create or replace function graphql.value_literal(ast jsonb)
     returns text
     immutable
@@ -4475,9 +4465,7 @@ declare
     ---------------------
     -- Always required --
     ---------------------
-    parsed graphql.parse_result = graphql.parse(coalesce(query, ''));
-    ast jsonb = parsed.ast;
-
+    ast jsonb = graphql.parse_query(coalesce(query, ''));
 
     n_operation_defs int = jsonb_array_length(
         jsonb_path_query_array(
@@ -4521,7 +4509,14 @@ declare
     data_ jsonb;
     request_data jsonb;
     errors_ jsonb[] = case
-        when parsed.error is not null then array[jsonb_build_object('message', parsed.error)]
+        when ast is null then array[
+            jsonb_build_object(
+                'message',
+                graphql.parse_query_errors(
+                    coalesce(query, '')
+                )
+            )
+        ]
         when ast_operation is null then array[jsonb_build_object('message', 'unknown operation')]
         else '{}'
     end;

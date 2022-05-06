@@ -1,6 +1,0 @@
-comment = 'GraphQL native'
-default_version = '@CARGO_VERSION@'
-module_pathname = '$libdir/pg_graphql'
-relocatable = false
-superuser = false
-schema = 'graphql'
