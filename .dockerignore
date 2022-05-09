@@ -4,6 +4,7 @@
 .pytest_cache/
 dockerfiles/
 docs/
+target/
 pg_graphql.egg-info/
 nix/
 node_modules/
