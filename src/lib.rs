@@ -142,7 +142,7 @@ extension_sql_file!("sql/directive/parse.sql", name = "28", requires = ["27"]);
 extension_sql_file!(
     "sql/reflection/type/types/meta_kind.sql",
     name = "29",
-    requires = ["28"]
+    requires = ["27"]
 );
 extension_sql_file!(
     "sql/reflection/type/types/type_kind.sql",
@@ -309,11 +309,10 @@ extension_sql_file!(
     name = "62",
     requires = ["61"]
 );
-extension_sql_file!("sql/resolve/resolve.sql", name = "63", requires = ["62"]);
 extension_sql_file!(
     "sql/resolve/argument_value_by_name.sql",
     name = "64",
-    requires = ["63"]
+    requires = ["62"]
 );
 extension_sql_file!(
     "sql/resolve/introspection/resolve_field.sql",
@@ -340,6 +339,7 @@ extension_sql_file!(
     name = "69",
     requires = ["68"]
 );
+extension_sql_file!("sql/resolve/resolve.sql", name = "70", requires = ["68"]);
 
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
