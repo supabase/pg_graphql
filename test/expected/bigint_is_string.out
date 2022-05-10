@@ -64,4 +64,20 @@ begin;
  {"data": {"blogPostCollection": {"edges": [{"node": {"id": "1", "parent": {"id": "1", "parentId": "1"}, "parentId": "1"}}], "totalCount": 1}}}
 (1 row)
 
+    select graphql.resolve($$
+    mutation {
+      deleteFromBlogPostCollection {
+        affectedCount
+        records {
+          id
+          parentId
+        }
+      }
+    }
+    $$);
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"deleteFromBlogPostCollection": {"records": [{"id": "1", "parentId": "1"}], "affectedCount": 1}}}
+(1 row)
+
 rollback;
