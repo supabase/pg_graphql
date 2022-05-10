@@ -1,9 +1,9 @@
 // build.rs
 // Build and link libgraphqlparser
 
-// extern crate bindgen;
-// use std::path::PathBuf;
+extern crate bindgen;
 use std::env;
+use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
@@ -26,7 +26,6 @@ fn main() {
     println!("cargo:rerun-if-changed=submodules/libgraphqlparser");
     println!("cargo:rustc-link-lib=graphqlparser");
 
-    /*
     // Rust Wrapper
     println!("cargo:rerun-if-changed=src/c/lib.h");
 
@@ -50,5 +49,4 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
-    */
 }

@@ -140,6 +140,33 @@ begin;
 (1 row)
 
     rollback to savepoint a;
+    -- Filter null is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                   jsonb_pretty                   
+--------------------------------------------------
+ {                                               +
+     "data": null,                               +
+     "errors": [                                 +
+         {                                       +
+             "message": "Invalid filter argument"+
+         }                                       +
+     ]                                           +
+ }
+(1 row)
+
+    rollback to savepoint a;
     -- Variable: Int
     select jsonb_pretty(
         graphql.resolve($$
@@ -396,6 +423,36 @@ begin;
              "message": "invalid input syntax for type integer: \"true\""+
          }                                                               +
      ]                                                                   +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: null is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             accountCollection(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": null}'
+      )
+    );
+                   jsonb_pretty                   
+--------------------------------------------------
+ {                                               +
+     "data": null,                               +
+     "errors": [                                 +
+         {                                       +
+             "message": "Invalid filter argument"+
+         }                                       +
+     ]                                           +
  }
 (1 row)
 

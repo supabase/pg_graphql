@@ -46,7 +46,8 @@ fn parse(query: &str) -> ParseResult {
 
                 ParseResult {
                     ast: Some(
-                        serde_json::from_str(ast_str).expect("failed to parse query ast json"),
+                        //serde_json::from_str(&ast_str_wo_loc.to_string())
+                        serde_json::from_str(&ast_str).expect("failed to parse query ast json"),
                     ),
                     errors: None,
                 }

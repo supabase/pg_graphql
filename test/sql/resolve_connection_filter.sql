@@ -80,7 +80,21 @@ begin;
     select graphql.resolve($${accountCollection(filter: {id: {gt: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-
+    -- Filter null is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
 
     -- Variable: Int
     select jsonb_pretty(
@@ -230,6 +244,25 @@ begin;
            }
         $$,
         variables:= '{"afilt": {"id": {"eq": true}} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: null is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             accountCollection(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": null}'
       )
     );
     rollback to savepoint a;

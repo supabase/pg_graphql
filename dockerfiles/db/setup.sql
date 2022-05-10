@@ -1,8 +1,7 @@
-create schema if not exists extensions;
+drop extension if exists rs_graphql;
+create extension if not exists rs_graphql;
 
 create role anon;
-create extension if not exists "uuid-ossp";
-create extension if not exists pg_graphql with schema extensions cascade;
 
 grant usage on schema public to anon;
 alter default privileges in schema public grant all on tables to anon;
@@ -10,7 +9,6 @@ alter default privileges in schema public grant all on functions to anon;
 alter default privileges in schema public grant all on sequences to anon;
 
 grant usage on schema graphql to anon;
-grant select on graphql.field, graphql.type, graphql.enum_value to anon;
 grant all on function graphql.resolve to anon;
 
 alter default privileges in schema graphql grant all on tables to anon;
@@ -30,9 +28,9 @@ create function graphql(
 as $$
     select graphql.resolve(
         query := query,
-        variables := coalesce(variables, '{}'),
-        "operationName" := "operationName",
-        extensions := extensions
+        -- variables := coalesce(variables, '{}'),
+        "operationName" := "operationName"
+        -- extensions := extensions
     );
 $$;
 
@@ -60,7 +58,7 @@ create type blog_post_status as enum ('PENDING', 'RELEASED');
 
 
 create table blog_post(
-    id uuid not null default uuid_generate_v4() primary key,
+    id uuid not null default gen_random_uuid() primary key,
     blog_id integer not null references blog(id) on delete cascade,
     title varchar(255) not null,
     body varchar(10000),
@@ -88,6 +86,3 @@ values
 
 
 comment on schema public is '@graphql({"inflect_names": true})';
-
--- Sync the GraphQL schema
-select graphql.rebuild_schema();

@@ -1,34 +1,41 @@
-FROM postgres:14 as build
+FROM postgres:14
+RUN apt-get update
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-      build-essential \
-      ca-certificates \
-      cmake \
-      git \
-      postgresql-server-dev-14 \
-      python2 \
-    && rm -rf "/var/lib/apt/lists/*"
+ENV build_deps ca-certificates \
+  git \
+  build-essential \
+  libpq-dev \
+  postgresql-server-dev-14 \
+  curl \
+  libreadline6-dev \
+  zlib1g-dev
 
-RUN export \
-      VERSION="v0.7.0" \
-      REPO_URL="https://github.com/graphql/libgraphqlparser" \
-    && git clone -b "${VERSION}" --depth 1 "${REPO_URL}" \
-    && cd libgraphqlparser \
-    && cmake . \
-    && make install
 
-COPY . pg_graphql
-WORKDIR /pg_graphql
-RUN ./bin/pgc build
-RUN make install
+RUN apt-get install -y --no-install-recommends $build_deps pkg-config cmake
 
-FROM postgres:14 as main
+WORKDIR /home/rs_graphql
 
-# libgraphqlparser
-ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
-COPY --from=build ["/usr/local/lib/libgraphqlparser.so", "/usr/local/lib/libgraphqlparser.so"]
+ENV HOME=/home/rs_graphql \
+  PATH=/home/rs_graphql/.cargo/bin:$PATH
+RUN chown postgres:postgres /home/rs_graphql
+USER postgres
 
-# pg_graphql
-COPY --from=build ["/usr/lib/postgresql", "/usr/lib/postgresql"]
-COPY --from=build ["/usr/share/postgresql", "/usr/share/postgresql"]
+RUN \
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
+  rustup --version && \
+  rustc --version && \
+  cargo --version
+
+# PGX
+RUN cargo install cargo-pgx
+
+RUN cargo pgx init --pg14 $(which pg_config)
+
+USER root
+
+COPY . .
+RUN cargo pgx install
+
+#RUN rm -fr /tmp/build \
+#  && apt-get clean \
+#  && apt-get autoremove -y $build_deps
