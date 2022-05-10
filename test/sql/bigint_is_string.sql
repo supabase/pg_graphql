@@ -54,4 +54,16 @@ begin;
     }
     $$);
 
+    select graphql.resolve($$
+    mutation {
+      deleteFromBlogPostCollection {
+        affectedCount
+        records {
+          id
+          parentId
+        }
+      }
+    }
+    $$);
+
 rollback;
