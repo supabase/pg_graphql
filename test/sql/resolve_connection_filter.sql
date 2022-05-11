@@ -249,4 +249,23 @@ begin;
     );
     rollback to savepoint a;
 
+    -- Variable: AccountFilter, null does not apply any filters
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             accountCollection(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": null }'
+      )
+    );
+    rollback to savepoint a;
+
 rollback;

@@ -2743,7 +2743,9 @@ begin
         -- "{"id": {"eq": 1}}"
         variable_value = variables -> variable_name;
 
-        if jsonb_typeof(variable_value) <> 'object' then
+        if jsonb_typeof(variable_value) = 'null' then
+            return 'true';
+        elsif jsonb_typeof(variable_value) <> 'object' then
             return graphql.exception('Invalid filter argument');
         end if;
 
