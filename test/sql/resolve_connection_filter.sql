@@ -60,6 +60,21 @@ begin;
     );
     rollback to savepoint a;
 
+    -- Filter is null should have no effect
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: null) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
     -- neq
     select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
@@ -230,6 +245,25 @@ begin;
            }
         $$,
         variables:= '{"afilt": {"id": {"eq": true}} }'
+      )
+    );
+    rollback to savepoint a;
+
+    -- Variable: AccountFilter, null does not apply any filters
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($afilt: AccountFilter!)
+           {
+             accountCollection(filter: $afilt) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"afilt": null }'
       )
     );
     rollback to savepoint a;

@@ -497,6 +497,14 @@ create or replace function graphql.value_literal(ast jsonb)
 as $$
     select ast -> 'value' ->> 'value';
 $$;
+
+create or replace function graphql.value_literal_is_null(ast jsonb)
+    returns bool
+    immutable
+    language sql
+as $$
+    select (ast -> 'value' ->> 'kind') = 'NullValue';
+$$;
 create or replace function graphql.exception(message text)
     returns text
     language plpgsql
@@ -2711,7 +2719,7 @@ begin
 
 
     -- No filter specified
-    if filter_arg is null then
+    if filter_arg is null or graphql.value_literal_is_null(filter_arg) then
         return 'true';
 
 
@@ -2735,7 +2743,9 @@ begin
         -- "{"id": {"eq": 1}}"
         variable_value = variables -> variable_name;
 
-        if jsonb_typeof(variable_value) <> 'object' then
+        if jsonb_typeof(variable_value) = 'null' then
+            return 'true';
+        elsif jsonb_typeof(variable_value) <> 'object' then
             return graphql.exception('Invalid filter argument');
         end if;
 
