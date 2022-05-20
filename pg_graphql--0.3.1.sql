@@ -1745,7 +1745,6 @@ begin
                 on gt.entity = es.entity
         where
             gt.meta_kind = 'Node'
-            and not es.column_type in ('json', 'jsonb')
             and not es.is_composite;
 
     -- Node
@@ -2153,7 +2152,6 @@ begin
             gf.meta_kind = 'ObjectsArg'
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial -- skip (big)serial columns
-            and not ec.column_type in ('json', 'jsonb')
             and not ec.is_array -- disallow arrays
             and not ec.is_composite; -- disallow arrays
 
@@ -2275,7 +2273,6 @@ begin
             gf.meta_kind = 'UpdateSetArg'
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial -- skip (big)serial columns
-            and not ec.column_type in ('json', 'jsonb')
             and not ec.is_array -- disallow arrays
             and not ec.is_composite; -- disallow composite
 
@@ -3097,6 +3094,11 @@ begin
                                     block_name,
                                     gf_s.column_name
                                 )
+                                when gf_s.column_name is not null and gf_s.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                                    $j$(%I.%I) #>> '{}'$j$,
+                                    block_name,
+                                    gf_s.column_name
+                                )
                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
                                 when gf_s.local_columns is not null and gf_s.meta_kind = 'Relationship.toOne' then
                                     graphql.build_node_query(
@@ -3399,6 +3401,11 @@ begin
                                             graphql.alias_or_name_literal(x.sel),
                                             case
                                                 when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
+                                                when nf.column_name is not null and nf.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                                                    $j$(%I.%I) #>> '{}'$j$,
+                                                    block_name,
+                                                    nf.column_name
+                                                )
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                                                 when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', top_fields.type_)
@@ -3648,6 +3655,11 @@ begin
                                             graphql.alias_or_name_literal(x.sel),
                                             case
                                                 when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
+                                                when nf.column_name is not null and nf.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                                                    $j$(%I.%I) #>> '{}'$j$,
+                                                    block_name,
+                                                    nf.column_name
+                                                )
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                                                 when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', top_fields.type_)
@@ -3743,6 +3755,11 @@ as $$
                     graphql.alias_or_name_literal(x.sel),
                     case
                         when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
+                        when nf.column_name is not null and nf.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                            $j$(%I.%I) #>> '{}'$j$,
+                            block_name,
+                            nf.column_name
+                        )
                         when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                         when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                         when nf.name = '__typename' then format('%L', (c.type_).name)
@@ -3895,6 +3912,11 @@ begin
                                             graphql.alias_or_name_literal(x.sel),
                                             case
                                                 when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
+                                                when nf.column_name is not null and nf.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                                                    $j$(%I.%I) #>> '{}'$j$,
+                                                    block_name,
+                                                    nf.column_name
+                                                )
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                                                 when nf.meta_kind = 'Function' then format('%I(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', top_fields.type_)

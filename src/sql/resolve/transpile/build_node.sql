@@ -29,6 +29,11 @@ as $$
                     graphql.alias_or_name_literal(x.sel),
                     case
                         when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
+                        when nf.column_name is not null and nf.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                            $j$(%I.%I) #>> '{}'$j$,
+                            block_name,
+                            nf.column_name
+                        )
                         when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                         when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                         when nf.name = '__typename' then format('%L', (c.type_).name)
