@@ -1,7 +1,7 @@
 begin;
     create table blog_post(
         id int primary key,
-        data jsonb ,
+        data jsonb,
         parent_id int references blog_post(id)
     );
     select graphql.resolve($$
@@ -23,6 +23,12 @@ begin;
  {"data": {"insertIntoBlogPostCollection": {"records": [{"id": 1, "data": "{\"key\": \"value\"}"}]}}}
 (1 row)
 
+    select * from blog_post;
+ id |       data       | parent_id 
+----+------------------+-----------
+  1 | {"key": "value"} |         1
+(1 row)
+
     select graphql.resolve($$
     mutation {
       updateBlogPostCollection(set: {
@@ -38,6 +44,12 @@ begin;
                                               resolve                                              
 ---------------------------------------------------------------------------------------------------
  {"data": {"updateBlogPostCollection": {"records": [{"id": 1, "data": "{\"key\": \"value2\"}"}]}}}
+(1 row)
+
+    select * from blog_post;
+ id |       data        | parent_id 
+----+-------------------+-----------
+  1 | {"key": "value2"} |         1
 (1 row)
 
     select graphql.resolve($$

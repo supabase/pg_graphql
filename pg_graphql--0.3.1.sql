@@ -3616,6 +3616,8 @@ begin
         from
             jsonb_array_elements(values_var) with ordinality row_(elem, ix),
             unnest(values_all_field_keys) vfk(field_name)
+            join unnest(allowed_columns) ac
+                on vfk.field_name = ac.name
             left join jsonb_each_text(row_.elem) row_col(field_name, field_val)
                 on vfk.field_name = row_col.field_name
         group by

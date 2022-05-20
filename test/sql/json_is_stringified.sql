@@ -2,7 +2,7 @@ begin;
 
     create table blog_post(
         id int primary key,
-        data jsonb ,
+        data jsonb,
         parent_id int references blog_post(id)
     );
 
@@ -21,6 +21,8 @@ begin;
     }
     $$);
 
+    select * from blog_post;
+
     select graphql.resolve($$
     mutation {
       updateBlogPostCollection(set: {
@@ -33,6 +35,8 @@ begin;
       }
     }
     $$);
+
+    select * from blog_post;
 
     select graphql.resolve($$
     {
