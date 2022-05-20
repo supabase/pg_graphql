@@ -9,7 +9,7 @@ begin;
       insertIntoBlogPostCollection(objects: [{
         id: 1
         data: "{\"key\": \"value\"}"
-        parentId: 1 
+        parentId: 1
       }]) {
         records {
           id
