@@ -6,8 +6,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "graphql";
     repo = "libgraphqlparser";
-    rev = "7e6c35c7b9e919d0c40b28020fb9358c3cf2679c";
-    sha256 = "sha256-4syYEE80HA7YuSjgRnK5KqF6yUSPHqDmbHnGEiLW98g=";
+    rev = "3b64cd52d13621921990a5801ba019e8a9402599";
+    sha256 = "sha256-0ubcB2GykZnId4CL+pb4U0Ry2JftqwaEUh2DqeghHo0=";
   };
   buildInputs = [ python2 ];
   inherit cmake;
