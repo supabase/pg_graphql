@@ -111,6 +111,8 @@ begin
         from
             jsonb_array_elements(values_var) with ordinality row_(elem, ix),
             unnest(values_all_field_keys) vfk(field_name)
+            join unnest(allowed_columns) ac
+                on vfk.field_name = ac.name
             left join jsonb_each_text(row_.elem) row_col(field_name, field_val)
                 on vfk.field_name = row_col.field_name
         group by
@@ -150,6 +152,11 @@ begin
                                             graphql.alias_or_name_literal(x.sel),
                                             case
                                                 when nf.column_name is not null and nf.column_type = 'bigint'::regtype then format('(%I.%I)::text', block_name, nf.column_name)
+                                                when nf.column_name is not null and nf.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                                                    $j$(%I.%I) #>> '{}'$j$,
+                                                    block_name,
+                                                    nf.column_name
+                                                )
                                                 when nf.column_name is not null then format('%I.%I', block_name, nf.column_name)
                                                 when nf.meta_kind = 'Function' then format('%s(%I)', nf.func, block_name)
                                                 when nf.name = '__typename' then format('%L', top_fields.type_)

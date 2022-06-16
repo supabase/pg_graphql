@@ -195,6 +195,11 @@ begin
                                     block_name,
                                     gf_s.column_name
                                 )
+                                when gf_s.column_name is not null and gf_s.column_type in ('json'::regtype, 'jsonb'::regtype) then format(
+                                    $j$(%I.%I) #>> '{}'$j$,
+                                    block_name,
+                                    gf_s.column_name
+                                )
                                 when gf_s.column_name is not null then format('%I.%I', block_name, gf_s.column_name)
                                 when gf_s.local_columns is not null and gf_s.meta_kind = 'Relationship.toOne' then
                                     graphql.build_node_query(

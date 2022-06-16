@@ -418,7 +418,6 @@ begin
                 on gt.entity = es.entity
         where
             gt.meta_kind = 'Node'
-            and not es.column_type in ('json', 'jsonb')
             and not es.is_composite;
 
     -- Node
@@ -826,7 +825,6 @@ begin
             gf.meta_kind = 'ObjectsArg'
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial -- skip (big)serial columns
-            and not ec.column_type in ('json', 'jsonb')
             and not ec.is_array -- disallow arrays
             and not ec.is_composite; -- disallow arrays
 
@@ -948,7 +946,6 @@ begin
             gf.meta_kind = 'UpdateSetArg'
             and not ec.is_generated -- skip generated columns
             and not ec.is_serial -- skip (big)serial columns
-            and not ec.column_type in ('json', 'jsonb')
             and not ec.is_array -- disallow arrays
             and not ec.is_composite; -- disallow composite
 

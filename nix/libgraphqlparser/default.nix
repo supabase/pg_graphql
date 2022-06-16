@@ -1,11 +1,13 @@
-{ stdenv, fetchurl, cmake, python2 }:
+{ stdenv, fetchFromGitHub, cmake, python2 }:
 
 stdenv.mkDerivation {
-  name = "libgraphqlparser-0.7.0";
+  name = "libgraphqlparser";
   builder = ./builder.sh;
-  src = fetchurl {
-    url = "https://github.com/graphql/libgraphqlparser/archive/refs/tags/0.7.0.tar.gz";
-    sha256 = "63dae018f970dc2bdce431cbafbfa0bd3e6b10bba078bb997a3c1a40894aa35c";
+  src = fetchFromGitHub {
+    owner = "graphql";
+    repo = "libgraphqlparser";
+    rev = "3b64cd52d13621921990a5801ba019e8a9402599";
+    sha256 = "sha256-0ubcB2GykZnId4CL+pb4U0Ry2JftqwaEUh2DqeghHo0=";
   };
   buildInputs = [ python2 ];
   inherit cmake;

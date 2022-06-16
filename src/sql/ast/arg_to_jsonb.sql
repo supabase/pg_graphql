@@ -10,6 +10,7 @@ $$
     select
         case arg ->> 'kind'
             when 'Argument'     then graphql.arg_to_jsonb(arg -> 'value', variables)
+            when 'NullValue'    then to_jsonb(null::bool)
             when 'IntValue'     then to_jsonb((arg ->> 'value')::int)
             when 'FloatValue'   then to_jsonb((arg ->> 'value')::float)
             when 'BooleanValue' then to_jsonb((arg ->> 'value')::bool)
