@@ -1646,7 +1646,7 @@ begin
         t.id,
         x.*
     from
-        graphql.type t,
+        graphql._type t,
         lateral (
             values
                 (graphql.type_id('__Type'),   '__type',   true,  false, null::boolean, true,  null::text),
@@ -1678,10 +1678,10 @@ begin
             fs.description,
             fs.is_hidden_from_schema
         from
-            graphql.type conn
-            join graphql.type edge
+            graphql._type conn
+            join graphql._type edge
                 on conn.entity = edge.entity
-            join graphql.type node
+            join graphql._type node
                 on edge.entity = node.entity,
             lateral (
                 values
@@ -1709,7 +1709,7 @@ begin
             false as is_array,
             'The total number of records matching the `filter` criteria'
         from
-            graphql.type conn
+            graphql._type conn
         where
             conn.meta_kind = 'Connection'
             and graphql.comment_directive_totalCount_enabled(conn.entity);
@@ -1726,7 +1726,7 @@ begin
             false,
             true
         from
-            graphql.type t
+            graphql._type t
         where
             t.type_kind = 'OBJECT';
 
@@ -1748,7 +1748,7 @@ begin
             es.column_attribute_num,
             false as is_hidden_from_schema
         from
-            graphql.type gt
+            graphql._type gt
             join graphql.entity_column es
                 on gt.entity = es.entity
         where
@@ -1772,7 +1772,7 @@ begin
             false as is_hidden_from_schema,
             pp.oid::regproc as func
         from
-            graphql.type gt
+            graphql._type gt
             join pg_class pc
                 on gt.entity = pc.oid
             join pg_proc pp
@@ -1816,10 +1816,10 @@ begin
             rel.foreign_columns,
             rel.foreign_name_override
         from
-            graphql.type node
+            graphql._type node
             join graphql.relationship rel
                 on node.entity = rel.local_entity
-            join graphql.type conn
+            join graphql._type conn
                 on conn.entity = rel.foreign_entity
                 and (
                     (conn.meta_kind = 'Node' and rel.foreign_cardinality = 'ONE')
@@ -1844,7 +1844,7 @@ begin
             gt.entity,
             null::text description
         from
-            graphql.type gt
+            graphql._type gt
             join graphql.entity_column ec
                 on gt.entity = ec.entity
         where
@@ -1863,7 +1863,7 @@ begin
             false,
             null::text as description
         from
-            graphql.type gt -- IntFilter
+            graphql._type gt -- IntFilter
             join (
                 values
                     ('eq'),
@@ -1895,10 +1895,10 @@ begin
             gt.entity,
             null::text description
         from
-            graphql.type gt
+            graphql._type gt
             join graphql.entity_column ec
                 on gt.entity = ec.entity
-            join graphql.type gt_scalar
+            join graphql._type gt_scalar
                 on graphql.type_id(ec.column_type) = gt_scalar.graphql_type_id
                 and gt_scalar.meta_kind = 'FilterType'
         where
@@ -1926,7 +1926,7 @@ begin
         null::text as description
     from
         graphql._field f
-        join graphql.type t
+        join graphql._type t
             on f.type_id = t.id
     where
         t.meta_kind in ('__Field', '__EnumValue', '__InputValue', '__Directive');
@@ -1946,9 +1946,9 @@ begin
         null::text as description
     from
         graphql._field f
-        join graphql.type t
+        join graphql._type t
             on f.type_id = t.id
-        join graphql.type pt
+        join graphql._type pt
             on f.parent_type_id = pt.id
     where
         t.meta_kind = '__Type'
@@ -1968,7 +1968,7 @@ begin
         f.id parent_arg_field_id,
         y.description
     from
-        graphql.type t
+        graphql._type t
         inner join graphql._field f
             on t.id = f.type_id,
         lateral (
@@ -1992,7 +1992,7 @@ begin
         f.id parent_arg_field_id,
         y.description
     from
-        graphql.type t
+        graphql._type t
         inner join graphql._field f
             on t.id = f.type_id,
         lateral (
@@ -2017,11 +2017,11 @@ begin
         f.id parent_arg_field_name,
         'Sort order to apply to the collection' as description
     from
-        graphql.type t
+        graphql._type t
         inner join graphql._field f
             on t.id = f.type_id
             and t.meta_kind = 'Connection'
-        inner join graphql.type tt
+        inner join graphql._type tt
             on t.entity = tt.entity
             and tt.meta_kind = 'OrderBy';
 
@@ -2038,11 +2038,11 @@ begin
         f.id parent_arg_field_id,
         'Filters to apply to the results set when querying from the collection' as description
     from
-        graphql.type t
+        graphql._type t
         inner join graphql._field f
             on t.id = f.type_id
             and t.meta_kind = 'Connection'
-        inner join graphql.type tt
+        inner join graphql._type tt
             on t.entity = tt.entity
             and tt.meta_kind = 'FilterEntity';
 
@@ -2059,7 +2059,7 @@ begin
             fs.description,
             false as is_hidden_from_schema
         from
-            graphql.type node,
+            graphql._type node,
             lateral (
                 values
                     ('Mutation.insert', node.id, false, false, false, format('Adds one or more `%s` records to the collection', node.name))
@@ -2080,7 +2080,7 @@ begin
             fs.description,
             false as is_hidden_from_schema
         from
-            graphql.type ret_type,
+            graphql._type ret_type,
             lateral (
                 values
                     ('Mutation.update', ret_type.id, true,  false,  false,  'Updates zero or more records in the collection')
@@ -2101,7 +2101,7 @@ begin
             fs.description,
             false as is_hidden_from_schema
         from
-            graphql.type ret_type,
+            graphql._type ret_type,
             lateral (
                 values
                     ('Mutation.delete', ret_type.id, true,  false,  false,  'Deletes zero or more records from the collection')
@@ -2124,11 +2124,11 @@ begin
             f.id parent_arg_field_id,
             null as description
         from
-            graphql.type t
+            graphql._type t
             inner join graphql._field f
                 on t.id = f.type_id
                 and f.meta_kind = 'Mutation.insert'
-            inner join graphql.type tt
+            inner join graphql._type tt
                 on t.entity = tt.entity
                 and tt.meta_kind = 'InsertNode',
             lateral (
@@ -2182,8 +2182,8 @@ begin
         x.is_array_not_null,
         x.description
     from
-        graphql.type t
-        join graphql.type t_base
+        graphql._type t
+        join graphql._type t_base
             on t.entity = t_base.entity
             and t_base.meta_kind = 'Node',
         lateral (
@@ -2210,7 +2210,7 @@ begin
         'Restricts the mutation''s impact to records matching the critera' as description
     from
         graphql._field f
-        inner join graphql.type tt
+        inner join graphql._type tt
             on f.entity = tt.entity
             and tt.meta_kind = 'FilterEntity'
     where
@@ -2252,7 +2252,7 @@ begin
             'Fields that are set will be updated for all records matching the `filter`' as description
         from
             graphql._field f
-            inner join graphql.type tt
+            inner join graphql._type tt
                 on tt.meta_kind = 'UpdateNode'
                 and f.entity = tt.entity
             where
