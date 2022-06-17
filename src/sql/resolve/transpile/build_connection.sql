@@ -109,8 +109,21 @@ declare
     page_info_clause text;
     node_clause text;
     edges_clause text;
+    join_clause text;
+    where_clause text;
+    order_by_clause text;
 
     result text;
+
+
+    __a text;
+    __b text;
+    __c text;
+    __d text;
+    __e text;
+    __f text;
+    __g text;
+    __h text;
 begin
     if first_ is not null and last_ is not null then
         perform graphql.exception('only one of "first" and "last" may be provided');
@@ -267,6 +280,19 @@ begin
         )
     end;
 
+
+    join_clause = coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true');
+
+    where_clause = graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions);
+
+    order_by_clause = graphql.order_by_clause(
+        block_name,
+        case
+            when last_ is not null then graphql.reverse(column_orders)
+            else column_orders
+        end
+    );
+
     -- Error out on invalid top level selections
     perform case
                 when gf.name is not null then ''
@@ -349,9 +375,9 @@ begin
                 else 'true'
             end,
             -- total join clause
-            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
+            join_clause,
             -- total where
-            graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
+            where_clause,
             -- __cursor
             format(
                 'graphql.encode(%s)',
@@ -402,17 +428,11 @@ begin
                 cursor_var_ix := cursor_var_ix
             ),
             -- join
-            coalesce(graphql.join_clause(field_row.local_columns, block_name, field_row.foreign_columns, parent_block_name), 'true'),
+            join_clause,
             -- where
-            graphql.where_clause(filter_arg, entity, block_name, variables, variable_definitions),
+            where_clause,
             -- order
-            graphql.order_by_clause(
-                block_name,
-                case
-                    when last_ is not null then graphql.reverse(column_orders)
-                    else column_orders
-                end
-            ),
+            order_by_clause,
             -- limit
             coalesce(first_, last_, '30'),
             -- has_next_page block namex
@@ -421,13 +441,7 @@ begin
             coalesce(first_, last_, '30'),
             -- xyz
             block_name,
-            graphql.order_by_clause(
-                block_name,
-                case
-                    when last_ is not null then graphql.reverse(column_orders)
-                    else column_orders
-                end
-            ),
+            order_by_clause,
             coalesce(first_, last_, '30'),
             -- JSON selects
             concat_ws(', ', total_count_clause, page_info_clause, __typename_clause, edges_clause),
