@@ -12,6 +12,8 @@ $$
             when 'neq' then '<>'
             when 'gte' then '>='
             when 'gt' then '>'
+            when 'like' then 'like'
+            when 'ilike' then 'ilike'
             else graphql.exception('Invalid comaprison operator')
         end::graphql.comparison_op
 $$;

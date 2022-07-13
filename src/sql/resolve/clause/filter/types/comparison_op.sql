@@ -1,1 +1,1 @@
-create type graphql.comparison_op as enum ('=', '<', '<=', '<>', '>=', '>');
+create type graphql.comparison_op as enum ('=', '<', '<=', '<>', '>=', '>', 'like', 'ilike');
