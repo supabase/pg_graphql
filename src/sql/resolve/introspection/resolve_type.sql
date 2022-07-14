@@ -31,7 +31,7 @@ begin
                         select
                             jsonb_agg(
                                 graphql.resolve_field(
-                                    f.name,
+                                    f,
                                     f.parent_type,
                                     null,
                                     x.sel

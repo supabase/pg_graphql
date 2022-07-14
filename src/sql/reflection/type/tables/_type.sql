@@ -17,6 +17,7 @@ create index ix_graphql_type_name on graphql._type(name);
 create index ix_graphql_type_type_kind on graphql._type(type_kind);
 create index ix_graphql_type_meta_kind on graphql._type(meta_kind);
 create index ix_graphql_type_graphql_type_id on graphql._type(graphql_type_id);
+create index ix_graphql_type_name_regex on graphql._type ( (name ~ '^[_A-Za-z][_0-9A-Za-z]*$' ));
 
 
 create or replace function graphql.inflect_type_default(text)

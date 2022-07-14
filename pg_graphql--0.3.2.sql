@@ -916,6 +916,7 @@ create index ix_graphql_type_name on graphql._type(name);
 create index ix_graphql_type_type_kind on graphql._type(type_kind);
 create index ix_graphql_type_meta_kind on graphql._type(meta_kind);
 create index ix_graphql_type_graphql_type_id on graphql._type(graphql_type_id);
+create index ix_graphql_type_name_regex on graphql._type ( (name ~ '^[_A-Za-z][_0-9A-Za-z]*$' ));
 
 
 create or replace function graphql.inflect_type_default(text)
@@ -1350,6 +1351,8 @@ create type graphql.field_meta_kind as enum (
     'ObjectsArg',
     'AtMostArg',
     'Query.heartbeat',
+    'Query.__schema',
+    'Query.__type',
     '__Typename'
 );
 
@@ -1396,6 +1399,7 @@ create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
 create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_field_id);
 create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
 create index ix_graphql_field_entity on graphql._field(entity);
+create index ix_graphql_field_name_regex on graphql._field ( (name ~ '^[_A-Za-z][_0-9A-Za-z]*$' ));
 
 
 create or replace function graphql.field_name_for_column(entity regclass, column_name text)
@@ -1642,7 +1646,7 @@ begin
     values
         (graphql.type_id('Query'), graphql.type_id('Datetime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC Datetime from server');
 
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, meta_kind, description)
     select
         t.id,
         x.*
@@ -1650,8 +1654,8 @@ begin
         graphql._type t,
         lateral (
             values
-                (graphql.type_id('__Type'),   '__type',   true,  false, null::boolean, true,  null::text),
-                (graphql.type_id('__Schema'), '__schema', true , false, null,          true,  null)
+                (graphql.type_id('__Type'),   '__type',   true,  false, null::boolean, true, 'Query.__type'::graphql.field_meta_kind, null::text),
+                (graphql.type_id('__Schema'), '__schema', true , false, null,          true, 'Query.__schema',                        null)
         ) x(type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     where
         t.meta_kind = 'Query';
@@ -4020,6 +4024,291 @@ begin
     return result;
 end;
 $$;
+create or replace function graphql.build_field_query(
+    ast jsonb,
+    parent_block_name text,
+    variable_definitions jsonb = '[]',
+    variables jsonb = '{}'
+)
+    returns text
+    language plpgsql
+    stable
+as $$
+declare
+    block_name text = graphql.slug();
+begin
+    return
+        format('
+        (
+            select
+                %s
+            from
+                graphql.field gf
+            where
+                not gf.is_hidden_from_schema
+                and gf.parent_type = %I
+                and (
+                    (gf.parent_arg_field_id is null and $3 is null)
+                    or gf.parent_arg_field_id = $3
+                )
+            )',
+            string_agg(
+                format('%L, %s',
+                    graphql.alias_or_name_literal(x.sel),
+                    case graphql.name_literal(x.sel)
+                        when 'description' then 'description'
+                        when 'directives' then 'jsonb_build_array()' -- todo
+                        when 'queryType' then '1' -- todo
+                        when 'mutationType' then '1' -- todo
+                        when 'subscriptionType' then '1' -- todo
+                        when 'types' then format(
+                            '(
+                                select
+                                    jsonb_agg(%s)
+                                from
+                                    graphql.type
+                                where
+                                    not is_hidden_from_schema
+                            )',
+                            graphql.build_type_query_core_selects(
+                                ast := x.sel
+                            )
+                        )
+                        when '' then '1' -- todo
+                        else graphql.exception('Invalid field for type __Schema')
+                    end
+                ),
+                ', '
+            ),
+            block_name,
+            '__Schema'
+        )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
+end
+$$;
+create or replace function graphql.build_schema_query(
+    ast jsonb,
+    variable_definitions jsonb = '[]',
+    variables jsonb = '{}'
+)
+    returns text
+    language plpgsql
+    stable
+as $$
+declare
+    block_name text = graphql.slug();
+begin
+    return
+        format('
+            (
+                select
+                    jsonb_build_object(%s)
+                from
+                    graphql.field as %I
+                where
+                    parent_type = %L
+                limit 1
+            )',
+            string_agg(
+                format('%L, %s',
+                    graphql.alias_or_name_literal(x.sel),
+                    case graphql.name_literal(x.sel)
+                        when 'description' then 'description'
+                        when 'directives' then 'jsonb_build_array()' -- todo
+                        when 'queryType' then '1' -- todo
+                        when 'mutationType' then '1' -- todo
+                        when 'subscriptionType' then '1' -- todo
+                        when 'types' then format(
+                            '(
+                                select
+                                    jsonb_agg(%s)
+                                from
+                                    graphql.type
+                                where
+                                    not is_hidden_from_schema
+                            )',
+                            graphql.build_type_query_core_selects(
+                                ast := x.sel
+                            )
+                        )
+                        when '' then '1' -- todo
+                        else graphql.exception('Invalid field for type __Schema')
+                    end
+                ),
+                ', '
+            ),
+            block_name,
+            '__Schema'
+        )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
+end
+$$;
+create or replace function graphql.build_type_query_core_selects(
+    ast jsonb
+)
+    returns text
+    language sql
+    immutable
+as $$
+    select format(
+        'jsonb_build_object(%s)',
+        string_agg(
+            format('%L, %s',
+                graphql.alias_or_name_literal(x.sel),
+                case graphql.name_literal(x.sel)
+                    when 'name' then 'name'
+                    when 'description' then 'description'
+                    when 'specifiedByURL' then 'null::text'
+                    when 'kind' then 'type_kind::text'
+                    when 'fields' then 'null' -- todo
+                    when 'interfaces' then format('
+                        case
+                            when type_kind = %L then to_jsonb(null::text)
+                            when type_kind = %L then to_jsonb(null::text)
+                            when meta_kind = %L then to_jsonb(null::text)
+                            else jsonb_build_array()
+                        end',
+                        'SCALAR',
+                        'INTERFACE',
+                        'Cursor'
+                    )
+                    when 'possibleTypes' then 'null'
+                    when 'enumValues' then 'null' --todo
+                    when 'inputFields' then 'null' --todo
+                    when 'ofType' then 'null'
+                    else graphql.exception('Invalid field for type __Type')
+                end
+            ),
+            ', '
+        )
+    )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
+$$;
+
+/*
+
+create or replace function graphql.build_type_query_wrapper_selects(
+    ast jsonb,
+    kind text, -- NON_NULL or LIST
+    of_type_selects text
+)
+    returns text
+    language sql
+    immutable
+as $$
+    select format(
+        'jsonb_build_object(%s)',
+        string_agg(
+            format('%L, %s',
+                graphql.alias_or_name_literal(x.sel),
+                case graphql.name_literal(x.sel)
+                    when 'kind' then format('%L', kind)
+                    when 'ofType' then of_type_selects
+                    when 'name' then 'null'
+                    when 'description' then 'null'
+                    when 'specifiedByURL' then 'null'
+                    when 'fields' then 'null'
+                    when 'interfaces' then 'null'
+                    when 'possibleTypes' then 'null'
+                    when 'enumValues' then 'null'
+                    else graphql.exception('Invalid field for type __Type')
+                end
+            ),
+            ', '
+        )
+    )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
+
+$$;
+
+
+
+create or replace function graphql.build_type_query_in_field_context(
+    ast jsonb,
+    variable_definitions jsonb = '[]',
+    variables jsonb = '{}',
+)
+    returns text
+    language plpgsql
+    stable
+as $$
+declare
+    block_name text = graphql.slug();
+
+    of_type_ast jsonb = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "ofKind")') -> 0;
+    of_type_of_type_ast jsonb = jsonb_path_query(of_type_ast, '$.selectionSet.selections[*] ? (@.name.value == "ofKind")') -> 0;
+    of_type_of_type_of_type_ast jsonb = jsonb_path_query(of_type_of_type_ast, '$.selectionSet.selections[*] ? (@.name.value == "ofKind")') -> 0;
+
+begin
+
+    return
+        format('
+            (
+                select
+                    case
+                        when is_array_not_null and is_array and is_not_null then %s
+                        when is_array and is_not_null then %s
+                        when is_not_null then %s
+                        when is_array then %s
+                        else %s
+                    end
+                from
+                    graphql.type as %I
+                where
+                    not is_hidden_from_schema
+            )',
+            graphql.build_type_query_wrapper_selects(
+                ast,
+                $a$NON_NULL$a$,
+                graphql.build_type_query_wrapper_selects(
+                    of_type_ast,
+                    $a$LIST$a$,
+                    graphql.build_type_query_wrapper_selects(
+                        of_type_of_type_ast,
+                        $a$NON_NULL$a$,
+                        graphql.build_type_query_core_selects(
+                            of_type_of_type_of_type_ast
+                        )
+                    )
+                )
+            ),
+            graphql.build_type_query_wrapper_selects(
+                ast,
+                $a$LIST$a$,
+                graphql.build_type_query_wrapper_selects(
+                    of_type_ast,
+                    $a$NON_NULL$a$,
+                    graphql.build_type_query_core_selects(
+                        of_type_of_type_ast
+                    )
+                )
+            ),
+            graphql.build_type_query_wrapper_selects(
+                ast,
+                $a$NON_NULL$a$,
+                graphql.build_type_query_core_selects(
+                    of_type_ast
+                )
+            ),
+            graphql.build_type_query_wrapper_selects(
+                ast,
+                $a$LIST$a$,
+                graphql.build_type_query_core_selects(
+                    of_type_ast
+                )
+            ),
+            graphql.build_type_query_core_selects(
+                ast
+            ),
+            block_name
+        );
+end
+$$;
+*/
 create or replace function graphql."resolve_enumValues"(type_ text, ast jsonb)
     returns jsonb
     stable
@@ -4086,6 +4375,82 @@ begin
                                 jsonb_agg(
                                     graphql.resolve_field(
                                         ga.name,
+                                        field_rec.type_,
+                                        field_rec.id,
+                                        x.sel
+                                    )
+                                    order by
+                                        ga.column_attribute_num,
+                                        case ga.name
+                                            when 'first' then 80
+                                            when 'last' then 81
+                                            when 'before' then 82
+                                            when 'after' then 83
+                                            when 'after' then 83
+                                            when 'filter' then 95
+                                            when 'orderBy' then 96
+                                            when 'atMost' then 97
+                                            else 0
+                                        end,
+                                        ga.name
+                                ),
+                                '[]'
+                            )
+                        from
+                            graphql.field ga
+                        where
+                            ga.parent_arg_field_id = field_rec.id
+                            and not ga.is_hidden_from_schema
+                            and ga.is_arg
+                            and ga.parent_type = field_rec.type_
+                    )
+                    -- INPUT_OBJECT types only
+                    when selection_name = 'defaultValue' then to_jsonb(field_rec.default_value)
+                    else graphql.exception_unknown_field(selection_name, field_rec.type_)::jsonb
+                end
+            ),
+            'null'::jsonb
+        )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel),
+        lateral (
+            select
+                graphql.alias_or_name_literal(x.sel) field_alias,
+                graphql.name_literal(x.sel) as selection_name
+        ) fa;
+end;
+$$;
+
+
+create or replace function graphql.resolve_field(field_rec graphql.field, parent_type text, parent_arg_field_id integer, ast jsonb)
+    returns jsonb
+    stable
+    language plpgsql
+as $$
+begin
+
+    return
+        coalesce(
+            jsonb_object_agg(
+                fa.field_alias,
+                case
+                    when selection_name = 'name' then to_jsonb(field_rec.name)
+                    when selection_name = 'description' then to_jsonb(field_rec.description)
+                    when selection_name = 'isDeprecated' then to_jsonb(false) -- todo
+                    when selection_name = 'deprecationReason' then to_jsonb(null::text) -- todo
+                    when selection_name = 'type' then graphql."resolve___Type"(
+                                                            field_rec.type_,
+                                                            x.sel,
+                                                            field_rec.is_array_not_null,
+                                                            field_rec.is_array,
+                                                            field_rec.is_not_null
+                    )
+                    when selection_name = 'args' then (
+                        select
+                            coalesce(
+                                jsonb_agg(
+                                    graphql.resolve_field(
+                                        ga,
                                         field_rec.type_,
                                         field_rec.id,
                                         x.sel
@@ -4253,7 +4618,7 @@ begin
                         select
                             jsonb_agg(
                                 graphql.resolve_field(
-                                    f.name,
+                                    f,
                                     f.parent_type,
                                     null,
                                     x.sel
@@ -4673,6 +5038,14 @@ begin
                                     parent_type :=  'Query',
                                     parent_block_name := null
                                 )
+                                /*
+                        when 'Query.__schema???' then
+                                graphql.build_schema_query(
+                                    ast := ast_inlined,
+                                    variable_definitions := variable_definitions,
+                                    variables := variables
+                                )
+*/
                         when 'Query.heartbeat' then graphql.build_heartbeat_query(ast_inlined)
                         when '__Typename' then format(
                             $typename_stmt$ select to_jsonb(%L::text) $typename_stmt$,

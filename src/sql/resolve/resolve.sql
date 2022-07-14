@@ -174,6 +174,14 @@ begin
                                     parent_type :=  'Query',
                                     parent_block_name := null
                                 )
+                                /*
+                        when 'Query.__schema???' then
+                                graphql.build_schema_query(
+                                    ast := ast_inlined,
+                                    variable_definitions := variable_definitions,
+                                    variables := variables
+                                )
+*/
                         when 'Query.heartbeat' then graphql.build_heartbeat_query(ast_inlined)
                         when '__Typename' then format(
                             $typename_stmt$ select to_jsonb(%L::text) $typename_stmt$,
