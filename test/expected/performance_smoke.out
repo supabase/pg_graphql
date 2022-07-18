@@ -1,0 +1,114 @@
+begin;
+    create table author(
+        id int primary key
+    );
+    create table book(
+        id int primary key,
+        author_id int references author(id)
+    );
+    select jsonb_pretty(
+        graphql.resolve($$
+    {
+      bookCollection {
+        edges {
+          node {
+            id
+            author {
+              id
+              bookCollection {
+                edges {
+                  node {
+                    id
+                    author {
+                      id
+                      bookCollection {
+                        edges {
+                          node {
+                            id
+                            author {
+                              id
+                              bookCollection {
+                                edges {
+                                  node {
+                                    id
+                                    author {
+                                      id
+                                      bookCollection {
+                                        edges {
+                                          node {
+                                            id
+                                            author {
+                                              id
+                                              bookCollection {
+                                                edges {
+                                                  node {
+                                                    id
+                                                    author {
+                                                      id
+                                                      bookCollection {
+                                                        edges {
+                                                          node {
+                                                            id
+                                                            author {
+                                                              id
+                                                              bookCollection {
+                                                                edges {
+                                                                  node {
+                                                                    id
+                                                                    author {
+                                                                      id
+                                                                      bookCollection {
+                                                                        edges {
+                                                                          node {
+                                                                            id
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+        $$)
+    );
+        jsonb_pretty         
+-----------------------------
+ {                          +
+     "data": {              +
+         "bookCollection": {+
+             "edges": [     +
+             ]              +
+         }                  +
+     }                      +
+ }
+(1 row)
+
+rollback;
