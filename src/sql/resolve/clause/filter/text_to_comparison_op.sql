@@ -12,6 +12,7 @@ $$
             when 'neq' then '<>'
             when 'gte' then '>='
             when 'gt' then '>'
-            else graphql.exception('Invalid comaprison operator')
+            when 'in' then 'in'
+            else graphql.exception('Invalid comparison operator')
         end::graphql.comparison_op
 $$;
