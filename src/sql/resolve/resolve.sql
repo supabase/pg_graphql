@@ -108,7 +108,6 @@ begin
 
             prepared_statement_name = (
                 case
-                    /*
                     when operation = 'Query' then graphql.cache_key(
                         current_user::regrole,
                         current_schemas(false),
@@ -119,8 +118,6 @@ begin
                         ),
                         variables
                     )
-                    */
-                    when false then md5(format('%s%s%s',random(),random(),random()))
                     -- If not a query (mutation) don't attempt to cache
                     else md5(format('%s%s%s',random(),random(),random()))
                 end
@@ -183,6 +180,22 @@ begin
                                     variable_definitions := variable_definitions,
                                     variables := variables
                                 )
+                        when 'Query.__type' then
+                                format('
+                                    (
+                                        select
+                                            %s
+                                        from
+                                            graphql.type t
+                                        where
+                                            t.name = %L
+                                    )',
+                                    graphql.build_type_query_core_selects(
+                                        ast := ast_inlined,
+                                        block_name := 't'
+                                    ),
+                                    graphql.argument_value_by_name('name', ast_inlined)
+                                )
                         when 'Query.heartbeat' then graphql.build_heartbeat_query(ast_inlined)
                         when '__Typename' then format(
                             $typename_stmt$ select to_jsonb(%L::text) $typename_stmt$,
@@ -217,40 +230,8 @@ begin
                             );
                         end if;
 
-
-                        if graphql.get_introspection_cache(prepared_statement_name) is not null then
-                            data_ = graphql.get_introspection_cache(prepared_statement_name);
-                        else
-                            data_ = case meta_kind
-                                when '__Schema' then
-                                    graphql."resolve___Schema"(
-                                        ast := ast_inlined,
-                                        variable_definitions := variable_definitions
-                                    )
-                                when '__Type' then
-                                    jsonb_build_object(
-                                        graphql.alias_or_name_literal(ast_statement),
-                                        graphql."resolve___Type"(
-                                            (
-                                                select
-                                                    name
-                                                from
-                                                    graphql.type type_
-                                                where
-                                                    name = graphql.argument_value_by_name('name', ast_inlined)
-                                            ),
-                                            ast_inlined
-                                        )
-                                    )
-                                else null::jsonb
-                            end;
-                            --perform graphql.set_introspection_cache(prepared_statement_name, data_);
-                        end if;
                     end if;
             end if;
-
-            raise notice 'Query
-            %', q;
 
             if errors_ = '{}' and q is not null then
                 execute graphql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);

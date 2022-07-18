@@ -28,9 +28,39 @@ begin
                     case graphql.name_literal(x.sel)
                         when 'description' then 'description'
                         when 'directives' then 'jsonb_build_array()' -- todo
-                        when 'queryType' then '1' -- todo
-                        when 'mutationType' then '1' -- todo
-                        when 'subscriptionType' then '1' -- todo
+                        when 'queryType' then format(
+                            '(
+                                select
+                                    %s
+                                from
+                                    graphql.type %I
+                                where
+                                    %I.name = $v$Query$v$
+                            )',
+                            graphql.build_type_query_core_selects(
+                                ast := x.sel,
+                                block_name := types_block_name
+                            ),
+                            types_block_name,
+                            types_block_name
+                        )
+                        when 'mutationType' then format(
+                            '(
+                                select
+                                    %s
+                                from
+                                    graphql.type %I
+                                where
+                                    %I.name = $v$Mutation$v$
+                            )',
+                            graphql.build_type_query_core_selects(
+                                ast := x.sel,
+                                block_name := types_block_name
+                            ),
+                            types_block_name,
+                            types_block_name
+                        )
+                        when 'subscriptionType' then 'null::text' -- todo
                         when 'types' then format(
                             '(
                                 select
@@ -45,7 +75,6 @@ begin
                             types_block_name,
                             types_block_name
                         )
-                        when '' then '1' -- todo
                         else graphql.exception('Invalid field for type __Schema')
                     end
                 ),

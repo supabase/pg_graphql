@@ -28,7 +28,10 @@ as $$
                             else jsonb_build_array()
                         end'
                     when 'possibleTypes' then 'null'
-                    when 'enumValues' then 'null' --todo
+                    when 'enumValues' then graphql.build_enum_values_query(
+                        ast := x.sel,
+                        type_block_name := block_name
+                    )
                     when 'inputFields' then graphql.build_field_on_type_query(
                         ast := x.sel,
                         type_block_name := block_name,
@@ -105,6 +108,7 @@ begin
                 select
                     case
                         when is_array_not_null and is_array and is_not_null then %s
+                        when is_array_not_null and is_array then %s
                         when is_array and is_not_null then %s
                         when is_not_null then %s
                         when is_array then %s
@@ -129,6 +133,18 @@ begin
                             of_type_of_type_of_type_ast,
                             block_name
                         )
+                    )
+                )
+            ),
+            graphql.build_type_query_wrapper_selects(
+                ast,
+                $a$NON_NULL$a$,
+                graphql.build_type_query_wrapper_selects(
+                    of_type_ast,
+                    $a$LIST$a$,
+                    graphql.build_type_query_core_selects(
+                        of_type_of_type_ast,
+                        block_name
                     )
                 )
             ),

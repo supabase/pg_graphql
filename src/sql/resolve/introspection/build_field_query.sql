@@ -22,7 +22,6 @@ begin
                     graphql.field %I
                 where
                     not %I.is_hidden_from_schema
-
                     and %I.parent_type =  %I.name
                     -- Toggle between fields and input fields
                     and case %L::bool
