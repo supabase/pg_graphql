@@ -9,6 +9,7 @@ create or replace function graphql.build_schema_query(
 as $$
 declare
     block_name text = graphql.slug();
+    types_block_name text = graphql.slug();
 begin
     return
         format('
@@ -33,15 +34,16 @@ begin
                         when 'types' then format(
                             '(
                                 select
-                                    jsonb_agg(%s)
+                                    jsonb_agg(%s order by %I.name)
                                 from
-                                    graphql.type
-                                where
-                                    not is_hidden_from_schema
+                                    graphql.type %I
                             )',
                             graphql.build_type_query_core_selects(
-                                ast := x.sel
-                            )
+                                ast := x.sel,
+                                block_name := types_block_name
+                            ),
+                            types_block_name,
+                            types_block_name
                         )
                         when '' then '1' -- todo
                         else graphql.exception('Invalid field for type __Schema')

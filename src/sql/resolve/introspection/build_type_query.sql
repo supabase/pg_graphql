@@ -1,5 +1,6 @@
 create or replace function graphql.build_type_query_core_selects(
-    ast jsonb
+    ast jsonb,
+    block_name text
 )
     returns text
     language sql
@@ -15,21 +16,24 @@ as $$
                     when 'description' then 'description'
                     when 'specifiedByURL' then 'null::text'
                     when 'kind' then 'type_kind::text'
-                    when 'fields' then 'null' -- todo
-                    when 'interfaces' then format('
-                        case
-                            when type_kind = %L then to_jsonb(null::text)
-                            when type_kind = %L then to_jsonb(null::text)
-                            when meta_kind = %L then to_jsonb(null::text)
-                            else jsonb_build_array()
-                        end',
-                        'SCALAR',
-                        'INTERFACE',
-                        'Cursor'
+                    when 'fields' then graphql.build_field_on_type_query(
+                        ast := x.sel,
+                        type_block_name := block_name,
+                        is_input_fields := false
                     )
+                    when 'interfaces' then 'case
+                            when type_kind = $v$SCALAR$v$ then to_jsonb(null::text)
+                            when type_kind = $v$INTERFACE$v$ then to_jsonb(null::text)
+                            when meta_kind = $v$Cursor$v$ then to_jsonb(null::text)
+                            else jsonb_build_array()
+                        end'
                     when 'possibleTypes' then 'null'
                     when 'enumValues' then 'null' --todo
-                    when 'inputFields' then 'null' --todo
+                    when 'inputFields' then graphql.build_field_on_type_query(
+                        ast := x.sel,
+                        type_block_name := block_name,
+                        is_input_fields := true
+                    )
                     when 'ofType' then 'null'
                     else graphql.exception('Invalid field for type __Type')
                 end
@@ -40,8 +44,6 @@ as $$
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
 $$;
-
-/*
 
 create or replace function graphql.build_type_query_wrapper_selects(
     ast jsonb,
@@ -82,8 +84,7 @@ $$;
 
 create or replace function graphql.build_type_query_in_field_context(
     ast jsonb,
-    variable_definitions jsonb = '[]',
-    variables jsonb = '{}',
+    field_block_name text
 )
     returns text
     language plpgsql
@@ -92,12 +93,12 @@ as $$
 declare
     block_name text = graphql.slug();
 
-    of_type_ast jsonb = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "ofKind")') -> 0;
-    of_type_of_type_ast jsonb = jsonb_path_query(of_type_ast, '$.selectionSet.selections[*] ? (@.name.value == "ofKind")') -> 0;
-    of_type_of_type_of_type_ast jsonb = jsonb_path_query(of_type_of_type_ast, '$.selectionSet.selections[*] ? (@.name.value == "ofKind")') -> 0;
+    of_type_ast jsonb = jsonb_path_query(ast, '$.selectionSet.selections[*] ? (@.name.value == "ofType")');
+    of_type_of_type_ast jsonb = jsonb_path_query(of_type_ast, '$.selectionSet.selections[*] ? (@.name.value == "ofType")');
+    of_type_of_type_of_type_ast jsonb = jsonb_path_query(of_type_of_type_ast, '$.selectionSet.selections[*] ? (@.name.value == "ofType")');
 
 begin
-
+    --raise exception '3: %, 2: %, 1: %', of_type_of_type_of_type_ast, of_type_of_type_ast, of_type_ast;
     return
         format('
             (
@@ -113,6 +114,7 @@ begin
                     graphql.type as %I
                 where
                     not is_hidden_from_schema
+                    and %I.name = %I.type_
             )',
             graphql.build_type_query_wrapper_selects(
                 ast,
@@ -124,7 +126,8 @@ begin
                         of_type_of_type_ast,
                         $a$NON_NULL$a$,
                         graphql.build_type_query_core_selects(
-                            of_type_of_type_of_type_ast
+                            of_type_of_type_of_type_ast,
+                            block_name
                         )
                     )
                 )
@@ -136,7 +139,8 @@ begin
                     of_type_ast,
                     $a$NON_NULL$a$,
                     graphql.build_type_query_core_selects(
-                        of_type_of_type_ast
+                        of_type_of_type_ast,
+                        block_name
                     )
                 )
             ),
@@ -144,21 +148,25 @@ begin
                 ast,
                 $a$NON_NULL$a$,
                 graphql.build_type_query_core_selects(
-                    of_type_ast
+                    of_type_ast,
+                    block_name
                 )
             ),
             graphql.build_type_query_wrapper_selects(
                 ast,
                 $a$LIST$a$,
                 graphql.build_type_query_core_selects(
-                    of_type_ast
+                    of_type_ast,
+                    block_name
                 )
             ),
             graphql.build_type_query_core_selects(
-                ast
+                ast,
+                block_name
             ),
-            block_name
+            block_name,
+            block_name,
+            field_block_name
         );
 end
 $$;
-*/

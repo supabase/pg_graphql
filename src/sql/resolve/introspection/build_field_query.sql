@@ -1,6 +1,78 @@
-create or replace function graphql.build_field_query(
+create or replace function graphql.build_field_on_type_query(
     ast jsonb,
-    parent_block_name text,
+    type_block_name text,
+    variable_definitions jsonb = '[]',
+    variables jsonb = '{}',
+    is_input_fields bool = false
+)
+    returns text
+    language plpgsql
+    stable
+as $$
+declare
+    block_name text = graphql.slug();
+begin
+
+    return
+        format('
+            (
+                select
+                    jsonb_agg(jsonb_build_object(%s) order by %I.column_attribute_num, %I.name)
+                from
+                    graphql.field %I
+                where
+                    not %I.is_hidden_from_schema
+
+                    and %I.parent_type =  %I.name
+                    -- Toggle between fields and input fields
+                    and case %L::bool
+                        when false then %I.type_kind = $v$OBJECT$v$ and not %I.is_arg
+                        else %I.type_kind = $v$INPUT_OBJECT$v$
+                    end
+            )',
+            string_agg(
+                format('%L, %s',
+                    graphql.alias_or_name_literal(x.sel),
+                    case graphql.name_literal(x.sel)
+                        when 'name' then 'name'
+                        when 'description' then 'description'
+                        when 'isDeprecated' then 'false'
+                        when 'deprecationReason' then 'null'
+                        when 'defaultValue' then 'default_value'
+                        when 'type' then graphql.build_type_query_in_field_context(
+                            ast:= x.sel,
+                            field_block_name := block_name
+                        )
+                        when 'args' then graphql.build_args_on_field_query(
+                            ast := x.sel,
+                            field_block_name := block_name
+                        )
+                        else graphql.exception_unknown_field(graphql.name_literal(x.sel), '__Field')
+                    end
+                ),
+                ', '
+            ),
+            block_name,
+            block_name,
+            block_name,
+            block_name,
+            block_name,
+            type_block_name,
+            is_input_fields,
+            type_block_name,
+            block_name,
+            type_block_name
+        )
+    from
+        jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
+end
+$$;
+
+
+
+create or replace function graphql.build_args_on_field_query(
+    ast jsonb,
+    field_block_name text,
     variable_definitions jsonb = '[]',
     variables jsonb = '{}'
 )
@@ -11,51 +83,65 @@ as $$
 declare
     block_name text = graphql.slug();
 begin
+
     return
         format('
-        (
-            select
-                %s
-            from
-                graphql.field gf
-            where
-                not gf.is_hidden_from_schema
-                and gf.parent_type = %I
-                and (
-                    (gf.parent_arg_field_id is null and $3 is null)
-                    or gf.parent_arg_field_id = $3
-                )
+            (
+                select
+                    coalesce(
+                        jsonb_agg(
+                            jsonb_build_object(%s)
+                             order by
+                                %I.column_attribute_num,
+                                case %I.name
+                                    when $v$first$v$ then 80
+                                    when $v$last$v$ then 81
+                                    when $v$before$v$ then 82
+                                    when $v$after$v$ then 83
+                                    when $v$filter$v$ then 95
+                                    when $v$orderBy$v$ then 96
+                                    when $v$atMost$v$ then 97
+                                    else 0
+                                end,
+                                %I.name
+                            ),
+                            $v$[]$v$
+                        )
+                from
+                    graphql.field %I
+                where
+                    not %I.is_hidden_from_schema
+                    and %I.parent_arg_field_id =  %I.id
             )',
             string_agg(
                 format('%L, %s',
                     graphql.alias_or_name_literal(x.sel),
                     case graphql.name_literal(x.sel)
+                        when 'name' then 'name'
                         when 'description' then 'description'
-                        when 'directives' then 'jsonb_build_array()' -- todo
-                        when 'queryType' then '1' -- todo
-                        when 'mutationType' then '1' -- todo
-                        when 'subscriptionType' then '1' -- todo
-                        when 'types' then format(
-                            '(
-                                select
-                                    jsonb_agg(%s)
-                                from
-                                    graphql.type
-                                where
-                                    not is_hidden_from_schema
-                            )',
-                            graphql.build_type_query_core_selects(
-                                ast := x.sel
-                            )
+                        when 'isDeprecated' then 'false'
+                        when 'deprecationReason' then 'null'
+                        when 'defaultValue' then 'default_value'
+                        when 'type' then graphql.build_type_query_in_field_context(
+                            ast:= x.sel,
+                            field_block_name := block_name
                         )
-                        when '' then '1' -- todo
-                        else graphql.exception('Invalid field for type __Schema')
+                        when 'args' then graphql.build_args_on_field_query(
+                            ast := x.sel,
+                            field_block_name := block_name
+                        )
+                        else graphql.exception_unknown_field(graphql.name_literal(x.sel), '__Field')
                     end
                 ),
                 ', '
             ),
             block_name,
-            '__Schema'
+            block_name,
+            block_name,
+            block_name,
+            block_name,
+            block_name,
+            field_block_name
         )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);

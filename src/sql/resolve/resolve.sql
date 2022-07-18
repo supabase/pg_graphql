@@ -108,6 +108,7 @@ begin
 
             prepared_statement_name = (
                 case
+                    /*
                     when operation = 'Query' then graphql.cache_key(
                         current_user::regrole,
                         current_schemas(false),
@@ -118,6 +119,8 @@ begin
                         ),
                         variables
                     )
+                    */
+                    when false then md5(format('%s%s%s',random(),random(),random()))
                     -- If not a query (mutation) don't attempt to cache
                     else md5(format('%s%s%s',random(),random(),random()))
                 end
@@ -174,14 +177,12 @@ begin
                                     parent_type :=  'Query',
                                     parent_block_name := null
                                 )
-                                /*
-                        when 'Query.__schema???' then
+                        when 'Query.__schema' then
                                 graphql.build_schema_query(
                                     ast := ast_inlined,
                                     variable_definitions := variable_definitions,
                                     variables := variables
                                 )
-*/
                         when 'Query.heartbeat' then graphql.build_heartbeat_query(ast_inlined)
                         when '__Typename' then format(
                             $typename_stmt$ select to_jsonb(%L::text) $typename_stmt$,
@@ -243,10 +244,13 @@ begin
                                     )
                                 else null::jsonb
                             end;
-                            perform graphql.set_introspection_cache(prepared_statement_name, data_);
+                            --perform graphql.set_introspection_cache(prepared_statement_name, data_);
                         end if;
                     end if;
             end if;
+
+            raise notice 'Query
+            %', q;
 
             if errors_ = '{}' and q is not null then
                 execute graphql.prepared_statement_create_clause(prepared_statement_name, variable_definitions, q);
