@@ -52,6 +52,16 @@ begin
                                     graphql.type %I
                                 where
                                     %I.name = $v$Mutation$v$
+                                    -- At least one field exists on the mutation
+                                    and exists(
+                                        select
+                                            1
+                                        from
+                                             graphql.field f
+                                        where
+                                            f.parent_type = $v$Mutation$v$
+                                            and not f.is_hidden_from_schema
+                                    )
                             )',
                             graphql.build_type_query_core_selects(
                                 ast := x.sel,

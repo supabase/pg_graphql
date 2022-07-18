@@ -28,6 +28,22 @@ begin
                         when false then %I.type_kind = $v$OBJECT$v$ and not %I.is_arg
                         else %I.type_kind = $v$INPUT_OBJECT$v$
                     end
+                    and (
+                        %I.meta_kind <> $v$Query.heartbeat$v$
+                        or (
+                            %I.meta_kind = $v$Query.heartbeat$v$
+                            and not exists(
+                                select
+                                    1
+                                from
+                                    graphql.field gf
+                                where
+                                    gf.parent_type = $v$Query$v$
+                                    and not gf.is_hidden_from_schema
+                                    and gf.meta_kind <> $v$Query.heartbeat$v$
+                            )
+                        )
+                    )
             )',
             string_agg(
                 format('%L, %s',
@@ -60,7 +76,9 @@ begin
             is_input_fields,
             type_block_name,
             block_name,
-            type_block_name
+            type_block_name,
+            block_name,
+            block_name
         )
     from
         jsonb_array_elements(ast -> 'selectionSet' -> 'selections') x(sel);
