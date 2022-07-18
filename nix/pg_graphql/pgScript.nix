@@ -15,7 +15,7 @@ let
 
     trap 'pg_ctl stop -m i && rm -rf "$tmpdir"' sigint sigterm exit
 
-    PGTZ=UTC initdb --no-locale --encoding=UTF8 --nosync -U "$PGUSER"
+    PGTZ=UTC initdb --no-locale --encoding=UTF8 -U "$PGUSER"
 
     options="-F -c listen_addresses=\"\" -c log_min_messages=${logMin} -k $PGDATA"
 
