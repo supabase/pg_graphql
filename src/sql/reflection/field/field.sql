@@ -14,6 +14,8 @@ create type graphql.field_meta_kind as enum (
     'ObjectsArg',
     'AtMostArg',
     'Query.heartbeat',
+    'Query.__schema',
+    'Query.__type',
     '__Typename'
 );
 
@@ -60,6 +62,7 @@ create index ix_graphql_field_parent_type_id on graphql._field(parent_type_id);
 create index ix_graphql_field_parent_arg_field_id on graphql._field(parent_arg_field_id);
 create index ix_graphql_field_meta_kind on graphql._field(meta_kind);
 create index ix_graphql_field_entity on graphql._field(entity);
+create index ix_graphql_field_name_regex on graphql._field ( (name ~ '^[_A-Za-z][_0-9A-Za-z]*$' ));
 
 
 create or replace function graphql.field_name_for_column(entity regclass, column_name text)
@@ -306,7 +309,7 @@ begin
     values
         (graphql.type_id('Query'), graphql.type_id('Datetime'), 'Query.heartbeat', 'heartbeat', true,  false, null, false, 'UTC Datetime from server');
 
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, meta_kind, description)
     select
         t.id,
         x.*
@@ -314,8 +317,8 @@ begin
         graphql._type t,
         lateral (
             values
-                (graphql.type_id('__Type'),   '__type',   true,  false, null::boolean, true,  null::text),
-                (graphql.type_id('__Schema'), '__schema', true , false, null,          true,  null)
+                (graphql.type_id('__Type'),   '__type',   true,  false, null::boolean, true, 'Query.__type'::graphql.field_meta_kind, null::text),
+                (graphql.type_id('__Schema'), '__schema', true , false, null,          true, 'Query.__schema',                        null)
         ) x(type_id, constant_name, is_not_null, is_array, is_array_not_null, is_hidden_from_schema, description)
     where
         t.meta_kind = 'Query';

@@ -37,7 +37,6 @@ begin
             refresh materialized view graphql.relationship with data;
             perform graphql.rebuild_types();
             perform graphql.rebuild_fields();
-            truncate table graphql.introspection_query_cache;
 
             -- Update the stored schema version value
             update graphql.schema_version set ver = cur_schema_version where true; -- satisfy safedelete

@@ -1,7 +1,7 @@
 let
   nixpkgs = builtins.fetchTarball {
-    name = "2021-12";
-    url = "https://github.com/NixOS/nixpkgs/archive/5f8babdd259d68ff8052dfc8d650ebdf9cc3bd75.tar.gz";
+    name = "2022-05";
+    url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
   };
 in with import nixpkgs {};
 mkShell {
