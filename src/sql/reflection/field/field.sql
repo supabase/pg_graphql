@@ -546,12 +546,13 @@ begin
             );
 
     -- IntFilter {in: ... }
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, description)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
         select
             gt.id as parent_type_id,
             gt.graphql_type_id type_id,
             ops.constant_name as constant_name,
-            false,
+            true,
+            true,
             true,
             null::text as description
         from

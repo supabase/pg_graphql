@@ -1,68 +1,67 @@
--- Confirm no match returns string, not null
-select graphql.cache_key_variable_component('{}') = '$';
- ?column? 
-----------
- t
-(1 row)
-
--- No matches
+-- Confirm returns string, not null
 select graphql.cache_key_variable_component('{}');
  cache_key_variable_component 
 ------------------------------
- $
+ 
 (1 row)
 
 select graphql.cache_key_variable_component('{"x": 1}');
  cache_key_variable_component 
 ------------------------------
- $,$."x"
+ x:1
 (1 row)
 
 select graphql.cache_key_variable_component('{"x": "1"}');
  cache_key_variable_component 
 ------------------------------
- $,$."x"
+ x:1
 (1 row)
 
 -- Matches
 select graphql.cache_key_variable_component('{"id": {"eq": 1}}');
  cache_key_variable_component 
 ------------------------------
- $,$."id",$."id"."eq"
+ id:{"eq": 1}
 (1 row)
 
 select graphql.cache_key_variable_component('{"orderByVal": "DescNullsFirst"}');
-           cache_key_variable_component           
---------------------------------------------------
- $,$."orderByVal",$."orderByVal"="DescNullsFirst"
+ cache_key_variable_component 
+------------------------------
+ orderByVal:DescNullsFirst
 (1 row)
 
 select graphql.cache_key_variable_component('{"orderByObj": [{"email": "AscNullsFirst"}]}');
-                                      cache_key_variable_component                                      
---------------------------------------------------------------------------------------------------------
- $,$."orderByObj",$."orderByObj"[0],$."orderByObj"[0]."email",$."orderByObj"[0]."email"="AscNullsFirst"
+      cache_key_variable_component       
+-----------------------------------------
+ orderByObj:[{"email": "AscNullsFirst"}]
 (1 row)
 
-select graphql.cache_key_variable_component('{
-    "id": {"eq": 1},
-    "orderByVal": "DescNullsFirst",
-    "orderByObj": [
-        {"email": "AscNullsFirst"}
-    ]
-}');
-                                                                       cache_key_variable_component                                                                       
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- $,$."id",$."id"."eq",$."orderByObj",$."orderByObj"[0],$."orderByObj"[0]."email",$."orderByObj"[0]."email"="AscNullsFirst",$."orderByVal",$."orderByVal"="DescNullsFirst"
-(1 row)
-
-select graphql.cache_key_variable_component('
-    [
-        { "email": "foo@barsley.com", "priority": 1 },
-        { "email": "bar@foosworth.com" }
-    ]
-');
-             cache_key_variable_component              
--------------------------------------------------------
- $,$[0],$[0]."email",$[0]."priority",$[1],$[1]."email"
+-- Cursors not included
+select graphql.cache_key_variable_component(
+    variables := '{"afterCursor": "xxxxxx", "other": 1}',
+    variable_definitions := '[
+        {
+            "kind": "VariableDefinition",
+            "type": {
+                "kind": "NamedType",
+                "name": {
+                    "kind": "Name",
+                    "value": "Cursor"
+                }
+            },
+            "variable": {
+                "kind": "Variable",
+                "name": {
+                    "kind": "Name",
+                    "value": "afterCursor"
+                }
+            },
+            "defaultValue": null
+        }
+    ]'::jsonb
+);
+ cache_key_variable_component 
+------------------------------
+ other:1
 (1 row)
 

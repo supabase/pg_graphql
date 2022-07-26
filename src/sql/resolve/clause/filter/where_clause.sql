@@ -11,7 +11,7 @@ create or replace function graphql.where_clause(
     as
 $$
 declare
-    clause_arr text[] = '{}';
+    clause_arr text[] = array['true'];
     variable_name text;
     variable_ix int;
     variable_value jsonb;
@@ -62,7 +62,10 @@ begin
     for field_name, op_name, variable_part, column_name, column_type in
         select
             f.name, -- id
-            (select k from jsonb_object_keys(je.v) x(k) limit 1), -- eq
+            case
+                when jsonb_typeof(je.v) = 'object' then  (select k from jsonb_object_keys(je.v) x(k) limit 1) -- eq
+                else graphql.exception('Invalid filter field')
+            end,
             (select v from jsonb_each(je.v) x(k, v) limit 1), -- 1
             f.column_name,
             f.column_type
@@ -77,20 +80,27 @@ begin
         if comp_op = 'in' then
             variable_part = graphql.arg_coerce_list(
                 variable_part
-            );
-            -- maybe cast here
-            variable_part_literal = 'array[' || array_agg(format('%L::%s', v, column_type)) || ']' from jsonb_array_elements(variable_part) jae(v);
-        else
-            variable_part_literal = format('%L::%s', variable_part, column_type);
-        end if;
+            ); -- this is now a jsonb array
+            variable_part_literal = 'array[' || string_agg(format('(((%L::jsonb) #>> $a${}$a$ )::%s)', v, column_type), ', ') || ']' from jsonb_array_elements(variable_part) jae(v);
 
-        clause_arr = clause_arr || format(
-            '%I.%I %s %s',
-            alias_name,
-            column_name,
-            comp_op,
-            variable_part_literal
-        );
+            clause_arr = clause_arr || format(
+                '%I.%I = any(%s)',
+                alias_name,
+                column_name,
+                variable_part_literal
+            );
+        else
+            -- Extract json as text to use with %L
+            variable_part_literal = format('((%L::jsonb) #>> $a${}$a$ )::%s', variable_part, column_type);
+
+            clause_arr = clause_arr || format(
+                '%I.%I %s %s',
+                alias_name,
+                column_name,
+                comp_op,
+                variable_part_literal
+            );
+        end if;
     end loop;
 
     return array_to_string(clause_arr, ' and ');

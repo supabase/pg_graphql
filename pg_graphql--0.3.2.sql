@@ -1882,12 +1882,13 @@ begin
             );
 
     -- IntFilter {in: ... }
-    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, description)
+    insert into graphql._field(parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description)
         select
             gt.id as parent_type_id,
             gt.graphql_type_id type_id,
             ops.constant_name as constant_name,
-            false,
+            true,
+            true,
             true,
             null::text as description
         from
@@ -2703,7 +2704,7 @@ create or replace function graphql.where_clause(
     as
 $$
 declare
-    clause_arr text[] = '{}';
+    clause_arr text[] = array['true'];
     variable_name text;
     variable_ix int;
     variable_value jsonb;
@@ -2754,7 +2755,10 @@ begin
     for field_name, op_name, variable_part, column_name, column_type in
         select
             f.name, -- id
-            (select k from jsonb_object_keys(je.v) x(k) limit 1), -- eq
+            case
+                when jsonb_typeof(je.v) = 'object' then  (select k from jsonb_object_keys(je.v) x(k) limit 1) -- eq
+                else graphql.exception('Invalid filter field')
+            end,
             (select v from jsonb_each(je.v) x(k, v) limit 1), -- 1
             f.column_name,
             f.column_type
@@ -2769,20 +2773,27 @@ begin
         if comp_op = 'in' then
             variable_part = graphql.arg_coerce_list(
                 variable_part
-            );
-            -- maybe cast here
-            variable_part_literal = 'array[' || array_agg(format('%L::%s', v, column_type)) || ']' from jsonb_array_elements(variable_part) jae(v);
-        else
-            variable_part_literal = format('%L::%s', variable_part, column_type);
-        end if;
+            ); -- this is now a jsonb array
+            variable_part_literal = 'array[' || string_agg(format('(((%L::jsonb) #>> $a${}$a$ )::%s)', v, column_type), ', ') || ']' from jsonb_array_elements(variable_part) jae(v);
 
-        clause_arr = clause_arr || format(
-            '%I.%I %s %s',
-            alias_name,
-            column_name,
-            comp_op,
-            variable_part_literal
-        );
+            clause_arr = clause_arr || format(
+                '%I.%I = any(%s)',
+                alias_name,
+                column_name,
+                variable_part_literal
+            );
+        else
+            -- Extract json as text to use with %L
+            variable_part_literal = format('((%L::jsonb) #>> $a${}$a$ )::%s', variable_part, column_type);
+
+            clause_arr = clause_arr || format(
+                '%I.%I %s %s',
+                alias_name,
+                column_name,
+                comp_op,
+                variable_part_literal
+            );
+        end if;
     end loop;
 
     return array_to_string(clause_arr, ' and ');
@@ -4234,7 +4245,8 @@ create or replace function graphql.cache_key(
     schemas text[],
     schema_version int,
     ast jsonb,
-    variables jsonb
+    variables jsonb,
+    variable_definitions jsonb
 )
     returns text
     language sql
@@ -4248,10 +4260,13 @@ as $$
             || $3::text
             -- Parsed query hash
             || ast::text
-            || graphql.cache_key_variable_component(variables)
+            || graphql.cache_key_variable_component(variables, variable_definitions)
         )
 $$;
-create or replace function graphql.cache_key_variable_component(variables jsonb = '{}')
+create or replace function graphql.cache_key_variable_component(
+    variables jsonb = '{}',
+    variable_definitions jsonb = '[]'
+)
     returns text
     language sql
     immutable
@@ -4268,34 +4283,29 @@ and filtered column names
 
 While false positives are possible, the cost of false positives is low
 */
-    with doc as (
+    with dynamic_elems(var_name) as (
         select
-            *
+           graphql.name_literal(elem -> 'variable') -- the variable's name
         from
-            graphql.jsonb_unnest_recursive_with_jsonpath(variables)
-    ),
-    general_structure as (
-        select
-            jpath::text as x
-        from
-            doc
-    ),
-    order_clause as (
-        select
-            jpath::text || '=' || obj as x
-        from
-            doc
+            jsonb_array_elements(variable_definitions) with ordinality ar(elem, idx)
         where
-            obj #>> '{}' in ('AscNullsFirst', 'AscNullsLast', 'DescNullsFirst', 'DescNullsLast')
+            -- Everything other than cursors must be static
+            elem::text like '%Cursor%'
+    ),
+    doc as (
+        select
+            ar.var_name || ':' || ar.var_value
+        from
+            jsonb_each_text(variables) ar(var_name, var_value)
+            left join dynamic_elems se
+                on ar.var_name = se.var_name
+        where
+            se.var_name is null
     )
     select
         coalesce(string_agg(y.x, ',' order by y.x), '')
     from
-        (
-            select x from general_structure
-            union all
-            select x from order_clause
-        ) y(x)
+        doc y(x)
 $$;
 create table graphql.introspection_query_cache(
     cache_key text primary key, -- equivalent to prepared statement name
@@ -4469,6 +4479,12 @@ begin
        );
     end if;
 
+    if jsonb_typeof(variables) <> 'object' then
+        return jsonb_build_object(
+          'errors', to_jsonb('variables must be an object'::text)
+        );
+    end if;
+
     -- Rebuild the schema cache if the SQL schema has changed
     perform graphql.rebuild_schema();
 
@@ -4495,7 +4511,8 @@ begin
                             'statement', ast_statement,
                             'fragment_defs', fragment_definitions
                         ),
-                        variables
+                        variables,
+                        variable_definitions
                     )
                     -- If not a query (mutation) don't attempt to cache
                     else md5(format('%s%s%s',random(),random(),random()))

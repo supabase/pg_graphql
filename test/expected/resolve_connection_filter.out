@@ -1,13 +1,14 @@
 begin;
     create table account(
         id int primary key,
-        is_verified bool
+        is_verified bool,
+        name text
     );
-    insert into public.account(id, is_verified)
+    insert into public.account(id, is_verified, name)
     values
-        (1, true),
-        (2, true),
-        (3, false);
+        (1, true, 'foo'),
+        (2, true, 'bar'),
+        (3, false, 'baz');
     savepoint a;
     -- Filter by Int
     select jsonb_pretty(
@@ -178,6 +179,221 @@ begin;
                               resolve                              
 -------------------------------------------------------------------
  {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- in - int
+    select graphql.resolve($${accountCollection(filter: {id: {in: [1, 2]}}) { edges { node { id } } }}$$);
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- in - int coerce to list
+    select graphql.resolve($${accountCollection(filter: {id: {in: 2}}) { edges { node { id } } }}$$);
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 2}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- in - bool
+    select graphql.resolve($${accountCollection(filter: {isVerified: {in: [false]}}) { edges { node { id } } }}$$);
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- in - text
+    select graphql.resolve($${accountCollection(filter: {name: {in: ["foo", "bar"]}}) { edges { node { id } } }}$$);
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- in - text coerce to list
+    select graphql.resolve($${accountCollection(filter: {name: {in: "baz"}}) { edges { node { id } } }}$$);
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: In, mixed List Int
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: Int!)
+           {
+             accountCollection(filter: {id: {in: [1, $filt]}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"filt": 2}'
+      )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: In: single elem wrapped in list
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: Int!)
+           {
+             accountCollection(filter: {id: {in: [$filt]}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"filt": 3}'
+      )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: In: single elem coerce to list
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: Int!)
+           {
+             accountCollection(filter: {id: {in: $filt}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"filt": 1}'
+      )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: In: multi-element list
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: Int!)
+           {
+             accountCollection(filter: {id: {in: $filt}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '{"filt": [2, 3]}'
+      )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Variable: In: variables not an object
+    select jsonb_pretty(
+        graphql.resolve($$
+           query AccountsFiltered($filt: Int!)
+           {
+             accountCollection(filter: {id: {in: $filt}}) {
+               edges {
+                 node{
+                   id
+                 }
+               }
+             }
+           }
+        $$,
+        variables:= '[{"filt": [2, 3]}]'
+      )
+    );
+                jsonb_pretty                 
+---------------------------------------------
+ {                                          +
+     "errors": "variables must be an object"+
+ }
 (1 row)
 
     rollback to savepoint a;

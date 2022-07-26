@@ -109,9 +109,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$);
-                          resolve                          
------------------------------------------------------------
- {"data": null, "errors": [{"message": "Invalid filter"}]}
+                             resolve                             
+-----------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid filter field"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -207,9 +207,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": " $$;'' "}'::jsonb);
-                              resolve                               
---------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Invalid filter argument"}]}
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "cannot call jsonb_each on a non-object"}]}
 (1 row)
 
     rollback to savepoint a;
@@ -221,9 +221,9 @@ begin;
           ) { edges { node { id } } }
         }
     $a$, '{"var": [" $$;'' "]}'::jsonb);
-                              resolve                               
---------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Invalid filter argument"}]}
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "cannot call jsonb_each on a non-object"}]}
 (1 row)
 
     rollback to savepoint a;

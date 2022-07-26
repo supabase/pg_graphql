@@ -90,6 +90,12 @@ begin
        );
     end if;
 
+    if jsonb_typeof(variables) <> 'object' then
+        return jsonb_build_object(
+          'errors', to_jsonb('variables must be an object'::text)
+        );
+    end if;
+
     -- Rebuild the schema cache if the SQL schema has changed
     perform graphql.rebuild_schema();
 
@@ -116,7 +122,8 @@ begin
                             'statement', ast_statement,
                             'fragment_defs', fragment_definitions
                         ),
-                        variables
+                        variables,
+                        variable_definitions
                     )
                     -- If not a query (mutation) don't attempt to cache
                     else md5(format('%s%s%s',random(),random(),random()))
