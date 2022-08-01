@@ -116,6 +116,13 @@ begin;
     select graphql.resolve($${accountCollection(filter: {name: {in: "baz"}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
+    -- in - empty list
+    select graphql.resolve($${accountCollection(filter: {name: {in: []}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
+
+    -- in - null
+    select graphql.resolve($${accountCollection(filter: {name: {in: null}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
 
     -- Variable: In, mixed List Int
     select jsonb_pretty(

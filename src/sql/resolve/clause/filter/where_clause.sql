@@ -78,10 +78,24 @@ begin
         comp_op = graphql.text_to_comparison_op(op_name);
 
         if comp_op = 'in' then
+
             variable_part = graphql.arg_coerce_list(
                 variable_part
             ); -- this is now a jsonb array
-            variable_part_literal = 'array[' || string_agg(format('(((%L::jsonb) #>> $a${}$a$ )::%s)', v, column_type), ', ') || ']' from jsonb_array_elements(variable_part) jae(v);
+
+            variable_part_literal = (
+                'array['
+                || (
+                    select
+                        coalesce(
+                            string_agg(format('(((%L::jsonb) #>> $a${}$a$ )::%s)', v, column_type), ', '),
+                            ''
+                        )
+                    from
+                        jsonb_array_elements(variable_part) jae(v)
+                   )
+                || format(']::%s[]', column_type)
+            );
 
             clause_arr = clause_arr || format(
                 '%I.%I = any(%s)',
