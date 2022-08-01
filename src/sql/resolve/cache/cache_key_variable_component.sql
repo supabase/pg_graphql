@@ -1,4 +1,7 @@
-create or replace function graphql.cache_key_variable_component(variables jsonb = '{}')
+create or replace function graphql.cache_key_variable_component(
+    variables jsonb = '{}',
+    variable_definitions jsonb = '[]'
+)
     returns text
     language sql
     immutable
@@ -15,32 +18,27 @@ and filtered column names
 
 While false positives are possible, the cost of false positives is low
 */
-    with doc as (
+    with dynamic_elems(var_name) as (
         select
-            *
+           graphql.name_literal(elem -> 'variable') -- the variable's name
         from
-            graphql.jsonb_unnest_recursive_with_jsonpath(variables)
-    ),
-    general_structure as (
-        select
-            jpath::text as x
-        from
-            doc
-    ),
-    order_clause as (
-        select
-            jpath::text || '=' || obj as x
-        from
-            doc
+            jsonb_array_elements(variable_definitions) with ordinality ar(elem, idx)
         where
-            obj #>> '{}' in ('AscNullsFirst', 'AscNullsLast', 'DescNullsFirst', 'DescNullsLast')
+            -- Everything other than cursors must be static
+            elem::text like '%Cursor%'
+    ),
+    doc as (
+        select
+            ar.var_name || ':' || ar.var_value
+        from
+            jsonb_each_text(variables) ar(var_name, var_value)
+            left join dynamic_elems se
+                on ar.var_name = se.var_name
+        where
+            se.var_name is null
     )
     select
         coalesce(string_agg(y.x, ',' order by y.x), '')
     from
-        (
-            select x from general_structure
-            union all
-            select x from order_clause
-        ) y(x)
+        doc y(x)
 $$;

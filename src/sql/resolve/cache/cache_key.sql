@@ -3,7 +3,8 @@ create or replace function graphql.cache_key(
     schemas text[],
     schema_version int,
     ast jsonb,
-    variables jsonb
+    variables jsonb,
+    variable_definitions jsonb
 )
     returns text
     language sql
@@ -17,6 +18,6 @@ as $$
             || $3::text
             -- Parsed query hash
             || ast::text
-            || graphql.cache_key_variable_component(variables)
+            || graphql.cache_key_variable_component(variables, variable_definitions)
         )
 $$;
