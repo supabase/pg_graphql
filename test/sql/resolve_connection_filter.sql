@@ -76,12 +76,20 @@ begin;
         $$)
     );
 
+    -- filter = null is ignored
+    select graphql.resolve($${accountCollection(filter: null) { edges { node { id } } }}$$);
+    rollback to savepoint a;
+
     -- neq
     select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- lt
     select graphql.resolve($${accountCollection(filter: {id: {lt: 2}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
+
+    -- lt - null - should be ignored
+    select graphql.resolve($${accountCollection(filter: {id: {lt: null}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- lte

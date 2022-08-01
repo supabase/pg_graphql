@@ -2773,14 +2773,14 @@ begin
                 on je.k = f.name
         loop
 
+        -- Null should be ignored
+        if jsonb_typeof(variable_part) = 'null' or variable_part is null then
+            continue;
+        end if;
+
         comp_op = graphql.text_to_comparison_op(op_name);
 
         if comp_op = 'in' then
-
-            -- Null should be ignored
-            if jsonb_typeof(variable_part) = 'null' or variable_part is null then
-                continue;
-            end if;
 
             variable_part = graphql.arg_coerce_list(
                 variable_part
