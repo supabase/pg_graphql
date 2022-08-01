@@ -566,7 +566,8 @@ begin
             ) ops(constant_name)
                 on true
         where
-            gt.meta_kind = 'FilterType';
+            gt.meta_kind = 'FilterType'
+            and gt.graphql_type_id not in (graphql.type_id('JSON'));
 
     -- AccountFilter(column eq)
     insert into graphql._field(meta_kind, parent_type_id, type_id, is_not_null, is_array, column_name, column_attribute_num, entity, description)
