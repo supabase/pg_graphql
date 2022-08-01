@@ -184,7 +184,7 @@ begin;
     -- Variable: In: multi-element list
     select jsonb_pretty(
         graphql.resolve($$
-           query AccountsFiltered($filt: Int!)
+           query AccountsFiltered($filt: [Int!])
            {
              accountCollection(filter: {id: {in: $filt}}) {
                edges {
@@ -203,7 +203,7 @@ begin;
     -- Variable: In: variables not an object
     select jsonb_pretty(
         graphql.resolve($$
-           query AccountsFiltered($filt: Int!)
+           query AccountsFiltered($filt: [Int!])
            {
              accountCollection(filter: {id: {in: $filt}}) {
                edges {
