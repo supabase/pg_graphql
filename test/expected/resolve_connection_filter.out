@@ -232,9 +232,9 @@ begin;
     rollback to savepoint a;
     -- in - null
     select graphql.resolve($${accountCollection(filter: {name: {in: null}}) { edges { node { id } } }}$$);
-                    resolve                     
-------------------------------------------------
- {"data": {"accountCollection": {"edges": []}}}
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
 (1 row)
 
     rollback to savepoint a;

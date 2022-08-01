@@ -2776,9 +2776,15 @@ begin
 
         if comp_op = 'in' then
 
+            -- Null should be ignored
+            if jsonb_typeof(variable_part) = 'null' or variable_part is null then
+                continue;
+            end if;
+
             variable_part = graphql.arg_coerce_list(
                 variable_part
             ); -- this is now a jsonb array
+
 
             variable_part_literal = (
                 'array['
