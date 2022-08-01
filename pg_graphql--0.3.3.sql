@@ -1893,7 +1893,7 @@ begin
             ops.constant_name as constant_name,
             true,
             true,
-            true,
+            false,
             null::text as description
         from
             graphql._type gt -- IntFilter
