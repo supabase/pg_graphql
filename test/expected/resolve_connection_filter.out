@@ -142,6 +142,14 @@ begin;
  }
 (1 row)
 
+    -- filter = null is ignored
+    select graphql.resolve($${accountCollection(filter: null) { edges { node { id } } }}$$);
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
+(1 row)
+
+    rollback to savepoint a;
     -- neq
     select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) { edges { node { id } } }}$$);
                                         resolve                                         
@@ -155,6 +163,14 @@ begin;
                               resolve                              
 -------------------------------------------------------------------
  {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- lt - null - should be ignored
+    select graphql.resolve($${accountCollection(filter: {id: {lt: null}}) { edges { node { id } } }}$$);
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
 (1 row)
 
     rollback to savepoint a;

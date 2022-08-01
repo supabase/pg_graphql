@@ -1,4 +1,4 @@
-export PG_GRAPHQL_VERSION='0.3.3'
+export PG_GRAPHQL_VERSION='0.4.0'
 
 cli_log() {
   script_name=${0##*/}
