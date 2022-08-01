@@ -1666,8 +1666,8 @@ begin
         -- TODO parent type lookup from metakind
         (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'hasPreviousPage', true,  false, null, false, null),
         (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Boolean'), 'hasNextPage',     true,  false, null, false, null),
-        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Cursor'),  'startCursor',     false, false, null, false, null),
-        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('Cursor'),  'endCursor',       false, false, null, false, null);
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'startCursor',     false, false, null, false, null),
+        (graphql.type_id('PageInfo'::graphql.meta_kind), graphql.type_id('String'),  'endCursor',       false, false, null, false, null);
 
 
     insert into graphql._field(meta_kind, entity, parent_type_id, type_id, constant_name, is_not_null, is_array, is_array_not_null, description, is_hidden_from_schema)
@@ -1691,7 +1691,7 @@ begin
             lateral (
                 values
                     ('Constant', edge.id, node.id,                     'node',       true,  false, null::boolean, null::text, null::text, null::text[], null::text[], false),
-                    ('Constant', edge.id, graphql.type_id('Cursor'),   'cursor',     true,  false, null, null, null, null, null, false),
+                    ('Constant', edge.id, graphql.type_id('String'),   'cursor',     true,  false, null, null, null, null, null, false),
                     ('Constant', conn.id, edge.id,                     'edges',      true,  true,  true, null, null, null, null, false),
                     ('Constant', conn.id, graphql.type_id('PageInfo'::graphql.meta_kind), 'pageInfo',   true,  false, null, null, null, null, null, false),
                     ('Query.collection', graphql.type_id('Query'::graphql.meta_kind), conn.id, null, false, false, null,
