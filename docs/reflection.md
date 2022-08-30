@@ -12,7 +12,7 @@ Table, column, and relationship type and field names may also be [manually overr
 
 ### Connection Types
 
-Connection types hande pagination best practices according to the [relay spec](https://relay.dev/graphql/connections.htm#). `pg_graphql` uses keyset pagination to enable consistent retrival times on every page.
+Connection types handle pagination best practices according to the [relay spec](https://relay.dev/graphql/connections.htm#). `pg_graphql` uses keyset pagination to enable consistent retrival times on every page.
 
 ## Example
 
