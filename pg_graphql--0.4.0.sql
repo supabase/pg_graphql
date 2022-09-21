@@ -250,6 +250,22 @@ create function graphql.to_regclass(schema_ text, name_ text)
     immutable
 as
 $$ select (quote_ident(schema_) || '.' || quote_ident(name_))::regclass; $$;
+create function graphql.to_regnamespace(regclass)
+    returns regnamespace
+    language sql
+    set search_path to ''
+    immutable
+as
+$$ select (parse_ident($1::text))[1]::regnamespace $$;
+
+
+create function graphql.to_regnamespace(regproc)
+    returns regnamespace
+    language sql
+    set search_path to ''
+    immutable
+as
+$$ select (parse_ident($1::text))[1]::regnamespace $$;
 create function graphql.to_table_name(regclass)
     returns text
     language sql
@@ -940,7 +956,7 @@ as $$
                     -- Explicit name has firts priority
                     graphql.comment_directive_name(rec.entity),
                     -- When the schema has "inflect_names: true then inflect. otherwise, use table name
-                    case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+                    case graphql.comment_directive_inflect_names(graphql.to_regnamespace(rec.entity))
                         when true then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
                         else graphql.to_table_name(rec.entity)
                     end
@@ -1410,7 +1426,7 @@ as $$
     select
         coalesce(
             graphql.comment_directive_name($1, $2),
-            case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+            case graphql.comment_directive_inflect_names(graphql.to_regnamespace(entity))
                 when true then graphql.to_camel_case($2)
                 else $2
             end
@@ -1473,7 +1489,7 @@ create or replace function graphql.field_name_for_to_one(foreign_entity regclass
     language plpgsql
 as $$
 declare
-    is_inflection_on bool = graphql.comment_directive_inflect_names(current_schema::regnamespace);
+    is_inflection_on bool = graphql.comment_directive_inflect_names(graphql.to_regnamespace(foreign_entity));
 
     has_req_suffix text = case is_inflection_on
         when true then '\_id'
@@ -1527,7 +1543,7 @@ as $$
     select
         coalesce(
             graphql.comment_directive_name(func),
-            case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+            case graphql.comment_directive_inflect_names(graphql.to_regnamespace(func))
                 when true then graphql.to_camel_case(ltrim(graphql.to_function_name(func), '_'))
                 else ltrim(graphql.to_function_name(func), '_')
             end

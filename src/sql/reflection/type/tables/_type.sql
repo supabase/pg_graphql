@@ -41,7 +41,7 @@ as $$
                     -- Explicit name has firts priority
                     graphql.comment_directive_name(rec.entity),
                     -- When the schema has "inflect_names: true then inflect. otherwise, use table name
-                    case graphql.comment_directive_inflect_names(current_schema::regnamespace)
+                    case graphql.comment_directive_inflect_names(graphql.to_regnamespace(rec.entity))
                         when true then graphql.inflect_type_default(graphql.to_table_name(rec.entity))
                         else graphql.to_table_name(rec.entity)
                     end
