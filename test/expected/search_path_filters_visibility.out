@@ -37,7 +37,7 @@ begin;
         and meta_kind = 'Node';
  name 
 ------
- Bar
+ bar
 (1 row)
 
 rollback;
