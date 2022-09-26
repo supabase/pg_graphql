@@ -3525,19 +3525,17 @@ begin
     with value_rows(r) as (
         select
             format(
-                format(
-                    '(%s)',
-                    string_agg(
-                        format(
-                            '%s',
-                            case
-                                when row_col.field_val is null then 'default'
-                                else format('%L', row_col.field_val)
-                            end
-                        ),
-                        ', '
-                        order by vfk.field_name asc
-                    )
+                '(%s)',
+                string_agg(
+                    format(
+                        '%s',
+                        case
+                            when row_col.field_val is null then 'default'
+                            else format('%L', row_col.field_val)
+                        end
+                    ),
+                    ', '
+                    order by vfk.field_name asc
                 )
             )
         from
