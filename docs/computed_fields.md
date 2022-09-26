@@ -1,6 +1,6 @@
 ## PostgreSQL Builtin (Preferred)
 
-PostgreSQL has a builtin method for adding [generated columns](https://www.postgresql.org/docs/14/ddl-generated-columns.html) to tables. Generated columns are reflected identically to non-generated columns. This is the reccomended approach to adding computed fields when your computation meets the restrictions. Namely:
+PostgreSQL has a builtin method for adding [generated columns](https://www.postgresql.org/docs/14/ddl-generated-columns.html) to tables. Generated columns are reflected identically to non-generated columns. This is the recommended approach to adding computed fields when your computation meets the restrictions. Namely:
 
 - expression must be immutable
 - expression may only reference the current row
