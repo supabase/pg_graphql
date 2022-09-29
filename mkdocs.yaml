@@ -8,12 +8,12 @@ repo_url: https://github.com/supabase/pg_graphql
 nav:
     - Welcome: 'index.md'
     - Quickstart: 'quickstart.md'
+    - SQL Interface: 'sql_interface.md'
     - API: 'api.md'
-    - Reflection: 'reflection.md'
     - Computed Fields: 'computed_fields.md'
     - Security: 'security.md'
     - Configuration: 'configuration.md'
-    - Performance: 'performance.md'
+    - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
     - Contributing: 'contributing.md'
 
@@ -29,7 +29,12 @@ theme:
 markdown_extensions:
     - pymdownx.highlight:
         linenums: true
+        guess_lang: false
+        use_pygments: true
+        pygments_style: default
     - pymdownx.superfences
+    - pymdownx.tabbed:
+        alternate_style: true
     - pymdownx.snippets
     - pymdownx.tasklist
     - admonition
