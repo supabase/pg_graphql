@@ -622,6 +622,299 @@ Example usage:
 Note, only one key value pair may be provided to each element of the input array. For example, `[{name: AscNullsLast}, {id: AscNullFirst}]` is valid. Passing multiple key value pairs in a single element of the input array e.g. `[{name: AscNullsLast, id: AscNullFirst}]`, in invalid.
 
 
+#### Relationships
+
+Relationships between collections in the Graph are derived from foreign keys.
+
+##### One-to-Many
+
+A foreign key on table A referencing table B defines a one-to-many relationship from table A to table B.
+
+
+=== "GraphQL"
+
+    ```sql
+    type Blog {
+
+      id: Int!
+      name: String!
+      description: String
+
+      blogPostCollection(
+        """Query the first `n` records in the collection"""
+        first: Int
+
+        """Query the last `n` records in the collection"""
+        last: Int
+
+        """Query values in the collection before the provided cursor"""
+        before: Cursor
+
+        """Query values in the collection after the provided cursor"""
+        after: Cursor
+
+        """Filters to apply to the results set when querying from the collection"""
+        filter: BlogPostFilter
+
+        """Sort order to apply to the collection"""
+        orderBy: [BlogPostOrderBy!]
+      ): BlogPostConnection
+
+    }
+    ```
+
+=== "SQL"
+
+    ```sql
+    create table "Blog"(
+        id serial primary key,
+        name varchar(255) not null
+    );
+
+    create table "BlogPost"(
+        id serial primary key,
+        "blogId" integer not null references "Blog"(id),
+        title varchar(255) not null,
+        body varchar(10000)
+    );
+    ```
+
+Where `blogPostCollection` exposes the full `Query` interface to `BlogPost`s.
+
+
+Example usage:
+
+
+=== "Query"
+
+    ```graphql
+    {
+      blogCollection {
+        edges {
+          node {
+            name
+            blogPostCollection {
+              edges {
+                node {
+                  id
+                  title
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "name": "pg_graphql blog",
+                "blogPostCollection": {
+                  "edges": [
+                    {
+                      "node": {
+                        "id": 2,
+                        "title": "fIr3t p0sT"
+                      }
+                    },
+                    {
+                      "node": {
+                        "id": 3,
+                        "title": "graphql with postgres"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+##### Many-to-One
+
+A foreign key on table A referencing table B defines a many-to-one relationship from table B to table A.
+
+=== "GraphQL"
+
+    ```sql
+    type BlogPost {
+      id: Int!
+      blogId: Int!
+      title: String!
+      body: String
+
+      blog: Blog
+    }
+    ```
+
+=== "SQL"
+
+    ```sql
+    create table "Blog"(
+        id serial primary key,
+        name varchar(255) not null
+    );
+
+    create table "BlogPost"(
+        id serial primary key,
+        "blogId" integer not null references "Blog"(id),
+        title varchar(255) not null,
+        body varchar(10000)
+    );
+    ```
+
+Where `blog` exposes the `Blog` record associated with the `BlogPost`.
+
+
+Example usage:
+
+
+=== "Query"
+
+    ```graphql
+    {
+      blogPostCollection {
+        edges {
+          node {
+            title
+            blog {
+              name
+            }
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogPostCollection": {
+          "edges": [
+            {
+              "node": {
+                "blog": {
+                  "name": "pg_graphql blog"
+                },
+                "title": "fIr3t p0sT"
+              }
+            },
+            {
+              "node": {
+                "blog": {
+                  "name": "pg_graphql blog"
+                },
+                "title": "graphql with postgres"
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+
+
+
+##### One-to-One
+
+
+A one-to-one relationship is defined by a foreign key on table A referencing table B where the columns making up the foreign key on table A are unique.
+
+=== "GraphQL"
+
+    ```sql
+    type Employee {
+      id: Int!
+      name: String!
+      emailAddressId: Int
+      emailAddress: EmailAddress
+    }
+
+    type EmailAddress {
+      id: Int!
+      address: String!
+      employee: Employee
+    }
+    ```
+
+=== "SQL"
+
+    ```sql
+    create table "EmailAddress"(
+        id serial primary key,
+        address text unique not null
+    );
+
+    create table "Employee"(
+        id serial primary key,
+        name text not null,
+        email_address_id int unique references "EmailAddress"(id)
+    );
+    ```
+
+
+Example usage:
+
+
+=== "Query"
+
+    ```graphql
+    {
+      employeeCollection {
+        edges {
+          node {
+            name
+            emailAddress {
+              address
+              employee {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "employeeCollection": {
+          "edges": [
+            {
+              "node": {
+                "name": "Foo Barington",
+                "emailAddress": {
+                  "address": "foo@bar.com",
+                  "employee": {
+                    "name": "Foo Barington"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+
 ### MutationType
 
 The `Mutation` type is the entrypoint for mutations/edits.
