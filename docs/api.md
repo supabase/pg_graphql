@@ -1,13 +1,10 @@
-SQL tables are reflected into GraphQL types with columns and foreign keys represented as fields on those types.
+
+In our API, each SQL table is reflected as a set of GraphQL types. At a high level, tables become types and columns/foreign keys become fields on those types.
 
 
-!!! note
+By default, PostgreSQL table and column names are not inflected when reflecting GraphQL  names. For example, an `account_holder` table has GraphQL type name `account_holder`. In cases where SQL entities are named using `snake_case`, [enable inflection](/pg_graphql/configuration/#inflection) to match GraphQL/Javascript conventions e.g. `account_holder` -> `AccountHolder`.
 
-    By default, PostgreSQL table and column names are not inflected when reflecting GraphQL type and field names. For example, an `account_holder` table has GraphQL type name `account_holder`.
-
-    In cases where SQL entities are `snake_case`, you'll likely want to [enable inflection](/pg_graphql/configuration/#inflection) to re-case names to match GraphQL/Javascript conventions e.g. `account_holder` -> `AccountHolder`.
-
-    Individual table, column, and relationship names may also be [manually overridden](/pg_graphql/configuration/#tables-type) as needed.
+Individual table, column, and relationship names may also be [manually overridden](/pg_graphql/configuration/#tables-type).
 
 ## Type Conversion
 
@@ -24,8 +21,10 @@ Each table has top level entry in the `Query` type for selecting records from th
     ```graphql
     """The root type for querying data"""
     type Query {
+
       """A pagable collection of type `Blog`"""
       blogCollection(
+
         """Query the first `n` records in the collection"""
         first: Int
 
@@ -47,12 +46,38 @@ Each table has top level entry in the `Query` type for selecting records from th
     }
     ```
 
+=== "SQL"
+
+    ```sql
+    create table blog(
+      id serial primary key,
+      name varchar(255) not null,
+      description varchar(255),
+      "createdAt" timestamp not null,
+      "updatedAt" timestamp not null
+    );
+    ```
+
+
+Connection types are the primary interface to returning records from a collection.
+
+Connections wrap a result set with some additional metadata.
+
+
 === "BlogConnection"
 
     ```graphql
     type BlogConnection {
-      edges: [BlogEdge!]!
+
+      # Count of all records matching the *filter* criteria
+      totalCount: Int!
+
+      # Pagination metadata
       pageInfo: PageInfo!
+
+      # Result set
+      edges: [BlogEdge!]!
+
     }
     ```
 
@@ -60,20 +85,57 @@ Each table has top level entry in the `Query` type for selecting records from th
 
     ```graphql
     type BlogEdge {
+
+      # Unique identifier of the record within the query
       cursor: String!
+
+      # Contents of a record/row in the results set
       node: Blog
+
     }
     ```
+
+=== "PageInfo"
+
+    ```graphql
+    type PageInfo {
+
+      # unique identifier of the first record within the query
+      startCursor: String
+
+      # unique identifier of the last record within the query
+      endCursor: String
+
+      # is another page of content available
+      hasNextPage: Boolean!
+
+      # is another page of content available
+      hasPreviousPage: Boolean!
+    }
+    ```
+
 
 === "Blog"
 
     ```graphql
+    # A record from the `blog` table
     type Blog {
+
+      # Value from `id` column
       id: Int!
+
+      # Value from `name` column
       name: String!
+
+      # Value from `description` column
       description: String
+
+      # Value from `createdAt` column
       createdAt: Datetime!
+
+      # Value from `updatedAt` column
       updatedAt: Datetime!
+
     }
 
     ```
@@ -106,20 +168,24 @@ Each table has top level entry in the `Query` type for selecting records from th
 
     ```sql
     create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null,
-      "updatedAt" timestamp not null
+        id serial primary key,
+        name varchar(255) not null,
+        description varchar(255),
+        created_at timestamp not null,
+        updated_at timestamp not null
     );
     ```
+
+!!! note
+
+    The `totalCount` field is disabled by default because it can be expensive on larget tables. To enable it use a [comment directive](configuration.md#totalcount)
 
 
 
 
 ##### Pagination
 
-Paginating forwards and backwards through collections is handled using the `first`, `last`, `before`, and `after` parameters and follows the [relay spec](https://relay.dev/graphql/connections.htm#).
+Paginating forwards and backwards through collections is handled using the `first`, `last`, `before`, and `after` parameters, following the [relay spec](https://relay.dev/graphql/connections.htm#).
 
 === "QueryType"
 
@@ -127,6 +193,7 @@ Paginating forwards and backwards through collections is handled using the `firs
     type Query {
 
       blogCollection(
+
         """Query the first `n` records in the collection"""
         first: Int
 
@@ -137,9 +204,10 @@ Paginating forwards and backwards through collections is handled using the `firs
         before: Cursor
 
         """Query values in the collection after the provided cursor"""
-        after: Cursor    filter: BlogFilter
+        after: Cursor
 
         ...truncated...
+
       ): BlogConnection
     }
     ```
@@ -150,19 +218,33 @@ Metadata relating to the current page of a result set is available on the `pageI
 
 
 === "GraphQL"
+
     ```graphql
     type BlogConnection {
-      edges: [BlogEdge!]!
+
+      # Pagination metadata
       pageInfo: PageInfo!
+
+      # Result set
+      edges: [BlogEdge!]!
+
     }
     ```
 
     ```graphql
     type PageInfo {
-      endCursor: String
-      hasNextPage: Boolean!
-      hasPreviousPage: Boolean!
+
+      # unique identifier of the first record within the query
       startCursor: String
+
+      # unique identifier of the last record within the query
+      endCursor: String
+
+      # is another page of content available
+      hasNextPage: Boolean!
+
+      # is another page of content available
+      hasPreviousPage: Boolean!
     }
     ```
 
@@ -178,41 +260,31 @@ Metadata relating to the current page of a result set is available on the `pageI
     );
     ```
 
-To paginate forwards in the collection, use the `first` and `after` aguments. To retrive the first page, the `after` argument should be null.
+To paginate forward in the collection, use the `first` and `after` aguments. To retrive the first page, the `after` argument should be null.
 
-```graphql
-{
-  blogCollection(
-    first: 2,
-    after: null
-  ) {
-    pageInfo {
-      startCursor
-      endCursor
-      hasPreviousPage
-      hasNextPage
-    }
-    edges {
-      cursor
-      node {
-        id
+=== "Query"
+
+    ```graphql
+    {
+      blogCollection(
+        first: 2,
+        after: null
+      ) {
+        pageInfo {
+          startCursor
+          endCursor
+          hasPreviousPage
+          hasNextPage
+        }
+        edges {
+          cursor
+          node {
+            id
+          }
+        }
       }
     }
-  }
-}
-```
-
-To retrieve the next page, provide the cursor value from `data.blogCollection.pageInfo.endCursor` in the result set to the `after` argument of a second query.
-
-i.e.
-
-```graphql
-{
-  blogCollection(
-    first: 2,
-    after: "WzJd"
-  ) ...truncated...
-```
+    ```
 
 === "Page 1"
 
@@ -242,6 +314,20 @@ i.e.
           }
         }
       }
+    }
+    ```
+
+To retrieve the next page, provide the cursor value from `data.blogCollection.pageInfo.endCursor` to the `after` argument of another query.
+
+=== "Query"
+
+    ```graphql
+    {
+      blogCollection(
+        first: 2,
+        after: "WzJd"
+      ) {
+      ...truncated...
     }
     ```
 
@@ -276,11 +362,10 @@ i.e.
     }
     ```
 
-once the collection has been fully enumerated, `hasNextPage` returns false.
+once the collection has been fully enumerated, `data.blogConnection.pageInfo.hasNextPage` returns false.
 
 
-To paginate backwards through a collection, repeat the process substituting the values from `first` and `after` with `last` and `before`.
-
+To paginate backwards through a collection, repeat the process substituting `first` -> `last`, `after` -> `before`, `hasNextPage` -> `hasPreviousPage`
 !!! warning
     Do not use cursors as unique identifiers.
     Cursors are not stable across versions of pg_graphql and should only be persisted within a single user session.
@@ -294,9 +379,14 @@ To filter the result set, use the `filter` argument.
 
     ```graphql
     type Query {
+
       blogCollection(
+
+        """Filters to apply to the results set when querying from the collection"""
         filter: BlogFilter
+
         ...truncated...
+
       ): BlogConnection
     }
     ```
@@ -427,7 +517,7 @@ We expect to expand support to user defined `AND` and `OR` composition in a futu
 
 ##### Ordering
 
-The default order of results is set by the underlying table's primary key. The default order can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
+The default order of results is defined by the underlying table's primary key column in ascending order. That default can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
 
 === "QueryType"
 
@@ -445,44 +535,142 @@ The default order of results is set by the underlying table's primary key. The d
     }
     ```
 
+=== "BlogOrderBy"
 
-
-
-
-#### Connection Types
-
-Connection types are the primary interface to returning records from a collection.
-
-Connections wrap a result set with some additional metadata.
-
-
-=== "GraphQL"
     ```graphql
-    type BlogConnection {
-
-      # Count of all records matching the *filter* criteria
-      totalCount: Int!
-
-      # Pagination metadata
-      pageInfo: PageInfo!
-
-      # Result set
-      edges: [BlogEdge!]!
+    input BlogOrderBy {
+      id: OrderByDirection
+      name: OrderByDirection
+      description: OrderByDirection
+      createdAt: OrderByDirection
+      updatedAt: OrderByDirection
     }
+    ```
 
-    type PageInfo {
 
-      # unique identifier of the first record within the page
-      startCursor: String
+=== "OrderByDirection"
 
-      # unique identifier of the last record within the page
-      endCursor: String
+    ```graphql
+    """Defines a per-field sorting order"""
+    enum OrderByDirection {
+      """Ascending order, nulls first"""
+      AscNullsFirst
 
-      # is another page of content available
-      hasNextPage: Boolean!
+      """Ascending order, nulls last"""
+      AscNullsLast
 
-      # is another page of content available
-      hasPreviousPage: Boolean!
+      """Descending order, nulls first"""
+      DescNullsFirst
+
+      """Descending order, nulls last"""
+      DescNullsLast
+    }
+    ```
+
+Example usage:
+
+
+=== "Query"
+
+    ```graphql
+    {
+      blogCollection(
+        orderBy: [{id: DescNullsLast}]
+      ) {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 4
+              }
+            },
+            {
+              "node": {
+                "id": 3
+              }
+            },
+            {
+              "node": {
+                "id": 2
+              }
+            },
+            {
+              "node": {
+                "id": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+Note, only one key value pair may be provided to each element of the input array. For example, `[{name: AscNullsLast}, {id: AscNullFirst}]` is valid. Passing multiple key value pairs in a single element of the input array e.g. `[{name: AscNullsLast, id: AscNullFirst}]`, in invalid.
+
+
+### MutationType
+
+The `Mutation` type is the entrypoint for mutations/edits.
+
+Each table has top level entry in the `Mutation` type for [inserting](#insert) `insertInto<Table>Collection`, [updating](#update) `update<Table>Collection` and [deleting](#delete) `deleteFrom<Table>Collection`.
+
+=== "MutationType"
+
+    ```graphql
+    """The root type for creating and mutating data"""
+    type Mutation {
+
+      """Adds one or more `BlogInsertResponse` records to the collection"""
+      insertIntoBlogCollection(
+
+        """Records to add to the Blog collection"""
+        objects: [BlogInsertInput!]!
+
+      ): BlogInsertResponse
+
+      """Updates zero or more records in the collection"""
+      updateBlogCollection(
+        """
+        Fields that are set will be updated for all records matching the `filter`
+        """
+        set: BlogUpdateInput!
+
+        """Restricts the mutation's impact to records matching the critera"""
+        filter: BlogFilter
+
+        """
+        The maximum number of records in the collection permitted to be affected
+        """
+        atMost: Int! = 1
+
+      ): BlogUpdateResponse!
+
+      """Deletes zero or more records from the collection"""
+      deleteFromBlogCollection(
+        """Restricts the mutation's impact to records matching the critera"""
+        filter: BlogFilter
+
+        """
+        The maximum number of records in the collection permitted to be affected
+        """
+        atMost: Int! = 1
+
+      ): BlogDeleteResponse!
+
     }
     ```
 
@@ -490,24 +678,319 @@ Connections wrap a result set with some additional metadata.
 
     ```sql
     create table blog(
-        id serial primary key,
-        name varchar(255) not null,
-        description varchar(255),
-        created_at timestamp not null,
-        updated_at timestamp not null
+      id serial primary key,
+      name varchar(255) not null,
+      description varchar(255),
+      "createdAt" timestamp not null default now(),
+      "updatedAt" timestamp
     );
     ```
 
-!!! note
-
-    The `totalCount` field is disabled by default because it can be expensive on larget tables. To enable it use a [comment directive](configuration.md#totalcount)
-
-
-
-### MutationType
-
 #### Insert
+
+To add records to a collection, use the `insertInto<Table>Collection` field on the `Mutation` type.
+
+=== "MutationType"
+
+    ```graphql
+    """The root type for creating and mutating data"""
+    type Mutation {
+
+      """Adds one or more `BlogInsertResponse` records to the collection"""
+      insertIntoBlogCollection(
+
+        """Records to add to the Blog collection"""
+        objects: [BlogInsertInput!]!
+
+      ): BlogInsertResponse
+
+    }
+    ```
+
+=== "BlogInsertInput"
+
+    ```graphql
+    input BlogInsertInput {
+      name: String
+      description: String
+      createdAt: Datetime
+      updatedAt: Datetime
+    }
+    ```
+
+=== "BlogInsertResponse"
+
+    ```graphql
+    type BlogInsertResponse {
+      """Count of the records impacted by the mutation"""
+      affectedCount: Int!
+
+      """Array of records impacted by the mutation"""
+      records: [Blog!]!
+    }
+    ```
+
+=== "SQL"
+
+    ```sql
+    create table blog(
+      id serial primary key,
+      name varchar(255) not null,
+      description varchar(255),
+      "createdAt" timestamp not null default now(),
+      "updatedAt" timestamp
+    );
+    ```
+
+Where elements in the `objects` array are inserted into the underlying table.
+
+
+Example usage:
+
+=== "Query"
+    ```graphql
+    mutation {
+      insertIntoBlogCollection(
+        objects: [
+          {name: "foo"},
+          {name: "bar"},
+        ]
+      ) {
+        affectedCount
+        records {
+          id
+          name
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "insertIntoBlogCollection": {
+          "records": [
+            {
+              "id": 1,
+              "name": "foo"
+            },
+            {
+              "id": 2,
+              "name": "bar"
+            }
+          ],
+          "affectedCount": 2
+        }
+      }
+    }
+    ```
 
 #### Update
 
+
+To update records in a collection, use the `update<Table>Collection` field on the `Mutation` type.
+
+=== "MutationType"
+
+    ```graphql
+    """The root type for creating and mutating data"""
+    type Mutation {
+
+      """Updates zero or more records in the collection"""
+      updateBlogCollection(
+        """
+        Fields that are set will be updated for all records matching the `filter`
+        """
+        set: BlogUpdateInput!
+
+        """Restricts the mutation's impact to records matching the critera"""
+        filter: BlogFilter
+
+        """
+        The maximum number of records in the collection permitted to be affected
+        """
+        atMost: Int! = 1
+
+      ): BlogUpdateResponse!
+
+    }
+    ```
+
+=== "BlogUpdateInput"
+
+    ```graphql
+    input BlogUpdateInput {
+      name: String
+      description: String
+      createdAt: Datetime
+      updatedAt: Datetime
+    }
+    ```
+
+=== "BlogUpdateResponse"
+
+    ```graphql
+    type BlogUpdateResponse {
+
+      """Count of the records impacted by the mutation"""
+      affectedCount: Int!
+
+      """Array of records impacted by the mutation"""
+      records: [Blog!]!
+
+    }
+    ```
+
+
+=== "SQL"
+
+    ```sql
+    create table blog(
+      id serial primary key,
+      name varchar(255) not null,
+      description varchar(255),
+      "createdAt" timestamp not null default now(),
+      "updatedAt" timestamp
+    );
+    ```
+
+Where the `set` argument is a key value pair describing the values to update, `filter` controls which records should be updated, and `atMost` restricts the maximum number of records that may be impacted. If the number of records impacted by the mutation exceeds the `atMost` parameter the operation will return an error.
+
+Example usage:
+
+=== "Query"
+    ```graphql
+    mutation {
+      updateBlogCollection(
+        set: {name: "baz"}
+        filter: {id: {eq: 1}}
+      ) {
+        affectedCount
+        records {
+          id
+          name
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "updateBlogCollection": {
+          "records": [
+            {
+              "id": 1,
+              "name": "baz"
+            }
+          ],
+          "affectedCount": 1
+        }
+      }
+    }
+    ```
+
+
+
 #### Delete
+
+To remove records from a collection, use the `deleteFrom<Table>Collection` field on the `Mutation` type.
+
+=== "MutationType"
+
+    ```graphql
+    """The root type for creating and mutating data"""
+    type Mutation {
+
+      """Deletes zero or more records from the collection"""
+      deleteFromBlogCollection(
+        """Restricts the mutation's impact to records matching the critera"""
+        filter: BlogFilter
+
+        """
+        The maximum number of records in the collection permitted to be affected
+        """
+        atMost: Int! = 1
+
+      ): BlogDeleteResponse!
+
+    }
+    ```
+
+=== "BlogFilter"
+
+    ```graphql
+    input BlogFilter {
+      id: IntFilter
+      name: StringFilter
+      description: StringFilter
+      createdAt: DatetimeFilter
+      updatedAt: DatetimeFilter
+    }
+    ```
+
+=== "BlogDeleteResponse"
+
+    ```graphql
+    type BlogDeleteResponse {
+      """Count of the records impacted by the mutation"""
+      affectedCount: Int!
+
+      """Array of records impacted by the mutation"""
+      records: [Blog!]!
+    }
+    ```
+
+=== "SQL"
+
+    ```sql
+    create table blog(
+      id serial primary key,
+      name varchar(255) not null,
+      description varchar(255),
+      "createdAt" timestamp not null default now(),
+      "updatedAt" timestamp
+    );
+    ```
+
+Where `filter` controls which records should be deleted and `atMost` restricts the maximum number of records that may be deleted. If the number of records impacted by the mutation exceeds the `atMost` parameter the operation will return an error.
+
+Example usage:
+
+=== "Query"
+
+    ```graphql
+    mutation {
+      deleteFromBlogCollection(
+        filter: {id: {eq: 1}}
+      ) {
+        affectedCount
+        records {
+          id
+          name
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "deleteFromBlogCollection": {
+          "records": [
+            {
+              "id": 1,
+              "name": "baz"
+            }
+          ],
+          "affectedCount": 1
+        }
+      }
+    }
+    ```
