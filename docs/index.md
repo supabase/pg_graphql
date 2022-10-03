@@ -19,13 +19,12 @@
 
 - [x] __Performant__
 - [x] __Consistent__
-- [x] __Serverless__
 - [x] __Open Source__
 
 ### Overview
-`pg_graphql` reflects a GraphQL schema from the existing SQL schema.
+`pg_graphql` is a PostgreSQL extension that enables querying the database with GraphQL using a single a SQL function.
 
-The extension keeps schema translation and query resolution neatly contained on your database server. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.
+The extension reflects a GraphQL schema from the existing SQL schema and exposes it through a SQL function, `graphql.resolve(...)`. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.
 
 
 ### TL;DR
@@ -63,6 +62,6 @@ create table blog_post(
 ```
 Translates into a GraphQL schema displayed below.
 
-Each table receives an entrypoint in the top level `Query` type that is a pageable collection with relationships defined by its foreign keys. Tables similarly recieve entrypoints in the `Mutation` schema that enable bulk operations for insert, update, and delete.
+Each table receives an entrypoint in the top level `Query` type that is a pageable collection with relationships defined by its foreign keys. Tables similarly recieve entrypoints in the `Mutation` type that enable bulk operations for insert, update, and delete.
 
 ![GraphiQL](./assets/quickstart_graphiql.png)
