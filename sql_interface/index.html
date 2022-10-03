@@ -10,14 +10,14 @@
       
       
       
-        <link rel="canonical" href="https://supabase.github.io/pg_graphql/installation/">
+        <link rel="canonical" href="https://supabase.github.io/pg_graphql/sql_interface/">
       
       <link rel="icon" href="../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
     
     
       
-        <title>Installation - pg_graphql</title>
+        <title>SQL Interface - pg_graphql</title>
       
     
     
@@ -69,6 +69,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#graphqlresolve" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -97,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Installation
+              SQL Interface
             
           </span>
         </div>
@@ -234,11 +239,75 @@
 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../sql_interface/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          SQL Interface
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         SQL Interface
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#graphqlresolve" class="md-nav__link">
+    graphql.resolve
+  </a>
+  
+    <nav class="md-nav" aria-label="graphql.resolve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#description" class="md-nav__link">
+    description
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signature" class="md-nav__link">
+    signature
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    usage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -324,19 +393,11 @@
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
         Installation
       </a>
-      
     </li>
   
 
@@ -374,6 +435,48 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#graphqlresolve" class="md-nav__link">
+    graphql.resolve
+  </a>
+  
+    <nav class="md-nav" aria-label="graphql.resolve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#description" class="md-nav__link">
+    description
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signature" class="md-nav__link">
+    signature
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    usage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -386,24 +489,107 @@
                 
                   
 
-  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/installation.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/sql_interface.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Installation</h1>
+  <h1>SQL Interface</h1>
 
-<p>First, install <a href="https://github.com/graphql/libgraphqlparser">libgraphqlparser</a></p>
-<p>Then clone the repo and install using</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>git clone https://github.com/supabase/pg_graphql.git
-<span class="nb">cd</span> pg_graphql
-make install
+<p>pg_graphql's public facing SQL interface consists of a single SQL function to resolve GraphQL requests. All other entities in the <code>graphql</code> schema are private.</p>
+<h3 id="graphqlresolve">graphql.resolve</h3>
+<h5 id="description">description</h5>
+<p>Resolves a GraphQL query, returning JSONB.</p>
+<h5 id="signature">signature</h5>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="c1">-- graphql query/mutation</span>
+<span class="w">    </span><span class="n">query</span><span class="w"> </span><span class="nb">text</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="c1">-- json key/values pairs for variables</span>
+<span class="w">    </span><span class="n">variables</span><span class="w"> </span><span class="n">jsonb</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="c1">-- the name of the graphql operation in *query* to execute</span>
+<span class="w">    </span><span class="ss">&quot;operationName&quot;</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="c1">-- extensions to include in the request</span>
+<span class="w">    </span><span class="n">extensions</span><span class="w"> </span><span class="n">jsonb</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">returns</span><span class="w"> </span><span class="n">jsonb</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">strict</span><span class="w"></span>
+<span class="w">    </span><span class="k">volatile</span><span class="w"></span>
+<span class="w">    </span><span class="n">parallel</span><span class="w"> </span><span class="n">safe</span><span class="w"></span>
+<span class="w">    </span><span class="k">language</span><span class="w"> </span><span class="n">plpgsql</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
-<p>To enable the extension in PostgreSQL we must execute a <code>create extension</code> statement. The extension creates its own schema/namespace named <code>graphql</code> to avoid naming conflicts.</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">extension</span><span class="w"> </span><span class="n">pg_graphql</span><span class="w"> </span><span class="k">cascade</span><span class="p">;</span><span class="w"></span>
+<h5 id="usage">usage</h5>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">-- Create the extension</span>
+<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">create</span><span class="w"> </span><span class="n">extension</span><span class="w"> </span><span class="n">pg_graphql</span><span class="p">;</span><span class="w"></span>
+<span class="k">CREATE</span><span class="w"> </span><span class="n">EXTENSION</span><span class="w"></span>
+
+<span class="c1">-- Create an example table</span>
+<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"> </span><span class="n">title</span><span class="w"> </span><span class="nb">text</span><span class="p">);</span><span class="w"></span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"></span>
+
+<span class="c1">-- Insert a record</span>
+<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">title</span><span class="p">)</span><span class="w"> </span><span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;book 1&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="k">INSERT</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+
+<span class="c1">-- Query the table via GraphQL</span>
+<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span><span class="w"></span>
+<span class="n">query</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">bookCollection</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">id</span><span class="w"></span>
+<span class="w">      </span><span class="err">}</span><span class="w"></span>
+<span class="w">    </span><span class="err">}</span><span class="w"></span>
+<span class="w">  </span><span class="err">}</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+<span class="err">$$</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">             </span><span class="n">resolve</span><span class="w"></span>
+<span class="c1">----------------------------------------------------------------------</span>
+<span class="err">{</span><span class="ss">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="ss">&quot;bookCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="ss">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">{</span><span class="ss">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="ss">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="err">}}</span><span class="p">]</span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="err">}</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 
 
@@ -425,7 +611,7 @@ make install
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../example_schema/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Example Schema" rel="prev">
+        <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quickstart" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -434,20 +620,20 @@ make install
               <span class="md-footer__direction">
                 Previous
               </span>
-              Example Schema
+              Quickstart
             </div>
           </div>
         </a>
       
       
         
-        <a href="../contributing/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing" rel="next">
+        <a href="../api/" class="md-footer__link md-footer__link--next" aria-label="Next: API" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Contributing
+              API
             </div>
           </div>
           <div class="md-footer__button md-icon">

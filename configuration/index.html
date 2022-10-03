@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://supabase.github.io/pg_graphql/configuration/">
       
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
     
     
       
@@ -21,31 +21,35 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.7a952b86.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
         
           
           
           <meta name="theme-color" content="#000000">
         
       
+      
+
     
     
     
       
         
+        
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
     
-    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
+    
     
     
   </head>
@@ -86,7 +90,7 @@
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -108,7 +112,7 @@
     
     
       <label class="md-header__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
       </label>
       <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
@@ -116,13 +120,13 @@
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
       
@@ -142,10 +146,10 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/supabase/pg_graphql/" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -186,10 +190,10 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/supabase/pg_graphql/" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -237,8 +241,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
-        API
+      <a href="../sql_interface/" class="md-nav__link">
+        SQL Interface
       </a>
     </li>
   
@@ -252,8 +256,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../reflection/" class="md-nav__link">
-        Reflection
+      <a href="../api/" class="md-nav__link">
+        API
       </a>
     </li>
   
@@ -410,8 +414,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
-        Performance
+      <a href="../example_schema/" class="md-nav__link">
+        Example Schema
       </a>
     </li>
   
@@ -547,13 +551,16 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
-<a href="https://github.com/supabase/pg_graphql/edit/master/docs/configuration.md" title="Edit this page" class="md-content__button md-icon">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
-</a>
+                  
+
+  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/configuration.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
 
 
   <h1>Configuration</h1>
@@ -562,147 +569,134 @@
 <h2 id="comment-directives">Comment Directives</h2>
 <p>Comment directives are snippets of configuration associated with SQL entities that alter how those entities behave.</p>
 <p>The format of a comment directive is</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="o">@</span><span class="n">graphql</span><span class="p">(</span><span class="o">&lt;</span><span class="n">JSON</span><span class="o">&gt;</span><span class="p">)</span>
-</code></pre></div>
-</td></tr></table>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="o">@</span><span class="n">graphql</span><span class="p">(</span><span class="o">&lt;</span><span class="n">JSON</span><span class="o">&gt;</span><span class="p">)</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <h3 id="inflection">Inflection</h3>
 <p>Inflection describes how SQL entities' names are transformed into GraphQL type and field names. By default, inflection is disabled and SQL names are literally interpolated such that</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
-    <span class="p">...</span>
-<span class="p">);</span>
-</code></pre></div>
-</td></tr></table>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <p>results in GraphQL type names like
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>BlogPost
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>BlogPost
 BlogPostEdge
 BlogPostConnection
 ...
-</code></pre></div>
-</td></tr></table></p>
+</code></pre></div></td></tr></table></div></p>
 <p>Since snake case is a common casing structure for SQL types, <code>pg_graphql</code> support basic inflection from <code>snake_case</code> to <code>PascalCase</code> for type names, and <code>snake_case</code> to <code>camelCase</code> for field names to match Javascript conventions.</p>
 <p>The inflection directive can be applied at the schema level with:</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">comment</span> <span class="k">on</span> <span class="k">schema</span> <span class="o">&lt;</span><span class="k">schema_name</span><span class="o">&gt;</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">schema</span><span class="w"> </span><span class="o">&lt;</span><span class="k">schema_name</span><span class="o">&gt;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <p>for example
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">comment</span> <span class="k">on</span> <span class="k">schema</span> <span class="k">public</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">schema</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;inflect_names&quot;: true})&#39;</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">table</span> <span class="n">blog_post</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
-    <span class="p">...</span>
-<span class="p">);</span>
-</code></pre></div>
-</td></tr></table></p>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog_post</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
 <p>similarly would generated the GraphQL type names
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>BlogPost
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>BlogPost
 BlogPostEdge
 BlogPostConnection
 ...
-</code></pre></div>
-</td></tr></table></p>
+</code></pre></div></td></tr></table></div></p>
 <p>For more fine grained adjustments to reflected names, see <a href="#renaming">renaming</a>.</p>
 <h3 id="totalcount">totalCount</h3>
 <p><code>totalCount</code> is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">BlogPostConnection</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">edges</span><span class="n">: [BlogPostEdge</span><span class="o">!</span><span class="p">]</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">pageInfo</span><span class="n">: PageInfo</span><span class="o">!</span><span class="w"></span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogPostConnection</span> <span class="p">{</span>
+  edges: <span class="p">[</span><span class="k">BlogPostEdge</span><span class="p">!]!</span>
+  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
 
-<span class="w">  </span><span class="s2">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="na">totalCount</span><span class="n">: Int</span><span class="o">!</span><span class="w"> </span><span class="c c-Singline"># this field</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-</code></pre></div>
-</td></tr></table>
+  <span class="c c-Multi">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span>
+  totalCount: <span class="k">Int</span><span class="p">!</span> <span class="c c-Singline"># this field</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
 <p>to enable <code>totalCount</code> for a table, use the directive</p>
-<p><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="ss">&quot;BlogPost&quot;</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table>
+<p><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 for example
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
-    <span class="n">email</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span>
-<span class="p">);</span>
-<span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="ss">&quot;BlogPost&quot;</span> <span class="k">is</span> <span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table></p>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">email</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;totalCount&quot;: {&quot;enabled&quot;: true}})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
 <h3 id="renaming">Renaming</h3>
 <h4 id="tables-type">Table's Type</h4>
 <p>Use the <code>"name"</code> JSON key to override a table's type name.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="n">account</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span>
-<span class="p">);</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">account</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="k">comment</span> <span class="k">on</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span> <span class="k">is</span>
-<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;AccountHolder&quot;})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;AccountHolder&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <p>results in:
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">AccountHolder</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c c-Singline"># previously: &quot;Account&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-</code></pre></div>
-</td></tr></table></p>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">AccountHolder</span> <span class="p">{</span> <span class="c c-Singline"># previously: &quot;Account&quot;</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div></p>
 <h4 id="columns-field-name">Column's Field Name</h4>
 <p>Use the <code>"name"</code> JSON key to override a column's field name.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="ss">&quot;Account&quot;</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
-    <span class="n">email</span> <span class="nb">text</span>
-<span class="p">);</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">email</span><span class="w"> </span><span class="nb">text</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="k">comment</span> <span class="k">on</span> <span class="k">column</span> <span class="ss">&quot;Account&quot;</span><span class="p">.</span><span class="n">email</span> <span class="k">is</span>
-<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;emailAddress&quot;})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">column</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">.</span><span class="n">email</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;emailAddress&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <p>results in:
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">emailAddress</span><span class="n">: String</span><span class="o">!</span><span class="w"> </span><span class="c c-Singline"># previously &quot;email&quot;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-</code></pre></div>
-</td></tr></table></p>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="p">{</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  emailAddress: <span class="k">String</span><span class="p">!</span> <span class="c c-Singline"># previously &quot;email&quot;</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div></p>
 <h4 id="computed-field">Computed Field</h4>
 <p>Use the <code>"name"</code> JSON key to override a <a href="../computed_fields/">computed field's</a> name.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
 <span class="normal"> 4</span>
@@ -719,43 +713,41 @@ for example
 <span class="normal">15</span>
 <span class="normal">16</span>
 <span class="normal">17</span>
-<span class="normal">18</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="ss">&quot;Account&quot;</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
-    <span class="ss">&quot;firstName&quot;</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
-    <span class="ss">&quot;lastName&quot;</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">not</span> <span class="k">null</span>
-<span class="p">);</span>
+<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;firstName&quot;</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;lastName&quot;</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
 <span class="c1">-- Extend with function</span>
-<span class="k">create</span> <span class="k">function</span> <span class="k">public</span><span class="p">.</span><span class="ss">&quot;_fullName&quot;</span><span class="p">(</span><span class="n">rec</span> <span class="k">public</span><span class="p">.</span><span class="ss">&quot;Account&quot;</span><span class="p">)</span>
-    <span class="k">returns</span> <span class="nb">text</span>
-    <span class="k">immutable</span>
-    <span class="k">strict</span>
-    <span class="k">language</span> <span class="k">sql</span>
-<span class="k">as</span> <span class="err">$$</span>
-    <span class="k">select</span> <span class="n">format</span><span class="p">(</span><span class="s1">&#39;%s %s&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="p">.</span><span class="ss">&quot;firstName&quot;</span><span class="p">,</span> <span class="n">rec</span><span class="p">.</span><span class="ss">&quot;lastName&quot;</span><span class="p">)</span>
-<span class="err">$$</span><span class="p">;</span>
+<span class="k">create</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="ss">&quot;_fullName&quot;</span><span class="p">(</span><span class="n">rec</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="ss">&quot;Account&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">returns</span><span class="w"> </span><span class="nb">text</span><span class="w"></span>
+<span class="w">    </span><span class="k">immutable</span><span class="w"></span>
+<span class="w">    </span><span class="k">strict</span><span class="w"></span>
+<span class="w">    </span><span class="k">language</span><span class="w"> </span><span class="k">sql</span><span class="w"></span>
+<span class="k">as</span><span class="w"> </span><span class="err">$$</span><span class="w"></span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;%s %s&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">rec</span><span class="p">.</span><span class="ss">&quot;firstName&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">rec</span><span class="p">.</span><span class="ss">&quot;lastName&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="err">$$</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">comment</span> <span class="k">on</span> <span class="k">function</span> <span class="k">public</span><span class="p">.</span><span class="n">_full_name</span> <span class="k">is</span>
-<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;displayName&quot;})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="n">_full_name</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="n">e</span><span class="s1">&#39;@graphql({&quot;name&quot;: &quot;displayName&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <p>results in:
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">firstName</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">lastName</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">displayName</span><span class="n">: String</span><span class="w"> </span><span class="c c-Singline"># previously &quot;fullName&quot;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-</code></pre></div>
-</td></tr></table></p>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="p">{</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  firstName: <span class="k">String</span><span class="p">!</span>
+  lastName: <span class="k">String</span><span class="p">!</span>
+  displayName: <span class="k">String</span> <span class="c c-Singline"># previously &quot;fullName&quot;</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div></p>
 <h4 id="relationships-field">Relationship's Field</h4>
 <p>Use the <code>"local_name"</code> and <code>"foreign_name"</code> JSON keys to override a a relationships inbound and outbound field names.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
 <span class="normal"> 4</span>
@@ -768,24 +760,23 @@ for example
 <span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="ss">&quot;Account&quot;</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span>
-<span class="p">);</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">table</span> <span class="ss">&quot;Post&quot;</span><span class="p">(</span>
-    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
-    <span class="ss">&quot;accountId&quot;</span> <span class="nb">integer</span> <span class="k">not</span> <span class="k">null</span> <span class="k">references</span> <span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">),</span>
-    <span class="n">title</span> <span class="nb">text</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
-    <span class="n">body</span> <span class="nb">text</span>
-<span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Post&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;accountId&quot;</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">body</span><span class="w"> </span><span class="nb">text</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="k">comment</span> <span class="k">on</span> <span class="k">constraint</span> <span class="n">post_owner_id_fkey</span>
-<span class="k">on</span> <span class="n">post</span>
-<span class="k">is</span> <span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;author&quot;, &quot;local_name&quot;: &quot;posts&quot;})&#39;</span><span class="p">;</span>
-</code></pre></div>
-</td></tr></table>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">post_owner_id_fkey</span><span class="w"></span>
+<span class="k">on</span><span class="w"> </span><span class="n">post</span><span class="w"></span>
+<span class="k">is</span><span class="w"> </span><span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;author&quot;, &quot;local_name&quot;: &quot;posts&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
 <p>results in:
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
 <span class="normal"> 4</span>
@@ -803,43 +794,49 @@ for example
 <span class="normal">16</span>
 <span class="normal">17</span>
 <span class="normal">18</span>
-<span class="normal">19</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="kd">type</span><span class="w"> </span><span class="nc">Post</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">accountId</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">title</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">body</span><span class="n">: String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">author</span><span class="n">: Account</span><span class="w"> </span><span class="c c-Singline"># was &quot;account&quot;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Post</span> <span class="p">{</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  accountId: <span class="k">Int</span><span class="p">!</span>
+  title: <span class="k">String</span><span class="p">!</span>
+  body: <span class="k">String</span><span class="p">!</span>
+  author: <span class="k">Account</span> <span class="c c-Singline"># was &quot;account&quot;</span>
+<span class="p">}</span>
 
-<span class="kd">type</span><span class="w"> </span><span class="nc">Account</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="na">id</span><span class="n">: Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="na">posts</span><span class="p">(</span><span class="w"> </span><span class="c c-Singline"># was &quot;postCollection&quot;</span><span class="w"></span>
-<span class="w">    </span><span class="na">after</span><span class="n">: Cursor</span><span class="w">,</span>
-<span class="w">    </span><span class="na">before</span><span class="n">: Cursor</span><span class="w">,</span>
-<span class="w">    </span><span class="na">filter</span><span class="n">: PostFilter</span><span class="w">,</span>
-<span class="w">    </span><span class="na">first</span><span class="n">: Int</span><span class="w">,</span>
-<span class="w">    </span><span class="na">last</span><span class="n">: Int</span><span class="w">,</span>
-<span class="w">    </span><span class="na">orderBy</span><span class="n">: [PostOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
-<span class="w">  </span><span class="p">)</span><span class="n">: PostConnection</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-</code></pre></div>
-</td></tr></table></p>
+<span class="kt">type</span> <span class="k">Account</span> <span class="p">{</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  <span class="k">posts</span><span class="p">(</span> <span class="c c-Singline"># was &quot;postCollection&quot;</span>
+    after: <span class="k">Cursor</span>,
+    before: <span class="k">Cursor</span>,
+    filter: <span class="k">PostFilter</span>,
+    first: <span class="k">Int</span>,
+    last: <span class="k">Int</span>,
+    orderBy: <span class="p">[</span><span class="k">PostOrderBy</span><span class="p">!]</span>
+  <span class="p">):</span> <span class="k">PostConnection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div></p>
 
-              
-            </article>
-          </div>
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
         </div>
         
       </main>
       
         <footer class="md-footer">
   
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
         <a href="../security/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Security" rel="prev">
           <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
           <div class="md-footer__title">
             <div class="md-ellipsis">
@@ -853,17 +850,17 @@ for example
       
       
         
-        <a href="../performance/" class="md-footer__link md-footer__link--next" aria-label="Next: Performance" rel="next">
+        <a href="../example_schema/" class="md-footer__link md-footer__link--next" aria-label="Next: Example Schema" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Performance
+              Example Schema
             </div>
           </div>
           <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
           </div>
         </a>
       
@@ -889,10 +886,11 @@ for example
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://supabase.github.io/pg_graphql/api/">
       
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
     
     
       
@@ -21,31 +21,35 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.7a952b86.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
         
           
           
           <meta name="theme-color" content="#000000">
         
       
+      
+
     
     
     
       
         
+        
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
     
-    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
+    
     
     
   </head>
@@ -66,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#graphqlresolve" class="md-skip">
+        <a href="#type-conversion" class="md-skip">
           Skip to content
         </a>
       
@@ -86,7 +90,7 @@
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -108,7 +112,7 @@
     
     
       <label class="md-header__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
       </label>
       <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
@@ -116,13 +120,13 @@
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
       
@@ -142,10 +146,10 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/supabase/pg_graphql/" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -186,10 +190,10 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/supabase/pg_graphql/" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -235,6 +239,21 @@
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../sql_interface/" class="md-nav__link">
+        SQL Interface
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -267,31 +286,125 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#graphqlresolve" class="md-nav__link">
-    graphql.resolve
+  <a href="#type-conversion" class="md-nav__link">
+    Type Conversion
   </a>
   
-    <nav class="md-nav" aria-label="graphql.resolve">
+    <nav class="md-nav" aria-label="Type Conversion">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#description" class="md-nav__link">
-    description
+  <a href="#querytype" class="md-nav__link">
+    QueryType
+  </a>
+  
+    <nav class="md-nav" aria-label="QueryType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#collections" class="md-nav__link">
+    Collections
+  </a>
+  
+    <nav class="md-nav" aria-label="Collections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    Pagination
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#signature" class="md-nav__link">
-    signature
+  <a href="#filtering" class="md-nav__link">
+    Filtering
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    usage
+  <a href="#ordering" class="md-nav__link">
+    Ordering
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#relationships" class="md-nav__link">
+    Relationships
+  </a>
+  
+    <nav class="md-nav" aria-label="Relationships">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-to-many" class="md-nav__link">
+    One-to-Many
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#many-to-one" class="md-nav__link">
+    Many-to-One
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-to-one" class="md-nav__link">
+    One-to-One
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mutationtype" class="md-nav__link">
+    MutationType
+  </a>
+  
+    <nav class="md-nav" aria-label="MutationType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#insert" class="md-nav__link">
+    Insert
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update" class="md-nav__link">
+    Update
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete" class="md-nav__link">
+    Delete
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -304,21 +417,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reflection/" class="md-nav__link">
-        Reflection
-      </a>
     </li>
   
 
@@ -376,8 +474,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
-        Performance
+      <a href="../example_schema/" class="md-nav__link">
+        Example Schema
       </a>
     </li>
   
@@ -438,31 +536,125 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#graphqlresolve" class="md-nav__link">
-    graphql.resolve
+  <a href="#type-conversion" class="md-nav__link">
+    Type Conversion
   </a>
   
-    <nav class="md-nav" aria-label="graphql.resolve">
+    <nav class="md-nav" aria-label="Type Conversion">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#description" class="md-nav__link">
-    description
+  <a href="#querytype" class="md-nav__link">
+    QueryType
+  </a>
+  
+    <nav class="md-nav" aria-label="QueryType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#collections" class="md-nav__link">
+    Collections
+  </a>
+  
+    <nav class="md-nav" aria-label="Collections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    Pagination
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#signature" class="md-nav__link">
-    signature
+  <a href="#filtering" class="md-nav__link">
+    Filtering
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    usage
+  <a href="#ordering" class="md-nav__link">
+    Ordering
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#relationships" class="md-nav__link">
+    Relationships
+  </a>
+  
+    <nav class="md-nav" aria-label="Relationships">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-to-many" class="md-nav__link">
+    One-to-Many
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#many-to-one" class="md-nav__link">
+    Many-to-One
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-to-one" class="md-nav__link">
+    One-to-One
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mutationtype" class="md-nav__link">
+    MutationType
+  </a>
+  
+    <nav class="md-nav" aria-label="MutationType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#insert" class="md-nav__link">
+    Insert
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update" class="md-nav__link">
+    Update
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete" class="md-nav__link">
+    Delete
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -479,23 +671,32 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
-<a href="https://github.com/supabase/pg_graphql/edit/master/docs/api.md" title="Edit this page" class="md-content__button md-icon">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
-</a>
+                  
+
+  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/api.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
 
 
   <h1>API</h1>
 
-<p>The public facing API consists of a single SQL function that resolves GraphQL queries. All other entities in the <code>graphql</code> schema are private.</p>
-<h3 id="graphqlresolve">graphql.resolve</h3>
-<h5 id="description">description</h5>
-<p>Resolves a GraphQL query, returning JSONB.</p>
-<h5 id="signature">signature</h5>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<p>In our API, each SQL table is reflected as a set of GraphQL types. At a high level, tables become types and columns/foreign keys become fields on those types.</p>
+<p>By default, PostgreSQL table and column names are not inflected when reflecting GraphQL  names. For example, an <code>account_holder</code> table has GraphQL type name <code>account_holder</code>. In cases where SQL entities are named using <code>snake_case</code>, <a href="/pg_graphql/configuration/#inflection">enable inflection</a> to match GraphQL/Javascript conventions e.g. <code>account_holder</code> -&gt; <code>AccountHolder</code>.</p>
+<p>Individual table, column, and relationship names may also be <a href="/pg_graphql/configuration/#tables-type">manually overridden</a>.</p>
+<h2 id="type-conversion">Type Conversion</h2>
+<h3 id="querytype">QueryType</h3>
+<p>The <code>Query</code> type is the entrypoint for all read access into the graph.</p>
+<h4 id="collections">Collections</h4>
+<p>Each table has top level entry in the <code>Query</code> type for selecting records from that table. Collections return a <a href="#connection-types">connection type</a> and can be <a href="#pagination">paginated</a>, <a href="#filtering">filtered</a>, and <a href="#sorting">sorted</a> using the available arguments.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">QueryType</label><label for="__tabbed_1_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
 <span class="normal"> 4</span>
@@ -506,22 +707,867 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span>
-    <span class="c1">-- the graphql query/mutation</span>
-    <span class="n">stmt</span> <span class="nb">text</span><span class="p">,</span>
-    <span class="c1">-- json key/values pairs for variables</span>
-    <span class="n">variables</span> <span class="n">jsonb</span> <span class="k">default</span> <span class="s1">&#39;{}&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
-<span class="p">)</span>
-    <span class="k">returns</span> <span class="n">jsonb</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for querying data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
 
-    <span class="k">strict</span>
-    <span class="k">volatile</span>
-    <span class="n">parallel</span> <span class="n">safe</span>
-    <span class="k">language</span> <span class="n">plpgsql</span>
-</code></pre></div>
-</td></tr></table>
-<h5 id="usage">usage</h5>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+  <span class="c c-Multi">&quot;&quot;&quot;A pagable collection of type `Blog`&quot;&quot;&quot;</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
+    first: <span class="k">Int</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span>
+    last: <span class="k">Int</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span>
+    before: <span class="k">Cursor</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span>
+    after: <span class="k">Cursor</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
+    orderBy: <span class="p">[</span><span class="k">BlogOrderBy</span><span class="p">!]</span>
+  <span class="p">):</span> <span class="k">BlogConnection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Connection types are the primary interface to returning records from a collection.</p>
+<p>Connections wrap a result set with some additional metadata.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:7"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><input id="__tabbed_2_5" name="__tabbed_2" type="radio" /><input id="__tabbed_2_6" name="__tabbed_2" type="radio" /><input id="__tabbed_2_7" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">BlogConnection</label><label for="__tabbed_2_2">BlogEdge</label><label for="__tabbed_2_3">PageInfo</label><label for="__tabbed_2_4">Blog</label><label for="__tabbed_2_5">BlogOrderBy</label><label for="__tabbed_2_6">BlogFilter</label><label for="__tabbed_2_7">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># Count of all records matching the *filter* criteria</span>
+  totalCount: <span class="k">Int</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Pagination metadata</span>
+  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Result set</span>
+  edges: <span class="p">[</span><span class="k">BlogEdge</span><span class="p">!]!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogEdge</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># Unique identifier of the record within the query</span>
+  cursor: <span class="k">String</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Contents of a record/row in the results set</span>
+  node: <span class="k">Blog</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">PageInfo</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># unique identifier of the first record within the query</span>
+  startCursor: <span class="k">String</span>
+
+  <span class="c c-Singline"># unique identifier of the last record within the query</span>
+  endCursor: <span class="k">String</span>
+
+  <span class="c c-Singline"># is another page of content available</span>
+  hasNextPage: <span class="k">Boolean</span><span class="p">!</span>
+
+  <span class="c c-Singline"># is another page of content available</span>
+  hasPreviousPage: <span class="k">Boolean</span><span class="p">!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Singline"># A record from the `blog` table</span>
+<span class="kt">type</span> <span class="k">Blog</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># Value from `id` column</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Value from `name` column</span>
+  name: <span class="k">String</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Value from `description` column</span>
+  description: <span class="k">String</span>
+
+  <span class="c c-Singline"># Value from `createdAt` column</span>
+  createdAt: <span class="k">Datetime</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Value from `updatedAt` column</span>
+  updatedAt: <span class="k">Datetime</span><span class="p">!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogOrderBy</span> <span class="p">{</span>
+  id: <span class="k">OrderByDirection</span>
+  name: <span class="k">OrderByDirection</span>
+  description: <span class="k">OrderByDirection</span>
+  createdAt: <span class="k">OrderByDirection</span>
+  updatedAt: <span class="k">OrderByDirection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  id: <span class="k">IntFilter</span>
+  name: <span class="k">StringFilter</span>
+  description: <span class="k">StringFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
+  updatedAt: <span class="k">DatetimeFilter</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">updated_at</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>totalCount</code> field is disabled by default because it can be expensive on larget tables. To enable it use a <a href="../configuration/#totalcount">comment directive</a></p>
+</div>
+<h5 id="pagination">Pagination</h5>
+<p>Paginating forwards and backwards through collections is handled using the <code>first</code>, <code>last</code>, <code>before</code>, and <code>after</code> parameters, following the <a href="https://relay.dev/graphql/connections.htm#">relay spec</a>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:1"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">QueryType</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
+
+  <span class="k">blogCollection</span><span class="p">(</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
+    first: <span class="k">Int</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span>
+    last: <span class="k">Int</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span>
+    before: <span class="k">Cursor</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span>
+    after: <span class="k">Cursor</span>
+
+    <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
+
+  <span class="p">):</span> <span class="k">BlogConnection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Metadata relating to the current page of a result set is available on the <code>pageInfo</code> field of the connection type returned from a collection.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">GraphQL</label><label for="__tabbed_4_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># Pagination metadata</span>
+  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Result set</span>
+  edges: <span class="p">[</span><span class="k">BlogEdge</span><span class="p">!]!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">PageInfo</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># unique identifier of the first record within the query</span>
+  startCursor: <span class="k">String</span>
+
+  <span class="c c-Singline"># unique identifier of the last record within the query</span>
+  endCursor: <span class="k">String</span>
+
+  <span class="c c-Singline"># is another page of content available</span>
+  hasNextPage: <span class="k">Boolean</span><span class="p">!</span>
+
+  <span class="c c-Singline"># is another page of content available</span>
+  hasPreviousPage: <span class="k">Boolean</span><span class="p">!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>To paginate forward in the collection, use the <code>first</code> and <code>after</code> aguments. To retrive the first page, the <code>after</code> argument should be null.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Query</label><label for="__tabbed_5_2">Page 1</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    first: <span class="mi">2</span>,
+    after: <span class="kt">null</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">pageInfo</span> <span class="p">{</span>
+      <span class="k">startCursor</span>
+      <span class="k">endCursor</span>
+      <span class="k">hasPreviousPage</span>
+      <span class="k">hasNextPage</span>
+    <span class="p">}</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;blogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">          </span><span class="p">},</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;cursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzFd&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="w">          </span><span class="p">},</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;cursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzJd&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;pageInfo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;startCursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzFd&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;endCursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzJd&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;hasNextPage&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;hasPreviousPage&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>To retrieve the next page, provide the cursor value from <code>data.blogCollection.pageInfo.endCursor</code> to the <code>after</code> argument of another query.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Query</label><label for="__tabbed_6_2">Page 2</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    first: <span class="mi">2</span>,
+    after: <span class="s2">&quot;WzJd&quot;</span>
+  <span class="p">)</span> <span class="p">{</span>
+  <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;blogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w"></span>
+<span class="w">          </span><span class="p">},</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;cursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzNd&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="w"></span>
+<span class="w">          </span><span class="p">},</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;cursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzRd&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;pageInfo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;startCursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzNd&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;endCursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzRd&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;hasNextPage&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;hasPreviousPage&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>once the collection has been fully enumerated, <code>data.blogConnection.pageInfo.hasNextPage</code> returns false.</p>
+<p>To paginate backwards through a collection, repeat the process substituting <code>first</code> -&gt; <code>last</code>, <code>after</code> -&gt; <code>before</code>, <code>hasNextPage</code> -&gt; <code>hasPreviousPage</code></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Do not use cursors as unique identifiers.
+Cursors are not stable across versions of pg_graphql and should only be persisted within a single user session.</p>
+</div>
+<h5 id="filtering">Filtering</h5>
+<p>To filter the result set, use the <code>filter</code> argument.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">QueryType</label><label for="__tabbed_7_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
+
+  <span class="k">blogCollection</span><span class="p">(</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
+
+    <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
+
+  <span class="p">):</span> <span class="k">BlogConnection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Where the <code>&lt;Table&gt;Filter</code> type enumerates filterable fields and their associated <code>&lt;Type&gt;Filter</code>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">BlogFilter</label><label for="__tabbed_8_2">IntFilter</label><label for="__tabbed_8_3">StringFilter</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  id: <span class="k">IntFilter</span>
+  name: <span class="k">StringFilter</span>
+  description: <span class="k">StringFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
+  updatedAt: <span class="k">DatetimeFilter</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;Int&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">IntFilter</span> <span class="p">{</span>
+  eq: <span class="k">Int</span>
+  gt: <span class="k">Int</span>
+  gte: <span class="k">Int</span>
+  lt: <span class="k">Int</span>
+  lte: <span class="k">Int</span>
+  neq: <span class="k">Int</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;String&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">StringFilter</span> <span class="p">{</span>
+  eq: <span class="k">String</span>
+  gt: <span class="k">String</span>
+  gte: <span class="k">String</span>
+  lt: <span class="k">String</span>
+  lte: <span class="k">String</span>
+  neq: <span class="k">String</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>The following list shows the operators that may be available on <code>&lt;Type&gt;Filter</code> types.</p>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>eq</td>
+<td>Equal To</td>
+</tr>
+<tr>
+<td>neq</td>
+<td>Not Equal To</td>
+</tr>
+<tr>
+<td>gt</td>
+<td>Greater Than</td>
+</tr>
+<tr>
+<td>gte</td>
+<td>Greater Than Or Equal To</td>
+</tr>
+<tr>
+<td>lt</td>
+<td>Less Than</td>
+</tr>
+<tr>
+<td>lte</td>
+<td>Less Than Or Equal To</td>
+</tr>
+</tbody>
+</table>
+<p>Not all operators are avaiable on every <code>&lt;Type&gt;Filter</code> type. For example, <code>UUIDFilter</code> only supports <code>eq</code> and <code>neq</code> because <code>UUID</code>s are not ordered.</p>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Query</label><label for="__tabbed_9_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>id: <span class="p">{</span>lt: <span class="mi">3</span><span class="p">}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;blogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">          </span><span class="p">},</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;cursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzFd&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="w">          </span><span class="p">},</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;cursor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WzJd&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>When multiple filters are provided to the <code>filter</code> argument, all conditions must be met for a record to be returned. In other words, multiple filters are composed with <code>AND</code> boolean logic.</p>
+<p>We expect to expand support to user defined <code>AND</code> and <code>OR</code> composition in a future release.</p>
+<h5 id="ordering">Ordering</h5>
+<p>The default order of results is defined by the underlying table's primary key column in ascending order. That default can be overridden by passing an array of <code>&lt;Table&gt;OrderBy</code> to the collection's <code>orderBy</code> argument.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:3"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><input id="__tabbed_10_3" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">QueryType</label><label for="__tabbed_10_2">BlogOrderBy</label><label for="__tabbed_10_3">OrderByDirection</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
+
+  <span class="k">blogCollection</span><span class="p">(</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
+    orderBy: <span class="p">[</span><span class="k">BlogOrderBy</span><span class="p">!]</span>
+
+    <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
+
+  <span class="p">):</span> <span class="k">BlogConnection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogOrderBy</span> <span class="p">{</span>
+  id: <span class="k">OrderByDirection</span>
+  name: <span class="k">OrderByDirection</span>
+  description: <span class="k">OrderByDirection</span>
+  createdAt: <span class="k">OrderByDirection</span>
+  updatedAt: <span class="k">OrderByDirection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;Defines a per-field sorting order&quot;&quot;&quot;</span>
+<span class="k">enum</span> <span class="k">OrderByDirection</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Ascending order, nulls first&quot;&quot;&quot;</span>
+  <span class="k">AscNullsFirst</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Ascending order, nulls last&quot;&quot;&quot;</span>
+  <span class="k">AscNullsLast</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Descending order, nulls first&quot;&quot;&quot;</span>
+  <span class="k">DescNullsFirst</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Descending order, nulls last&quot;&quot;&quot;</span>
+  <span class="k">DescNullsLast</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Query</label><label for="__tabbed_11_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    orderBy: <span class="p">[{</span>id: <span class="k">DescNullsLast</span><span class="p">}]</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
 <span class="normal"> 4</span>
@@ -548,76 +1594,1100 @@
 <span class="normal">25</span>
 <span class="normal">26</span>
 <span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="c1">-- Create the extension</span>
-<span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="n">extension</span> <span class="n">pg_graphql</span> <span class="k">cascade</span><span class="p">;</span>
-<span class="k">CREATE</span> <span class="n">EXTENSION</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;blogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Note, only one key value pair may be provided to each element of the input array. For example, <code>[{name: AscNullsLast}, {id: AscNullFirst}]</code> is valid. Passing multiple key value pairs in a single element of the input array e.g. <code>[{name: AscNullsLast, id: AscNullFirst}]</code>, is invalid.</p>
+<h4 id="relationships">Relationships</h4>
+<p>Relationships between collections in the Graph are derived from foreign keys.</p>
+<h5 id="one-to-many">One-to-Many</h5>
+<p>A foreign key on table A referencing table B defines a one-to-many relationship from table A to table B.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">GraphQL</label><label for="__tabbed_12_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">Blog</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
 
-<span class="c1">-- Create an example table</span>
-<span class="n">graphqldb</span><span class="o">=</span> <span class="k">create</span> <span class="k">table</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span> <span class="n">title</span> <span class="nb">text</span><span class="p">);</span>
-<span class="k">CREATE</span> <span class="k">TABLE</span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="w"></span>
 
-<span class="c1">-- Insert a record</span>
-<span class="n">graphqldb</span><span class="o">=</span> <span class="k">insert</span> <span class="k">into</span> <span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;book 1&#39;</span><span class="p">);</span>
-<span class="k">INSERT</span> <span class="mi">0</span> <span class="mi">1</span>
+<span class="w">  </span><span class="n">blogPostCollection</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="k">first</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="w"></span>
 
-<span class="c1">-- Query the table via GraphQL</span>
-<span class="n">graphqldb</span><span class="o">=</span> <span class="k">select</span> <span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span>
-<span class="n">query</span> <span class="err">{</span>
-  <span class="n">bookCollection</span> <span class="err">{</span>
-    <span class="n">edges</span> <span class="err">{</span>
-      <span class="n">node</span> <span class="err">{</span>
-        <span class="n">id</span>
-      <span class="err">}</span>
-    <span class="err">}</span>
-  <span class="err">}</span>
-<span class="err">}</span>
-<span class="err">$$</span><span class="p">);</span>
+<span class="w">    </span><span class="ss">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="k">last</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="w"></span>
 
-             <span class="n">resolve</span>
-<span class="c1">----------------------------------------------------------------------</span>
-<span class="err">{</span><span class="ss">&quot;data&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;bookCollection&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;node&quot;</span><span class="p">:</span> <span class="err">{</span><span class="ss">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="err">}}</span><span class="p">]</span><span class="err">}}</span><span class="p">,</span> <span class="ss">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[]</span><span class="err">}</span>
-</code></pre></div>
-</td></tr></table>
+<span class="w">    </span><span class="ss">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="k">before</span><span class="p">:</span><span class="w"> </span><span class="k">Cursor</span><span class="w"></span>
 
-              
-            </article>
-          </div>
+<span class="w">    </span><span class="ss">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="k">after</span><span class="p">:</span><span class="w"> </span><span class="k">Cursor</span><span class="w"></span>
+
+<span class="w">    </span><span class="ss">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="n">BlogPostFilter</span><span class="w"></span>
+
+<span class="w">    </span><span class="ss">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="n">orderBy</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="n">BlogPostOrderBy</span><span class="o">!</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">):</span><span class="w"> </span><span class="n">BlogPostConnection</span><span class="w"></span>
+
+<span class="err">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;blogId&quot;</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">body</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Where <code>blogPostCollection</code> exposes the full <code>Query</code> interface to <code>BlogPost</code>s.</p>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Query</label><label for="__tabbed_13_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">blogCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">name</span>
+        <span class="k">blogPostCollection</span> <span class="p">{</span>
+          <span class="k">edges</span> <span class="p">{</span>
+            <span class="k">node</span> <span class="p">{</span>
+              <span class="k">id</span>
+              <span class="k">title</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;blogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg_graphql blog&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;blogPostCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">              </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                  </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fIr3t p0sT&quot;</span><span class="w"></span>
+<span class="w">                  </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                  </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;graphql with postgres&quot;</span><span class="w"></span>
+<span class="w">                  </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">              </span><span class="p">]</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<h5 id="many-to-one">Many-to-One</h5>
+<p>A foreign key on table A referencing table B defines a many-to-one relationship from table B to table A.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">GraphQL</label><label for="__tabbed_14_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">BlogPost</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">blogId</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">title</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">body</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">blog</span><span class="p">:</span><span class="w"> </span><span class="n">Blog</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;blogId&quot;</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">body</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Where <code>blog</code> exposes the <code>Blog</code> record associated with the <code>BlogPost</code>.</p>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Query</label><label for="__tabbed_15_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">blogPostCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">title</span>
+        <span class="k">blog</span> <span class="p">{</span>
+          <span class="k">name</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;blogPostCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;blog&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">              </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg_graphql blog&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fIr3t p0sT&quot;</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;blog&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">              </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg_graphql blog&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;graphql with postgres&quot;</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<h5 id="one-to-one">One-to-One</h5>
+<p>A one-to-one relationship is defined by a foreign key on table A referencing table B where the columns making up the foreign key on table A are unique.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">GraphQL</label><label for="__tabbed_16_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">Employee</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">emailAddressId</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="w"></span>
+<span class="w">  </span><span class="n">emailAddress</span><span class="p">:</span><span class="w"> </span><span class="n">EmailAddress</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+
+<span class="k">type</span><span class="w"> </span><span class="n">EmailAddress</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">employee</span><span class="p">:</span><span class="w"> </span><span class="n">Employee</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">address</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">unique</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Employee&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">email_address_id</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">unique</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">Query</label><label for="__tabbed_17_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">employeeCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">name</span>
+        <span class="k">emailAddress</span> <span class="p">{</span>
+          <span class="k">address</span>
+          <span class="k">employee</span> <span class="p">{</span>
+            <span class="k">name</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;employeeCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo Barington&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;emailAddress&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">              </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo@bar.com&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">              </span><span class="nt">&quot;employee&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo Barington&quot;</span><span class="w"></span>
+<span class="w">              </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<h3 id="mutationtype">MutationType</h3>
+<p>The <code>Mutation</code> type is the entrypoint for mutations/edits.</p>
+<p>Each table has top level entry in the <code>Mutation</code> type for <a href="#insert">inserting</a> <code>insertInto&lt;Table&gt;Collection</code>, <a href="#update">updating</a> <code>update&lt;Table&gt;Collection</code> and <a href="#delete">deleting</a> <code>deleteFrom&lt;Table&gt;Collection</code>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="18:2"><input checked="checked" id="__tabbed_18_1" name="__tabbed_18" type="radio" /><input id="__tabbed_18_2" name="__tabbed_18" type="radio" /><div class="tabbed-labels"><label for="__tabbed_18_1">MutationType</label><label for="__tabbed_18_2">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="k">insertIntoBlogCollection</span><span class="p">(</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Records to add to the Blog collection&quot;&quot;&quot;</span>
+    objects: <span class="p">[</span><span class="k">BlogInsertInput</span><span class="p">!]!</span>
+
+  <span class="p">):</span> <span class="k">BlogInsertResponse</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="k">updateBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    set: <span class="k">BlogUpdateInput</span><span class="p">!</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
+
+  <span class="p">):</span> <span class="k">BlogUpdateResponse</span><span class="p">!</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
+
+  <span class="p">):</span> <span class="k">BlogDeleteResponse</span><span class="p">!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<h4 id="insert">Insert</h4>
+<p>To add records to a collection, use the <code>insertInto&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="19:4"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><input id="__tabbed_19_3" name="__tabbed_19" type="radio" /><input id="__tabbed_19_4" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MutationType</label><label for="__tabbed_19_2">BlogInsertInput</label><label for="__tabbed_19_3">BlogInsertResponse</label><label for="__tabbed_19_4">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="k">insertIntoBlogCollection</span><span class="p">(</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Records to add to the Blog collection&quot;&quot;&quot;</span>
+    objects: <span class="p">[</span><span class="k">BlogInsertInput</span><span class="p">!]!</span>
+
+  <span class="p">):</span> <span class="k">BlogInsertResponse</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogInsertInput</span> <span class="p">{</span>
+  name: <span class="k">String</span>
+  description: <span class="k">String</span>
+  createdAt: <span class="k">Datetime</span>
+  updatedAt: <span class="k">Datetime</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogInsertResponse</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span>
+  affectedCount: <span class="k">Int</span><span class="p">!</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
+  records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Where elements in the <code>objects</code> array are inserted into the underlying table.</p>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">Query</label><label for="__tabbed_20_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">mutation</span> <span class="p">{</span>
+  <span class="k">insertIntoBlogCollection</span><span class="p">(</span>
+    objects: <span class="p">[</span>
+      <span class="p">{</span>name: <span class="s2">&quot;foo&quot;</span><span class="p">}</span>,
+      <span class="p">{</span>name: <span class="s2">&quot;bar&quot;</span><span class="p">}</span>,
+    <span class="p">]</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">affectedCount</span>
+    <span class="k">records</span> <span class="p">{</span>
+      <span class="k">id</span>
+      <span class="k">name</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;insertIntoBlogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;records&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bar&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;affectedCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<h4 id="update">Update</h4>
+<p>To update records in a collection, use the <code>update&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="21:4"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><input id="__tabbed_21_3" name="__tabbed_21" type="radio" /><input id="__tabbed_21_4" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">MutationType</label><label for="__tabbed_21_2">BlogUpdateInput</label><label for="__tabbed_21_3">BlogUpdateResponse</label><label for="__tabbed_21_4">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="k">updateBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    set: <span class="k">BlogUpdateInput</span><span class="p">!</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
+
+  <span class="p">):</span> <span class="k">BlogUpdateResponse</span><span class="p">!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogUpdateInput</span> <span class="p">{</span>
+  name: <span class="k">String</span>
+  description: <span class="k">String</span>
+  createdAt: <span class="k">Datetime</span>
+  updatedAt: <span class="k">Datetime</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogUpdateResponse</span> <span class="p">{</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span>
+  affectedCount: <span class="k">Int</span><span class="p">!</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
+  records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Where the <code>set</code> argument is a key value pair describing the values to update, <code>filter</code> controls which records should be updated, and <code>atMost</code> restricts the maximum number of records that may be impacted. If the number of records impacted by the mutation exceeds the <code>atMost</code> parameter the operation will return an error.</p>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">Query</label><label for="__tabbed_22_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">mutation</span> <span class="p">{</span>
+  <span class="k">updateBlogCollection</span><span class="p">(</span>
+    set: <span class="p">{</span>name: <span class="s2">&quot;baz&quot;</span><span class="p">}</span>
+    filter: <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">affectedCount</span>
+    <span class="k">records</span> <span class="p">{</span>
+      <span class="k">id</span>
+      <span class="k">name</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;updateBlogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;records&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;baz&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;affectedCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<h4 id="delete">Delete</h4>
+<p>To remove records from a collection, use the <code>deleteFrom&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="23:4"><input checked="checked" id="__tabbed_23_1" name="__tabbed_23" type="radio" /><input id="__tabbed_23_2" name="__tabbed_23" type="radio" /><input id="__tabbed_23_3" name="__tabbed_23" type="radio" /><input id="__tabbed_23_4" name="__tabbed_23" type="radio" /><div class="tabbed-labels"><label for="__tabbed_23_1">MutationType</label><label for="__tabbed_23_2">BlogFilter</label><label for="__tabbed_23_3">BlogDeleteResponse</label><label for="__tabbed_23_4">SQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
+
+  <span class="p">):</span> <span class="k">BlogDeleteResponse</span><span class="p">!</span>
+
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  id: <span class="k">IntFilter</span>
+  name: <span class="k">StringFilter</span>
+  description: <span class="k">StringFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
+  updatedAt: <span class="k">DatetimeFilter</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogDeleteResponse</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span>
+  affectedCount: <span class="k">Int</span><span class="p">!</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
+  records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Where <code>filter</code> controls which records should be deleted and <code>atMost</code> restricts the maximum number of records that may be deleted. If the number of records impacted by the mutation exceeds the <code>atMost</code> parameter the operation will return an error.</p>
+<p>Example usage:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="24:2"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><input id="__tabbed_24_2" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">Query</label><label for="__tabbed_24_2">Result</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">mutation</span> <span class="p">{</span>
+  <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">affectedCount</span>
+    <span class="k">records</span> <span class="p">{</span>
+      <span class="k">id</span>
+      <span class="k">name</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;deleteFromBlogCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;records&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;baz&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;affectedCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
         </div>
         
       </main>
       
         <footer class="md-footer">
   
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quickstart" rel="prev">
+        <a href="../sql_interface/" class="md-footer__link md-footer__link--prev" aria-label="Previous: SQL Interface" rel="prev">
           <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Previous
               </span>
-              Quickstart
+              SQL Interface
             </div>
           </div>
         </a>
       
       
         
-        <a href="../reflection/" class="md-footer__link md-footer__link--next" aria-label="Next: Reflection" rel="next">
+        <a href="../computed_fields/" class="md-footer__link md-footer__link--next" aria-label="Next: Computed Fields" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Reflection
+              Computed Fields
             </div>
           </div>
           <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
           </div>
         </a>
       
@@ -643,10 +2713,11 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>
