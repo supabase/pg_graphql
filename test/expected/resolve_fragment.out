@@ -27,9 +27,9 @@ begin;
           description
         }
     $$);
-                                                              resolve                                                               
-------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"blogCollection": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "first"}, "cursor": "WzFd"}]}}}
+                                                                resolve                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"blogCollection": {"edges": [{"node": {"name": "A: Blog 1", "ownerId": 1, "description": "first"}, "cursor": "WzEsIDFd"}]}}}
 (1 row)
 
 rollback;

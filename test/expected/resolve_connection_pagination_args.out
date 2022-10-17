@@ -546,6 +546,13 @@ begin;
              "edges": [                +
                  {                     +
                      "node": {         +
+                         "id": 14,     +
+                         "title": "b", +
+                         "reversed": 1 +
+                     }                 +
+                 },                    +
+                 {                     +
+                     "node": {         +
                          "id": 3,      +
                          "title": null,+
                          "reversed": 2 +
@@ -570,13 +577,6 @@ begin;
                          "id": 8,      +
                          "title": "b", +
                          "reversed": 2 +
-                     }                 +
-                 },                    +
-                 {                     +
-                     "node": {         +
-                         "id": 7,      +
-                         "title": "a", +
-                         "reversed": 3 +
                      }                 +
                  }                     +
              ]                         +

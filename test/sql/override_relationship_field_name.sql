@@ -14,24 +14,32 @@ begin;
     is E'@graphql({"foreign_name": "author", "local_name": "blogz"})';
 
 
-    select graphql.rebuild_schema();
 
     -- expect: 'author'
-    select
-        name
-    from
-        graphql.field
-    where
-        parent_type = 'Blog'
-        and foreign_columns is not null;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            fields {
+              name
+            }
+          }
+        }
+        $$)
+    );
+
 
     -- expect: 'blogz'
-    select
-        name
-    from
-        graphql.field
-    where
-        parent_type = 'Account'
-        and foreign_columns is not null;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Blog") {
+            fields {
+              name
+            }
+          }
+        }
+        $$)
+    );
 
 rollback;

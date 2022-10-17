@@ -1,26 +1,49 @@
 begin;
-    set client_min_messages to error;
-    --set log_min_messages to panic;
     create schema xyz;
+    comment on schema xyz is '@graphql({"inflect_names": true})';
     create type xyz.light as enum ('red');
-    select graphql.rebuild_schema();
- rebuild_schema 
-----------------
- 
-(1 row)
-
     -- expect nothing b/c not in search_path
-    select name from graphql.type t where t.enum is not null;
- name 
-------
-(0 rows)
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Light") {
+            kind
+            name
+          }
+        }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
 
     set search_path = 'xyz';
     -- expect 1 record
-    select name from graphql.type t where t.enum is not null;
- name  
--------
- Light
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Light") {
+            kind
+            name
+          }
+        }
+        $$)
+    );
+        jsonb_pretty         
+-----------------------------
+ {                          +
+     "data": {              +
+         "__type": {        +
+             "kind": "ENUM",+
+             "name": "Light"+
+         }                  +
+     }                      +
+ }
 (1 row)
 
     revoke all on type xyz.light from public;
@@ -39,14 +62,25 @@ begin;
 
     grant usage on schema xyz to low_priv;
     grant usage on schema graphql to low_priv;
-    grant select on graphql.field to low_priv;
-    grant select on graphql.type to low_priv;
-    grant select on graphql.enum_value to low_priv;
     set role low_priv;
     -- expect no results b/c low_priv does not have usage permission
-    select name from graphql.type t where t.enum is not null;
- name 
-------
-(0 rows)
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Light") {
+            kind
+            name
+          }
+        }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
 
 rollback;

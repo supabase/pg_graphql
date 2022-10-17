@@ -9,36 +9,67 @@ begin;
     comment on constraint blog_owner_id_fkey
     on blog
     is E'@graphql({"foreign_name": "author", "local_name": "blogz"})';
-    select graphql.rebuild_schema();
- rebuild_schema 
-----------------
- 
-(1 row)
-
     -- expect: 'author'
-    select
-        name
-    from
-        graphql.field
-    where
-        parent_type = 'Blog'
-        and foreign_columns is not null;
-  name  
---------
- author
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            fields {
+              name
+            }
+          }
+        }
+        $$)
+    );
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "__type": {                +
+             "fields": [            +
+                 {                  +
+                     "name": "id"   +
+                 },                 +
+                 {                  +
+                     "name": "blogz"+
+                 }                  +
+             ]                      +
+         }                          +
+     }                              +
+ }
 (1 row)
 
     -- expect: 'blogz'
-    select
-        name
-    from
-        graphql.field
-    where
-        parent_type = 'Account'
-        and foreign_columns is not null;
- name  
--------
- blogz
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Blog") {
+            fields {
+              name
+            }
+          }
+        }
+        $$)
+    );
+             jsonb_pretty              
+---------------------------------------
+ {                                    +
+     "data": {                        +
+         "__type": {                  +
+             "fields": [              +
+                 {                    +
+                     "name": "id"     +
+                 },                   +
+                 {                    +
+                     "name": "ownerId"+
+                 },                   +
+                 {                    +
+                     "name": "author" +
+                 }                    +
+             ]                        +
+         }                            +
+     }                                +
+ }
 (1 row)
 
 rollback;

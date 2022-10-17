@@ -1,4 +1,5 @@
 begin;
+
     create table account(
         id int primary key
     );
@@ -7,6 +8,38 @@ begin;
         id int primary key,
         -- unique constraint makes this a 1:1 relationship
         account_id int not null unique references account(id)
+    );
+
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            kind
+            fields {
+              name
+              type {
+                name
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Address") {
+            kind
+            fields {
+              name
+              type {
+                name
+              }
+            }
+          }
+        }
+        $$)
     );
 
     insert into account(id) select * from generate_series(1, 10);

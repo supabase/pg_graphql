@@ -170,6 +170,14 @@ begin;
                      "name": "BlogPostStatus"        +
                  },                                  +
                  {                                   +
+                     "kind": "ENUM",                 +
+                     "name": "BlogPostStatus"        +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "BlogPostStatusFilter"  +
+                 },                                  +
+                 {                                   +
                      "kind": "INPUT_OBJECT",         +
                      "name": "BlogPostUpdateInput"   +
                  },                                  +
@@ -236,10 +244,6 @@ begin;
                  {                                   +
                      "kind": "SCALAR",               +
                      "name": "JSON"                  +
-                 },                                  +
-                 {                                   +
-                     "kind": "INPUT_OBJECT",         +
-                     "name": "JSONFilter"            +
                  },                                  +
                  {                                   +
                      "kind": "OBJECT",               +

@@ -148,9 +148,9 @@ begin;
     $$,
     variables := '{"acc": {"doesNotExist": "other"}}'::jsonb
     );
-                                 resolve                                 
--------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Unknown field 'doesNotExist'"}]}
+                                                       resolve                                                       
+---------------------------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Input for type AccountInsertInput contains extra keys [\"doesNotExist\"]"}]}
 (1 row)
 
     -- Wrong input type (list of string, not list of object)
@@ -161,9 +161,9 @@ begin;
       }
     }
     $$);
-                                            resolve                                             
-------------------------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Invalid value for objects. Expected list of objects"}]}
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid input for BlogInsertInput type"}]}
 (1 row)
 
     -- objects argument is missing
@@ -176,7 +176,7 @@ begin;
     $$);
                                   resolve                                  
 ---------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Argument 'objects' is required"}]}
+ {"data": null, "errors": [{"message": "Invalid input for NonNull type"}]}
 (1 row)
 
     -- Empty call

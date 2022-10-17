@@ -46,4 +46,25 @@ begin;
  }
 (1 row)
 
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "DoesNotExist") {
+            kind
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
+
 rollback;

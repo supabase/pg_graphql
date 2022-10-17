@@ -1,17 +1,149 @@
 begin;
     savepoint a;
     create table "@xyz"( id int primary key);
-    select name from graphql.type where entity = '"@xyz"'::regclass;
- name 
-------
-(0 rows)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                types {
+                  name
+                }
+              }
+            }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "__schema": {                            +
+             "types": [                           +
+                 {                                +
+                     "name": "BigInt"             +
+                 },                               +
+                 {                                +
+                     "name": "BigIntFilter"       +
+                 },                               +
+                 {                                +
+                     "name": "Boolean"            +
+                 },                               +
+                 {                                +
+                     "name": "BooleanFilter"      +
+                 },                               +
+                 {                                +
+                     "name": "Cursor"             +
+                 },                               +
+                 {                                +
+                     "name": "Date"               +
+                 },                               +
+                 {                                +
+                     "name": "DateFilter"         +
+                 },                               +
+                 {                                +
+                     "name": "Datetime"           +
+                 },                               +
+                 {                                +
+                     "name": "DatetimeFilter"     +
+                 },                               +
+                 {                                +
+                     "name": "Float"              +
+                 },                               +
+                 {                                +
+                     "name": "FloatFilter"        +
+                 },                               +
+                 {                                +
+                     "name": "ID"                 +
+                 },                               +
+                 {                                +
+                     "name": "Int"                +
+                 },                               +
+                 {                                +
+                     "name": "IntFilter"          +
+                 },                               +
+                 {                                +
+                     "name": "JSON"               +
+                 },                               +
+                 {                                +
+                     "name": "OrderByDirection"   +
+                 },                               +
+                 {                                +
+                     "name": "PageInfo"           +
+                 },                               +
+                 {                                +
+                     "name": "Query"              +
+                 },                               +
+                 {                                +
+                     "name": "String"             +
+                 },                               +
+                 {                                +
+                     "name": "StringFilter"       +
+                 },                               +
+                 {                                +
+                     "name": "Time"               +
+                 },                               +
+                 {                                +
+                     "name": "TimeFilter"         +
+                 },                               +
+                 {                                +
+                     "name": "UUID"               +
+                 },                               +
+                 {                                +
+                     "name": "UUIDFilter"         +
+                 },                               +
+                 {                                +
+                     "name": "__Directive"        +
+                 },                               +
+                 {                                +
+                     "name": "__DirectiveLocation"+
+                 },                               +
+                 {                                +
+                     "name": "__EnumValue"        +
+                 },                               +
+                 {                                +
+                     "name": "__Field"            +
+                 },                               +
+                 {                                +
+                     "name": "__InputValue"       +
+                 },                               +
+                 {                                +
+                     "name": "__Schema"           +
+                 },                               +
+                 {                                +
+                     "name": "__Type"             +
+                 },                               +
+                 {                                +
+                     "name": "__TypeKind"         +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
 
     rollback to savepoint a;
     create table xyz( "! q" int primary key);
-    select name from graphql.field where entity = 'xyz'::regclass and meta_kind = 'Column';
- name 
-------
-(0 rows)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Xyz") {
+                fields {
+                  name
+                }
+              }
+            }
+        $$)
+    );
+      jsonb_pretty       
+-------------------------
+ {                      +
+     "data": {          +
+         "__type": {    +
+             "fields": [+
+             ]          +
+         }              +
+     }                  +
+ }
+(1 row)
 
     rollback to savepoint a;
 rollback;

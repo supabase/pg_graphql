@@ -17,17 +17,27 @@ begin;
         jsb jsonb
     );
 
-    select graphql.rebuild_schema();
-
-    select
-        name, parent_type, type_, is_not_null, is_array, is_arg
-    from
-        graphql.field
-    where
-        entity = 'something'::regclass
-        and column_name is not null
-    order by
-        parent_type,
-        name;
+    -- Inflection on, Overrides: off
+    comment on schema public is e'@graphql({"inflect_names": true})';
+    select jsonb_pretty(
+        jsonb_path_query(
+            graphql.resolve($$
+                {
+                  __schema {
+                    types {
+                      name
+                      fields {
+                        name
+                      }
+                      inputFields {
+                        name
+                      }
+                    }
+                  }
+                }
+            $$),
+            '$.data.__schema.types[*] ? (@.name starts with "Something")'
+        )
+    );
 
 rollback;

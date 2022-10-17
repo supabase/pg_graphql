@@ -1,5 +1,4 @@
 begin;
-
     create table account(
         id serial primary key,
         email varchar(255) not null,
@@ -15,6 +14,7 @@ begin;
         owner_id integer not null references account(id),
         name varchar(255) not null,
         description varchar(255),
+        tags text[] not null,
         created_at timestamp not null,
         updated_at timestamp not null
     );
@@ -37,12 +37,17 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
 
+
     query IntrospectionQuery {
       __schema {
+
         queryType {
           name
         }
         mutationType {
+          name
+        }
+        subscriptionType {
           name
         }
         types {

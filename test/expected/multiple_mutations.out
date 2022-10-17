@@ -85,15 +85,15 @@ begin;
       }
     }
     $$));
-                    jsonb_pretty                     
------------------------------------------------------
- {                                                  +
-     "data": null,                                  +
-     "errors": [                                    +
-         {                                          +
-             "message": "Unknown field 'invalidKey'"+
-         }                                          +
-     ]                                              +
+                                          jsonb_pretty                                           
+-------------------------------------------------------------------------------------------------
+ {                                                                                              +
+     "data": null,                                                                              +
+     "errors": [                                                                                +
+         {                                                                                      +
+             "message": "Input for type AccountInsertInput contains extra keys [\"invalidKey\"]"+
+         }                                                                                      +
+     ]                                                                                          +
  }
 (1 row)
 
@@ -125,15 +125,15 @@ begin;
       }
     }
     $$));
-                    jsonb_pretty                     
------------------------------------------------------
- {                                                  +
-     "data": null,                                  +
-     "errors": [                                    +
-         {                                          +
-             "message": "Unknown field 'invalidKey'"+
-         }                                          +
-     ]                                              +
+                                          jsonb_pretty                                           
+-------------------------------------------------------------------------------------------------
+ {                                                                                              +
+     "data": null,                                                                              +
+     "errors": [                                                                                +
+         {                                                                                      +
+             "message": "Input for type AccountInsertInput contains extra keys [\"invalidKey\"]"+
+         }                                                                                      +
+     ]                                                                                          +
  }
 (1 row)
 

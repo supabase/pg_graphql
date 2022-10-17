@@ -22,4 +22,17 @@ begin;
         $$)
     );
 
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "DoesNotExist") {
+            kind
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
+
 rollback;

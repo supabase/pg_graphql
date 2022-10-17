@@ -18,9 +18,9 @@ begin;
       }
     }
     $$);
-                                              resolve                                              
----------------------------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Unknown field 'totalCount' on type 'AccountConnection'"}]}
+                                resolve                                 
+------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "unknown field in connection"}]}
 (1 row)
 
     -- Enable totalCount
@@ -36,9 +36,9 @@ begin;
       }
     }
     $$);
-                                                resolve                                                
--------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"cursor": "WzFd"}, {"cursor": "WzJd"}], "totalCount": 2}}}
+                                                    resolve                                                    
+---------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"cursor": "WzEsIDFd"}, {"cursor": "WzIsIDJd"}], "totalCount": 2}}}
 (1 row)
 
 rollback;

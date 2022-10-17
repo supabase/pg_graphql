@@ -1,14 +1,4 @@
 begin;
-    create view f as
-        select
-            distinct name
-        from
-            graphql.field
-        where
-            func is not null
-        order by
-            name;
-
     create table account (
         id int primary key
     );
@@ -24,26 +14,62 @@ begin;
 
     -- Inflection off, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": false})';
-    select graphql.rebuild_schema();
-    select * from f;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "account") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     savepoint a;
 
     -- Inflection off, Overrides: on
     comment on function public._full_name(public.account) is E'@graphql({"name": "wholeName"})';
-    select graphql.rebuild_schema();
-    select * from f;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "account") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     rollback to savepoint a;
 
     -- Inflection on, Overrides: off
     comment on schema public is e'@graphql({"inflect_names": true})';
-    select graphql.rebuild_schema();
-    select * from f;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     -- Inflection on, Overrides: on
     comment on function public._full_name(public.account) is E'@graphql({"name": "WholeName"})';
-    select graphql.rebuild_schema();
-    select * from f;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
 rollback;

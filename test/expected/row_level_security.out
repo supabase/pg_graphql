@@ -4,7 +4,6 @@ begin;
     alter default privileges in schema public grant all on tables to anon;
     grant usage on schema public to anon;
     grant usage on schema graphql to anon;
-    grant select on graphql.field, graphql.type, graphql.enum_value to anon;
     grant all on function graphql.resolve to anon;
     create table account(
         id int primary key

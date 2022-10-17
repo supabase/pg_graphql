@@ -1,3 +1,6 @@
-comment = 'GraphQL support'
-default_version = '0.4.0'
+comment = 'pg_graphql: GraphQL support'
+default_version = '@CARGO_VERSION@'
+module_pathname = '$libdir/rs_graphql'
 relocatable = false
+superuser = false
+schema = 'graphql'

@@ -9,7 +9,7 @@ begin;
     );
 
     -- Extend with function
-    create function public."_fullName"(rec public.account)
+    create function public._full_name(rec public.account)
         returns text
         immutable
         strict

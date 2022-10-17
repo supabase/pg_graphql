@@ -6,8 +6,19 @@ begin;
 
     comment on table public.account is E'@graphql({"name": "UserAccount"})';
 
-    select graphql.rebuild_schema();
-
-    select name from graphql.type where entity = 'public.account'::regclass order by name;
+    select jsonb_pretty(
+        jsonb_path_query(
+            graphql.resolve($$
+                query IntrospectionQuery {
+                  __schema {
+                    types {
+                      name
+                    }
+                  }
+                }
+            $$),
+            '$.data.__schema.types[*].name ? (@ starts with "UserAccount")'
+        )
+    );
 
 rollback;

@@ -1,5 +1,4 @@
 begin;
-
     -- check that the resolver works
     select graphql.resolve($${ utcNow: heartbeat }$$) -> 'data' ->> 'utcNow' like '2%';
 

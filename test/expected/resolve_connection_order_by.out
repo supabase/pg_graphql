@@ -408,15 +408,15 @@ begin;
         variables:= '{"direction": "InvalidChoice"}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         {                                    +
-             "message": "Invalid order clause"+
-         }                                    +
-     ]                                        +
+                           jsonb_pretty                           
+------------------------------------------------------------------
+ {                                                               +
+     "data": null,                                               +
+     "errors": [                                                 +
+         {                                                       +
+             "message": "Invalid input for OrderByDirection type"+
+         }                                                       +
+     ]                                                           +
  }
 (1 row)
 
@@ -437,15 +437,35 @@ begin;
         variables:= '{}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         {                                    +
-             "message": "Invalid order clause"+
-         }                                    +
-     ]                                        +
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "accountCollection": {    +
+             "edges": [            +
+                 {                 +
+                     "node": {     +
+                         "id": 1   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 2   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": 3   +
+                     }             +
+                 },                +
+                 {                 +
+                     "node": {     +
+                         "id": null+
+                     }             +
+                 }                 +
+             ]                     +
+         }                         +
+     }                             +
  }
 (1 row)
 
@@ -1051,15 +1071,15 @@ begin;
         variables:= '{}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         {                                    +
-             "message": "Invalid order clause"+
-         }                                    +
-     ]                                        +
+                      jsonb_pretty                       
+---------------------------------------------------------
+ {                                                      +
+     "data": null,                                      +
+     "errors": [                                        +
+         {                                              +
+             "message": "Invalid input for NonNull type"+
+         }                                              +
+     ]                                                  +
  }
 (1 row)
 
@@ -1080,15 +1100,15 @@ begin;
         variables:= '{"ent": "[]"}'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         {                                    +
-             "message": "Invalid order clause"+
-         }                                    +
-     ]                                        +
+                          jsonb_pretty                          
+----------------------------------------------------------------
+ {                                                             +
+     "data": null,                                             +
+     "errors": [                                               +
+         {                                                     +
+             "message": "Invalid input for AccountOrderBy type"+
+         }                                                     +
+     ]                                                         +
  }
 (1 row)
 
