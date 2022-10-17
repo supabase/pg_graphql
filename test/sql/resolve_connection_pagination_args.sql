@@ -163,7 +163,7 @@ begin;
         variables := '{"beforeCursor": "WzNd"}'
     ));
 
-    -- issue #221: confirm variables for first/last before/after may be present so long as
+    -- issue #161: confirm variables for first/last before/after may be present so long as
     -- only correct pairs are passed as variables
     select jsonb_pretty(
         graphql.resolve($$
