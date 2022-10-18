@@ -1,0 +1,10 @@
+version: '3'
+services:
+
+  test:
+    container_name: pg_graphql_test
+    build:
+        context: ..
+        dockerfile: ./dockerfiles/db/Dockerfile
+    command:
+      - ./bin/installcheck
