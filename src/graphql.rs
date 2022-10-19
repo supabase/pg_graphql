@@ -34,7 +34,7 @@ fn to_base_type_name(
                 .chars()
                 .zip(table_name.chars())
                 .map(|(prev, cur)| match prev.is_alphanumeric() {
-                    true => cur.to_lowercase().to_string(),
+                    true => cur.to_string(),
                     false => cur.to_uppercase().to_string(),
                 })
                 .collect();
