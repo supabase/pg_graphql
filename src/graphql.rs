@@ -3019,7 +3019,6 @@ pub struct __Schema {
 
 impl __Schema {
     // types: [__Type!]!
-    #[allow(dead_code)]
     pub fn types(&self) -> Vec<__Type> {
         // This is certainly not the right way to do this
         let schema_rc = Rc::new(self.clone());

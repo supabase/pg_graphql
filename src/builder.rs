@@ -1577,6 +1577,7 @@ impl __Schema {
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         mut type_name: Option<String>,
         variables: &serde_json::Value,
+        type_map: &HashMap<String, __Type>,
     ) -> Result<Option<__TypeBuilder>, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -1603,8 +1604,6 @@ impl __Schema {
         }
         let type_name = type_name.unwrap();
 
-        //let type_name = type_name.unwrap();
-        let type_map = self.type_map();
         let requested_type: Option<&__Type> = type_map.get(&type_name);
 
         match requested_type {
@@ -1781,6 +1780,8 @@ impl __Schema {
             .ok_or("Encountered type without name in schema builder")?;
         let field_map = type_.field_map();
 
+        let type_map = self.type_map();
+
         match type_ {
             __Type::__Schema(_) => {
                 let mut builder_fields: Vec<__SchemaSelection> = vec![];
@@ -1814,6 +1815,7 @@ impl __Schema {
                                                 fragment_definitions,
                                                 t.name(),
                                                 variables,
+                                                &type_map,
                                             )
                                             .map(|x| x.unwrap())
                                         })
@@ -1828,6 +1830,7 @@ impl __Schema {
                                         fragment_definitions,
                                         Some("Query".to_string()),
                                         variables,
+                                        &type_map,
                                     )?;
                                     __SchemaField::QueryType(builder.unwrap())
                                 }
@@ -1838,6 +1841,7 @@ impl __Schema {
                                         fragment_definitions,
                                         Some("Mutation".to_string()),
                                         variables,
+                                        &type_map,
                                     )?;
                                     __SchemaField::MutationType(builder)
                                 }
