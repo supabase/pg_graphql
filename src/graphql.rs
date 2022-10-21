@@ -70,9 +70,12 @@ impl Column {
             self.directives.inflect_names,
         );
 
-        // Lowercase first letter
-        // AccountByEmail => accountByEmail
-        lowercase_first_letter(&base_type_name)
+        match self.directives.inflect_names {
+            // Lowercase first letter
+            // AccountByEmail => accountByEmail
+            true => lowercase_first_letter(&base_type_name),
+            false => base_type_name,
+        }
     }
 }
 
@@ -114,6 +117,8 @@ impl ForeignKey {
             column_names = &self.referenced_table_meta.column_names;
         }
 
+        let is_inflection_on = table_ref.directives.inflect_names;
+
         // If name is overridden, return immediately
         match name_override {
             Some(name) => return name.to_string(),
@@ -123,25 +128,26 @@ impl ForeignKey {
         let base_type_name = to_base_type_name(
             &table_ref.name,
             &table_ref.directives.name,
-            table_ref.directives.inflect_names,
+            is_inflection_on,
         );
 
         // "accountHolder"
         let base_type_as_field_name = lowercase_first_letter(&base_type_name);
 
         let singular_name = match &column_names[..] {
-            // Single column that ends in "Id"
-            [column_name] => match column_name.strip_suffix("Id") {
-                Some(column_name_stripped) => {
-                    let base = to_base_type_name(
-                        column_name_stripped,
-                        &None,
-                        table_ref.directives.inflect_names,
-                    );
-                    lowercase_first_letter(&base)
-                }
-                // Single column that ends in "_id"
-                None => match column_name.strip_suffix("_id") {
+            [column_name] => match is_inflection_on {
+                true => match column_name.strip_suffix("_id") {
+                    Some(column_name_stripped) => {
+                        let base = to_base_type_name(
+                            column_name_stripped,
+                            &None,
+                            table_ref.directives.inflect_names,
+                        );
+                        lowercase_first_letter(&base)
+                    }
+                    None => base_type_as_field_name.clone(),
+                },
+                false => match column_name.strip_suffix("Id") {
                     Some(column_name_stripped) => {
                         let base = to_base_type_name(
                             column_name_stripped,
@@ -1519,6 +1525,9 @@ impl ___Type for NodeType {
                 continue;
             }
             let foreign_table = foreign_table.unwrap();
+            if !foreign_table.graphql_select_types_are_valid() {
+                continue;
+            }
 
             let relation_field = __Field {
                 name_: fkey.graphql_field_name(reverse_reference),
@@ -1565,6 +1574,9 @@ impl ___Type for NodeType {
                 continue;
             }
             let foreign_table = foreign_table.unwrap();
+            if !foreign_table.graphql_select_types_are_valid() {
+                continue;
+            }
 
             let relation_field = match fkey.is_locally_unique {
                 false => {
@@ -3178,8 +3190,7 @@ impl __Schema {
             .iter()
             .map(|x| x.tables.iter())
             .flatten()
-            .filter(|x| x.primary_key().is_some())
-            .filter(|x| GRAPHQL_NAME_RE.is_match(&x.graphql_base_type_name()))
+            .filter(|x| x.graphql_select_types_are_valid())
             .any(|x| {
                 x.permissions.is_selectable
                     && (x.permissions.is_insertable
