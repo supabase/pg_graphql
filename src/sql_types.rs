@@ -173,7 +173,7 @@ pub struct Table {
 
 impl Table {
     pub fn primary_key(&self) -> Option<&Index> {
-        self.indexes.iter().filter(|x| x.is_primary_key).next()
+        self.indexes.iter().find(|x| x.is_primary_key)
     }
 
     pub fn primary_key_columns(&self) -> Vec<&Column> {
@@ -184,34 +184,21 @@ impl Table {
             .map(|col_num| {
                 self.columns
                     .iter()
-                    .filter(|col| &col.attribute_num == col_num)
-                    .next()
+                    .find(|col| &col.attribute_num == col_num)
                     .expect("Failed to unwrap pkey by attnum")
             })
             .collect::<Vec<&Column>>()
     }
 
     pub fn is_any_column_selectable(&self) -> bool {
-        self.columns
-            .iter()
-            .filter(|x| x.permissions.is_selectable)
-            .next()
-            .is_some()
+        self.columns.iter().any(|x| x.permissions.is_selectable)
     }
     pub fn is_any_column_insertable(&self) -> bool {
-        self.columns
-            .iter()
-            .filter(|x| x.permissions.is_insertable)
-            .next()
-            .is_some()
+        self.columns.iter().any(|x| x.permissions.is_insertable)
     }
 
     pub fn is_any_column_updatable(&self) -> bool {
-        self.columns
-            .iter()
-            .filter(|x| x.permissions.is_updatable)
-            .next()
-            .is_some()
+        self.columns.iter().any(|x| x.permissions.is_updatable)
     }
 }
 
@@ -257,11 +244,7 @@ pub struct Context {
 
 impl Context {
     pub fn is_composite(&self, type_oid: u32) -> bool {
-        self.composites
-            .iter()
-            .filter(|x| x.oid == type_oid)
-            .next()
-            .is_some()
+        self.composites.iter().any(|x| x.oid == type_oid)
     }
 }
 
@@ -297,7 +280,7 @@ mod tests {
         let config = load_sql_config();
         let context = load_sql_context(&config);
         assert!(context.schemas.len() == 1);
-        assert!(context.schemas[0].tables.len() == 0);
+        assert!(context.schemas[0].tables.is_empty());
     }
 
     #[pg_test]
