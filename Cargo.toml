@@ -1,0 +1,40 @@
+[package]
+name = "pg_graphql"
+version = "0.5.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["pg14"]
+pg14 = ["pgx/pg14", "pgx-tests/pg14" ]
+pg_test = []
+
+[dependencies]
+pgx = "~0.5.2"
+graphql-parser = "0.4"
+serde = "1.0"
+serde_json = "1.0"
+itertools = "0.10.3"
+cached = "0.34.0"
+rand = "0.8"
+uuid = "1"
+regex = "1"
+base64 = "0.13"
+lazy_static = "1"
+
+
+
+[dev-dependencies]
+pgx-tests = "~0.5.2"
+
+[profile.dev]
+panic = "unwind"
+lto = "thin"
+
+[profile.release]
+panic = "unwind"
+opt-level = 3
+lto = "fat"
+codegen-units = 1

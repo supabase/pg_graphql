@@ -16,13 +16,10 @@ begin;
     grant usage on schema public to api;
     grant all on all tables in schema public to api;
 
-    select graphql.rebuild_schema();
-
     savepoint a;
 
     -- Nothing is excluded
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
     rollback to savepoint a;
@@ -30,7 +27,6 @@ begin;
     -- Revoke Select Excludes: All entity types
     revoke select on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
     rollback to savepoint a;
@@ -38,7 +34,6 @@ begin;
     -- Revoke Insert Excludes: CreateNode
     revoke insert on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
     rollback to savepoint a;
@@ -46,7 +41,6 @@ begin;
     -- Revoke Update Excludes: UpdateNode
     revoke update on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
     rollback to savepoint a;
@@ -54,7 +48,6 @@ begin;
     -- Revoke Delete Excludes: from Mutation schema
     revoke delete on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
     rollback to savepoint a;

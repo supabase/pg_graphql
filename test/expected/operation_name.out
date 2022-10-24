@@ -157,14 +157,14 @@ begin;
             $$
         )
     );
-                jsonb_pretty                
---------------------------------------------
- {                                         +
-     "errors": [                           +
-         {                                 +
-             "message": "unknown operation"+
-         }                                 +
-     ]                                     +
+                 jsonb_pretty                 
+----------------------------------------------
+ {                                           +
+     "errors": [                             +
+         {                                   +
+             "message": "Operation not found"+
+         }                                   +
+     ]                                       +
  }
 (1 row)
 
@@ -198,14 +198,14 @@ begin;
             $$
         )
     );
-                jsonb_pretty                
---------------------------------------------
- {                                         +
-     "errors": [                           +
-         {                                 +
-             "message": "unknown operation"+
-         }                                 +
-     ]                                     +
+                 jsonb_pretty                 
+----------------------------------------------
+ {                                           +
+     "errors": [                             +
+         {                                   +
+             "message": "Operation not found"+
+         }                                   +
+     ]                                       +
  }
 (1 row)
 

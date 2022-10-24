@@ -4,24 +4,34 @@ begin;
         email varchar(255) not null
     );
     comment on column public.account.email is E'@graphql({"name": "emailAddress"})';
-    select graphql.rebuild_schema();
- rebuild_schema 
-----------------
- 
-(1 row)
-
-    select
-        name
-    from
-        graphql.field
-    where
-        entity = 'public.account'::regclass
-        and column_name = 'email'
-        and meta_kind = 'Column'
-        and not is_arg;
-     name     
---------------
- emailAddress
+    -- expect: 'emailAddresses'
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            fields {
+              name
+            }
+          }
+        }
+        $$)
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "__type": {                       +
+             "fields": [                   +
+                 {                         +
+                     "name": "id"          +
+                 },                        +
+                 {                         +
+                     "name": "emailAddress"+
+                 }                         +
+             ]                             +
+         }                                 +
+     }                                     +
+ }
 (1 row)
 
 rollback;

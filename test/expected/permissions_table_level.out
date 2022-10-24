@@ -11,30 +11,9 @@ begin;
     -- Allow access to public.account.id but nothing else
     grant usage on schema public to api;
     grant all on all tables in schema public to api;
-    select graphql.rebuild_schema();
- rebuild_schema 
-----------------
- 
-(1 row)
-
     savepoint a;
     -- Nothing is excluded
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
-         name          |     meta_kind      
------------------------+--------------------
- Account               | Node
- AccountConnection     | Connection
- AccountDeleteResponse | DeleteNodeResponse
- AccountEdge           | Edge
- AccountFilter         | FilterEntity
- AccountInsertInput    | InsertNode
- AccountInsertResponse | InsertNodeResponse
- AccountOrderBy        | OrderBy
- AccountUpdateInput    | UpdateNode
- AccountUpdateResponse | UpdateNodeResponse
-(10 rows)
-
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
 -------------------------------------------------
@@ -77,11 +56,6 @@ begin;
     -- Revoke Select Excludes: All entity types
     revoke select on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
- name | meta_kind 
-------+-----------
-(0 rows)
-
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
               jsonb_pretty               
 -----------------------------------------
@@ -99,14 +73,12 @@ begin;
 (1 row)
 
     select jsonb_pretty(graphql.resolve(' {__type(name: "Mutation") { fields { name } } } ') );
-        jsonb_pretty        
-----------------------------
- {                         +
-     "data": {             +
-         "__type": {       +
-             "fields": null+
-         }                 +
-     }                     +
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
  }
 (1 row)
 
@@ -114,20 +86,6 @@ begin;
     -- Revoke Insert Excludes: CreateNode
     revoke insert on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
-         name          |     meta_kind      
------------------------+--------------------
- Account               | Node
- AccountConnection     | Connection
- AccountDeleteResponse | DeleteNodeResponse
- AccountEdge           | Edge
- AccountFilter         | FilterEntity
- AccountInsertResponse | InsertNodeResponse
- AccountOrderBy        | OrderBy
- AccountUpdateInput    | UpdateNode
- AccountUpdateResponse | UpdateNodeResponse
-(9 rows)
-
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
 -------------------------------------------------
@@ -167,20 +125,6 @@ begin;
     -- Revoke Update Excludes: UpdateNode
     revoke update on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
-         name          |     meta_kind      
------------------------+--------------------
- Account               | Node
- AccountConnection     | Connection
- AccountDeleteResponse | DeleteNodeResponse
- AccountEdge           | Edge
- AccountFilter         | FilterEntity
- AccountInsertInput    | InsertNode
- AccountInsertResponse | InsertNodeResponse
- AccountOrderBy        | OrderBy
- AccountUpdateResponse | UpdateNodeResponse
-(9 rows)
-
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
 -------------------------------------------------
@@ -220,21 +164,6 @@ begin;
     -- Revoke Delete Excludes: from Mutation schema
     revoke delete on public.account from api;
     set role api;
-    select name, meta_kind from graphql.type where entity is not null order by name asc;
-         name          |     meta_kind      
------------------------+--------------------
- Account               | Node
- AccountConnection     | Connection
- AccountDeleteResponse | DeleteNodeResponse
- AccountEdge           | Edge
- AccountFilter         | FilterEntity
- AccountInsertInput    | InsertNode
- AccountInsertResponse | InsertNodeResponse
- AccountOrderBy        | OrderBy
- AccountUpdateInput    | UpdateNode
- AccountUpdateResponse | UpdateNodeResponse
-(10 rows)
-
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
                   jsonb_pretty                   
 -------------------------------------------------

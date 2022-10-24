@@ -275,15 +275,15 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": null,                                +
-     "errors": [                                  +
-         {                                        +
-             "message": "missing argument \"set\""+
-         }                                        +
-     ]                                            +
+                      jsonb_pretty                       
+---------------------------------------------------------
+ {                                                      +
+     "data": null,                                      +
+     "errors": [                                        +
+         {                                              +
+             "message": "Invalid input for NonNull type"+
+         }                                              +
+     ]                                                  +
  }
 (1 row)
 

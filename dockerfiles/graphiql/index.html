@@ -1,7 +1,7 @@
 <html>
   <head>
-    <title>GraphiQL</title>
-    <link href="https://unpkg.com/graphiql/graphiql.css" rel="stylesheet" />
+    <title>GraphiQL - pg_graphql</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/graphiql/2.0.4/graphiql.css" rel="stylesheet" />
   </head>
   <body style="margin: 0;">
     <div id="graphiql" style="height: 100vh;"></div>
@@ -16,12 +16,12 @@
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql/graphiql.js"
+      src="https://cdnjs.cloudflare.com/ajax/libs/graphiql/2.0.4/graphiql.js"
     ></script>
-
     <script>
-      const fetcher = GraphiQL.createFetcher({ url: 'http://localhost:3000/rpc/graphql' });
-
+      const fetcher = GraphiQL.createFetcher({
+             url: 'http://localhost:3001/rpc/graphql',
+      });
       ReactDOM.render(
         React.createElement(GraphiQL, { fetcher: fetcher }),
         document.getElementById('graphiql'),

@@ -6,10 +6,16 @@ begin;
         id serial primary key
     );
 
-    select graphql.rebuild_schema();
-
     -- Should be visible because it has a primary ky
-    select * from graphql.entity;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            name
+          }
+        }
+        $$)
+    );
 
     rollback to savepoint a;
 
@@ -18,6 +24,14 @@ begin;
     );
 
     -- Should NOT be visible because it does not have a primary ky
-    select * from graphql.entity;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            name
+          }
+        }
+        $$)
+    );
 
 rollback;

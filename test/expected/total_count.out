@@ -18,9 +18,9 @@ begin;
       }
     }
     $$);
-                                              resolve                                              
----------------------------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Unknown field 'totalCount' on type 'AccountConnection'"}]}
+                                resolve                                 
+------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "unknown field in connection"}]}
 (1 row)
 
     -- Enable totalCount

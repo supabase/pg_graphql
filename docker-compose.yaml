@@ -1,14 +1,15 @@
 version: '3'
 services:
+
   db:
-    container_name: pg_graphql_db
+    container_name: pg_db
     build:
         context: .
         dockerfile: ./dockerfiles/db/Dockerfile
     volumes:
         - ./dockerfiles/db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
     ports:
-      - 5404:5432
+      - 5406:5432
     command:
       - postgres
       - -c
@@ -26,23 +27,24 @@ services:
       POSTGRES_DB: graphqldb
 
   rest:
-    container_name: pg_graphql_postgrest
-    image: postgrest/postgrest:v9.0.0
+    container_name: pg_postgrest
+    image: postgrest/postgrest:v10.0.0
     restart: unless-stopped
     ports:
-      - 3000:3000
-    depends_on:
-      - db
+      - 3001:3000
     environment:
       PGRST_DB_URI: postgres://postgres:password@db:5432/graphqldb
-      PGRST_DB_SCHEMA: public, graphql
+      PGRST_DB_SCHEMA: public
       PGRST_DB_ANON_ROLE: anon
+    depends_on:
+      - db
 
   graphiql:
-    container_name: graphiql
-    build:
-        context: ./dockerfiles/graphiql
+    container_name: pg_graphiql
+    image: nginx
+    volumes:
+      - ./dockerfiles/graphiql:/usr/share/nginx/html
     ports:
-        - 4000:8000
+      - 4000:80
     depends_on:
       - rest

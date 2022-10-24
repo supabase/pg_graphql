@@ -163,6 +163,25 @@ begin;
         variables := '{"beforeCursor": "WzNd"}'
     ));
 
+    -- issue #161: confirm variables for first/last before/after may be present so long as
+    -- only correct pairs are passed as variables
+    select jsonb_pretty(
+        graphql.resolve($$
+            query ABC($beforeCursor: Cursor, $afterCursor: Cursor, $lastN: Int, $firstN: Int){
+              accountCollection(last: $lastN, before: $beforeCursor, first: $firstN, after: $afterCursor) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := '{"beforeCursor": "WzNd", "afterCursor": null, "lastN": 2, "beforeN": null}'
+    ));
+
+
+
     -- Last without a before clause
     select jsonb_pretty(
         graphql.resolve($$

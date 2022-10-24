@@ -5,6 +5,7 @@
 dockerfiles/
 docs/
 pg_graphql.egg-info/
+target/
 nix/
 node_modules/
 results/

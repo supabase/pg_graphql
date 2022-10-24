@@ -421,10 +421,14 @@ begin;
         variables:= '[{"filt": [2, 3]}]'
       )
     );
-                jsonb_pretty                 
----------------------------------------------
- {                                          +
-     "errors": "variables must be an object"+
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "errors": [                                     +
+         {                                           +
+             "message": "variables must be an object"+
+         }                                           +
+     ]                                               +
  }
 (1 row)
 
@@ -616,15 +620,15 @@ begin;
         variables:= '{"afilt": {"dne_id": 2} }'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         {                                    +
-             "message": "Invalid filter field"+
-         }                                    +
-     ]                                        +
+                                      jsonb_pretty                                      
+----------------------------------------------------------------------------------------
+ {                                                                                     +
+     "data": null,                                                                     +
+     "errors": [                                                                       +
+         {                                                                             +
+             "message": "Input for type AccountFilter contains extra keys [\"dne_id\"]"+
+         }                                                                             +
+     ]                                                                                 +
  }
 (1 row)
 
@@ -646,15 +650,15 @@ begin;
         variables:= '{"afilt": {"id": 2} }'
       )
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": null,                            +
-     "errors": [                              +
-         {                                    +
-             "message": "Invalid filter field"+
-         }                                    +
-     ]                                        +
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": null,                                        +
+     "errors": [                                          +
+         {                                                +
+             "message": "Invalid input for IntFilter type"+
+         }                                                +
+     ]                                                    +
  }
 (1 row)
 
@@ -676,15 +680,15 @@ begin;
         variables:= '{"afilt": {"id": {"eq": true}} }'
       )
     );
-                               jsonb_pretty                               
---------------------------------------------------------------------------
- {                                                                       +
-     "data": null,                                                       +
-     "errors": [                                                         +
-         {                                                               +
-             "message": "invalid input syntax for type integer: \"true\""+
-         }                                                               +
-     ]                                                                   +
+                    jsonb_pretty                     
+-----------------------------------------------------
+ {                                                  +
+     "data": null,                                  +
+     "errors": [                                    +
+         {                                          +
+             "message": "Invalid input for Int type"+
+         }                                          +
+     ]                                              +
  }
 (1 row)
 

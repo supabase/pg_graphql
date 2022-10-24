@@ -3,9 +3,6 @@ begin;
     create role api;
     grant usage on schema graphql to api;
     grant execute on function graphql.resolve to api;
-    grant select on graphql.type to api;
-    grant select on graphql.field to api;
-
 
     create table xyz( id int primary key);
 

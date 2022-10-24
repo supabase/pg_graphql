@@ -4,25 +4,32 @@ begin;
         email varchar(255) not null
     );
     comment on table public.account is E'@graphql({"name": "UserAccount"})';
-    select graphql.rebuild_schema();
- rebuild_schema 
-----------------
- 
-(1 row)
-
-    select name from graphql.type where entity = 'public.account'::regclass order by name;
-           name            
----------------------------
- UserAccount
- UserAccountConnection
- UserAccountDeleteResponse
- UserAccountEdge
- UserAccountFilter
- UserAccountInsertInput
- UserAccountInsertResponse
- UserAccountOrderBy
- UserAccountUpdateInput
- UserAccountUpdateResponse
+    select jsonb_pretty(
+        jsonb_path_query(
+            graphql.resolve($$
+                query IntrospectionQuery {
+                  __schema {
+                    types {
+                      name
+                    }
+                  }
+                }
+            $$),
+            '$.data.__schema.types[*].name ? (@ starts with "UserAccount")'
+        )
+    );
+        jsonb_pretty         
+-----------------------------
+ "UserAccount"
+ "UserAccountConnection"
+ "UserAccountDeleteResponse"
+ "UserAccountEdge"
+ "UserAccountFilter"
+ "UserAccountInsertInput"
+ "UserAccountInsertResponse"
+ "UserAccountOrderBy"
+ "UserAccountUpdateInput"
+ "UserAccountUpdateResponse"
 (10 rows)
 
 rollback;

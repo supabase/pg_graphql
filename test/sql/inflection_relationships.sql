@@ -1,16 +1,5 @@
 begin;
-    create view r as
-        select
-            distinct name
-        from
-            graphql.field
-        where
-            local_columns is not null
-        order by
-            name;
-
     savepoint a;
-
     -- Inflection true, Overrides: off, Ends with '_id'
     comment on schema public is e'@graphql({"inflect_names": true})';
 
@@ -20,8 +9,17 @@ begin;
         constraint fkey_author_id foreign key (author_id) references account_holder(id)
     );
 
-    select graphql.rebuild_schema();
-    select * from r;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "AccountHolder") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     -- Inflection true, Overrides: off, does not end with '_id'
     rollback to savepoint a;
@@ -34,8 +32,17 @@ begin;
         constraint fkey_author_id foreign key (author) references account_holder(id)
     );
 
-    select graphql.rebuild_schema();
-    select * from r;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "AccountHolder") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     -- Inflection true, Overrides: true
     rollback to savepoint a;
@@ -52,8 +59,17 @@ begin;
     on account_holder
     is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
 
-    select graphql.rebuild_schema();
-    select * from r;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "AccountHolder") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     -- Inflection false, Overrides: off, Ends with 'Id'
     rollback to savepoint a;
@@ -66,8 +82,17 @@ begin;
         constraint fkey_author_id foreign key ("authorId") references "AccountHolder"(id)
     );
 
-    select graphql.rebuild_schema();
-    select * from r;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "AccountHolder") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     -- Inflection false, Overrides: off, does not end with 'Id'
     rollback to savepoint a;
@@ -80,8 +105,17 @@ begin;
         constraint fkey_author_id foreign key (author) references "AccountHolder"(id)
     );
 
-    select graphql.rebuild_schema();
-    select * from r;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "AccountHolder") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
     -- Inflection false, Overrides: true
     rollback to savepoint a;
@@ -98,7 +132,16 @@ begin;
     on "AccountHolder"
     is E'@graphql({"foreign_name": "auTHor", "local_name": "children"})';
 
-    select graphql.rebuild_schema();
-    select * from r;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "AccountHolder") {
+            fields {
+                name
+            }
+          }
+        }
+        $$)
+    );
 
 rollback;

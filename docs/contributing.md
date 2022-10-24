@@ -1,9 +1,12 @@
 pg_graphql is OSS. PR and issues are welcome.
 
-
 ## Development
 
-[Nix](https://nixos.org/download.html) is required to set up the environment.
+Requirements:
+
+- rust
+- cargo
+- [pgx](https://github.com/tcdi/pgx)
 
 ### Testing
 
@@ -12,8 +15,7 @@ Tests are located in `./test/sql` with expected output in `./test/expected`
 To run tests locally, execute:
 
 ```bash
-# might take a few minutes downloading dependencies on the first run
-$ nix-shell --run "pg_14_graphql make installcheck"
+$ cargo pgx install; ./bin/installcheck
 ```
 
 
@@ -22,7 +24,7 @@ $ nix-shell --run "pg_14_graphql make installcheck"
 To reduce the iteration cycle, you may want to launch a psql prompt with `pg_graphql` installed to experiment
 
 ```bash
-nix-shell --run "pg_14_graphql psql"
+cargo pgx run pg14
 ```
 
 Try out the commands below to spin up a database with the extension installed & query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.

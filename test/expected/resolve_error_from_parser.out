@@ -4,8 +4,8 @@ select graphql.resolve($$
   }
 }
 $$);
-                           resolve                            
---------------------------------------------------------------
- {"errors": [{"message": "2.3: syntax error, unexpected {"}]}
+                                                      resolve                                                      
+-------------------------------------------------------------------------------------------------------------------
+ {"errors": [{"message": "query parse error: Parse error at 2:3\nUnexpected `{[Punctuator]`\nExpected `Name`\n"}]}
 (1 row)
 

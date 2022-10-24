@@ -1,0 +1,19 @@
+name: Test
+on:
+  pull_request:
+  push: { branches: master }
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build docker images
+      run: docker-compose -f .ci/docker-compose.yml build
+
+    - name: Run tests
+      run: docker-compose -f .ci/docker-compose.yml run test
