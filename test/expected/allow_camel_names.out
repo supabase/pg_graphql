@@ -54,13 +54,13 @@ begin;
                              "totalCount": 1         +
                          }                           +
                      },                              +
-                     "cursor": "WzEsIDFd"            +
+                     "cursor": "WzFd"                +
                  }                                   +
              ],                                      +
              "pageInfo": {                           +
-                 "endCursor": "WzEsIDFd",            +
+                 "endCursor": "WzFd",                +
                  "hasNextPage": true,                +
-                 "startCursor": "WzEsIDFd",          +
+                 "startCursor": "WzFd",              +
                  "hasPreviousPage": false            +
              }                                       +
          }                                           +
@@ -107,7 +107,7 @@ begin;
                              "totalCount": 1         +
                          }                           +
                      },                              +
-                     "cursor": "WzIsIDJd"            +
+                     "cursor": "WzJd"                +
                  }                                   +
              ]                                       +
          }                                           +

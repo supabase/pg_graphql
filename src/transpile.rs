@@ -54,7 +54,7 @@ impl Table {
     }
 
     fn to_cursor_clause(&self, block_name: &str, order_by: &OrderByBuilder) -> String {
-        let mut frags: Vec<String> = order_by
+        let frags: Vec<String> = order_by
             .elems
             .iter()
             .map(|x| {
@@ -63,13 +63,6 @@ impl Table {
             })
             .collect();
 
-        let pkey_frags: Vec<String> = self
-            .primary_key_columns()
-            .iter()
-            .map(|col| format!("to_jsonb({block_name}.{})", quote_ident(&col.name)))
-            .collect();
-
-        frags.extend(pkey_frags);
         let clause = frags.join(", ");
 
         format!("encode(convert_to(jsonb_build_array({clause})::text, 'utf-8'), 'base64')")
@@ -711,23 +704,6 @@ impl ConnectionBuilder {
             }
         };
 
-        let prior_page_check_pagination_clause = {
-            let order_by = match self.last.is_some() {
-                true => self.order_by.clone(),
-                false => self.order_by.reverse(),
-            };
-            match cursor {
-                Some(cursor) => self.table.to_pagination_clause(
-                    &quoted_block_name,
-                    &order_by,
-                    &cursor,
-                    param_context,
-                    true,
-                )?,
-                None => "true".to_string(),
-            }
-        };
-
         let selectable_columns_clause = self.table.to_selectable_columns_clause();
 
         let pkey_tuple_clause_from_block =
@@ -782,7 +758,7 @@ impl ConnectionBuilder {
                 __has_previous_page(___has_previous_page) as (
                     with page_minus_1 as (
                         select
-                            {pkey_tuple_clause_from_block} = any( __records.seen ) is_pkey_in_records
+                            not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
                         from
                             {quoted_schema}.{quoted_table} {quoted_block_name}
                             left join (select array_agg({pkey_tuple_clause_from_records}) from __records ) __records(seen)
@@ -791,9 +767,8 @@ impl ConnectionBuilder {
                             {requested_previous_page} -- skips when not requested
                             and {join_clause}
                             and {where_clause}
-                            and {prior_page_check_pagination_clause}
                         order by
-                            {order_by_clause_reversed}
+                            {order_by_clause_records}
                         limit 1
                     )
                     select coalesce(bool_and(is_pkey_in_records), false) from page_minus_1
