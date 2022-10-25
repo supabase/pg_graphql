@@ -60,7 +60,7 @@ where
         };
     }
 
-    if !(operation_names.iter().unique().count() == operation_names.len()) {
+    if operation_names.iter().unique().count() != operation_names.len() {
         return GraphQLResponse {
             data: Omit::Omitted,
             errors: Omit::Present(vec![ErrorMessage {
@@ -79,7 +79,7 @@ where
             || (operation_names.len() == 1 && operation_name.is_none() ))
         .map(|x| x.0);
 
-    let response = match maybe_op {
+    match maybe_op {
         None => GraphQLResponse {
             data: Omit::Omitted,
             errors: Omit::Present(vec![ErrorMessage {
@@ -88,7 +88,7 @@ where
         },
         Some(op) => match op {
             OperationDefinition::Query(query) => {
-                resolve_query(query, &schema, variables, fragment_defs)
+                resolve_query(query, schema, variables, fragment_defs)
             }
             OperationDefinition::SelectionSet(selection_set) => {
                 resolve_selection_set(selection_set, schema, variables, fragment_defs)
@@ -103,8 +103,7 @@ where
                 }]),
             },
         },
-    };
-    response
+    }
 }
 
 fn resolve_query<'a, 'b, T>(
@@ -186,7 +185,7 @@ where
                             match connection_builder {
                                 Ok(builder) => match builder.execute() {
                                     Ok(d) => {
-                                        res_data[alias_or_name(&selection)] = d;
+                                        res_data[alias_or_name(selection)] = d;
                                     }
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 },
@@ -206,8 +205,7 @@ where
 
                             match __type_builder {
                                 Ok(builder) => {
-                                    res_data[alias_or_name(&selection)] =
-                                        serde_json::json!(builder);
+                                    res_data[alias_or_name(selection)] = serde_json::json!(builder);
                                 }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
@@ -222,15 +220,14 @@ where
 
                             match __schema_builder {
                                 Ok(builder) => {
-                                    res_data[alias_or_name(&selection)] =
-                                        serde_json::json!(builder);
+                                    res_data[alias_or_name(selection)] = serde_json::json!(builder);
                                 }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
                         _ => match field_def.name().as_ref() {
                             "__typename" => {
-                                res_data[alias_or_name(&selection)] =
+                                res_data[alias_or_name(selection)] =
                                     serde_json::json!(query_type.name())
                             }
                             "heartbeat" => {
@@ -238,7 +235,7 @@ where
                                     pgx::Spi::get_one("select to_jsonb(now())")
                                         .expect("Internal Error: queries should not return null");
                                 let now_json = now_jsonb.0;
-                                res_data[alias_or_name(&selection)] = now_json;
+                                res_data[alias_or_name(selection)] = now_json;
                             }
                             _ => res_errors.push(ErrorMessage {
                                 message: "unexpected type found on query object".to_string(),
@@ -347,7 +344,7 @@ where
                             );
                             match insert_builder {
                                 Ok(builder) => match builder.compile() {
-                                    Ok(d) => pairs.push((alias_or_name(&selection), d)),
+                                    Ok(d) => pairs.push((alias_or_name(selection), d)),
                                     Err(msg) => res_errors.push(msg),
                                 },
                                 Err(msg) => res_errors.push(msg),
@@ -362,7 +359,7 @@ where
                             );
                             match update_builder {
                                 Ok(builder) => match builder.compile() {
-                                    Ok(d) => pairs.push((alias_or_name(&selection), d)),
+                                    Ok(d) => pairs.push((alias_or_name(selection), d)),
                                     Err(msg) => res_errors.push(msg),
                                 },
                                 Err(msg) => res_errors.push(msg),
@@ -377,7 +374,7 @@ where
                             );
                             match delete_builder {
                                 Ok(builder) => match builder.compile() {
-                                    Ok(d) => pairs.push((alias_or_name(&selection), d)),
+                                    Ok(d) => pairs.push((alias_or_name(selection), d)),
                                     Err(msg) => res_errors.push(msg),
                                 },
                                 Err(msg) => res_errors.push(msg),
@@ -385,12 +382,12 @@ where
                         }
                         _ => match field_def.name().as_ref() {
                             "__typename" => {
-                                res_data[alias_or_name(&selection)] =
+                                res_data[alias_or_name(selection)] =
                                     serde_json::json!(mutation_type.name());
                             }
                             _ => res_errors.push(format!(
                                 "unexpected type found on mutation object: {}",
-                                field_def.type_.name().unwrap_or("".to_string())
+                                field_def.type_.name().unwrap_or_default()
                             )),
                         },
                     },
@@ -405,7 +402,7 @@ where
                 .collect();
 
             // If no errors occured during building statements
-            if errors.len() == 0 {
+            if errors.is_empty() {
                 let prepared_statement_names: Vec<String> = pairs
                     .iter()
                     .map(|(_, prep_statement_name)| prep_statement_name.clone())

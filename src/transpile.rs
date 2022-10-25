@@ -91,13 +91,13 @@ impl Table {
 
         )"
         */
-        if cursor.elems.len() == 0 {
+        if cursor.elems.is_empty() {
             return Ok(format!("{allow_equality}"));
         }
         let mut next_cursor = cursor.clone();
         let cursor_elem = next_cursor.elems.remove(0);
 
-        if order_by.elems.len() == 0 {
+        if order_by.elems.is_empty() {
             return Err("orderBy clause incompatible with pagination cursor".to_string());
         }
         let mut next_order_by = order_by.clone();
@@ -268,7 +268,7 @@ impl InsertSelection {
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         };
         Ok(r)
@@ -293,7 +293,7 @@ impl UpdateSelection {
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         };
         Ok(r)
@@ -318,7 +318,7 @@ impl DeleteSelection {
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         };
 
@@ -349,8 +349,7 @@ impl UpdateBuilder {
                     .table
                     .columns
                     .iter()
-                    .filter(|x| &x.name == column_name)
-                    .next()
+                    .find(|x| &x.name == column_name)
                     .expect("Failed to find field in update builder");
 
                 let value_clause = param_context.clause_for(val, &column.type_name);
@@ -584,47 +583,31 @@ impl ConnectionBuilder {
     fn requested_total(&self) -> bool {
         self.selections
             .iter()
-            .filter(|x| match x {
-                ConnectionSelection::TotalCount { alias: _ } => true,
-                _ => false,
-            })
-            .next()
-            .is_some()
+            .any(|x| matches!(&x, ConnectionSelection::TotalCount { alias: _ }))
     }
 
     fn page_selections(&self) -> Vec<PageInfoSelection> {
         self.selections
             .iter()
-            .map(|x| match x {
+            .flat_map(|x| match x {
                 ConnectionSelection::PageInfo(page_info_builder) => {
                     page_info_builder.selections.clone()
                 }
                 _ => vec![],
             })
-            .flatten()
             .collect()
     }
 
     fn requested_next_page(&self) -> bool {
         self.page_selections()
             .iter()
-            .filter(|x| match x {
-                PageInfoSelection::HasNextPage { alias: _ } => true,
-                _ => false,
-            })
-            .next()
-            .is_some()
+            .any(|x| matches!(&x, PageInfoSelection::HasNextPage { alias: _ }))
     }
 
     fn requested_previous_page(&self) -> bool {
         self.page_selections()
             .iter()
-            .filter(|x| match x {
-                PageInfoSelection::HasPreviousPage { alias: _ } => true,
-                _ => false,
-            })
-            .next()
-            .is_some()
+            .any(|x| matches!(&x, PageInfoSelection::HasPreviousPage { alias: _ }))
     }
 
     pub fn to_sql(
@@ -681,11 +664,11 @@ impl ConnectionBuilder {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        let limit: i64 = cmp::min(self.first.unwrap_or(self.last.unwrap_or(30)), 30);
+        let limit: i64 = cmp::min(self.first.unwrap_or_else(|| self.last.unwrap_or(30)), 30);
 
         let object_clause = frags.join(", ");
 
-        let cursor = &self.before.clone().or(self.after.clone());
+        let cursor = &self.before.clone().or_else(|| self.after.clone());
 
         let pagination_clause = {
             let order_by = match self.last.is_some() {
@@ -696,7 +679,7 @@ impl ConnectionBuilder {
                 Some(cursor) => self.table.to_pagination_clause(
                     &quoted_block_name,
                     &order_by,
-                    &cursor,
+                    cursor,
                     param_context,
                     false,
                 )?,
@@ -788,7 +771,7 @@ impl ConnectionBuilder {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql(None, &mut param_context)?;
 
-        let res: pgx::JsonB = Spi::get_one_with_args(&sql, param_context.params)
+        let res: pgx::JsonB = Spi::get_one_with_args(sql, param_context.params)
             .ok_or("Internal Error: Failed to execute transpiled query")?;
 
         Ok(res.0)
@@ -852,7 +835,7 @@ impl PageInfoSelection {
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         })
     }
@@ -884,11 +867,11 @@ impl ConnectionSelection {
             Self::TotalCount { alias } => {
                 format!(
                     "{}, coalesce(min(__total_count.___total_count), 0)",
-                    quote_literal(&alias)
+                    quote_literal(alias)
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         })
     }
@@ -905,7 +888,7 @@ impl EdgeBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&block_name, order_by, table, param_context))
+            .map(|x| x.to_sql(block_name, order_by, table, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let x = frags.join(", ");
@@ -942,7 +925,7 @@ impl EdgeSelection {
                 builder.to_sql(block_name, param_context)?
             ),
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         })
     }
@@ -957,7 +940,7 @@ impl NodeBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&block_name, param_context))
+            .map(|x| x.to_sql(block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
         Ok(format!("jsonb_build_object({})", frags.join(", ")))
     }
@@ -1049,7 +1032,7 @@ impl NodeSelection {
                 builder.to_sql(block_name)?
             ),
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
+                format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
         })
     }

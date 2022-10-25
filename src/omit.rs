@@ -9,9 +9,6 @@ pub enum Omit<T> {
 
 impl<T> Omit<T> {
     pub fn is_omit(&self) -> bool {
-        match &self {
-            Self::Omitted => true,
-            _ => false,
-        }
+        matches!(self, Self::Omitted)
     }
 }

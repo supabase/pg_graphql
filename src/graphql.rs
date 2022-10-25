@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 impl Context {
     fn inflect_names(&self, schema_oid: u32) -> bool {
-        let schema = self.schemas.iter().filter(|x| x.oid == schema_oid).next();
+        let schema = self.schemas.iter().find(|x| x.oid == schema_oid);
         schema.map(|s| s.directives.inflect_names).unwrap_or(false)
     }
 }
@@ -27,7 +27,7 @@ fn to_base_type_name(
         false => table_name.to_string(),
         true => {
             let mut padded = "+".to_string();
-            padded.push_str(&table_name);
+            padded.push_str(table_name);
 
             // account_BY_email => Account_By_Email
             let casing: String = padded
@@ -86,7 +86,7 @@ impl Function {
         }
 
         // remove underscore prefix from function name before inflecting
-        let trimmed_function_name = &self.name.strip_prefix("_").unwrap_or(&self.name);
+        let trimmed_function_name = &self.name.strip_prefix('_').unwrap_or(&self.name);
 
         let base_type_name = to_base_type_name(
             trimmed_function_name,
@@ -258,7 +258,7 @@ pub trait ___Type {
 
     fn field_map(&self) -> HashMap<String, __Field> {
         let mut hmap = HashMap::new();
-        let fields = self.fields(true).unwrap_or(vec![]);
+        let fields = self.fields(true).unwrap_or_default();
         for field in fields {
             hmap.insert(field.name(), field);
         }
@@ -278,7 +278,7 @@ pub trait ___Type {
 
     fn input_field_map(&self) -> HashMap<String, __InputValue> {
         let mut hmap = HashMap::new();
-        let fields = self.input_fields().unwrap_or(vec![]);
+        let fields = self.input_fields().unwrap_or_default();
         for field in fields {
             hmap.insert(field.name(), field);
         }
@@ -378,7 +378,7 @@ impl ___Field for __Field {
 
     // isDeprecated: Boolean!
     fn is_deprecated(&self) -> bool {
-        !self.deprecation_reason().is_none()
+        self.deprecation_reason().is_some()
     }
 
     // deprecationReason: String
@@ -419,7 +419,7 @@ impl __InputValue {
 
     // isDeprecated: Boolean!
     pub fn is_deprecated(&self) -> bool {
-        !self.deprecation_reason().is_none()
+        self.deprecation_reason().is_some()
     }
 
     // deprecationReason: String
@@ -428,7 +428,7 @@ impl __InputValue {
     }
 }
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum __TypeKind {
     SCALAR,
@@ -460,7 +460,7 @@ impl __EnumValue {
 
     // isDeprecated: Boolean!
     pub fn is_deprecated(&self) -> bool {
-        !self.deprecation_reason.is_none()
+        self.deprecation_reason.is_some()
     }
 
     // deprecationReason: String
@@ -750,6 +750,7 @@ impl __Type {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Scalar {
     ID,
@@ -1006,7 +1007,7 @@ impl ___Type for QueryType {
         // If there are no fields other than the default __type and __schema
         // inject heartbeat so introspection does not fail (all objects must have > 0 fields &
         // Query is a required type)
-        if f.len() == 0 {
+        if f.is_empty() {
             f.push(__Field {
                 name_: "heartbeat".to_string(),
                 type_: __Type::Scalar(Scalar::Datetime),
@@ -1045,7 +1046,7 @@ impl ___Type for QueryType {
             },
         ]);
 
-        f.sort_by(|a, b| a.name().cmp(&b.name()));
+        f.sort_by_key(|a| a.name());
         Some(f)
     }
 }
@@ -1195,7 +1196,7 @@ impl ___Type for MutationType {
                 }
             }
         }
-        f.sort_by(|a, b| a.name().cmp(&b.name()));
+        f.sort_by_key(|a| a.name());
         Some(f)
     }
 }
@@ -1221,10 +1222,7 @@ impl ___Type for EnumType {
 
     fn name(&self) -> Option<String> {
         let inflect_names = self.schema.context.inflect_names(self.enum_.schema_oid);
-        Some(format!(
-            "{}",
-            self.enum_.graphql_base_type_name(inflect_names)
-        ))
+        Some(self.enum_.graphql_base_type_name(inflect_names))
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -1457,7 +1455,7 @@ impl ___Type for NodeType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(format!("{}", self.table.graphql_base_type_name()))
+        Some(self.table.graphql_base_type_name())
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -1540,8 +1538,7 @@ impl ___Type for NodeType {
                 .context
                 .schemas
                 .iter()
-                .map(|x| x.tables.iter())
-                .flatten()
+                .flat_map(|x| x.tables.iter())
                 .find(|x| x.oid == fkey.referenced_table_meta.oid);
             // this should never happen but if there is an unhandled edge case panic-ing here
             // would block
@@ -1575,10 +1572,8 @@ impl ___Type for NodeType {
             .context
             .schemas
             .iter()
-            .map(|schema| schema.tables.iter())
-            .flatten()
-            .map(|tab| tab.foreign_keys.iter())
-            .flatten()
+            .flat_map(|schema| schema.tables.iter())
+            .flat_map(|tab| tab.foreign_keys.iter())
             .filter(|x| x.permissions.is_selectable)
             // inbound references
             .filter(|x| x.referenced_table_meta.oid == self.table.oid)
@@ -1589,8 +1584,7 @@ impl ___Type for NodeType {
                 .context
                 .schemas
                 .iter()
-                .map(|x| x.tables.iter())
-                .flatten()
+                .flat_map(|x| x.tables.iter())
                 .find(|x| x.oid == fkey.local_table_meta.oid);
             // this should never happen but if there is an unhandled edge case panic-ing here
             // would block
@@ -2879,7 +2873,7 @@ impl ___Type for FilterTypeType {
             }
         };
 
-        infields.sort_by(|a, b| a.name().cmp(&b.name()));
+        infields.sort_by_key(|a| a.name());
         Some(infields)
     }
 }
@@ -2910,7 +2904,7 @@ impl ___Type for FilterEntityType {
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 // No filtering on json/b. they do not support = or <>
                 .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
-                .map(|col| {
+                .filter_map(|col| {
                     // Should be a scalar
                     let utype = sql_column_to_graphql_type(col, &self.schema).unmodified_type();
 
@@ -2937,7 +2931,6 @@ impl ___Type for FilterEntityType {
                         _ => None,
                     }
                 })
-                .filter_map(|x| x)
                 .collect(),
         )
     }
@@ -3198,7 +3191,7 @@ impl __Schema {
             }
         }
 
-        types_.sort_by(|a, b| a.name().cmp(&b.name()));
+        types_.sort_by_key(|a| a.name());
         types_
     }
 
@@ -3216,8 +3209,7 @@ impl __Schema {
         self.context
             .schemas
             .iter()
-            .map(|x| x.tables.iter())
-            .flatten()
+            .flat_map(|x| x.tables.iter())
             .filter(|x| x.graphql_select_types_are_valid())
             .any(|x| {
                 x.permissions.is_selectable
@@ -3244,7 +3236,7 @@ impl __Schema {
             schema: Rc::new(self.clone()),
         };
 
-        match mutation.fields(true).unwrap_or(vec![]).len() {
+        match mutation.fields(true).unwrap_or_default().len() {
             0 => None,
             _ => Some(__Type::Mutation(mutation)),
         }

@@ -2,7 +2,6 @@ use crate::graphql::*;
 use crate::parser_util::*;
 use crate::sql_types::*;
 use graphql_parser::query::*;
-use serde;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -33,6 +32,7 @@ pub enum InsertElemValue {
     Value(serde_json::Value),
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum InsertSelection {
     AffectedCount { alias: String },
@@ -48,8 +48,8 @@ fn read_argument_at_most<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let at_most: serde_json::Value =
-        read_argument("atMost", field, &query_field, variables).unwrap_or(serde_json::json!(1));
+    let at_most: serde_json::Value = read_argument("atMost", field, query_field, variables)
+        .unwrap_or_else(|_| serde_json::json!(1));
     let at_most: Option<i32> = serde_json::from_value(at_most)
         .map_err(|_| "Internal Error: failed to parse validated atFirst".to_string())?;
 
@@ -70,7 +70,7 @@ where
     use serde_json::Value as JsonValue;
 
     // [{"name": "bob", "email": "a@b.com"}, {..}]
-    let validated: serde_json::Value = read_argument("objects", field, &query_field, variables)?;
+    let validated: serde_json::Value = read_argument("objects", field, query_field, variables)?;
 
     // [<Table>OrderBy!]
     let insert_type: InsertInputType =
@@ -122,7 +122,7 @@ where
         _ => return Err("Insert re-validation errror".to_string()),
     };
 
-    if objects.len() == 0 {
+    if objects.is_empty() {
         return Err("At least one record must be provided to objects".to_string());
     }
     Ok(objects)
@@ -142,21 +142,21 @@ where
         .name()
         .ok_or("Encountered type without name in connection builder")?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::InsertResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(vec!["objects"], &query_field)?;
+            restrict_allowed_arguments(vec!["objects"], query_field)?;
 
             let objects: Vec<InsertRowBuilder> =
-                read_argument_objects(field, &query_field, variables)?;
+                read_argument_objects(field, query_field, variables)?;
 
             let mut builder_fields: Vec<InsertSelection> = vec![];
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -220,6 +220,7 @@ pub struct SetBuilder {
     pub set: HashMap<String, serde_json::Value>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum UpdateSelection {
     AffectedCount { alias: String },
@@ -237,7 +238,7 @@ where
 {
     use serde_json::Value as JsonValue;
 
-    let validated: serde_json::Value = read_argument("set", field, &query_field, variables)?;
+    let validated: serde_json::Value = read_argument("set", field, query_field, variables)?;
 
     let update_type: UpdateInputType = match field.get_arg("set").unwrap().type_().unmodified_type()
     {
@@ -277,7 +278,7 @@ where
         _ => return Err("Update re-validation errror".to_string()),
     };
 
-    if set.len() == 0 {
+    if set.is_empty() {
         return Err("At least one mapping must be provided to set argument".to_string());
     }
 
@@ -298,22 +299,22 @@ where
         .name()
         .ok_or("Encountered type without name in update builder")?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::UpdateResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(vec!["set", "filter", "atMost"], &query_field)?;
+            restrict_allowed_arguments(vec!["set", "filter", "atMost"], query_field)?;
 
-            let set: SetBuilder = read_argument_set(field, &query_field, variables)?;
-            let filter: FilterBuilder = read_argument_filter(field, &query_field, variables)?;
-            let at_most: i32 = read_argument_at_most(field, &query_field, variables)?;
+            let set: SetBuilder = read_argument_set(field, query_field, variables)?;
+            let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
+            let at_most: i32 = read_argument_at_most(field, query_field, variables)?;
 
             let mut builder_fields: Vec<UpdateSelection> = vec![];
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -372,6 +373,7 @@ pub struct DeleteBuilder {
     pub selections: Vec<DeleteSelection>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum DeleteSelection {
     AffectedCount { alias: String },
@@ -393,21 +395,21 @@ where
         .name()
         .ok_or("Encountered type without name in delete builder")?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::DeleteResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(vec!["filter", "atMost"], &query_field)?;
+            restrict_allowed_arguments(vec!["filter", "atMost"], query_field)?;
 
-            let filter: FilterBuilder = read_argument_filter(field, &query_field, variables)?;
-            let at_most: i32 = read_argument_at_most(field, &query_field, variables)?;
+            let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
+            let at_most: i32 = read_argument_at_most(field, query_field, variables)?;
 
             let mut builder_fields: Vec<DeleteSelection> = vec![];
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -609,14 +611,14 @@ impl FromStr for Cursor {
                                 }
                                 Ok(Cursor { elems })
                             }
-                            _ => return Err("Failed to decode cursor, error 4".to_string()),
+                            _ => Err("Failed to decode cursor, error 4".to_string()),
                         },
-                        Err(_) => return Err("Failed to decode cursor, error 3".to_string()),
+                        Err(_) => Err("Failed to decode cursor, error 3".to_string()),
                     }
                 }
-                Err(_) => return Err("Failed to decode cursor, error 2".to_string()),
+                Err(_) => Err("Failed to decode cursor, error 2".to_string()),
             },
-            Err(_) => return Err("Failed to decode cursor, error 1".to_string()),
+            Err(_) => Err("Failed to decode cursor, error 1".to_string()),
         }
     }
 }
@@ -661,6 +663,7 @@ pub struct EdgeBuilder {
     pub selections: Vec<EdgeSelection>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum EdgeSelection {
     Cursor { alias: String },
@@ -724,7 +727,7 @@ where
         .map(|(name, _)| name.as_ref())
         .collect();
 
-    match extra_keys.len() > 0 {
+    match !extra_keys.is_empty() {
         true => Err(format!("Input contains extra keys {:?}", extra_keys)),
         false => Ok(()),
     }
@@ -771,7 +774,7 @@ where
 {
     use serde_json::Value as JsonValue;
 
-    let validated: serde_json::Value = read_argument("filter", field, &query_field, variables)?;
+    let validated: serde_json::Value = read_argument("filter", field, query_field, variables)?;
 
     let filter_type: FilterEntityType =
         match field.get_arg("filter").unwrap().type_().unmodified_type() {
@@ -806,9 +809,8 @@ where
             let filter_op = FilterOp::from_str(filter_op_str)?;
 
             // Treat nulls as not provided
-            match filter_val {
-                JsonValue::Null => continue,
-                _ => (),
+            if let JsonValue::Null = filter_val {
+                continue;
             }
 
             match &filter_iv.sql_type {
@@ -839,7 +841,7 @@ where
     use serde_json::Value as JsonValue;
 
     // [{"id": "DescNullsLast"}]
-    let validated: serde_json::Value = read_argument("orderBy", field, &query_field, variables)?;
+    let validated: serde_json::Value = read_argument("orderBy", field, query_field, variables)?;
 
     // [<Table>OrderBy!]
     let order_type: OrderByEntityType =
@@ -864,7 +866,7 @@ where
                         for (column_field_name, order_direction_json) in obj.iter() {
                             let order_direction = match order_direction_json {
                                 JsonValue::Null => continue,
-                                JsonValue::String(x) => OrderDirection::from_str(&x)?,
+                                JsonValue::String(x) => OrderDirection::from_str(x)?,
                                 _ => return Err("Order re-validation error 6".to_string()),
                             };
                             let column_input_value: &__InputValue =
@@ -896,7 +898,7 @@ where
     let pkey = order_type
         .table
         .primary_key()
-        .ok_or("Found table with no primary key".to_string())?;
+        .ok_or_else(|| "Found table with no primary key".to_string())?;
 
     for col_attnum in &pkey.column_attnums {
         for col in &order_type.table.columns {
@@ -925,7 +927,7 @@ where
 {
     use serde_json::Value as JsonValue;
 
-    let validated: serde_json::Value = read_argument(arg_name, field, &query_field, variables)?;
+    let validated: serde_json::Value = read_argument(arg_name, field, query_field, variables)?;
 
     let _: Scalar = match field.get_arg(arg_name).unwrap().type_().unmodified_type() {
         __Type::Scalar(x) => x,
@@ -933,9 +935,9 @@ where
     };
 
     match validated {
-        JsonValue::Null => return Ok(None),
+        JsonValue::Null => Ok(None),
         JsonValue::String(x) => Ok(Some(Cursor::from_str(&x)?)),
-        _ => return Err("Cursor re-validation errror".to_string()),
+        _ => Err("Cursor re-validation errror".to_string()),
     }
 }
 
@@ -953,30 +955,30 @@ where
         .name()
         .ok_or("Encountered type without name in connection builder")?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::Connection(xtype) => {
             // Raise for disallowed arguments
             restrict_allowed_arguments(
                 vec!["first", "last", "before", "after", "filter", "orderBy"],
-                &query_field,
+                query_field,
             )?;
 
             // TODO: only one of first/last, before/after provided
 
-            let first: serde_json::Value = read_argument("first", field, &query_field, variables)?;
+            let first: serde_json::Value = read_argument("first", field, query_field, variables)?;
             let first: Option<i64> = serde_json::from_value(first)
                 .map_err(|_| "Internal Error: failed to parse validated first".to_string())?;
 
-            let last: serde_json::Value = read_argument("last", field, &query_field, variables)?;
+            let last: serde_json::Value = read_argument("last", field, query_field, variables)?;
             let last: Option<i64> = serde_json::from_value(last)
                 .map_err(|_| "Internal Error: failed to parse validated last".to_string())?;
 
             let before: Option<Cursor> =
-                read_argument_cursor("before", field, &query_field, variables)?;
+                read_argument_cursor("before", field, query_field, variables)?;
             let after: Option<Cursor> =
-                read_argument_cursor("after", field, &query_field, variables)?;
+                read_argument_cursor("after", field, query_field, variables)?;
 
             // Validate compatible input arguments
             if first.is_some() && last.is_some() {
@@ -989,14 +991,14 @@ where
                 return Err("\"last\" may only be used with \"before\"".to_string());
             }
 
-            let filter: FilterBuilder = read_argument_filter(field, &query_field, variables)?;
-            let order_by: OrderByBuilder = read_argument_order_by(field, &query_field, variables)?;
+            let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
+            let order_by: OrderByBuilder = read_argument_order_by(field, query_field, variables)?;
 
             let mut builder_fields: Vec<ConnectionSelection> = vec![];
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -1008,11 +1010,11 @@ where
                             __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
                                 f,
                                 selection_field,
-                                &fragment_definitions,
+                                fragment_definitions,
                                 variables,
                             )?),
                             __Type::PageInfo(_) => ConnectionSelection::PageInfo(
-                                to_page_info_builder(f, selection_field, &fragment_definitions)?,
+                                to_page_info_builder(f, selection_field, fragment_definitions)?,
                             ),
 
                             _ => match f.name().as_ref() {
@@ -1064,7 +1066,7 @@ where
         type_
     ))?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match type_ {
         __Type::PageInfo(xtype) => {
@@ -1072,7 +1074,7 @@ where
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -1081,16 +1083,16 @@ where
                     None => return Err("unknown field in pageInfo".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "startCursor" => PageInfoSelection::StartCursor {
-                            alias: alias_or_name(&selection_field),
+                            alias: alias_or_name(selection_field),
                         },
                         "endCursor" => PageInfoSelection::EndCursor {
-                            alias: alias_or_name(&selection_field),
+                            alias: alias_or_name(selection_field),
                         },
                         "hasPreviousPage" => PageInfoSelection::HasPreviousPage {
-                            alias: alias_or_name(&selection_field),
+                            alias: alias_or_name(selection_field),
                         },
                         "hasNextPage" => PageInfoSelection::HasNextPage {
-                            alias: alias_or_name(&selection_field),
+                            alias: alias_or_name(selection_field),
                         },
                         "__typename" => PageInfoSelection::Typename {
                             alias: alias_or_name(selection_field),
@@ -1124,7 +1126,7 @@ where
         type_
     ))?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match type_ {
         __Type::Edge(xtype) => {
@@ -1132,7 +1134,7 @@ where
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -1185,7 +1187,7 @@ where
         .name()
         .ok_or("Encountered type without name in node builder")?;
     let field_map = type_.field_map();
-    let alias = alias_or_name(&query_field);
+    let alias = alias_or_name(query_field);
 
     match type_ {
         __Type::Node(xtype) => {
@@ -1193,7 +1195,7 @@ where
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
-                &fragment_definitions,
+                fragment_definitions,
                 &type_name,
             )?;
 
@@ -1283,6 +1285,7 @@ where
 
 // Introspection
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Serialize, Clone, Debug)]
 pub enum __FieldField {
     Name,
@@ -1327,6 +1330,7 @@ pub struct __EnumValueBuilder {
     pub selections: Vec<__EnumValueSelection>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Serialize, Clone, Debug)]
 pub enum __InputValueField {
     Name,
@@ -1350,6 +1354,7 @@ pub struct __InputValueBuilder {
     pub selections: Vec<__InputValueSelection>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum __TypeField {
     Kind,
@@ -1417,7 +1422,7 @@ impl __Schema {
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
-            &fragment_definitions,
+            fragment_definitions,
             &"__EnumValue".to_string(),
         )?;
 
@@ -1467,7 +1472,7 @@ impl __Schema {
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
-            &fragment_definitions,
+            fragment_definitions,
             &"__InputValue".to_string(),
         )?;
 
@@ -1529,7 +1534,7 @@ impl __Schema {
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
-            &fragment_definitions,
+            fragment_definitions,
             &"__Field".to_string(),
         )?;
 
@@ -1605,7 +1610,7 @@ impl __Schema {
         }
 
         let name_arg_result: Result<serde_json::Value, String> =
-            read_argument("name", field, &query_field, variables);
+            read_argument("name", field, query_field, variables);
         let name_arg: Option<String> = match name_arg_result {
             // This builder (too) is overloaded and the arg is not present in all uses
             Err(_) => None,
@@ -1616,9 +1621,8 @@ impl __Schema {
         if name_arg.is_some() {
             type_name = name_arg;
         }
-        match type_name {
-            None => return Err("no name found for __type".to_string()),
-            _ => (),
+        if type_name.is_none() {
+            return Err("no name found for __type".to_string());
         }
         let type_name = type_name.unwrap();
 
@@ -1633,7 +1637,7 @@ impl __Schema {
                     fragment_definitions,
                     variables,
                 )
-                .map(|x| Some(x))
+                .map(Some)
             }
             None => Ok(None),
         }
@@ -1653,7 +1657,7 @@ impl __Schema {
 
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
-            &fragment_definitions,
+            fragment_definitions,
             &"__Type".to_string(),
         )?;
 
@@ -1665,7 +1669,7 @@ impl __Schema {
             match field_map.get(type_field_name) {
                 None => return Err(format!("unknown field on __Type: {}", type_field_name)),
                 Some(f) => builder_fields.push(__TypeSelection {
-                    alias: alias_or_name(&selection_field),
+                    alias: alias_or_name(selection_field),
                     selection: match f.name().as_str() {
                         "kind" => __TypeField::Kind,
                         "name" => __TypeField::Name,
@@ -1738,8 +1742,8 @@ impl __Schema {
                         }
                         "possibleTypes" => __TypeField::PossibleTypes(None),
                         "ofType" => {
-                            let unwrapped_type_builder = match &type_ {
-                                &__Type::List(list_type) => {
+                            let unwrapped_type_builder = match type_ {
+                                __Type::List(list_type) => {
                                     let inner_type: __Type = (*(list_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
                                         &inner_type,
@@ -1748,7 +1752,7 @@ impl __Schema {
                                         variables,
                                     )?)
                                 }
-                                &__Type::NonNull(non_null_type) => {
+                                __Type::NonNull(non_null_type) => {
                                     let inner_type = (*(non_null_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
                                         &inner_type,
@@ -1806,7 +1810,7 @@ impl __Schema {
 
                 let selection_fields = normalize_selection_set(
                     &query_field.selection_set,
-                    &fragment_definitions,
+                    fragment_definitions,
                     &type_name,
                 )?;
 
@@ -1816,7 +1820,7 @@ impl __Schema {
                     match field_map.get(field_name) {
                         None => return Err(format!("unknown field in __Schema: {}", field_name)),
                         Some(f) => builder_fields.push(__SchemaSelection {
-                            alias: alias_or_name(&selection_field),
+                            alias: alias_or_name(selection_field),
                             selection: match f.name().as_str() {
                                 "types" => {
                                     let builders = self
@@ -1829,7 +1833,7 @@ impl __Schema {
                                         .map(|t| {
                                             self.to_type_builder(
                                                 f,
-                                                &selection_field,
+                                                selection_field,
                                                 fragment_definitions,
                                                 t.name(),
                                                 variables,
@@ -1844,7 +1848,7 @@ impl __Schema {
                                 "queryType" => {
                                     let builder = self.to_type_builder(
                                         f,
-                                        &selection_field,
+                                        selection_field,
                                         fragment_definitions,
                                         Some("Query".to_string()),
                                         variables,
@@ -1855,7 +1859,7 @@ impl __Schema {
                                 "mutationType" => {
                                     let builder = self.to_type_builder(
                                         f,
-                                        &selection_field,
+                                        selection_field,
                                         fragment_definitions,
                                         Some("Mutation".to_string()),
                                         variables,
