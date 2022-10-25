@@ -1173,7 +1173,7 @@ where
     }
 }
 
-fn to_node_builder<'a, T>(
+pub fn to_node_builder<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
@@ -1192,6 +1192,10 @@ where
     match type_ {
         __Type::Node(xtype) => {
             let mut builder_fields = vec![];
+
+            restrict_allowed_arguments(vec!["nodeId"], &query_field)?;
+            let node_id: serde_json::Value =
+                read_argument("nodeId", field, &query_field, variables)?;
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,

@@ -986,6 +986,39 @@ impl NodeBuilder {
             )"
         ))
     }
+
+    pub fn to_query_entrypoint_sql(
+        &self,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let quoted_block_name = rand_block_name();
+        let quoted_schema = quote_ident(&self.table.schema);
+        let quoted_table = quote_ident(&self.table.name);
+        let object_clause = self.to_sql(&quoted_block_name, param_context)?;
+        let node_id_clause = self.to_node_id_clause(&self.node_id);
+
+        Ok(format!(
+            "
+            (
+                select
+                    jsonb_build_object({object_clause})
+                from
+                    {quoted_schema}.{quoted_table} as {quoted_block_name}
+                where
+                    {node_id_clause}
+            )"
+        ))
+    }
+
+    pub fn execute(&self) -> Result<serde_json::Value, String> {
+        let mut param_context = ParamContext { params: vec![] };
+        let sql = &self.to_query_entrypoint_sql(&mut param_context)?;
+
+        let res: pgx::JsonB = Spi::get_one_with_args(&sql, param_context.params)
+            .ok_or("Internal Error: Failed to execute transpiled query")?;
+
+        Ok(res.0)
+    }
 }
 
 impl NodeSelection {

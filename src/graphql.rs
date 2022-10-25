@@ -927,7 +927,7 @@ impl ___Type for QueryType {
                 .iter()
                 .filter(|x| x.graphql_select_types_are_valid())
             {
-                f.push(__Field {
+                let collection_entrypoint = __Field {
                     name_: format!(
                         "{}Collection",
                         lowercase_first_letter(&table.graphql_base_type_name())
@@ -1000,7 +1000,42 @@ impl ___Type for QueryType {
                     )),
                     deprecation_reason: None,
                     sql_type: None,
-                })
+                };
+
+                f.push(collection_entrypoint);
+
+                if table.primary_key().is_some() {
+                    let single_entrypoint = __Field {
+                        name_: format!(
+                            "{}",
+                            lowercase_first_letter(&table.graphql_base_type_name())
+                        ),
+                        type_: __Type::Node(NodeType {
+                            table: table.clone(),
+                            fkey: None,
+                            reverse_reference: None,
+                            schema: self.schema.clone(),
+                        }),
+                        args: vec![__InputValue {
+                            name_: "nodeId".to_string(),
+                            type_: __Type::NonNull(NonNullType {
+                                type_: Box::new(__Type::Scalar(Scalar::ID)),
+                            }),
+                            description: Some(
+                                "Query the first `n` records in the collection".to_string(),
+                            ),
+                            default_value: None,
+                            sql_type: None,
+                        }],
+                        description: Some(format!(
+                            "Retrieve a single `{}` by its ID",
+                            table.graphql_base_type_name()
+                        )),
+                        deprecation_reason: None,
+                        sql_type: None,
+                    };
+                    f.push(single_entrypoint);
+                }
             }
         }
 

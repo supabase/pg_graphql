@@ -192,6 +192,24 @@ where
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
+                        __Type::Node(_) => {
+                            let node_builder = to_node_builder(
+                                field_def,
+                                selection,
+                                &fragment_definitions,
+                                variables,
+                            );
+
+                            match node_builder {
+                                Ok(builder) => match builder.execute() {
+                                    Ok(d) => {
+                                        res_data[alias_or_name(&selection)] = d;
+                                    }
+                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                },
+                                Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                            }
+                        }
                         __Type::__Type(_) => {
                             let type_map = schema_type.type_map();
                             let __type_builder = schema_type.to_type_builder(
