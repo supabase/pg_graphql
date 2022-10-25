@@ -1043,6 +1043,11 @@ impl NodeSelection {
                 quote_literal(&builder.alias),
                 builder.to_sql(block_name)?
             ),
+            Self::NodeId(builder) => format!(
+                "{}, {}",
+                quote_literal(&builder.alias),
+                builder.to_sql(block_name)?
+            ),
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(&alias), quote_literal(&typename))
             }
@@ -1056,6 +1061,22 @@ impl ColumnBuilder {
             "{}.{}",
             &block_name,
             quote_ident(&self.column.name)
+        ))
+    }
+}
+
+impl NodeIdBuilder {
+    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+        let column_selects: Vec<String> = self
+            .columns
+            .iter()
+            .map(|col| format!("{}.{}", block_name, col.name))
+            .collect();
+        let column_clause = column_selects.join(", ");
+        let schema_name = quote_literal(&self.schema_name);
+        let table_name = quote_literal(&self.table_name);
+        Ok(format!(
+            "encode(convert_to(jsonb_build_array({schema_name}, {table_name}, {column_clause})::text, 'utf-8'), 'base64')"
         ))
     }
 }

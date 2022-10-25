@@ -41,6 +41,9 @@ begin;
      "name": "Something",              +
      "fields": [                       +
          {                             +
+             "name": "nodeId"          +
+         },                            +
+         {                             +
              "name": "id"              +
          },                            +
          {                             +

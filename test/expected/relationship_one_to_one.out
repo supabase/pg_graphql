@@ -30,6 +30,12 @@ begin;
              "kind": "OBJECT",            +
              "fields": [                  +
                  {                        +
+                     "name": "nodeId",    +
+                     "type": {            +
+                         "name": null     +
+                     }                    +
+                 },                       +
+                 {                        +
                      "name": "id",        +
                      "type": {            +
                          "name": null     +
@@ -69,6 +75,12 @@ begin;
          "__type": {                      +
              "kind": "OBJECT",            +
              "fields": [                  +
+                 {                        +
+                     "name": "nodeId",    +
+                     "type": {            +
+                         "name": null     +
+                     }                    +
+                 },                       +
                  {                        +
                      "name": "id",        +
                      "type": {            +

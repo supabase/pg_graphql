@@ -686,7 +686,16 @@ pub enum NodeSelection {
     Node(NodeBuilder),
     Column(ColumnBuilder),
     Function(FunctionBuilder),
+    NodeId(NodeIdBuilder),
     Typename { alias: String, typename: String },
+}
+
+#[derive(Clone, Debug)]
+pub struct NodeIdBuilder {
+    pub alias: String,
+    pub schema_name: String,
+    pub table_name: String,
+    pub columns: Vec<Column>,
 }
 
 #[derive(Clone, Debug)]
@@ -1220,18 +1229,27 @@ where
                                 builder_fields.push(NodeSelection::Node(node_builder?));
                             }
                             _ => {
+                                let alias = alias_or_name(&selection_field);
                                 let node_selection = match &f.sql_type {
                                     Some(node_sql_type) => match node_sql_type {
                                         NodeSQLType::Column(col) => {
                                             NodeSelection::Column(ColumnBuilder {
-                                                alias: alias_or_name(&selection_field),
+                                                alias,
                                                 column: col.clone(),
                                             })
                                         }
                                         NodeSQLType::Function(func) => {
                                             NodeSelection::Function(FunctionBuilder {
-                                                alias: alias_or_name(&selection_field),
+                                                alias,
                                                 function: func.clone(),
+                                            })
+                                        }
+                                        NodeSQLType::NodeId(pkey_columns) => {
+                                            NodeSelection::NodeId(NodeIdBuilder {
+                                                alias,
+                                                columns: pkey_columns.clone(),
+                                                table_name: xtype.table.name.clone(),
+                                                schema_name: xtype.table.schema.clone(),
                                             })
                                         }
                                     },

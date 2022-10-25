@@ -327,6 +327,7 @@ pub trait ___Field {
 #[derive(Clone, Debug)]
 pub enum NodeSQLType {
     Column(Column),
+    NodeId(Vec<Column>),
     Function(Function),
 }
 
@@ -1477,9 +1478,32 @@ impl ___Type for NodeType {
             })
             .collect();
 
-        let mut function_fields: Vec<__Field> = vec![];
+        // nodeId field
+        let mut node_id_field: Vec<__Field> = vec![];
+
+        if self.table.primary_key().is_some() {
+            let node_id = __Field {
+                name_: "nodeId".to_string(),
+                type_: __Type::NonNull(NonNullType {
+                    type_: Box::new(__Type::Scalar(Scalar::ID)),
+                }),
+                args: vec![],
+                description: Some("Globally Unique Record Identifier".to_string()),
+                deprecation_reason: None,
+                sql_type: Some(NodeSQLType::NodeId(
+                    self.table
+                        .primary_key_columns()
+                        .iter()
+                        .map(|x| (*x).clone())
+                        .collect::<Vec<Column>>(),
+                )),
+            };
+            node_id_field.push(node_id);
+        };
+
         // Functions require selecting an entire row. the whole table must be selectable
         // for functions to work
+        let mut function_fields: Vec<__Field> = vec![];
         if self.table.permissions.is_selectable {
             function_fields = self
                 .table
@@ -1671,11 +1695,16 @@ impl ___Type for NodeType {
         }
 
         Some(
-            vec![column_fields, relation_fields, function_fields]
-                .into_iter()
-                .flatten()
-                //.sorted_by(|a, b| a.name().cmp(&b.name()))
-                .collect(),
+            vec![
+                node_id_field,
+                column_fields,
+                relation_fields,
+                function_fields,
+            ]
+            .into_iter()
+            .flatten()
+            //.sorted_by(|a, b| a.name().cmp(&b.name()))
+            .collect(),
         )
     }
 }

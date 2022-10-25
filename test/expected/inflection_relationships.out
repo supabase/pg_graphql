@@ -25,6 +25,9 @@ begin;
          "__type": {                                  +
              "fields": [                              +
                  {                                    +
+                     "name": "nodeId"                 +
+                 },                                   +
+                 {                                    +
                      "name": "id"                     +
                  },                                   +
                  {                                    +
@@ -67,6 +70,9 @@ begin;
      "data": {                                        +
          "__type": {                                  +
              "fields": [                              +
+                 {                                    +
+                     "name": "nodeId"                 +
+                 },                                   +
                  {                                    +
                      "name": "id"                     +
                  },                                   +
@@ -114,6 +120,9 @@ begin;
          "__type": {                    +
              "fields": [                +
                  {                      +
+                     "name": "nodeId"   +
+                 },                     +
+                 {                      +
                      "name": "id"       +
                  },                     +
                  {                      +
@@ -157,6 +166,9 @@ begin;
          "__type": {                                  +
              "fields": [                              +
                  {                                    +
+                     "name": "nodeId"                 +
+                 },                                   +
+                 {                                    +
                      "name": "id"                     +
                  },                                   +
                  {                                    +
@@ -199,6 +211,9 @@ begin;
      "data": {                                        +
          "__type": {                                  +
              "fields": [                              +
+                 {                                    +
+                     "name": "nodeId"                 +
+                 },                                   +
                  {                                    +
                      "name": "id"                     +
                  },                                   +
@@ -245,6 +260,9 @@ begin;
      "data": {                          +
          "__type": {                    +
              "fields": [                +
+                 {                      +
+                     "name": "nodeId"   +
+                 },                     +
                  {                      +
                      "name": "id"       +
                  },                     +

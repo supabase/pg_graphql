@@ -24,6 +24,9 @@ begin;
          "__type": {                               +
              "fields": [                           +
                  {                                 +
+                     "name": "nodeId"              +
+                 },                                +
+                 {                                 +
                      "name": "id"                  +
                  },                                +
                  {                                 +
@@ -49,21 +52,24 @@ begin;
         }
         $$)
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "__type": {               +
-             "fields": [           +
-                 {                 +
-                     "name": "IddD"+
-                 },                +
-                 {                 +
-                     "name": "nAMe"+
-                 }                 +
-             ]                     +
-         }                         +
-     }                             +
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "__type": {                 +
+             "fields": [             +
+                 {                   +
+                     "name": "nodeId"+
+                 },                  +
+                 {                   +
+                     "name": "IddD"  +
+                 },                  +
+                 {                   +
+                     "name": "nAMe"  +
+                 }                   +
+             ]                       +
+         }                           +
+     }                               +
  }
 (1 row)
 
@@ -87,6 +93,9 @@ begin;
      "data": {                                   +
          "__type": {                             +
              "fields": [                         +
+                 {                               +
+                     "name": "nodeId"            +
+                 },                              +
                  {                               +
                      "name": "id"                +
                  },                              +
@@ -113,21 +122,24 @@ begin;
         }
         $$)
     );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "__type": {               +
-             "fields": [           +
-                 {                 +
-                     "name": "IddD"+
-                 },                +
-                 {                 +
-                     "name": "nAMe"+
-                 }                 +
-             ]                     +
-         }                         +
-     }                             +
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "__type": {                 +
+             "fields": [             +
+                 {                   +
+                     "name": "nodeId"+
+                 },                  +
+                 {                   +
+                     "name": "IddD"  +
+                 },                  +
+                 {                   +
+                     "name": "nAMe"  +
+                 }                   +
+             ]                       +
+         }                           +
+     }                               +
  }
 (1 row)
 
