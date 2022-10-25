@@ -9,7 +9,7 @@ where
         .alias
         .as_ref()
         .map(|x| x.as_ref().to_string())
-        .unwrap_or(query_field.name.as_ref().to_string())
+        .unwrap_or_else(|| query_field.name.as_ref().to_string())
 }
 
 pub fn normalize_selection_set<'a, 'b, T>(
@@ -24,7 +24,7 @@ where
 
     for selection in &selection_set.items {
         let sel = selection;
-        match normalize_selection(&sel, &fragment_definitions, type_name) {
+        match normalize_selection(sel, fragment_definitions, type_name) {
             Ok(sels) => selections.extend(sels),
             Err(err) => return Err(err),
         }
@@ -56,12 +56,10 @@ where
             let frag_def = match fragment_definitions
                 .iter()
                 .filter(|x| &x.name == frag_name)
-                .filter(|x| match &x.type_condition {
+                .find(|x| match &x.type_condition {
                     // TODO match when no type condition is specified?
                     TypeCondition::On(frag_type_name) => frag_type_name.as_ref() == type_name,
-                })
-                .next()
-            {
+                }) {
                 Some(frag) => frag,
                 None => {
                     return Err(format!(
@@ -74,7 +72,7 @@ where
 
             // TODO handle directives?
             let frag_selections =
-                normalize_selection_set(&frag_def.selection_set, &fragment_definitions, type_name);
+                normalize_selection_set(&frag_def.selection_set, fragment_definitions, type_name);
             match frag_selections {
                 Ok(sels) => selections.extend(sels.iter()),
                 Err(err) => return Err(err),
@@ -101,7 +99,7 @@ where
 
     let result = match graphql_value {
         Value::Null => JsonValue::Null,
-        Value::Boolean(x) => JsonValue::Bool(x.clone()),
+        Value::Boolean(x) => JsonValue::Bool(*x),
         // Why is as_i64 optional?
         Value::Int(x) => {
             let val = x.as_i64();
@@ -111,9 +109,9 @@ where
             }
         }
         Value::Float(x) => {
-            let val = Number::from_f64(x.clone());
+            let val = Number::from_f64(*x);
             match val {
-                Some(num) => JsonValue::Number(Number::from(num)),
+                Some(num) => JsonValue::Number(num),
                 None => return Err("Invalid Float input".to_string()),
             }
         }
@@ -237,11 +235,9 @@ pub fn validate_arg_from_type(
             JsonValue::String(user_input_string) => {
                 let matches_enum_value = enum_
                     .enum_values(true)
-                    .map(|x| x)
                     .into_iter()
                     .flatten()
-                    .filter(|x| x.name().as_str() == user_input_string)
-                    .next();
+                    .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
                     Some(_) => value.clone(),
                     None => {
@@ -256,11 +252,9 @@ pub fn validate_arg_from_type(
             JsonValue::String(user_input_string) => {
                 let matches_enum_value = enum_
                     .enum_values(true)
-                    .map(|x| x)
                     .into_iter()
                     .flatten()
-                    .filter(|x| x.name().as_str() == user_input_string)
-                    .next();
+                    .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
                     Some(_) => value.clone(),
                     None => {
@@ -305,7 +299,7 @@ pub fn validate_arg_from_type(
         _ => {
             return Err(format!(
                 "Invalid Type used as input argument {}",
-                type_.name().unwrap_or("".to_string())
+                type_.name().unwrap_or_default()
             ))
         }
     };
@@ -320,7 +314,7 @@ pub fn validate_arg_from_input_object(
     use serde_json::Map;
     use serde_json::Value as JsonValue;
 
-    let input_type_name = input_type.name().unwrap_or("".to_string());
+    let input_type_name = input_type.name().unwrap_or_default();
 
     //let allowed_kinds = vec![__TypeKind::INPUT_OBJECT, __TypeKind::ENUM];
     //if allowed_kinds.contains(&input_type.kind()) {
@@ -333,18 +327,17 @@ pub fn validate_arg_from_input_object(
         JsonValue::Null => value.clone(),
         JsonValue::Object(input_obj) => {
             let mut out_map: Map<String, JsonValue> = Map::new();
-            let type_input_fields: Vec<__InputValue> = input_type.input_fields().unwrap_or(vec![]);
+            let type_input_fields: Vec<__InputValue> =
+                input_type.input_fields().unwrap_or_default();
 
             // Confirm that there are no extra keys
-            let type_input_field_names: Vec<String> =
-                type_input_fields.iter().map(|x| x.name()).collect();
             let mut extra_input_keys = vec![];
             for (k, _) in input_obj.iter() {
-                if !type_input_field_names.contains(k) {
+                if !type_input_fields.iter().map(|x| x.name()).any(|x| x == *k) {
                     extra_input_keys.push(k);
                 }
             }
-            if extra_input_keys.len() > 0 {
+            if !extra_input_keys.is_empty() {
                 return Err(format!(
                     "Input for type {} contains extra keys {:?}",
                     input_type_name, extra_input_keys
@@ -357,7 +350,7 @@ pub fn validate_arg_from_input_object(
 
                 let out_val = match input_obj.get(&obj_field_key) {
                     None => validate_arg_from_type(&obj_field_type, &JsonValue::Null)?,
-                    Some(x) => validate_arg_from_type(&obj_field_type, &x)?,
+                    Some(x) => validate_arg_from_type(&obj_field_type, x)?,
                 };
                 out_map.insert(obj_field_key, out_val);
             }
