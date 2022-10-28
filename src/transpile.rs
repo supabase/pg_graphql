@@ -995,13 +995,18 @@ impl NodeBuilder {
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
         let object_clause = self.to_sql(&quoted_block_name, param_context)?;
-        let node_id_clause = self.to_node_id_clause(&self.node_id);
+
+        if self.node_id.is_none() {
+            return Err("Expected nodeId argument missing".to_string());
+        }
+        let node_id = self.node_id.as_ref().unwrap();
+        let node_id_clause = node_id.to_sql(&quoted_block_name, param_context)?;
 
         Ok(format!(
             "
             (
                 select
-                    jsonb_build_object({object_clause})
+                    {object_clause}
                 from
                     {quoted_schema}.{quoted_table} as {quoted_block_name}
                 where
@@ -1018,6 +1023,17 @@ impl NodeBuilder {
             .ok_or("Internal Error: Failed to execute transpiled query")?;
 
         Ok(res.0)
+    }
+}
+
+impl NodeIdInstance {
+    pub fn to_sql(
+        &self,
+        _block_name: &str,
+        _param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        // TODO unstub
+        Ok("id = 3".to_string())
     }
 }
 

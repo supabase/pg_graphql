@@ -59,6 +59,80 @@ where
     }
 }
 
+fn read_argument_node_id<'a, T>(
+    table: &Table,
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<Option<NodeIdInstance>, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
+    extern crate base64;
+    use std::str;
+
+    let node_id_base64_encoded_json_string: serde_json::Value =
+        read_argument("nodeId", field, query_field, variables)?;
+    let node_id_base64_encoded_string: String = match node_id_base64_encoded_json_string {
+        serde_json::Value::Null => return Ok(None),
+        serde_json::Value::String(s) => s,
+        _ => return Err("Invalid value passed to nodeId argument, Error 1".to_string()),
+    };
+
+    let node_id_json_string_utf8: Vec<u8> = base64::decode(node_id_base64_encoded_string)
+        .map_err(|_| "Invalid value passed to nodeId argument. Error 2".to_string())?;
+
+    let node_id_json_string: &str = str::from_utf8(&node_id_json_string_utf8)
+        .map_err(|_| "Invalid value passed to nodeId argument. Error 3".to_string())?;
+
+    let node_id_json: serde_json::Value = serde_json::from_str(node_id_json_string)
+        .map_err(|_| "Invalid value passed to nodeId argument. Error 4".to_string())?;
+
+    match node_id_json {
+        serde_json::Value::Array(x_arr) => {
+            if x_arr.len() < 3 {
+                return Err("Invalid value passed to nodeId argument. Error 5".to_string());
+            }
+
+            let mut x_arr_iter = x_arr.into_iter();
+            let schema_name = match x_arr_iter.next().unwrap() {
+                serde_json::Value::String(s) => s,
+                _ => {
+                    return Err("Invalid value passed to nodeId argument. Error 6".to_string());
+                }
+            };
+
+            let table_name = match x_arr_iter.next().unwrap() {
+                serde_json::Value::String(s) => s,
+                _ => {
+                    return Err("Invalid value passed to nodeId argument. Error 7".to_string());
+                }
+            };
+            let values: Vec<serde_json::Value> = x_arr_iter.collect();
+
+            let columns: Vec<Column> = table
+                .primary_key_columns()
+                .iter()
+                .map(|c| (*c).clone())
+                .collect();
+
+            if values.len() != columns.len() {
+                return Err("Invalid value passed to nodeId argument. Error 8".to_string());
+            }
+
+            // Popuate a NodeIdInstance
+            Ok(Some(NodeIdInstance {
+                schema_name,
+                table_name,
+                columns,
+                values,
+            }))
+        }
+        _ => Err("Invalid value passed to nodeId argument. Error 9".to_string()),
+    }
+}
+
 fn read_argument_objects<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
@@ -673,6 +747,9 @@ pub enum EdgeSelection {
 
 #[derive(Clone, Debug)]
 pub struct NodeBuilder {
+    // args
+    pub node_id: Option<NodeIdInstance>,
+
     pub alias: String,
 
     // metadata
@@ -691,6 +768,15 @@ pub enum NodeSelection {
     Function(FunctionBuilder),
     NodeId(NodeIdBuilder),
     Typename { alias: String, typename: String },
+}
+
+#[derive(Clone, Debug)]
+pub struct NodeIdInstance {
+    pub schema_name: String,
+    pub table_name: String,
+    pub columns: Vec<Column>,
+    // Vec matching length of "columns" representing primary key values
+    pub values: Vec<serde_json::Value>,
 }
 
 #[derive(Clone, Debug)]
@@ -1183,6 +1269,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
+
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in node builder")?;
@@ -1191,11 +1278,12 @@ where
 
     match type_ {
         __Type::Node(xtype) => {
+            let table = &xtype.table;
             let mut builder_fields = vec![];
 
             restrict_allowed_arguments(vec!["nodeId"], &query_field)?;
-            let node_id: serde_json::Value =
-                read_argument("nodeId", field, &query_field, variables)?;
+            let node_id: Option<NodeIdInstance> =
+                read_argument_node_id(table, field, &query_field, variables)?;
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
@@ -1276,6 +1364,7 @@ where
                 }
             }
             Ok(NodeBuilder {
+                node_id,
                 alias,
                 table: xtype.table.clone(),
                 fkey: xtype.fkey.clone(),

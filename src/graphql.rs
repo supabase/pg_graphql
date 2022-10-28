@@ -1021,9 +1021,7 @@ impl ___Type for QueryType {
                             type_: __Type::NonNull(NonNullType {
                                 type_: Box::new(__Type::Scalar(Scalar::ID)),
                             }),
-                            description: Some(
-                                "Query the first `n` records in the collection".to_string(),
-                            ),
+                            description: None,
                             default_value: None,
                             sql_type: None,
                         }],
