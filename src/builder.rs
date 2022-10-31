@@ -40,6 +40,36 @@ pub enum InsertSelection {
     Typename { alias: String, typename: String },
 }
 
+fn read_argument<'a, T>(
+    arg_name: &str,
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<serde_json::Value, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let input_value: __InputValue = match field.get_arg(arg_name) {
+        Some(arg) => arg,
+        None => return Err(format!("Internal error 1: {}", arg_name)),
+    };
+
+    let user_input: Option<&graphql_parser::query::Value<'a, T>> = query_field
+        .arguments
+        .iter()
+        .filter(|(input_arg_name, _)| input_arg_name.as_ref() == arg_name)
+        .map(|(_, v)| v)
+        .next();
+
+    let user_json_unvalidated = match user_input {
+        None => serde_json::Value::Null,
+        Some(val) => to_json(val, variables)?,
+    };
+
+    let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
+    Ok(user_json_validated)
+}
+
 fn read_argument_at_most<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
@@ -121,6 +151,13 @@ where
                 return Err("Invalid value passed to nodeId argument. Error 8".to_string());
             }
 
+            if (&schema_name, &table_name) != (&table.schema, &table.name) {
+                return Err(
+                    "Invalid value passed to nodeId argument. ID refers to a different collection"
+                        .to_string(),
+                );
+            }
+
             // Popuate a NodeIdInstance
             Ok(Some(NodeIdInstance {
                 schema_name,
@@ -129,7 +166,7 @@ where
                 values,
             }))
         }
-        _ => Err("Invalid value passed to nodeId argument. Error 9".to_string()),
+        _ => Err("Invalid value passed to nodeId argument. Error 10".to_string()),
     }
 }
 
@@ -819,36 +856,6 @@ where
     }
 }
 
-fn read_argument<'a, T>(
-    arg_name: &str,
-    field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
-    variables: &serde_json::Value,
-) -> Result<serde_json::Value, String>
-where
-    T: Text<'a> + Eq + AsRef<str>,
-{
-    let input_value: __InputValue = match field.get_arg(arg_name) {
-        Some(arg) => arg,
-        None => return Err(format!("Internal error 1: {}", arg_name)),
-    };
-
-    let user_input: Option<&graphql_parser::query::Value<'a, T>> = query_field
-        .arguments
-        .iter()
-        .filter(|(input_arg_name, _)| input_arg_name.as_ref() == arg_name)
-        .map(|(_, v)| v)
-        .next();
-
-    let user_json_unvalidated = match user_input {
-        None => serde_json::Value::Null,
-        Some(val) => to_json(val, variables)?,
-    };
-
-    let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
-    Ok(user_json_validated)
-}
-
 /// Reads the "filter" argument
 fn read_argument_filter<'a, T>(
     field: &__Field,
@@ -1282,8 +1289,13 @@ where
             let mut builder_fields = vec![];
 
             restrict_allowed_arguments(vec!["nodeId"], &query_field)?;
-            let node_id: Option<NodeIdInstance> =
-                read_argument_node_id(table, field, &query_field, variables)?;
+
+            // The nodeId argument is only valid on the entrypoint field for Node
+            // relationships to "node" e.g. within edges, do not have any arguments
+            let node_id: Option<NodeIdInstance> = match field.get_arg("nodeId").is_some() {
+                true => read_argument_node_id(table, field, query_field, variables)?,
+                false => None,
+            };
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,

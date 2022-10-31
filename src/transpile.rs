@@ -1011,7 +1011,8 @@ impl NodeBuilder {
                     {quoted_schema}.{quoted_table} as {quoted_block_name}
                 where
                     {node_id_clause}
-            )"
+            )
+            "
         ))
     }
 
@@ -1020,7 +1021,7 @@ impl NodeBuilder {
         let sql = &self.to_query_entrypoint_sql(&mut param_context)?;
 
         let res: pgx::JsonB = Spi::get_one_with_args(&sql, param_context.params)
-            .ok_or("Internal Error: Failed to execute transpiled query")?;
+            .unwrap_or_else(|| pgx::JsonB(serde_json::Value::Null));
 
         Ok(res.0)
     }
@@ -1029,11 +1030,16 @@ impl NodeBuilder {
 impl NodeIdInstance {
     pub fn to_sql(
         &self,
-        _block_name: &str,
-        _param_context: &mut ParamContext,
+        block_name: &str,
+        param_context: &mut ParamContext,
     ) -> Result<String, String> {
-        // TODO unstub
-        Ok("id = 3".to_string())
+        let mut col_val_pairs: Vec<String> = vec![];
+        for (col, val) in self.columns.iter().zip(self.values.iter()) {
+            let column_name = &col.name;
+            let val_clause = param_context.clause_for(val, &col.type_name);
+            col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))
+        }
+        Ok(col_val_pairs.join(" and "))
     }
 }
 

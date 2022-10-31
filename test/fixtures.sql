@@ -14,5 +14,3 @@ as $$
 */
     select encode(convert_to($1::text, 'utf-8'), 'base64')
 $$;
-
-create or replace function graphql.rebuild_schema() returns void language plpgsql as $$ begin end;  $$;
