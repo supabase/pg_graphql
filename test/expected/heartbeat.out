@@ -56,6 +56,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "account"          +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  }                              +
              ]                                  +

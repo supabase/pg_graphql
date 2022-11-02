@@ -22,6 +22,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "account"          +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  }                              +
              ]                                  +
@@ -94,6 +97,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "account"          +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  }                              +
              ]                                  +
@@ -133,6 +139,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "account"          +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  }                              +
              ]                                  +
@@ -171,6 +180,9 @@ begin;
      "data": {                                  +
          "__type": {                            +
              "fields": [                        +
+                 {                              +
+                     "name": "account"          +
+                 },                             +
                  {                              +
                      "name": "accountCollection"+
                  }                              +
