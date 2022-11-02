@@ -1006,10 +1006,7 @@ impl ___Type for QueryType {
 
                 if table.primary_key().is_some() {
                     let single_entrypoint = __Field {
-                        name_: format!(
-                            "{}",
-                            lowercase_first_letter(&table.graphql_base_type_name())
-                        ),
+                        name_: lowercase_first_letter(&table.graphql_base_type_name()),
                         type_: __Type::Node(NodeType {
                             table: table.clone(),
                             fkey: None,

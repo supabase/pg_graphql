@@ -1288,7 +1288,7 @@ where
             let table = &xtype.table;
             let mut builder_fields = vec![];
 
-            restrict_allowed_arguments(vec!["nodeId"], &query_field)?;
+            restrict_allowed_arguments(vec!["nodeId"], query_field)?;
 
             // The nodeId argument is only valid on the entrypoint field for Node
             // relationships to "node" e.g. within edges, do not have any arguments
@@ -1335,7 +1335,7 @@ where
                                 builder_fields.push(NodeSelection::Node(node_builder?));
                             }
                             _ => {
-                                let alias = alias_or_name(&selection_field);
+                                let alias = alias_or_name(selection_field);
                                 let node_selection = match &f.sql_type {
                                     Some(node_sql_type) => match node_sql_type {
                                         NodeSQLType::Column(col) => {

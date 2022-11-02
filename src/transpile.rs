@@ -126,8 +126,8 @@ impl Table {
         };
 
         Ok(format!("(
-            ( {quoted_col} {op} {val_clause}  or ( {quoted_col} is not null and {val_clause} is null and {nulls_first}))
-            or (( {quoted_col} = {val_clause} or ( {quoted_col} is null and {val_clause} is null)) and  {recurse_clause})
+            ( {block_name}.{quoted_col} {op} {val_clause}  or ( {block_name}.{quoted_col} is not null and {val_clause} is null and {nulls_first}))
+            or (( {block_name}.{quoted_col} = {val_clause} or ( {block_name}.{quoted_col} is null and {val_clause} is null)) and  {recurse_clause})
 
         )"))
     }
@@ -1020,8 +1020,8 @@ impl NodeBuilder {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_query_entrypoint_sql(&mut param_context)?;
 
-        let res: pgx::JsonB = Spi::get_one_with_args(&sql, param_context.params)
-            .unwrap_or_else(|| pgx::JsonB(serde_json::Value::Null));
+        let res: pgx::JsonB = Spi::get_one_with_args(sql, param_context.params)
+            .unwrap_or(pgx::JsonB(serde_json::Value::Null));
 
         Ok(res.0)
     }

@@ -203,7 +203,7 @@ where
                             match node_builder {
                                 Ok(builder) => match builder.execute() {
                                     Ok(d) => {
-                                        res_data[alias_or_name(&selection)] = d;
+                                        res_data[alias_or_name(selection)] = d;
                                     }
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 },
