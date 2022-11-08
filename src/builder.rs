@@ -1469,9 +1469,9 @@ pub enum __TypeField {
     Fields(Option<Vec<__FieldBuilder>>),
     InputFields(Option<Vec<__InputValueBuilder>>),
 
-    Interfaces(Vec<__Type>),
+    Interfaces(Vec<__TypeBuilder>),
     EnumValues(Option<Vec<__EnumValueBuilder>>),
-    PossibleTypes(Option<Vec<__Type>>),
+    PossibleTypes(Option<Vec<__TypeBuilder>>),
     OfType(Option<__TypeBuilder>),
     Typename {
         alias: String,
@@ -1826,7 +1826,27 @@ impl __Schema {
                                 }
                             }
                         }
-                        "interfaces" => __TypeField::Interfaces(vec![]),
+                        "interfaces" => {
+                            match type_.interfaces() {
+                                Some(interfaces) => {
+                                    let mut interface_builders = vec![];
+                                    for interface in &interfaces {
+                                        let interface_builder = self.to_type_builder_from_type(
+                                            &interface,
+                                            selection_field,
+                                            fragment_definitions,
+                                            variables,
+                                        )?;
+                                        interface_builders.push(interface_builder);
+                                    }
+                                    __TypeField::Interfaces(interface_builders)
+                                }
+                                None => {
+                                    // Declares as nullable, but breaks graphiql
+                                    __TypeField::Interfaces(vec![])
+                                }
+                            }
+                        }
                         "enumValues" => {
                             let enum_value_builders = match type_.enum_values(true) {
                                 Some(enum_values) => {
@@ -1845,7 +1865,23 @@ impl __Schema {
                             };
                             __TypeField::EnumValues(enum_value_builders)
                         }
-                        "possibleTypes" => __TypeField::PossibleTypes(None),
+                        "possibleTypes" => match type_.possible_types() {
+                            Some(types) => {
+                                let mut type_builders = vec![];
+                                for ty in &types {
+                                    let type_builder = self.to_type_builder_from_type(
+                                        &ty,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                    )?;
+
+                                    type_builders.push(type_builder);
+                                }
+                                __TypeField::PossibleTypes(Some(type_builders))
+                            }
+                            None => __TypeField::PossibleTypes(None),
+                        },
                         "ofType" => {
                             let unwrapped_type_builder = match type_ {
                                 __Type::List(list_type) => {

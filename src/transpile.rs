@@ -1189,20 +1189,14 @@ impl Serialize for __TypeBuilder {
                 __TypeField::InputFields(input_field_builders) => {
                     map.serialize_entry(&selection.alias, input_field_builders)?;
                 }
-                __TypeField::Interfaces(_) => {
-                    let x: Option<Vec<u32>> = match self.type_ {
-                        __Type::Scalar(_) => None,
-                        _ => Some(vec![]),
-                    };
-                    map.serialize_entry(&selection.alias, &x)?;
+                __TypeField::Interfaces(interfaces) => {
+                    map.serialize_entry(&selection.alias, &interfaces)?;
                 }
                 __TypeField::EnumValues(enum_values) => {
                     map.serialize_entry(&selection.alias, enum_values)?;
                 }
-                __TypeField::PossibleTypes(_) => {
-                    // XXX: stubbed
-                    let x: Option<u32> = None;
-                    map.serialize_entry(&selection.alias, &x)?;
+                __TypeField::PossibleTypes(possible_types) => {
+                    map.serialize_entry(&selection.alias, &possible_types)?;
                 }
                 __TypeField::OfType(t_builder) => {
                     map.serialize_entry(&selection.alias, t_builder)?;

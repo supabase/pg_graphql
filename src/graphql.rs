@@ -479,6 +479,7 @@ pub enum __Type {
     Edge(EdgeType),
     Node(NodeType),
     Enum(EnumType),
+    NodeInterface(NodeInterfaceType),
     // Mutation
     Mutation(MutationType),
     InsertInput(InsertInputType),
@@ -518,6 +519,7 @@ impl ___Type for __Type {
             Self::Connection(x) => x.kind(),
             Self::Edge(x) => x.kind(),
             Self::Node(x) => x.kind(),
+            Self::NodeInterface(x) => x.kind(),
             Self::InsertInput(x) => x.kind(),
             Self::InsertResponse(x) => x.kind(),
             Self::UpdateInput(x) => x.kind(),
@@ -551,6 +553,7 @@ impl ___Type for __Type {
             Self::Connection(x) => x.name(),
             Self::Edge(x) => x.name(),
             Self::Node(x) => x.name(),
+            Self::NodeInterface(x) => x.name(),
             Self::InsertInput(x) => x.name(),
             Self::InsertResponse(x) => x.name(),
             Self::UpdateInput(x) => x.name(),
@@ -584,6 +587,7 @@ impl ___Type for __Type {
             Self::Connection(x) => x.description(),
             Self::Edge(x) => x.description(),
             Self::Node(x) => x.description(),
+            Self::NodeInterface(x) => x.description(),
             Self::InsertInput(x) => x.description(),
             Self::InsertResponse(x) => x.description(),
             Self::UpdateInput(x) => x.description(),
@@ -618,6 +622,7 @@ impl ___Type for __Type {
             Self::Connection(x) => x.fields(_include_deprecated),
             Self::Edge(x) => x.fields(_include_deprecated),
             Self::Node(x) => x.fields(_include_deprecated),
+            Self::NodeInterface(x) => x.fields(_include_deprecated),
             Self::InsertInput(x) => x.fields(_include_deprecated),
             Self::InsertResponse(x) => x.fields(_include_deprecated),
             Self::UpdateInput(x) => x.fields(_include_deprecated),
@@ -644,13 +649,71 @@ impl ___Type for __Type {
     // # OBJECT only
     // interfaces: [__Type!]
     fn interfaces(&self) -> Option<Vec<__Type>> {
-        None
+        match self {
+            Self::Scalar(x) => x.interfaces(),
+            Self::Enum(x) => x.interfaces(),
+            Self::Query(x) => x.interfaces(),
+            Self::Mutation(x) => x.interfaces(),
+            Self::Connection(x) => x.interfaces(),
+            Self::Edge(x) => x.interfaces(),
+            Self::Node(x) => x.interfaces(),
+            Self::NodeInterface(x) => x.interfaces(),
+            Self::InsertInput(x) => x.interfaces(),
+            Self::InsertResponse(x) => x.interfaces(),
+            Self::UpdateInput(x) => x.interfaces(),
+            Self::UpdateResponse(x) => x.interfaces(),
+            Self::DeleteResponse(x) => x.interfaces(),
+            Self::FilterType(x) => x.interfaces(),
+            Self::FilterEntity(x) => x.interfaces(),
+            Self::OrderBy(x) => x.interfaces(),
+            Self::OrderByEntity(x) => x.interfaces(),
+            Self::PageInfo(x) => x.interfaces(),
+            Self::__TypeKind(x) => x.interfaces(),
+            Self::__Schema(x) => x.interfaces(),
+            Self::__Type(x) => x.interfaces(),
+            Self::__Field(x) => x.interfaces(),
+            Self::__InputValue(x) => x.interfaces(),
+            Self::__EnumValue(x) => x.interfaces(),
+            Self::__DirectiveLocation(x) => x.interfaces(),
+            Self::__Directive(x) => x.interfaces(),
+            Self::List(x) => x.interfaces(),
+            Self::NonNull(x) => x.interfaces(),
+        }
     }
 
     // # INTERFACE and UNION only
     // possibleTypes: [__Type!]
     fn possible_types(&self) -> Option<Vec<__Type>> {
-        None
+        match self {
+            Self::Scalar(x) => x.possible_types(),
+            Self::Enum(x) => x.possible_types(),
+            Self::Query(x) => x.possible_types(),
+            Self::Mutation(x) => x.possible_types(),
+            Self::Connection(x) => x.possible_types(),
+            Self::Edge(x) => x.possible_types(),
+            Self::Node(x) => x.possible_types(),
+            Self::NodeInterface(x) => x.possible_types(),
+            Self::InsertInput(x) => x.possible_types(),
+            Self::InsertResponse(x) => x.possible_types(),
+            Self::UpdateInput(x) => x.possible_types(),
+            Self::UpdateResponse(x) => x.possible_types(),
+            Self::DeleteResponse(x) => x.possible_types(),
+            Self::FilterType(x) => x.possible_types(),
+            Self::FilterEntity(x) => x.possible_types(),
+            Self::OrderBy(x) => x.possible_types(),
+            Self::OrderByEntity(x) => x.possible_types(),
+            Self::PageInfo(x) => x.possible_types(),
+            Self::__TypeKind(x) => x.possible_types(),
+            Self::__Schema(x) => x.possible_types(),
+            Self::__Type(x) => x.possible_types(),
+            Self::__Field(x) => x.possible_types(),
+            Self::__InputValue(x) => x.possible_types(),
+            Self::__EnumValue(x) => x.possible_types(),
+            Self::__DirectiveLocation(x) => x.possible_types(),
+            Self::__Directive(x) => x.possible_types(),
+            Self::List(x) => x.possible_types(),
+            Self::NonNull(x) => x.possible_types(),
+        }
     }
 
     // # ENUM only
@@ -664,6 +727,7 @@ impl ___Type for __Type {
             Self::Connection(x) => x.enum_values(_include_deprecated),
             Self::Edge(x) => x.enum_values(_include_deprecated),
             Self::Node(x) => x.enum_values(_include_deprecated),
+            Self::NodeInterface(x) => x.enum_values(_include_deprecated),
             Self::InsertInput(x) => x.enum_values(_include_deprecated),
             Self::InsertResponse(x) => x.enum_values(_include_deprecated),
             Self::UpdateInput(x) => x.enum_values(_include_deprecated),
@@ -698,6 +762,7 @@ impl ___Type for __Type {
             Self::Connection(x) => x.input_fields(),
             Self::Edge(x) => x.input_fields(),
             Self::Node(x) => x.input_fields(),
+            Self::NodeInterface(x) => x.input_fields(),
             Self::InsertInput(x) => x.input_fields(),
             Self::InsertResponse(x) => x.input_fields(),
             Self::UpdateInput(x) => x.input_fields(),
@@ -903,6 +968,11 @@ pub struct NodeType {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NodeInterfaceType {
+    pub schema: Rc<__Schema>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PageInfoType;
 
 impl ___Type for QueryType {
@@ -920,6 +990,26 @@ impl ___Type for QueryType {
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
         let mut f = vec![];
+
+        let single_entrypoint = __Field {
+            name_: "node".to_string(),
+            type_: __Type::NodeInterface(NodeInterfaceType {
+                schema: self.schema.clone(),
+            }),
+            args: vec![__InputValue {
+                name_: "nodeId".to_string(),
+                type_: __Type::NonNull(NonNullType {
+                    type_: Box::new(__Type::Scalar(Scalar::ID)),
+                }),
+                description: Some("The record's `ID`".to_string()),
+                default_value: None,
+                sql_type: None,
+            }],
+            description: Some("Retrieve a record by its `ID`".to_string()),
+            deprecation_reason: None,
+            sql_type: None,
+        };
+        f.push(single_entrypoint);
 
         for schema in self.schema.context.schemas.iter() {
             for table in schema
@@ -1003,49 +1093,7 @@ impl ___Type for QueryType {
                 };
 
                 f.push(collection_entrypoint);
-
-                if table.primary_key().is_some() {
-                    let single_entrypoint = __Field {
-                        name_: lowercase_first_letter(&table.graphql_base_type_name()),
-                        type_: __Type::Node(NodeType {
-                            table: table.clone(),
-                            fkey: None,
-                            reverse_reference: None,
-                            schema: self.schema.clone(),
-                        }),
-                        args: vec![__InputValue {
-                            name_: "nodeId".to_string(),
-                            type_: __Type::NonNull(NonNullType {
-                                type_: Box::new(__Type::Scalar(Scalar::ID)),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        }],
-                        description: Some(format!(
-                            "Retrieve a single `{}` by its ID",
-                            table.graphql_base_type_name()
-                        )),
-                        deprecation_reason: None,
-                        sql_type: None,
-                    };
-                    f.push(single_entrypoint);
-                }
             }
-        }
-
-        // If there are no fields other than the default __type and __schema
-        // inject heartbeat so introspection does not fail (all objects must have > 0 fields &
-        // Query is a required type)
-        if f.is_empty() {
-            f.push(__Field {
-                name_: "heartbeat".to_string(),
-                type_: __Type::Scalar(Scalar::Datetime),
-                args: vec![],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            });
         }
 
         // Default fields always preset
@@ -1335,6 +1383,57 @@ impl ___Type for ConnectionType {
     }
 }
 
+impl ___Type for NodeInterfaceType {
+    fn kind(&self) -> __TypeKind {
+        __TypeKind::INTERFACE
+    }
+
+    fn name(&self) -> Option<String> {
+        Some("Node".to_string())
+    }
+
+    fn possible_types(&self) -> Option<Vec<__Type>> {
+        let node_interface_name = self.name();
+        Some(
+            self.schema
+                .types()
+                .iter()
+                .filter_map(|t| match &t {
+                    __Type::NodeInterface(_) => {
+                        // The node's interfaces() includes this "Node" interface
+                        // at time of writing this is superfluous becasue all nodes
+                        // have a primary key and therefore implement "Node"
+                        let type_interface_names: Vec<Option<String>> = t
+                            .interfaces()
+                            .unwrap_or(vec![])
+                            .iter()
+                            .map(|interf| interf.name())
+                            .collect();
+                        match type_interface_names.contains(&node_interface_name) {
+                            true => Some(t.to_owned()),
+                            false => None,
+                        }
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<__Type>>(),
+        )
+    }
+
+    fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
+        Some(vec![__Field {
+            name_: "nodeId".to_string(),
+            type_: __Type::NonNull(NonNullType {
+                type_: Box::new(__Type::Scalar(Scalar::ID)),
+            }),
+            args: vec![],
+            description: Some("Retrieves a record by `ID`".to_string()),
+            deprecation_reason: None,
+            sql_type: None,
+        }])
+    }
+}
+
 impl ___Type for EdgeType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::OBJECT
@@ -1486,6 +1585,21 @@ impl ___Type for NodeType {
 
     fn name(&self) -> Option<String> {
         Some(self.table.graphql_base_type_name())
+    }
+
+    fn interfaces(&self) -> Option<Vec<__Type>> {
+        let mut interfaces = vec![];
+
+        if self.table.primary_key().is_some() {
+            interfaces.push(__Type::NodeInterface(NodeInterfaceType {
+                schema: self.schema.clone(),
+            }))
+        }
+
+        match interfaces.is_empty() {
+            false => Some(interfaces),
+            true => None,
+        }
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -3126,6 +3240,9 @@ impl __Schema {
                 entity: FilterableType::Scalar(Scalar::UUID),
             }),
             __Type::Query(QueryType {
+                schema: schema_rc.clone(),
+            }),
+            __Type::NodeInterface(NodeInterfaceType {
                 schema: schema_rc.clone(),
             }),
         ];
