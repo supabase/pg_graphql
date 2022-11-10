@@ -685,34 +685,8 @@ impl ___Type for __Type {
     // possibleTypes: [__Type!]
     fn possible_types(&self) -> Option<Vec<__Type>> {
         match self {
-            Self::Scalar(x) => x.possible_types(),
-            Self::Enum(x) => x.possible_types(),
-            Self::Query(x) => x.possible_types(),
-            Self::Mutation(x) => x.possible_types(),
-            Self::Connection(x) => x.possible_types(),
-            Self::Edge(x) => x.possible_types(),
-            Self::Node(x) => x.possible_types(),
             Self::NodeInterface(x) => x.possible_types(),
-            Self::InsertInput(x) => x.possible_types(),
-            Self::InsertResponse(x) => x.possible_types(),
-            Self::UpdateInput(x) => x.possible_types(),
-            Self::UpdateResponse(x) => x.possible_types(),
-            Self::DeleteResponse(x) => x.possible_types(),
-            Self::FilterType(x) => x.possible_types(),
-            Self::FilterEntity(x) => x.possible_types(),
-            Self::OrderBy(x) => x.possible_types(),
-            Self::OrderByEntity(x) => x.possible_types(),
-            Self::PageInfo(x) => x.possible_types(),
-            Self::__TypeKind(x) => x.possible_types(),
-            Self::__Schema(x) => x.possible_types(),
-            Self::__Type(x) => x.possible_types(),
-            Self::__Field(x) => x.possible_types(),
-            Self::__InputValue(x) => x.possible_types(),
-            Self::__EnumValue(x) => x.possible_types(),
-            Self::__DirectiveLocation(x) => x.possible_types(),
-            Self::__Directive(x) => x.possible_types(),
-            Self::List(x) => x.possible_types(),
-            Self::NonNull(x) => x.possible_types(),
+            _ => None,
         }
     }
 
@@ -1393,31 +1367,20 @@ impl ___Type for NodeInterfaceType {
     }
 
     fn possible_types(&self) -> Option<Vec<__Type>> {
-        let node_interface_name = self.name();
-        Some(
-            self.schema
-                .types()
-                .iter()
-                .filter_map(|t| match &t {
-                    __Type::NodeInterface(_) => {
-                        // The node's interfaces() includes this "Node" interface
-                        // at time of writing this is superfluous becasue all nodes
-                        // have a primary key and therefore implement "Node"
-                        let type_interface_names: Vec<Option<String>> = t
-                            .interfaces()
-                            .unwrap_or(vec![])
-                            .iter()
-                            .map(|interf| interf.name())
-                            .collect();
-                        match type_interface_names.contains(&node_interface_name) {
-                            true => Some(t.to_owned()),
-                            false => None,
-                        }
-                    }
-                    _ => None,
-                })
-                .collect::<Vec<__Type>>(),
-        )
+        let node_interface_name = self.name().unwrap();
+
+        let mut possible_types = vec![];
+
+        for type_ in self.schema.types() {
+            let type_interfaces: Vec<__Type> = type_.interfaces().unwrap_or(vec![]);
+            let interface_names: Vec<String> =
+                type_interfaces.iter().map(|x| x.name().unwrap()).collect();
+            if interface_names.contains(&node_interface_name) {
+                possible_types.push(type_)
+            }
+        }
+
+        Some(possible_types)
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {

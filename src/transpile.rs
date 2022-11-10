@@ -1000,7 +1000,12 @@ impl NodeBuilder {
             return Err("Expected nodeId argument missing".to_string());
         }
         let node_id = self.node_id.as_ref().unwrap();
-        let node_id_clause = node_id.to_sql(&quoted_block_name, param_context)?;
+
+        let node_id_clause = node_id.to_sql(
+            &quoted_block_name,
+            &self.table.primary_key_columns(),
+            param_context,
+        )?;
 
         Ok(format!(
             "
@@ -1031,10 +1036,11 @@ impl NodeIdInstance {
     pub fn to_sql(
         &self,
         block_name: &str,
+        pkey_columns: &Vec<&Column>,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         let mut col_val_pairs: Vec<String> = vec![];
-        for (col, val) in self.columns.iter().zip(self.values.iter()) {
+        for (col, val) in pkey_columns.iter().zip(self.values.iter()) {
             let column_name = &col.name;
             let val_clause = param_context.clause_for(val, &col.type_name);
             col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))

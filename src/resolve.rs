@@ -192,7 +192,7 @@ where
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
-                        __Type::Node(_) => {
+                        __Type::NodeInterface(_) => {
                             let node_builder = to_node_builder(
                                 field_def,
                                 selection,
