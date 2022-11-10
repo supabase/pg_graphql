@@ -22,10 +22,10 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
-                     "name": "account"          +
+                     "name": "accountCollection"+
                  },                             +
                  {                              +
-                     "name": "accountCollection"+
+                     "name": "node"             +
                  }                              +
              ]                                  +
          }                                      +
@@ -60,18 +60,18 @@ begin;
     revoke select on public.account from api;
     set role api;
     select jsonb_pretty(graphql.resolve(' {__type(name: "Query") { fields { name } } } ') );
-              jsonb_pretty               
------------------------------------------
- {                                      +
-     "data": {                          +
-         "__type": {                    +
-             "fields": [                +
-                 {                      +
-                     "name": "heartbeat"+
-                 }                      +
-             ]                          +
-         }                              +
-     }                                  +
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "__type": {               +
+             "fields": [           +
+                 {                 +
+                     "name": "node"+
+                 }                 +
+             ]                     +
+         }                         +
+     }                             +
  }
 (1 row)
 
@@ -97,10 +97,10 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
-                     "name": "account"          +
+                     "name": "accountCollection"+
                  },                             +
                  {                              +
-                     "name": "accountCollection"+
+                     "name": "node"             +
                  }                              +
              ]                                  +
          }                                      +
@@ -139,10 +139,10 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
-                     "name": "account"          +
+                     "name": "accountCollection"+
                  },                             +
                  {                              +
-                     "name": "accountCollection"+
+                     "name": "node"             +
                  }                              +
              ]                                  +
          }                                      +
@@ -181,10 +181,10 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
-                     "name": "account"          +
+                     "name": "accountCollection"+
                  },                             +
                  {                              +
-                     "name": "accountCollection"+
+                     "name": "node"             +
                  }                              +
              ]                                  +
          }                                      +

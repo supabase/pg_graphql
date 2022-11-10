@@ -31,14 +31,16 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
-                id
+              node(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
                 nodeId
-                blogCollection {
-                  edges {
-                    node {
-                      id
-                      name
+                ... on Account {
+                  id
+                  blogCollection {
+                    edges {
+                      node {
+                        id
+                        name
+                      }
                     }
                   }
                 }
@@ -50,7 +52,7 @@ begin;
 -----------------------------------------------------------
  {                                                        +
      "data": {                                            +
-         "account": {                                     +
+         "node": {                                        +
              "id": 2,                                     +
              "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd",+
              "blogCollection": {                          +
@@ -84,8 +86,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDk5XQ==") {
-                id
+              account: node(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDk5XQ==") {
                 nodeId
               }
             }
@@ -103,24 +104,26 @@ begin;
     -- Valid nodeId variable
     select graphql.resolve($$
     query GetOne($nid: ID!) {
-      account(
+      node(
         nodeId: $nid
       ) {
-        id
         nodeId
+        ... on Account {
+          id
+        }
       }
     }
     $$, '{"nid": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}');
-                                    resolve                                     
---------------------------------------------------------------------------------
- {"data": {"account": {"id": 2, "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}}}
+                                   resolve                                   
+-----------------------------------------------------------------------------
+ {"data": {"node": {"id": 2, "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}}}
 (1 row)
 
+    -- Empty nodeId
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "") {
-                id
+              node(nodeId: "") {
                 nodeId
               }
             }
@@ -138,11 +141,11 @@ begin;
  }
 (1 row)
 
+    -- null nodeId
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: null) {
-                id
+              node(nodeId: null) {
                 nodeId
               }
             }
@@ -170,22 +173,35 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "WyJwdWJsaWMiLCAiYmxvZyIsIDFd") {
-                id
+              node(nodeId: "WyJwdWJsaWMiLCAiYmxvZyIsIDFd") {
                 nodeId
+                ... on Account {
+                  isVerified
+                }
+                ... on Blog {
+                  id
+                  name
+                  owner {
+                    id
+                  }
+                }
               }
             }
         $$)
     );
-                                             jsonb_pretty                                              
--------------------------------------------------------------------------------------------------------
- {                                                                                                    +
-     "data": null,                                                                                    +
-     "errors": [                                                                                      +
-         {                                                                                            +
-             "message": "Invalid value passed to nodeId argument. ID refers to a different collection"+
-         }                                                                                            +
-     ]                                                                                                +
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "node": {                                   +
+             "id": 1,                                +
+             "name": "Blog 1",                       +
+             "owner": {                              +
+                 "id": 1                             +
+             },                                      +
+             "nodeId": "WyJwdWJsaWMiLCAiYmxvZyIsIDFd"+
+         }                                           +
+     }                                               +
  }
 (1 row)
 
@@ -204,9 +220,11 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              foo(nodeId: "WyJwdWJsaWMiLCAiRm9vIiwgMV0=") {
-                id
+              node(nodeId: "WyJwdWJsaWMiLCAiRm9vIiwgMV0=") {
                 nodeId
+                ... on Foo {
+                  id
+                }
               }
             }
         $$)
@@ -215,7 +233,7 @@ begin;
 ------------------------------------------------------
  {                                                   +
      "data": {                                       +
-         "foo": {                                    +
+         "node": {                                   +
              "id": 1,                                +
              "nodeId": "WyJwdWJsaWMiLCAiRm9vIiwgMV0="+
          }                                           +

@@ -31,14 +31,16 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
-                id
+              node(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd") {
                 nodeId
-                blogCollection {
-                  edges {
-                    node {
-                      id
-                      name
+                ... on Account {
+                  id
+                  blogCollection {
+                    edges {
+                      node {
+                        id
+                        name
+                      }
                     }
                   }
                 }
@@ -53,8 +55,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDk5XQ==") {
-                id
+              account: node(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDk5XQ==") {
                 nodeId
               }
             }
@@ -64,32 +65,34 @@ begin;
     -- Valid nodeId variable
     select graphql.resolve($$
     query GetOne($nid: ID!) {
-      account(
+      node(
         nodeId: $nid
       ) {
-        id
         nodeId
+        ... on Account {
+          id
+        }
       }
     }
     $$, '{"nid": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd"}');
 
 
+    -- Empty nodeId
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "") {
-                id
+              node(nodeId: "") {
                 nodeId
               }
             }
         $$)
     );
 
+    -- null nodeId
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: null) {
-                id
+              node(nodeId: null) {
                 nodeId
               }
             }
@@ -101,9 +104,18 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              account(nodeId: "WyJwdWJsaWMiLCAiYmxvZyIsIDFd") {
-                id
+              node(nodeId: "WyJwdWJsaWMiLCAiYmxvZyIsIDFd") {
                 nodeId
+                ... on Account {
+                  isVerified
+                }
+                ... on Blog {
+                  id
+                  name
+                  owner {
+                    id
+                  }
+                }
               }
             }
         $$)
@@ -120,9 +132,11 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              foo(nodeId: "WyJwdWJsaWMiLCAiRm9vIiwgMV0=") {
-                id
+              node(nodeId: "WyJwdWJsaWMiLCAiRm9vIiwgMV0=") {
                 nodeId
+                ... on Foo {
+                  id
+                }
               }
             }
         $$)
