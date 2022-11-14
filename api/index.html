@@ -1313,13 +1313,15 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">Boolean expression comparing fields on type &quot;Int&quot;</span>
 <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="kt">input</span> <span class="k">IntFilter</span> <span class="p">{</span>
   eq: <span class="k">Int</span>
   gt: <span class="k">Int</span>
   gte: <span class="k">Int</span>
+  in: <span class="p">[</span><span class="k">Int</span><span class="p">!]</span>
   lt: <span class="k">Int</span>
   lte: <span class="k">Int</span>
   neq: <span class="k">Int</span>
@@ -1337,13 +1339,15 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">Boolean expression comparing fields on type &quot;String&quot;</span>
 <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="kt">input</span> <span class="k">StringFilter</span> <span class="p">{</span>
   eq: <span class="k">String</span>
   gt: <span class="k">String</span>
   gte: <span class="k">String</span>
+  in: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
   lt: <span class="k">String</span>
   lte: <span class="k">String</span>
   neq: <span class="k">String</span>
@@ -1376,6 +1380,10 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <tr>
 <td>gte</td>
 <td>Greater Than Or Equal To</td>
+</tr>
+<tr>
+<td>in</td>
+<td>Contained by Value List</td>
 </tr>
 <tr>
 <td>lt</td>
