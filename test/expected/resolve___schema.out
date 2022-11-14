@@ -250,6 +250,10 @@ begin;
                      "name": "Mutation"              +
                  },                                  +
                  {                                   +
+                     "kind": "INTERFACE",            +
+                     "name": "Node"                  +
+                 },                                  +
+                 {                                   +
                      "kind": "ENUM",                 +
                      "name": "OrderByDirection"      +
                  },                                  +

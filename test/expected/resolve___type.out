@@ -26,6 +26,9 @@ begin;
              "kind": "OBJECT",                  +
              "fields": [                        +
                  {                              +
+                     "name": "nodeId"           +
+                 },                             +
+                 {                              +
                      "name": "id"               +
                  },                             +
                  {                              +

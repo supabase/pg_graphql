@@ -126,8 +126,8 @@ impl Table {
         };
 
         Ok(format!("(
-            ( {quoted_col} {op} {val_clause}  or ( {quoted_col} is not null and {val_clause} is null and {nulls_first}))
-            or (( {quoted_col} = {val_clause} or ( {quoted_col} is null and {val_clause} is null)) and  {recurse_clause})
+            ( {block_name}.{quoted_col} {op} {val_clause}  or ( {block_name}.{quoted_col} is not null and {val_clause} is null and {nulls_first}))
+            or (( {block_name}.{quoted_col} = {val_clause} or ( {block_name}.{quoted_col} is null and {val_clause} is null)) and  {recurse_clause})
 
         )"))
     }
@@ -986,6 +986,67 @@ impl NodeBuilder {
             )"
         ))
     }
+
+    pub fn to_query_entrypoint_sql(
+        &self,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let quoted_block_name = rand_block_name();
+        let quoted_schema = quote_ident(&self.table.schema);
+        let quoted_table = quote_ident(&self.table.name);
+        let object_clause = self.to_sql(&quoted_block_name, param_context)?;
+
+        if self.node_id.is_none() {
+            return Err("Expected nodeId argument missing".to_string());
+        }
+        let node_id = self.node_id.as_ref().unwrap();
+
+        let node_id_clause = node_id.to_sql(
+            &quoted_block_name,
+            &self.table.primary_key_columns(),
+            param_context,
+        )?;
+
+        Ok(format!(
+            "
+            (
+                select
+                    {object_clause}
+                from
+                    {quoted_schema}.{quoted_table} as {quoted_block_name}
+                where
+                    {node_id_clause}
+            )
+            "
+        ))
+    }
+
+    pub fn execute(&self) -> Result<serde_json::Value, String> {
+        let mut param_context = ParamContext { params: vec![] };
+        let sql = &self.to_query_entrypoint_sql(&mut param_context)?;
+
+        let res: pgx::JsonB = Spi::get_one_with_args(sql, param_context.params)
+            .unwrap_or(pgx::JsonB(serde_json::Value::Null));
+
+        Ok(res.0)
+    }
+}
+
+impl NodeIdInstance {
+    pub fn to_sql(
+        &self,
+        block_name: &str,
+        pkey_columns: &Vec<&Column>,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let mut col_val_pairs: Vec<String> = vec![];
+        for (col, val) in pkey_columns.iter().zip(self.values.iter()) {
+            let column_name = &col.name;
+            let val_clause = param_context.clause_for(val, &col.type_name);
+            col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))
+        }
+        Ok(col_val_pairs.join(" and "))
+    }
 }
 
 impl NodeSelection {
@@ -1026,6 +1087,11 @@ impl NodeSelection {
                 quote_literal(&builder.alias),
                 builder.to_sql(block_name)?
             ),
+            Self::NodeId(builder) => format!(
+                "{}, {}",
+                quote_literal(&builder.alias),
+                builder.to_sql(block_name)?
+            ),
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
@@ -1039,6 +1105,22 @@ impl ColumnBuilder {
             "{}.{}",
             &block_name,
             quote_ident(&self.column.name)
+        ))
+    }
+}
+
+impl NodeIdBuilder {
+    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+        let column_selects: Vec<String> = self
+            .columns
+            .iter()
+            .map(|col| format!("{}.{}", block_name, col.name))
+            .collect();
+        let column_clause = column_selects.join(", ");
+        let schema_name = quote_literal(&self.schema_name);
+        let table_name = quote_literal(&self.table_name);
+        Ok(format!(
+            "encode(convert_to(jsonb_build_array({schema_name}, {table_name}, {column_clause})::text, 'utf-8'), 'base64')"
         ))
     }
 }
@@ -1113,20 +1195,14 @@ impl Serialize for __TypeBuilder {
                 __TypeField::InputFields(input_field_builders) => {
                     map.serialize_entry(&selection.alias, input_field_builders)?;
                 }
-                __TypeField::Interfaces(_) => {
-                    let x: Option<Vec<u32>> = match self.type_ {
-                        __Type::Scalar(_) => None,
-                        _ => Some(vec![]),
-                    };
-                    map.serialize_entry(&selection.alias, &x)?;
+                __TypeField::Interfaces(interfaces) => {
+                    map.serialize_entry(&selection.alias, &interfaces)?;
                 }
                 __TypeField::EnumValues(enum_values) => {
                     map.serialize_entry(&selection.alias, enum_values)?;
                 }
-                __TypeField::PossibleTypes(_) => {
-                    // XXX: stubbed
-                    let x: Option<u32> = None;
-                    map.serialize_entry(&selection.alias, &x)?;
+                __TypeField::PossibleTypes(possible_types) => {
+                    map.serialize_entry(&selection.alias, &possible_types)?;
                 }
                 __TypeField::OfType(t_builder) => {
                     map.serialize_entry(&selection.alias, t_builder)?;

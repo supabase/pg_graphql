@@ -126,6 +126,7 @@ e'@graphql({"name": "emailAddress"})';
 results in:
 ```graphql
 type Account {
+  nodeId: ID!
   id: Int!
   emailAddress: String! # previously "email"
 }
@@ -159,6 +160,7 @@ e'@graphql({"name": "displayName"})';
 results in:
 ```graphql
 type Account {
+  nodeId: ID!
   id: Int!
   firstName: String!
   lastName: String!
@@ -190,6 +192,7 @@ is E'@graphql({"foreign_name": "author", "local_name": "posts"})';
 results in:
 ```graphql
 type Post {
+  nodeId: ID!
   id: Int!
   accountId: Int!
   title: String!

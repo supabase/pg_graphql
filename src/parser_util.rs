@@ -78,8 +78,22 @@ where
                 Err(err) => return Err(err),
             };
         }
-        Selection::InlineFragment(_) => {
-            return Err("inline fragments not yet handled".to_string());
+        Selection::InlineFragment(inline_fragment) => {
+            let inline_fragment_applies: bool = match &inline_fragment.type_condition {
+                Some(infrag) => match infrag {
+                    TypeCondition::On(infrag_name) => infrag_name.as_ref() == type_name,
+                },
+                None => true,
+            };
+
+            if inline_fragment_applies {
+                let infrag_selections = normalize_selection_set(
+                    &inline_fragment.selection_set,
+                    fragment_definitions,
+                    type_name,
+                )?;
+                selections.extend(infrag_selections.iter());
+            }
         }
     }
 

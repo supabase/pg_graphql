@@ -33,6 +33,9 @@ begin;
          "__type": {                    +
              "fields": [                +
                  {                      +
+                     "name": "nodeId"   +
+                 },                     +
+                 {                      +
                      "name": "id"       +
                  },                     +
                  {                      +

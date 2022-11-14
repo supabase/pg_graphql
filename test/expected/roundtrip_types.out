@@ -354,6 +354,17 @@ begin;
              "kind": "OBJECT",                  +
              "fields": [                        +
                  {                              +
+                     "name": "nodeId",          +
+                     "type": {                  +
+                         "kind": "NON_NULL",    +
+                         "name": null,          +
+                         "ofType": {            +
+                             "kind": "SCALAR",  +
+                             "name": "ID"       +
+                         }                      +
+                     }                          +
+                 },                             +
+                 {                              +
                      "name": "id",              +
                      "type": {                  +
                          "kind": "NON_NULL",    +

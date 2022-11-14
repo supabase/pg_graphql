@@ -40,6 +40,36 @@ pub enum InsertSelection {
     Typename { alias: String, typename: String },
 }
 
+fn read_argument<'a, T>(
+    arg_name: &str,
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<serde_json::Value, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let input_value: __InputValue = match field.get_arg(arg_name) {
+        Some(arg) => arg,
+        None => return Err(format!("Internal error 1: {}", arg_name)),
+    };
+
+    let user_input: Option<&graphql_parser::query::Value<'a, T>> = query_field
+        .arguments
+        .iter()
+        .filter(|(input_arg_name, _)| input_arg_name.as_ref() == arg_name)
+        .map(|(_, v)| v)
+        .next();
+
+    let user_json_unvalidated = match user_input {
+        None => serde_json::Value::Null,
+        Some(val) => to_json(val, variables)?,
+    };
+
+    let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
+    Ok(user_json_validated)
+}
+
 fn read_argument_at_most<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
@@ -56,6 +86,67 @@ where
     match at_most {
         Some(val) => Ok(val),
         None => Ok(1), // default
+    }
+}
+
+fn read_argument_node_id<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<NodeIdInstance, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
+    extern crate base64;
+    use std::str;
+
+    let node_id_base64_encoded_json_string: serde_json::Value =
+        read_argument("nodeId", field, query_field, variables)?;
+    let node_id_base64_encoded_string: String = match node_id_base64_encoded_json_string {
+        serde_json::Value::String(s) => s,
+        _ => return Err("Invalid value passed to nodeId argument, Error 1".to_string()),
+    };
+
+    let node_id_json_string_utf8: Vec<u8> = base64::decode(node_id_base64_encoded_string)
+        .map_err(|_| "Invalid value passed to nodeId argument. Error 2".to_string())?;
+
+    let node_id_json_string: &str = str::from_utf8(&node_id_json_string_utf8)
+        .map_err(|_| "Invalid value passed to nodeId argument. Error 3".to_string())?;
+
+    let node_id_json: serde_json::Value = serde_json::from_str(node_id_json_string)
+        .map_err(|_| "Invalid value passed to nodeId argument. Error 4".to_string())?;
+
+    match node_id_json {
+        serde_json::Value::Array(x_arr) => {
+            if x_arr.len() < 3 {
+                return Err("Invalid value passed to nodeId argument. Error 5".to_string());
+            }
+
+            let mut x_arr_iter = x_arr.into_iter();
+            let schema_name = match x_arr_iter.next().unwrap() {
+                serde_json::Value::String(s) => s,
+                _ => {
+                    return Err("Invalid value passed to nodeId argument. Error 6".to_string());
+                }
+            };
+
+            let table_name = match x_arr_iter.next().unwrap() {
+                serde_json::Value::String(s) => s,
+                _ => {
+                    return Err("Invalid value passed to nodeId argument. Error 7".to_string());
+                }
+            };
+            let values: Vec<serde_json::Value> = x_arr_iter.collect();
+
+            // Popuate a NodeIdInstance
+            Ok(NodeIdInstance {
+                schema_name,
+                table_name,
+                values,
+            })
+        }
+        _ => Err("Invalid value passed to nodeId argument. Error 10".to_string()),
     }
 }
 
@@ -673,6 +764,9 @@ pub enum EdgeSelection {
 
 #[derive(Clone, Debug)]
 pub struct NodeBuilder {
+    // args
+    pub node_id: Option<NodeIdInstance>,
+
     pub alias: String,
 
     // metadata
@@ -689,7 +783,24 @@ pub enum NodeSelection {
     Node(NodeBuilder),
     Column(ColumnBuilder),
     Function(FunctionBuilder),
+    NodeId(NodeIdBuilder),
     Typename { alias: String, typename: String },
+}
+
+#[derive(Clone, Debug)]
+pub struct NodeIdInstance {
+    pub schema_name: String,
+    pub table_name: String,
+    // Vec matching length of "columns" representing primary key values
+    pub values: Vec<serde_json::Value>,
+}
+
+#[derive(Clone, Debug)]
+pub struct NodeIdBuilder {
+    pub alias: String,
+    pub schema_name: String,
+    pub table_name: String,
+    pub columns: Vec<Column>,
 }
 
 #[derive(Clone, Debug)]
@@ -722,36 +833,6 @@ where
         true => Err(format!("Input contains extra keys {:?}", extra_keys)),
         false => Ok(()),
     }
-}
-
-fn read_argument<'a, T>(
-    arg_name: &str,
-    field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
-    variables: &serde_json::Value,
-) -> Result<serde_json::Value, String>
-where
-    T: Text<'a> + Eq + AsRef<str>,
-{
-    let input_value: __InputValue = match field.get_arg(arg_name) {
-        Some(arg) => arg,
-        None => return Err(format!("Internal error 1: {}", arg_name)),
-    };
-
-    let user_input: Option<&graphql_parser::query::Value<'a, T>> = query_field
-        .arguments
-        .iter()
-        .filter(|(input_arg_name, _)| input_arg_name.as_ref() == arg_name)
-        .map(|(_, v)| v)
-        .next();
-
-    let user_json_unvalidated = match user_input {
-        None => serde_json::Value::Null,
-        Some(val) => to_json(val, variables)?,
-    };
-
-    let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
-    Ok(user_json_validated)
 }
 
 /// Reads the "filter" argument
@@ -1164,7 +1245,8 @@ where
     }
 }
 
-fn to_node_builder<'a, T>(
+/*
+pub fn to_node_interface_builder<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
@@ -1174,6 +1256,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
+
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in node builder")?;
@@ -1181,88 +1264,192 @@ where
     let alias = alias_or_name(query_field);
 
     match type_ {
-        __Type::Node(xtype) => {
-            let mut builder_fields = vec![];
+        __Type::NodeInterface(node_interface) => {
+            restrict_allowed_arguments(vec!["nodeId"], query_field)?;
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-            )?;
+            // The nodeId argument is only valid on the entrypoint field for Node
+            // relationships to "node" e.g. within edges, do not have any arguments
+            let node_id: NodeIdInstance =
+                read_argument_node_id(table, field, query_field, variables)?;
 
-            for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
-                    None => {
-                        return Err(format!(
-                            "Unknown field '{}' on type '{}'",
-                            selection_field.name.as_ref(),
-                            &type_name
-                        ))
-                    }
-                    Some(f) => {
-                        match f.type_().unmodified_type() {
-                            __Type::Connection(_) => {
-                                let con_builder = to_connection_builder(
-                                    f,
-                                    selection_field,
-                                    fragment_definitions,
-                                    variables,
-                                    // TODO need ref to fkey here
-                                );
-                                builder_fields.push(NodeSelection::Connection(con_builder?));
-                            }
-                            __Type::Node(_) => {
-                                let node_builder = to_node_builder(
-                                    f,
-                                    selection_field,
-                                    fragment_definitions,
-                                    variables,
-                                    // TODO need ref to fkey here
-                                );
-                                builder_fields.push(NodeSelection::Node(node_builder?));
-                            }
-                            _ => {
-                                let node_selection = match &f.sql_type {
-                                    Some(node_sql_type) => match node_sql_type {
-                                        NodeSQLType::Column(col) => {
-                                            NodeSelection::Column(ColumnBuilder {
-                                                alias: alias_or_name(selection_field),
-                                                column: col.clone(),
-                                            })
-                                        }
-                                        NodeSQLType::Function(func) => {
-                                            NodeSelection::Function(FunctionBuilder {
-                                                alias: alias_or_name(selection_field),
-                                                function: func.clone(),
-                                            })
-                                        }
-                                    },
-                                    _ => match f.name().as_ref() {
-                                        "__typename" => NodeSelection::Typename {
-                                            alias: alias_or_name(selection_field),
-                                            typename: xtype.name().unwrap(),
-                                        },
-                                        _ => {
-                                            return Err("unexpected field type on node".to_string())
-                                        }
-                                    },
-                                };
-                                builder_fields.push(node_selection);
-                            }
+            let xtype: NodeType = node_interface
+                .possible_types()
+                .iter()
+                .filter_map(|x| match x {
+                    __Type::Node(node_type) => {
+                        match (node_type.table.schema_name, node_type.table.table_name)
+                            == (node_id.schema_name, node_id.table_name)
+                        {
+                            true => Some(node_type),
+                            false => None,
                         }
                     }
-                }
-            }
-            Ok(NodeBuilder {
-                alias,
-                table: xtype.table.clone(),
-                fkey: xtype.fkey.clone(),
-                reverse_reference: xtype.reverse_reference,
-                selections: builder_fields,
-            })
+                    _ => None,
+                })
+                .next()
+                .unwrap_or(Err(
+                    "Collection referenced by nodeId did not match any known collection",
+                ))?;
         }
         _ => Err("can not build query for non-node type".to_string()),
     }
+}
+*/
+
+pub fn to_node_builder<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
+) -> Result<NodeBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let type_ = field.type_().unmodified_type();
+
+    let alias = alias_or_name(query_field);
+
+    let xtype: NodeType = match type_ {
+        __Type::Node(xtype) => {
+            restrict_allowed_arguments(vec![], query_field)?;
+            xtype
+        }
+        __Type::NodeInterface(node_interface) => {
+            restrict_allowed_arguments(vec!["nodeId"], query_field)?;
+            // The nodeId argument is only valid on the entrypoint field for Node
+            // relationships to "node" e.g. within edges, do not have any arguments
+            let node_id: NodeIdInstance = read_argument_node_id(field, query_field, variables)?;
+
+            let possible_types: Vec<__Type> = node_interface.possible_types().unwrap_or(vec![]);
+            let xtype = possible_types
+                .iter()
+                .filter_map(|x| match x {
+                    __Type::Node(node_type) => Some(node_type),
+                    _ => None,
+                })
+                .find_map(|node_type| {
+                    match (&node_type.table.schema, &node_type.table.name)
+                        == (&node_id.schema_name, &node_id.table_name)
+                    {
+                        true => Some(node_type),
+                        false => None,
+                    }
+                });
+
+            match xtype {
+                Some(x) => x.clone(),
+                None => {
+                    return Err(
+                        "Collection referenced by nodeId did not match any known collection"
+                            .to_string(),
+                    );
+                }
+            }
+        }
+        _ => {
+            return Err("can not build query for non-node type".to_string());
+        }
+    };
+
+    let type_name = xtype
+        .name()
+        .ok_or("Encountered type without name in node builder")?;
+    let field_map = xtype.field_map();
+
+    let mut builder_fields = vec![];
+    restrict_allowed_arguments(vec!["nodeId"], query_field)?;
+
+    // The nodeId argument is only valid on the entrypoint field for Node
+    // relationships to "node" e.g. within edges, do not have any arguments
+    let node_id: Option<NodeIdInstance> = match field.get_arg("nodeId").is_some() {
+        true => Some(read_argument_node_id(field, query_field, variables)?),
+        false => None,
+    };
+
+    let selection_fields =
+        normalize_selection_set(&query_field.selection_set, fragment_definitions, &type_name)?;
+
+    for selection_field in selection_fields {
+        match field_map.get(selection_field.name.as_ref()) {
+            None => {
+                return Err(format!(
+                    "Unknown field '{}' on type '{}'",
+                    selection_field.name.as_ref(),
+                    &type_name
+                ))
+            }
+            Some(f) => {
+                match f.type_().unmodified_type() {
+                    __Type::Connection(_) => {
+                        let con_builder = to_connection_builder(
+                            f,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                            // TODO need ref to fkey here
+                        );
+                        builder_fields.push(NodeSelection::Connection(con_builder?));
+                    }
+                    __Type::Node(_) => {
+                        let node_builder = to_node_builder(
+                            f,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                            // TODO need ref to fkey here
+                        );
+                        builder_fields.push(NodeSelection::Node(node_builder?));
+                    }
+                    _ => {
+                        let alias = alias_or_name(selection_field);
+                        let node_selection = match &f.sql_type {
+                            Some(node_sql_type) => match node_sql_type {
+                                NodeSQLType::Column(col) => NodeSelection::Column(ColumnBuilder {
+                                    alias,
+                                    column: col.clone(),
+                                }),
+                                NodeSQLType::Function(func) => {
+                                    NodeSelection::Function(FunctionBuilder {
+                                        alias,
+                                        function: func.clone(),
+                                    })
+                                }
+                                NodeSQLType::NodeId(pkey_columns) => {
+                                    NodeSelection::NodeId(NodeIdBuilder {
+                                        alias,
+                                        columns: pkey_columns.clone(),
+                                        table_name: xtype.table.name.clone(),
+                                        schema_name: xtype.table.schema.clone(),
+                                    })
+                                }
+                            },
+                            _ => match f.name().as_ref() {
+                                "__typename" => NodeSelection::Typename {
+                                    alias: alias_or_name(selection_field),
+                                    typename: xtype.name().unwrap(),
+                                },
+                                _ => {
+                                    return Err(format!(
+                                        "unexpected field type on node {}",
+                                        f.name()
+                                    ))
+                                }
+                            },
+                        };
+                        builder_fields.push(node_selection);
+                    }
+                }
+            }
+        }
+    }
+    Ok(NodeBuilder {
+        node_id,
+        alias,
+        table: xtype.table.clone(),
+        fkey: xtype.fkey.clone(),
+        reverse_reference: xtype.reverse_reference,
+        selections: builder_fields,
+    })
 }
 
 // Introspection
@@ -1346,9 +1533,9 @@ pub enum __TypeField {
     Fields(Option<Vec<__FieldBuilder>>),
     InputFields(Option<Vec<__InputValueBuilder>>),
 
-    Interfaces(Vec<__Type>),
+    Interfaces(Vec<__TypeBuilder>),
     EnumValues(Option<Vec<__EnumValueBuilder>>),
-    PossibleTypes(Option<Vec<__Type>>),
+    PossibleTypes(Option<Vec<__TypeBuilder>>),
     OfType(Option<__TypeBuilder>),
     Typename {
         alias: String,
@@ -1703,7 +1890,27 @@ impl __Schema {
                                 }
                             }
                         }
-                        "interfaces" => __TypeField::Interfaces(vec![]),
+                        "interfaces" => {
+                            match type_.interfaces() {
+                                Some(interfaces) => {
+                                    let mut interface_builders = vec![];
+                                    for interface in &interfaces {
+                                        let interface_builder = self.to_type_builder_from_type(
+                                            &interface,
+                                            selection_field,
+                                            fragment_definitions,
+                                            variables,
+                                        )?;
+                                        interface_builders.push(interface_builder);
+                                    }
+                                    __TypeField::Interfaces(interface_builders)
+                                }
+                                None => {
+                                    // Declares as nullable, but breaks graphiql
+                                    __TypeField::Interfaces(vec![])
+                                }
+                            }
+                        }
                         "enumValues" => {
                             let enum_value_builders = match type_.enum_values(true) {
                                 Some(enum_values) => {
@@ -1722,7 +1929,23 @@ impl __Schema {
                             };
                             __TypeField::EnumValues(enum_value_builders)
                         }
-                        "possibleTypes" => __TypeField::PossibleTypes(None),
+                        "possibleTypes" => match type_.possible_types() {
+                            Some(types) => {
+                                let mut type_builders = vec![];
+                                for ty in &types {
+                                    let type_builder = self.to_type_builder_from_type(
+                                        &ty,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                    )?;
+
+                                    type_builders.push(type_builder);
+                                }
+                                __TypeField::PossibleTypes(Some(type_builders))
+                            }
+                            None => __TypeField::PossibleTypes(None),
+                        },
                         "ofType" => {
                             let unwrapped_type_builder = match type_ {
                                 __Type::List(list_type) => {
