@@ -185,6 +185,9 @@ Connections wrap a result set with some additional metadata.
     # A record from the `blog` table
     type Blog {
 
+      # globally unique identifier
+      nodeId: ID!
+
       # Value from `id` column
       id: Int!
 
@@ -1105,6 +1108,9 @@ A foreign key on table A referencing table B defines a one-to-many relationship 
     ```sql
     type Blog {
 
+      # globally unique identifier
+      nodeId: ID!
+
       id: Int!
       name: String!
       description: String
@@ -1218,6 +1224,7 @@ A foreign key on table A referencing table B defines a many-to-one relationship 
 
     ```sql
     type BlogPost {
+      nodeId: ID!
       id: Int!
       blogId: Int!
       title: String!
@@ -1307,6 +1314,7 @@ A one-to-one relationship is defined by a foreign key on table A referencing tab
 
     ```sql
     type Employee {
+      nodeId: ID!
       id: Int!
       name: String!
       emailAddressId: Int
@@ -1314,6 +1322,7 @@ A one-to-one relationship is defined by a foreign key on table A referencing tab
     }
 
     type EmailAddress {
+      nodeId: ID!
       id: Int!
       address: String!
       employee: Employee
