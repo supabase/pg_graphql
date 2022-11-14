@@ -99,7 +99,7 @@ begin;
         $$)
     );
 
-    -- Valid nodeId for incorrect table
+    -- Valid nodeId for one of many specified inline fragments
     select graphql.encode('["public", "blog", 1]'::jsonb);
     select jsonb_pretty(
         graphql.resolve($$
