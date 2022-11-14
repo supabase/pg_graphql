@@ -428,6 +428,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       eq: Int
       gt: Int
       gte: Int
+      in: [Int!]
       lt: Int
       lte: Int
       neq: Int
@@ -444,6 +445,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       eq: String
       gt: String
       gte: String
+      in: [String!]
       lt: String
       lte: String
       neq: String
@@ -460,6 +462,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 | neq         | Not Equal To             |
 | gt          | Greater Than             |
 | gte         | Greater Than Or Equal To |
+| in          | Contained by Value List  |
 | lt          | Less Than                |
 | lte         | Less Than Or Equal To    |
 
