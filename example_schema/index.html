@@ -1007,11 +1007,56 @@
 <span class="normal">544</span>
 <span class="normal">545</span>
 <span class="normal">546</span>
-<span class="normal">547</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="p">{</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Globally Unique Record Identifier&quot;&quot;&quot;</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">Int</span><span class="p">!</span>
   email: <span class="k">String</span><span class="p">!</span>
-  createdAt: <span class="k">DateTime</span><span class="p">!</span>
-  updatedAt: <span class="k">DateTime</span><span class="p">!</span>
+  createdAt: <span class="k">Datetime</span><span class="p">!</span>
   <span class="k">blogCollection</span><span class="p">(</span>
     <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
     first: <span class="k">Int</span>
@@ -1036,9 +1081,6 @@
 <span class="kt">type</span> <span class="k">AccountConnection</span> <span class="p">{</span>
   edges: <span class="p">[</span><span class="k">AccountEdge</span><span class="p">!]!</span>
   pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
-
-  <span class="c c-Multi">&quot;&quot;&quot;The total number of records matching the `filter` criteria&quot;&quot;&quot;</span>
-  totalCount: <span class="k">Int</span><span class="p">!</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">AccountDeleteResponse</span> <span class="p">{</span>
@@ -1051,20 +1093,18 @@
 
 <span class="kt">type</span> <span class="k">AccountEdge</span> <span class="p">{</span>
   cursor: <span class="k">String</span><span class="p">!</span>
-  node: <span class="k">Account</span>
+  node: <span class="k">Account</span><span class="p">!</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">AccountFilter</span> <span class="p">{</span>
   id: <span class="k">IntFilter</span>
   email: <span class="k">StringFilter</span>
-  createdAt: <span class="k">DateTimeFilter</span>
-  updatedAt: <span class="k">DateTimeFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">AccountInsertInput</span> <span class="p">{</span>
   email: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span>
-  updatedAt: <span class="k">DateTime</span>
+  createdAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">AccountInsertResponse</span> <span class="p">{</span>
@@ -1079,13 +1119,11 @@
   id: <span class="k">OrderByDirection</span>
   email: <span class="k">OrderByDirection</span>
   createdAt: <span class="k">OrderByDirection</span>
-  updatedAt: <span class="k">OrderByDirection</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">AccountUpdateInput</span> <span class="p">{</span>
   email: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span>
-  updatedAt: <span class="k">DateTime</span>
+  createdAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">AccountUpdateResponse</span> <span class="p">{</span>
@@ -1105,18 +1143,21 @@
   eq: <span class="k">BigInt</span>
   gt: <span class="k">BigInt</span>
   gte: <span class="k">BigInt</span>
+  in: <span class="p">[</span><span class="k">BigInt</span><span class="p">!]</span>
   lt: <span class="k">BigInt</span>
   lte: <span class="k">BigInt</span>
   neq: <span class="k">BigInt</span>
 <span class="p">}</span>
 
-<span class="kt">type</span> <span class="k">Blog</span> <span class="p">{</span>
+<span class="kt">type</span> <span class="k">Blog</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Globally Unique Record Identifier&quot;&quot;&quot;</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">Int</span><span class="p">!</span>
   ownerId: <span class="k">Int</span><span class="p">!</span>
   name: <span class="k">String</span><span class="p">!</span>
   description: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span><span class="p">!</span>
-  updatedAt: <span class="k">DateTime</span><span class="p">!</span>
+  createdAt: <span class="k">Datetime</span><span class="p">!</span>
+  owner: <span class="k">Account</span>
   <span class="k">blogPostCollection</span><span class="p">(</span>
     <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
     first: <span class="k">Int</span>
@@ -1136,7 +1177,6 @@
     <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
     orderBy: <span class="p">[</span><span class="k">BlogPostOrderBy</span><span class="p">!]</span>
   <span class="p">):</span> <span class="k">BlogPostConnection</span>
-  owner: <span class="k">Account</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
@@ -1154,7 +1194,7 @@
 
 <span class="kt">type</span> <span class="k">BlogEdge</span> <span class="p">{</span>
   cursor: <span class="k">String</span><span class="p">!</span>
-  node: <span class="k">Blog</span>
+  node: <span class="k">Blog</span><span class="p">!</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
@@ -1162,16 +1202,14 @@
   ownerId: <span class="k">IntFilter</span>
   name: <span class="k">StringFilter</span>
   description: <span class="k">StringFilter</span>
-  createdAt: <span class="k">DateTimeFilter</span>
-  updatedAt: <span class="k">DateTimeFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogInsertInput</span> <span class="p">{</span>
   ownerId: <span class="k">Int</span>
   name: <span class="k">String</span>
   description: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span>
-  updatedAt: <span class="k">DateTime</span>
+  createdAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">BlogInsertResponse</span> <span class="p">{</span>
@@ -1188,17 +1226,17 @@
   name: <span class="k">OrderByDirection</span>
   description: <span class="k">OrderByDirection</span>
   createdAt: <span class="k">OrderByDirection</span>
-  updatedAt: <span class="k">OrderByDirection</span>
 <span class="p">}</span>
 
-<span class="kt">type</span> <span class="k">BlogPost</span> <span class="p">{</span>
+<span class="kt">type</span> <span class="k">BlogPost</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Globally Unique Record Identifier&quot;&quot;&quot;</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">UUID</span><span class="p">!</span>
   blogId: <span class="k">Int</span><span class="p">!</span>
   title: <span class="k">String</span><span class="p">!</span>
   body: <span class="k">String</span>
-  status: <span class="k">String</span><span class="p">!</span>
-  createdAt: <span class="k">DateTime</span><span class="p">!</span>
-  updatedAt: <span class="k">DateTime</span><span class="p">!</span>
+  status: <span class="k">BlogPostStatus</span><span class="p">!</span>
+  createdAt: <span class="k">Datetime</span><span class="p">!</span>
   blog: <span class="k">Blog</span>
 <span class="p">}</span>
 
@@ -1217,7 +1255,7 @@
 
 <span class="kt">type</span> <span class="k">BlogPostEdge</span> <span class="p">{</span>
   cursor: <span class="k">String</span><span class="p">!</span>
-  node: <span class="k">BlogPost</span>
+  node: <span class="k">BlogPost</span><span class="p">!</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogPostFilter</span> <span class="p">{</span>
@@ -1225,9 +1263,8 @@
   blogId: <span class="k">IntFilter</span>
   title: <span class="k">StringFilter</span>
   body: <span class="k">StringFilter</span>
-  status: <span class="k">StringFilter</span>
-  createdAt: <span class="k">DateTimeFilter</span>
-  updatedAt: <span class="k">DateTimeFilter</span>
+  status: <span class="k">BlogPostStatusFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogPostInsertInput</span> <span class="p">{</span>
@@ -1235,9 +1272,8 @@
   blogId: <span class="k">Int</span>
   title: <span class="k">String</span>
   body: <span class="k">String</span>
-  status: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span>
-  updatedAt: <span class="k">DateTime</span>
+  status: <span class="k">BlogPostStatus</span>
+  createdAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">BlogPostInsertResponse</span> <span class="p">{</span>
@@ -1255,7 +1291,6 @@
   body: <span class="k">OrderByDirection</span>
   status: <span class="k">OrderByDirection</span>
   createdAt: <span class="k">OrderByDirection</span>
-  updatedAt: <span class="k">OrderByDirection</span>
 <span class="p">}</span>
 
 <span class="k">enum</span> <span class="k">BlogPostStatus</span> <span class="p">{</span>
@@ -1263,14 +1298,22 @@
   <span class="k">RELEASED</span>
 <span class="p">}</span>
 
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;BlogPostStatus&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">BlogPostStatusFilter</span> <span class="p">{</span>
+  eq: <span class="k">BlogPostStatus</span>
+  in: <span class="p">[</span><span class="k">BlogPostStatus</span><span class="p">!]</span>
+  neq: <span class="k">BlogPostStatus</span>
+<span class="p">}</span>
+
 <span class="kt">input</span> <span class="k">BlogPostUpdateInput</span> <span class="p">{</span>
   id: <span class="k">UUID</span>
   blogId: <span class="k">Int</span>
   title: <span class="k">String</span>
   body: <span class="k">String</span>
-  status: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span>
-  updatedAt: <span class="k">DateTime</span>
+  status: <span class="k">BlogPostStatus</span>
+  createdAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">BlogPostUpdateResponse</span> <span class="p">{</span>
@@ -1285,8 +1328,7 @@
   ownerId: <span class="k">Int</span>
   name: <span class="k">String</span>
   description: <span class="k">String</span>
-  createdAt: <span class="k">DateTime</span>
-  updatedAt: <span class="k">DateTime</span>
+  createdAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">BlogUpdateResponse</span> <span class="p">{</span>
@@ -1304,6 +1346,7 @@
   eq: <span class="k">Boolean</span>
   gt: <span class="k">Boolean</span>
   gte: <span class="k">Boolean</span>
+  in: <span class="p">[</span><span class="k">Boolean</span><span class="p">!]</span>
   lt: <span class="k">Boolean</span>
   lte: <span class="k">Boolean</span>
   neq: <span class="k">Boolean</span>
@@ -1311,18 +1354,34 @@
 
 <span class="k">scalar</span> <span class="k">Cursor</span>
 
-<span class="k">scalar</span> <span class="k">DateTime</span>
+<span class="k">scalar</span> <span class="k">Date</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>
-<span class="c c-Multi">Boolean expression comparing fields on type &quot;DateTime&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;Date&quot;</span>
 <span class="c c-Multi">&quot;&quot;&quot;</span>
-<span class="kt">input</span> <span class="k">DateTimeFilter</span> <span class="p">{</span>
-  eq: <span class="k">DateTime</span>
-  gt: <span class="k">DateTime</span>
-  gte: <span class="k">DateTime</span>
-  lt: <span class="k">DateTime</span>
-  lte: <span class="k">DateTime</span>
-  neq: <span class="k">DateTime</span>
+<span class="kt">input</span> <span class="k">DateFilter</span> <span class="p">{</span>
+  eq: <span class="k">Date</span>
+  gt: <span class="k">Date</span>
+  gte: <span class="k">Date</span>
+  in: <span class="p">[</span><span class="k">Date</span><span class="p">!]</span>
+  lt: <span class="k">Date</span>
+  lte: <span class="k">Date</span>
+  neq: <span class="k">Date</span>
+<span class="p">}</span>
+
+<span class="k">scalar</span> <span class="k">Datetime</span>
+
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;Datetime&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">DatetimeFilter</span> <span class="p">{</span>
+  eq: <span class="k">Datetime</span>
+  gt: <span class="k">Datetime</span>
+  gte: <span class="k">Datetime</span>
+  in: <span class="p">[</span><span class="k">Datetime</span><span class="p">!]</span>
+  lt: <span class="k">Datetime</span>
+  lte: <span class="k">Datetime</span>
+  neq: <span class="k">Datetime</span>
 <span class="p">}</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1332,6 +1391,7 @@
   eq: <span class="k">Float</span>
   gt: <span class="k">Float</span>
   gte: <span class="k">Float</span>
+  in: <span class="p">[</span><span class="k">Float</span><span class="p">!]</span>
   lt: <span class="k">Float</span>
   lte: <span class="k">Float</span>
   neq: <span class="k">Float</span>
@@ -1344,6 +1404,7 @@
   eq: <span class="k">Int</span>
   gt: <span class="k">Int</span>
   gte: <span class="k">Int</span>
+  in: <span class="p">[</span><span class="k">Int</span><span class="p">!]</span>
   lt: <span class="k">Int</span>
   lte: <span class="k">Int</span>
   neq: <span class="k">Int</span>
@@ -1351,19 +1412,11 @@
 
 <span class="k">scalar</span> <span class="k">JSON</span>
 
-<span class="c c-Multi">&quot;&quot;&quot;</span>
-<span class="c c-Multi">Boolean expression comparing fields on type &quot;JSON&quot;</span>
-<span class="c c-Multi">&quot;&quot;&quot;</span>
-<span class="kt">input</span> <span class="k">JSONFilter</span> <span class="p">{</span>
-  eq: <span class="k">JSON</span>
-  neq: <span class="k">JSON</span>
-<span class="p">}</span>
-
 <span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
 <span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
-  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the `Account` collection&quot;&quot;&quot;</span>
   <span class="k">deleteFromAccountCollection</span><span class="p">(</span>
-    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the criteria&quot;&quot;&quot;</span>
     filter: <span class="k">AccountFilter</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1372,9 +1425,9 @@
     atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
   <span class="p">):</span> <span class="k">AccountDeleteResponse</span><span class="p">!</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the `Blog` collection&quot;&quot;&quot;</span>
   <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
-    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the criteria&quot;&quot;&quot;</span>
     filter: <span class="k">BlogFilter</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1383,9 +1436,9 @@
     atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
   <span class="p">):</span> <span class="k">BlogDeleteResponse</span><span class="p">!</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the `BlogPost` collection&quot;&quot;&quot;</span>
   <span class="k">deleteFromBlogPostCollection</span><span class="p">(</span>
-    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the criteria&quot;&quot;&quot;</span>
     filter: <span class="k">BlogPostFilter</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1394,23 +1447,23 @@
     atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
   <span class="p">):</span> <span class="k">BlogPostDeleteResponse</span><span class="p">!</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `AccountInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `Account` records to the collection&quot;&quot;&quot;</span>
   <span class="k">insertIntoAccountCollection</span><span class="p">(</span>objects: <span class="p">[</span><span class="k">AccountInsertInput</span><span class="p">!]!):</span> <span class="k">AccountInsertResponse</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `Blog` records to the collection&quot;&quot;&quot;</span>
   <span class="k">insertIntoBlogCollection</span><span class="p">(</span>objects: <span class="p">[</span><span class="k">BlogInsertInput</span><span class="p">!]!):</span> <span class="k">BlogInsertResponse</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogPostInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogPost` records to the collection&quot;&quot;&quot;</span>
   <span class="k">insertIntoBlogPostCollection</span><span class="p">(</span>objects: <span class="p">[</span><span class="k">BlogPostInsertInput</span><span class="p">!]!):</span> <span class="k">BlogPostInsertResponse</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the `Account` collection&quot;&quot;&quot;</span>
   <span class="k">updateAccountCollection</span><span class="p">(</span>
     <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
 <span class="c c-Multi">    &quot;&quot;&quot;</span>
     set: <span class="k">AccountUpdateInput</span><span class="p">!</span>
 
-    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the criteria&quot;&quot;&quot;</span>
     filter: <span class="k">AccountFilter</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1419,14 +1472,14 @@
     atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
   <span class="p">):</span> <span class="k">AccountUpdateResponse</span><span class="p">!</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the `Blog` collection&quot;&quot;&quot;</span>
   <span class="k">updateBlogCollection</span><span class="p">(</span>
     <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
 <span class="c c-Multi">    &quot;&quot;&quot;</span>
     set: <span class="k">BlogUpdateInput</span><span class="p">!</span>
 
-    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the criteria&quot;&quot;&quot;</span>
     filter: <span class="k">BlogFilter</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1435,14 +1488,14 @@
     atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
   <span class="p">):</span> <span class="k">BlogUpdateResponse</span><span class="p">!</span>
 
-  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the `BlogPost` collection&quot;&quot;&quot;</span>
   <span class="k">updateBlogPostCollection</span><span class="p">(</span>
     <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
 <span class="c c-Multi">    &quot;&quot;&quot;</span>
     set: <span class="k">BlogPostUpdateInput</span><span class="p">!</span>
 
-    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the criteria&quot;&quot;&quot;</span>
     filter: <span class="k">BlogPostFilter</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1452,11 +1505,23 @@
   <span class="p">):</span> <span class="k">BlogPostUpdateResponse</span><span class="p">!</span>
 <span class="p">}</span>
 
+<span class="kt">interface</span> <span class="k">Node</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Retrieves a record by `ID`&quot;&quot;&quot;</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
+<span class="p">}</span>
+
 <span class="c c-Multi">&quot;&quot;&quot;Defines a per-field sorting order&quot;&quot;&quot;</span>
 <span class="k">enum</span> <span class="k">OrderByDirection</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Ascending order, nulls first&quot;&quot;&quot;</span>
   <span class="k">AscNullsFirst</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Ascending order, nulls last&quot;&quot;&quot;</span>
   <span class="k">AscNullsLast</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Descending order, nulls first&quot;&quot;&quot;</span>
   <span class="k">DescNullsFirst</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Descending order, nulls last&quot;&quot;&quot;</span>
   <span class="k">DescNullsLast</span>
 <span class="p">}</span>
 
@@ -1531,6 +1596,12 @@
     <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
     orderBy: <span class="p">[</span><span class="k">BlogPostOrderBy</span><span class="p">!]</span>
   <span class="p">):</span> <span class="k">BlogPostConnection</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Retrieve a record by its `ID`&quot;&quot;&quot;</span>
+  <span class="k">node</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;The record&#39;s `ID`&quot;&quot;&quot;</span>
+    nodeId: <span class="k">ID</span><span class="p">!</span>
+  <span class="p">):</span> <span class="k">Node</span>
 <span class="p">}</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1540,9 +1611,25 @@
   eq: <span class="k">String</span>
   gt: <span class="k">String</span>
   gte: <span class="k">String</span>
+  in: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
   lt: <span class="k">String</span>
   lte: <span class="k">String</span>
   neq: <span class="k">String</span>
+<span class="p">}</span>
+
+<span class="k">scalar</span> <span class="k">Time</span>
+
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;Time&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">TimeFilter</span> <span class="p">{</span>
+  eq: <span class="k">Time</span>
+  gt: <span class="k">Time</span>
+  gte: <span class="k">Time</span>
+  in: <span class="p">[</span><span class="k">Time</span><span class="p">!]</span>
+  lt: <span class="k">Time</span>
+  lte: <span class="k">Time</span>
+  neq: <span class="k">Time</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">UUID</span>
@@ -1552,6 +1639,7 @@
 <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="kt">input</span> <span class="k">UUIDFilter</span> <span class="p">{</span>
   eq: <span class="k">UUID</span>
+  in: <span class="p">[</span><span class="k">UUID</span><span class="p">!]</span>
   neq: <span class="k">UUID</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
