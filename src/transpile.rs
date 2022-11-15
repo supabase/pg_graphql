@@ -1,7 +1,12 @@
 use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table};
+use pgx::pg_sys::submodules::panic::CaughtError;
+use pgx::prelude::*;
+use pgx::SpiClient;
 use pgx::*;
+use pgx_contrib_spiext::*;
+use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
 
@@ -238,15 +243,31 @@ impl InsertBuilder {
         ))
     }
 
-    pub fn compile(&self) -> Result<String, String> {
+    pub fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql(&mut param_context)?;
-        let prep_statement_name = rand_block_name();
-        let psql = format!("prepare {prep_statement_name} as {sql}");
-        Spi::execute(|client| {
-            client.select(&psql, None, None);
-        });
-        Ok(prep_statement_name)
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
     }
 }
 
@@ -409,15 +430,31 @@ impl UpdateBuilder {
         ))
     }
 
-    pub fn compile(&self) -> Result<String, String> {
+    pub fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql(&mut param_context)?;
-        let prep_statement_name = rand_block_name();
-        let psql = format!("prepare {prep_statement_name} as {sql}");
-        Spi::execute(|client| {
-            client.select(&psql, None, None);
-        });
-        Ok(prep_statement_name)
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
     }
 }
 
@@ -482,15 +519,31 @@ impl DeleteBuilder {
         ))
     }
 
-    pub fn compile(&self) -> Result<String, String> {
+    pub fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql(&mut param_context)?;
-        let prep_statement_name = rand_block_name();
-        let psql = format!("prepare {prep_statement_name} as {sql}");
-        Spi::execute(|client| {
-            client.select(&psql, None, None);
-        });
-        Ok(prep_statement_name)
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
     }
 }
 

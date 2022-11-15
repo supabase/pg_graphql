@@ -328,146 +328,118 @@ where
         })
         .collect();
 
-    match selections[..] {
-        [] => GraphQLResponse {
-            data: Omit::Omitted,
-            errors: Omit::Present(vec![ErrorMessage {
-                message: "Selection set must not be empty".to_string(),
-            }]),
+    use pgx::prelude::*;
+    use pgx_contrib_spiext::subtxn::*;
+
+    let spi_result: Result<serde_json::Value, String> = Spi::connect(|c| {
+        //Create subtransaction
+        let sub_txn_result: Result<serde_json::Value, String> = c.sub_transaction(|mut xact| {
+            let res_data: serde_json::Value = match selections[..] {
+                [] => Err("Selection set must not be empty".to_string())?,
+                _ => {
+                    let mut res_data = json!({});
+                    // Key name to prepared statement name
+
+                    for selection in selections.iter() {
+                        let maybe_field_def = map.get(selection.name.as_ref());
+
+                        xact = match maybe_field_def {
+                            None => Err(format!(
+                                "Unknown field {:?} on type {}",
+                                selection.name,
+                                mutation_type.name().unwrap()
+                            ))?,
+                            Some(field_def) => match field_def.type_.unmodified_type() {
+                                __Type::InsertResponse(_) => {
+                                    let builder = match to_insert_builder(
+                                        field_def,
+                                        selection,
+                                        &fragment_definitions,
+                                        variables,
+                                    ) {
+                                        Ok(builder) => builder,
+                                        Err(err) => {
+                                            xact.rollback();
+                                            return Err(err);
+                                        }
+                                    };
+
+                                    let (d, next_xact) = builder.execute(xact)?;
+
+                                    res_data[alias_or_name(selection)] = d;
+                                    next_xact
+                                }
+                                __Type::UpdateResponse(_) => {
+                                    let builder = match to_update_builder(
+                                        field_def,
+                                        selection,
+                                        &fragment_definitions,
+                                        variables,
+                                    ) {
+                                        Ok(builder) => builder,
+                                        Err(err) => {
+                                            xact.rollback();
+                                            return Err(err);
+                                        }
+                                    };
+
+                                    let (d, next_xact) = builder.execute(xact)?;
+                                    res_data[alias_or_name(selection)] = d;
+                                    next_xact
+                                }
+                                __Type::DeleteResponse(_) => {
+                                    let builder = match to_delete_builder(
+                                        field_def,
+                                        selection,
+                                        &fragment_definitions,
+                                        variables,
+                                    ) {
+                                        Ok(builder) => builder,
+                                        Err(err) => {
+                                            xact.rollback();
+                                            return Err(err);
+                                        }
+                                    };
+
+                                    let (d, next_xact) = builder.execute(xact)?;
+                                    res_data[alias_or_name(selection)] = d;
+                                    next_xact
+                                }
+                                _ => match field_def.name().as_ref() {
+                                    "__typename" => {
+                                        res_data[alias_or_name(selection)] =
+                                            serde_json::json!(mutation_type.name());
+                                        xact
+                                    }
+                                    _ => Err(format!(
+                                        "unexpected type found on mutation object: {}",
+                                        field_def.type_.name().unwrap_or_default()
+                                    ))?,
+                                },
+                            },
+                        }
+                    }
+                    res_data
+                }
+            };
+            Ok(res_data)
+        });
+
+        // Spi::connect requires a Result<Option<_>, SpiError>
+        // and unwraps the outer result type, panic-ing if it finds an SpiError.
+        // to return our own result, we must wrap it in an Result<Option<T>>
+        Ok(Some(sub_txn_result))
+    })
+    .unwrap();
+
+    match spi_result {
+        Ok(data) => GraphQLResponse {
+            data: Omit::Present(data),
+            errors: Omit::Omitted,
         },
-        _ => {
-            let mut res_data = json!({});
-            let mut res_errors: Vec<String> = vec![];
-            // Key name to prepared statement name
-            let mut pairs: Vec<(String, String)> = vec![];
-
-            for selection in selections.iter() {
-                let maybe_field_def = map.get(selection.name.as_ref());
-
-                match maybe_field_def {
-                    None => {
-                        res_errors.push(format!(
-                            "Unknown field {:?} on type {}",
-                            selection.name,
-                            mutation_type.name().unwrap()
-                        ));
-                    }
-                    Some(field_def) => match field_def.type_.unmodified_type() {
-                        __Type::InsertResponse(_) => {
-                            let insert_builder = to_insert_builder(
-                                field_def,
-                                selection,
-                                &fragment_definitions,
-                                variables,
-                            );
-                            match insert_builder {
-                                Ok(builder) => match builder.compile() {
-                                    Ok(d) => pairs.push((alias_or_name(selection), d)),
-                                    Err(msg) => res_errors.push(msg),
-                                },
-                                Err(msg) => res_errors.push(msg),
-                            }
-                        }
-                        __Type::UpdateResponse(_) => {
-                            let update_builder = to_update_builder(
-                                field_def,
-                                selection,
-                                &fragment_definitions,
-                                variables,
-                            );
-                            match update_builder {
-                                Ok(builder) => match builder.compile() {
-                                    Ok(d) => pairs.push((alias_or_name(selection), d)),
-                                    Err(msg) => res_errors.push(msg),
-                                },
-                                Err(msg) => res_errors.push(msg),
-                            }
-                        }
-                        __Type::DeleteResponse(_) => {
-                            let delete_builder = to_delete_builder(
-                                field_def,
-                                selection,
-                                &fragment_definitions,
-                                variables,
-                            );
-                            match delete_builder {
-                                Ok(builder) => match builder.compile() {
-                                    Ok(d) => pairs.push((alias_or_name(selection), d)),
-                                    Err(msg) => res_errors.push(msg),
-                                },
-                                Err(msg) => res_errors.push(msg),
-                            }
-                        }
-                        _ => match field_def.name().as_ref() {
-                            "__typename" => {
-                                res_data[alias_or_name(selection)] =
-                                    serde_json::json!(mutation_type.name());
-                            }
-                            _ => res_errors.push(format!(
-                                "unexpected type found on mutation object: {}",
-                                field_def.type_.name().unwrap_or_default()
-                            )),
-                        },
-                    },
-                }
-            }
-
-            let mut errors: Vec<ErrorMessage> = res_errors
-                .iter()
-                .map(|x| ErrorMessage {
-                    message: x.to_string(),
-                })
-                .collect();
-
-            // If no errors occured during building statements
-            if errors.is_empty() {
-                let prepared_statement_names: Vec<String> = pairs
-                    .iter()
-                    .map(|(_, prep_statement_name)| prep_statement_name.clone())
-                    .collect();
-
-                use pgx::*;
-
-                let executor_result: pgx::JsonB = Spi::get_one_with_args(
-                    "select graphql.sequential_executor($1)",
-                    vec![(PgOid::from(1009), prepared_statement_names.into_datum())],
-                )
-                .unwrap();
-
-                let executor_result: SequentialExecutorResult =
-                    serde_json::from_value(executor_result.0).unwrap();
-
-                for executor_error in executor_result.errors {
-                    errors.push(ErrorMessage {
-                        message: executor_error.to_string(),
-                    });
-                }
-                // Assign statement output to json output on correct keyname
-                if let Some(json_arr) = executor_result.statement_results {
-                    for (statement_result, (key_name, _)) in json_arr.iter().zip(pairs) {
-                        res_data[key_name] = statement_result.clone();
-                    }
-                }
-            }
-
-            GraphQLResponse {
-                data: match errors.len() {
-                    0 => Omit::Present(res_data),
-                    _ => Omit::Present(serde_json::Value::Null),
-                },
-                errors: match errors.len() {
-                    0 => Omit::Omitted,
-                    _ => Omit::Present(errors),
-                },
-            }
-        }
+        Err(err) => GraphQLResponse {
+            data: Omit::Present(serde_json::Value::Null),
+            errors: Omit::Present(vec![ErrorMessage { message: err }]),
+        },
     }
-}
-
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-struct SequentialExecutorResult {
-    statement_results: Option<Vec<serde_json::Value>>,
-    errors: Vec<String>,
 }
