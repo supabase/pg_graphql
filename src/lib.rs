@@ -17,7 +17,7 @@ pg_module_magic!();
 
 extension_sql_file!("../sql/schema_version.sql");
 extension_sql_file!("../sql/directives.sql");
-extension_sql_file!("../sql/sequential_executor.sql");
+extension_sql_file!("../sql/raise_exception.sql");
 
 #[allow(non_snake_case, unused_variables)]
 #[pg_extern]
