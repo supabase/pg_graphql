@@ -1,7 +1,12 @@
 use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table};
+use pgx::pg_sys::submodules::panic::CaughtError;
+use pgx::prelude::*;
+use pgx::SpiClient;
 use pgx::*;
+use pgx_contrib_spiext::*;
+use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
 
@@ -238,15 +243,38 @@ impl InsertBuilder {
         ))
     }
 
-    pub fn compile(&self) -> Result<String, String> {
+    pub fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context)?;
-        let prep_statement_name = rand_block_name();
-        let psql = format!("prepare {prep_statement_name} as {sql}");
-        Spi::execute(|client| {
-            client.select(&psql, None, None);
-        });
-        Ok(prep_statement_name)
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
     }
 }
 
@@ -409,15 +437,38 @@ impl UpdateBuilder {
         ))
     }
 
-    pub fn compile(&self) -> Result<String, String> {
+    pub fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context)?;
-        let prep_statement_name = rand_block_name();
-        let psql = format!("prepare {prep_statement_name} as {sql}");
-        Spi::execute(|client| {
-            client.select(&psql, None, None);
-        });
-        Ok(prep_statement_name)
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
     }
 }
 
@@ -482,15 +533,38 @@ impl DeleteBuilder {
         ))
     }
 
-    pub fn compile(&self) -> Result<String, String> {
+    pub fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context)?;
-        let prep_statement_name = rand_block_name();
-        let psql = format!("prepare {prep_statement_name} as {sql}");
-        Spi::execute(|client| {
-            client.select(&psql, None, None);
-        });
-        Ok(prep_statement_name)
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
     }
 }
 
@@ -513,20 +587,30 @@ impl OrderByBuilder {
     }
 }
 
-pub fn json_to_literal(val: &serde_json::Value) -> String {
+pub fn json_to_text_datum(val: &serde_json::Value) -> Option<pg_sys::Datum> {
+    let null: Option<i32> = None;
     match val {
-        serde_json::Value::Null => "null".to_string(),
-        serde_json::Value::Bool(_) => quote_literal(&val.to_string()),
-        serde_json::Value::String(x) => quote_literal(&x.to_string()),
-        serde_json::Value::Number(x) => quote_literal(&x.to_string()),
+        serde_json::Value::Null => null.into_datum(),
+        serde_json::Value::Bool(_) => val.to_string().into_datum(),
+        serde_json::Value::String(x) => x.into_datum(),
+        serde_json::Value::Number(x) => x.to_string().into_datum(),
+        serde_json::Value::Array(xarr) => {
+            let inner_vals: Vec<Option<String>> = xarr
+                .iter()
+                .map(|x| match x {
+                    serde_json::Value::Null => None,
+                    serde_json::Value::Bool(x) => Some(x.to_string()),
+                    serde_json::Value::String(x) => Some(x.to_string()),
+                    serde_json::Value::Number(x) => Some(x.to_string()),
+                    serde_json::Value::Array(_) => panic!("Unexpected array in input value array"),
+                    serde_json::Value::Object(_) => {
+                        panic!("Unexpected object in input value array")
+                    }
+                })
+                .collect();
+            inner_vals.into_datum()
+        }
         // Should this ever happen? json input is escaped so it would be a string.
-        serde_json::Value::Array(xarr) => format!(
-            "array[{}]",
-            xarr.iter()
-                .map(json_to_literal)
-                .collect::<Vec<String>>()
-                .join(", ")
-        ),
         serde_json::Value::Object(_) => panic!("Unexpected object in input value"),
     }
 }
@@ -536,9 +620,17 @@ pub struct ParamContext {
 }
 
 impl ParamContext {
+    // Pushes a parameter into the context and returns a SQL clause to reference it
+    //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
     fn clause_for(&mut self, value: &serde_json::Value, type_name: &String) -> String {
-        let safe_literal = json_to_literal(value);
-        format!("({}::{})", safe_literal, type_name)
+        let type_oid = match type_name.ends_with("[]") {
+            true => PgOid::from(1009), // text[]
+            false => PgOid::from(25),  // text
+        };
+
+        let val_datum = json_to_text_datum(value);
+        self.params.push((type_oid, val_datum));
+        format!("(${}::{})", self.params.len(), type_name)
     }
 }
 
