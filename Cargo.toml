@@ -29,7 +29,7 @@ pgx-contrib-spiext = { git = "https://github.com/supabase/pgx-contrib-spiext", r
 
 
 [dev-dependencies]
-pgx-tests = "=0.6.0-alpha.0"
+pgx-tests = "=0.6.0-alpha.1"
 
 [profile.dev]
 panic = "unwind"
