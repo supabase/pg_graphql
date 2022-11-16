@@ -248,7 +248,14 @@ impl InsertBuilder {
         xact: SubTransaction<SpiClientWrapper>,
     ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context)?;
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
 
         let (res_q, next_xact) = xact
             .checked_update(sql, None, Some(param_context.params))
@@ -435,7 +442,14 @@ impl UpdateBuilder {
         xact: SubTransaction<SpiClientWrapper>,
     ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context)?;
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
 
         let (res_q, next_xact) = xact
             .checked_update(sql, None, Some(param_context.params))
@@ -524,7 +538,14 @@ impl DeleteBuilder {
         xact: SubTransaction<SpiClientWrapper>,
     ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context)?;
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
 
         let (res_q, next_xact) = xact
             .checked_update(sql, None, Some(param_context.params))
