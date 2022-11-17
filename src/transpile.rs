@@ -3,9 +3,7 @@ use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table};
 use pgx::pg_sys::submodules::panic::CaughtError;
 use pgx::prelude::*;
-use pgx::SpiClient;
 use pgx::*;
-use pgx_contrib_spiext::*;
 use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
@@ -70,7 +68,7 @@ impl Table {
 
         let clause = frags.join(", ");
 
-        format!("encode(convert_to(jsonb_build_array({clause})::text, 'utf-8'), 'base64')")
+        format!("translate(encode(convert_to(jsonb_build_array({clause})::text, 'utf-8'), 'base64'), E'\n', '')")
     }
 
     fn to_pagination_clause(
@@ -1212,7 +1210,7 @@ impl NodeIdBuilder {
         let schema_name = quote_literal(&self.schema_name);
         let table_name = quote_literal(&self.table_name);
         Ok(format!(
-            "encode(convert_to(jsonb_build_array({schema_name}, {table_name}, {column_clause})::text, 'utf-8'), 'base64')"
+            "translate(encode(convert_to(jsonb_build_array({schema_name}, {table_name}, {column_clause})::text, 'utf-8'), 'base64'), E'\n', '')"
         ))
     }
 }
