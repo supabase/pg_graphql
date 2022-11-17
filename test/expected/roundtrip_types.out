@@ -235,24 +235,24 @@ begin;
             }
         $$)
     );
-                                                                                                               jsonb_pretty                                                                                                                
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {                                                                                                                                                                                                                                        +
-     "data": {                                                                                                                                                                                                                            +
-         "mainTypeCollection": {                                                                                                                                                                                                          +
-             "edges": [                                                                                                                                                                                                                   +
-                 {                                                                                                                                                                                                                        +
-                     "node": {                                                                                                                                                                                                            +
-                         "id": 1                                                                                                                                                                                                          +
-                     }                                                                                                                                                                                                                    +
-                 }                                                                                                                                                                                                                        +
-             ],                                                                                                                                                                                                                           +
-             "pageInfo": {                                                                                                                                                                                                                +
-                 "endCursor": "WzEsIDEsICJiMiIsICJiMiIsICJiMiIsICJlNGY0N2VmNS1mYjI1LTRkMmEtODNiMi1kNWZhYjEx\nNGEyZTYiLCAiMjAwMC0wMS0wMSIsICIxNzoyMzowMCIsICIyMDAwLTAxLTAxVDE4OjAwOjAwLTA4\nOjAwIiwgIkdSRUVOIiwgMzAsIDIxLjUsIDAuMTAsIDFd", +
-                 "startCursor": "WzEsIDEsICJiMiIsICJiMiIsICJiMiIsICJlNGY0N2VmNS1mYjI1LTRkMmEtODNiMi1kNWZhYjEx\nNGEyZTYiLCAiMjAwMC0wMS0wMSIsICIxNzoyMzowMCIsICIyMDAwLTAxLTAxVDE4OjAwOjAwLTA4\nOjAwIiwgIkdSRUVOIiwgMzAsIDIxLjUsIDAuMTAsIDFd"+
-             }                                                                                                                                                                                                                            +
-         }                                                                                                                                                                                                                                +
-     }                                                                                                                                                                                                                                    +
+                                                                                                             jsonb_pretty                                                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {                                                                                                                                                                                                                                    +
+     "data": {                                                                                                                                                                                                                        +
+         "mainTypeCollection": {                                                                                                                                                                                                      +
+             "edges": [                                                                                                                                                                                                               +
+                 {                                                                                                                                                                                                                    +
+                     "node": {                                                                                                                                                                                                        +
+                         "id": 1                                                                                                                                                                                                      +
+                     }                                                                                                                                                                                                                +
+                 }                                                                                                                                                                                                                    +
+             ],                                                                                                                                                                                                                       +
+             "pageInfo": {                                                                                                                                                                                                            +
+                 "endCursor": "WzEsIDEsICJiMiIsICJiMiIsICJiMiIsICJlNGY0N2VmNS1mYjI1LTRkMmEtODNiMi1kNWZhYjExNGEyZTYiLCAiMjAwMC0wMS0wMSIsICIxNzoyMzowMCIsICIyMDAwLTAxLTAxVDE4OjAwOjAwLTA4OjAwIiwgIkdSRUVOIiwgMzAsIDIxLjUsIDAuMTAsIDFd", +
+                 "startCursor": "WzEsIDEsICJiMiIsICJiMiIsICJiMiIsICJlNGY0N2VmNS1mYjI1LTRkMmEtODNiMi1kNWZhYjExNGEyZTYiLCAiMjAwMC0wMS0wMSIsICIxNzoyMzowMCIsICIyMDAwLTAxLTAxVDE4OjAwOjAwLTA4OjAwIiwgIkdSRUVOIiwgMzAsIDIxLjUsIDAuMTAsIDFd"+
+             }                                                                                                                                                                                                                        +
+         }                                                                                                                                                                                                                            +
+     }                                                                                                                                                                                                                                +
  }
 (1 row)
 
