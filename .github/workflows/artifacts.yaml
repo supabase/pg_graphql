@@ -4,7 +4,7 @@ on: push
 
 jobs:
 
-  amd64_build_artifacts:
+  aarch64_build_artifacts:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -15,6 +15,11 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Build docker images
+      uses: uraimo/run-on-arch-action@v2
+      id: runarch
+      with:
+        arch: aarch64
+        distro: ubuntu20.04
       run: docker-compose -f .ci/docker-compose.yml build
 
     - name: Extract artifacts
