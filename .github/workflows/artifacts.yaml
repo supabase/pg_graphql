@@ -1,0 +1,38 @@
+name: pre-commit
+
+on: push
+
+jobs:
+
+  amd64_build_artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      arch: amd64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build docker images
+      run: docker-compose -f .ci/docker-compose.yml build
+
+    - name: Extract artifacts
+      run: |
+        mkdir artifacts
+        cd artifacts
+
+        id=$(docker create ci-test)
+        docker cp $id:/usr/share/postgresql/14/extension/pg_graphql.control - | tar x
+        docker cp $id:/usr/lib/postgresql/14/lib/pg_graphql.so - | tar x
+        # Name of SQL file with version tag e.g. pg_graphql--0.5.1
+        sql_file=$(docker run --rm -u root --entrypoint=ls ci-test /usr/share/postgresql/14/extension/ | grep 'pg_graphql' | grep 'sql')
+        docker cp $id:/usr/share/postgresql/14/extension/$sql_file - | tar x
+        docker rm -v $id
+
+        cd ..
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: pg-graphql-postgres-14-aarch64
+        path: artifacts
