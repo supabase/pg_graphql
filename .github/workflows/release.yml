@@ -1,0 +1,132 @@
+name: Release
+
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: true
+          prerelease: false
+
+  upload-x86_64:
+    name: upload extension x86_64
+    needs:
+      - release
+    strategy:
+      matrix:
+        postgres: [14, 15]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: build release artifacts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
+          sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
+
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
+            rustup --version && \
+            rustc --version && \
+            cargo --version
+
+          cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
+          cargo pgx init --pg${{ matrix.postgres }} download
+
+          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
+
+          mkdir archive
+          cp `find target/release -type f -name "pg_graphql*"` archive
+          tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz -C archive .
+
+      - name: Get upload url
+        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/olirice/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz
+          asset_name: pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz
+          asset_content_type: application/gzip
+
+  upload-aarch64:
+    name: upload extension aarch64
+    needs:
+      - release
+    strategy:
+      matrix:
+        postgres: [14, 15]
+    runs-on: ubuntu-20.04-8core
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: uraimo/run-on-arch-action@v2.0.5
+        name: build release artifacts
+        id: runcmd
+        with:
+          arch: aarch64
+          distro: ubuntu20.04
+
+          run: |
+            apt-get update
+            apt-get -y install --no-install-recommends wget gnupg ca-certificates
+            apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
+            apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
+
+            mkdir /rust-home
+            export HOME=/rust-home
+            export PATH=$PATH:$HOME/.cargo/env
+
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
+              rustup --version && \
+              rustc --version && \
+              cargo --version
+
+            source "$HOME/.cargo/env"
+
+            cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
+            cargo pgx init --pg${{ matrix.postgres }} download
+
+            cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
+
+            mkdir archive
+            cp `find target/release -type f -name "pg_graphql*"` archive
+            tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-aarch64-linux-gnu.tar.gz -C archive .
+
+      - name: Get upload url
+        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/olirice/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-aarch64-linux-gnu.tar.gz
+          asset_name: pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-aarch64-linux-gnu.tar.gz
+          asset_content_type: application/gzip
