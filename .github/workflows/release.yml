@@ -55,14 +55,14 @@ jobs:
           cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
           cargo pgx init --pg${{ matrix.postgres }} download
 
-          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
+          cargo build --release --no-default-features --features pg${{ matrix.postgres }}
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
           tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz -C archive .
 
       - name: Get upload url
-        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/olirice/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
+        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/supabase/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
@@ -102,14 +102,14 @@ jobs:
           cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
           cargo pgx init --pg${{ matrix.postgres }} download
 
-          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
+          cargo build --release --no-default-features --features pg${{ matrix.postgres }}
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
           tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-arm64-linux-gnu.tar.gz -C archive .
 
       - name: Get upload url
-        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/olirice/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
+        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/supabase/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
