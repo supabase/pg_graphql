@@ -56,7 +56,7 @@ jobs:
           sudo apt install -y postgresql-${{ matrix.postgres }} postgresql-server-dev-${{ matrix.postgres }} -y
 
           # Ensure installed pg_config is first on path
-          source /usr/lib/postgresql/${{ matrix.postgres }}/bin
+          export PATH=$PATH:/usr/lib/postgresql/${{ matrix.postgres }}/bin
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
             rustup --version && \
@@ -117,7 +117,7 @@ jobs:
           sudo apt install -y postgresql-${{ matrix.postgres }} postgresql-server-dev-${{ matrix.postgres }} -y
 
           # Ensure installed pg_config is first on path
-          source /usr/lib/postgresql/${{ matrix.postgres }}/bin
+          export PATH=$PATH:/usr/lib/postgresql/${{ matrix.postgres }}/bin
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
             rustup --version && \
