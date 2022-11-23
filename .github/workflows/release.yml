@@ -35,11 +35,13 @@ jobs:
       - release
     strategy:
       matrix:
+        extension_name: pg_graphql
+        repo: supabase/pg_graphql
+        pgx_version: 0.6.0-alpha.1
+        postgres: [14, 15]
         box:
           - { runner: ubuntu-20.04, arch: x86_64 }
           - { runner: arm-runner, arch: arm64 }
-        pgx_version: [ 0.6.0-alpha.1 ]
-        postgres: [14, 15]
     runs-on: ${{ matrix.box.runner }}
     timeout-minutes: 45
     steps:
@@ -78,11 +80,11 @@ jobs:
           cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
 
           mkdir archive
-          cp `find target/release -type f -name "pg_graphql*"` archive
-          tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz -C archive .
+          cp `find target/release -type f -name "${{ matrix.extension_name }}*"` archive
+          tar -czf ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz -C archive .
 
       - name: Get upload url
-        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/supabase/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
+        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/${{ matrix.repo }}/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
@@ -90,6 +92,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ./pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
-          asset_name: pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
+          asset_path: ./${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
+          asset_name: ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
           asset_content_type: application/gzip
