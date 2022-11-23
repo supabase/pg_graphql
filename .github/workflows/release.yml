@@ -26,7 +26,7 @@ jobs:
             Changes in this Release
             - First Change
             - Second Change
-          draft: true
+          draft: false
           prerelease: false
 
   upload-x86_64:
