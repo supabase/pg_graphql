@@ -71,7 +71,7 @@ jobs:
 
           # selects the pgVer from pg_config on path
           # https://github.com/tcdi/pgx/issues/288
-          cargo pgx package --no-default-features
+          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
@@ -132,7 +132,7 @@ jobs:
 
           # selects the pgVer from pg_config on path
           # https://github.com/tcdi/pgx/issues/288
-          cargo pgx package --no-default-features
+          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
