@@ -35,9 +35,12 @@ jobs:
       - release
     strategy:
       matrix:
-        extension_name: pg_graphql
-        repo: supabase/pg_graphql
-        pgx_version: 0.6.0-alpha.1
+        extension_name:
+          - pg_graphql
+        repo:
+          - supabase/pg_graphql
+        pgx_version:
+          - 0.6.0-alpha.1
         postgres: [14, 15]
         box:
           - { runner: ubuntu-20.04, arch: x86_64 }
