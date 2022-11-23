@@ -21,7 +21,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: ${{ github.ref }}
           body: |
             Changes in this Release
             - First Change
@@ -43,22 +43,35 @@ jobs:
 
       - name: build release artifacts
         run: |
+          # Add postgres package repo
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
           sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
           sudo apt-get install -y --no-install-recommends clang libclang-dev gcc
+
+          # Install requested postgres version
+          sudo apt install -y postgresql-${{ matrix.postgres }} postgresql-server-dev-${{ matrix.postgres }} -y
+
+          # Ensure installed pg_config is first on path
+          source /usr/lib/postgresql/${{ matrix.postgres }}/bin
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
             rustup --version && \
             rustc --version && \
             cargo --version
 
+          # Ensure cargo/rust on path
           source "$HOME/.cargo/env"
 
           cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
-          cargo pgx init --pg${{ matrix.postgres }} download
+          cargo pgx init --pg${{ matrix.postgres }}=/usr/lib/postgresql/${{ matrix.postgres }}/bin/pg_config
 
-          cargo build --release --no-default-features --features pg${{ matrix.postgres }}
+          # selects the pgVer from pg_config on path
+          # https://github.com/tcdi/pgx/issues/288
+          cargo pgx package --no-default-features
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
@@ -91,22 +104,35 @@ jobs:
 
       - name: build release artifacts
         run: |
+          # Add postgres package repo
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
           sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
           sudo apt-get install -y --no-install-recommends clang libclang-dev gcc
+
+          # Install requested postgres version
+          sudo apt install -y postgresql-${{ matrix.postgres }} postgresql-server-dev-${{ matrix.postgres }} -y
+
+          # Ensure installed pg_config is first on path
+          source /usr/lib/postgresql/${{ matrix.postgres }}/bin
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
             rustup --version && \
             rustc --version && \
             cargo --version
 
+          # Ensure cargo/rust on path
           source "$HOME/.cargo/env"
 
           cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
-          cargo pgx init --pg${{ matrix.postgres }} download
+          cargo pgx init --pg${{ matrix.postgres }}=/usr/lib/postgresql/${{ matrix.postgres }}/bin/pg_config
 
-          cargo build --release --no-default-features --features pg${{ matrix.postgres }}
+          # selects the pgVer from pg_config on path
+          # https://github.com/tcdi/pgx/issues/288
+          cargo pgx package --no-default-features
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
