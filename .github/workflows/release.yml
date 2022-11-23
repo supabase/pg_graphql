@@ -46,11 +46,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
           sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
+          sudo apt-get install -y --no-install-recommends clang libclang-dev gcc
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
             rustup --version && \
             rustc --version && \
             cargo --version
+
+          source "$HOME/.cargo/env"
 
           cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
           cargo pgx init --pg${{ matrix.postgres }} download
@@ -91,6 +94,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
           sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
+          sudo apt-get install -y --no-install-recommends clang libclang-dev gcc
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
             rustup --version && \
