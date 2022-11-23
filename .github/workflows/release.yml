@@ -37,7 +37,7 @@ jobs:
       matrix:
         postgres: [14, 15]
     runs-on: ubuntu-20.04
-    timeout: 45
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
 
@@ -82,7 +82,7 @@ jobs:
       matrix:
         postgres: [14, 15]
     runs-on: arm-runner
-    timeout: 45
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
 
