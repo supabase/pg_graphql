@@ -29,14 +29,18 @@ jobs:
           draft: false
           prerelease: false
 
-  upload-x86_64:
-    name: upload extension x86_64
+  build-linux-gnu:
+    name: release artifacts
     needs:
       - release
     strategy:
       matrix:
+        box:
+          - { runner: ubuntu-20.04, arch: x86_64 }
+          - { runner: arm-runner, arch: arm64 }
+        pgx_version: [ 0.6.0-alpha.1 ]
         postgres: [14, 15]
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.box.runner }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
@@ -66,7 +70,7 @@ jobs:
           # Ensure cargo/rust on path
           source "$HOME/.cargo/env"
 
-          cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
+          cargo install cargo-pgx --version ${{ matrix.pgx_version }} --locked
           cargo pgx init --pg${{ matrix.postgres }}=/usr/lib/postgresql/${{ matrix.postgres }}/bin/pg_config
 
           # selects the pgVer from pg_config on path
@@ -75,7 +79,7 @@ jobs:
 
           mkdir archive
           cp `find target/release -type f -name "pg_graphql*"` archive
-          tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz -C archive .
+          tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz -C archive .
 
       - name: Get upload url
         run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/supabase/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
@@ -86,67 +90,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ./pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz
-          asset_name: pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-x86_64-linux-gnu.tar.gz
-          asset_content_type: application/gzip
-
-  upload-arm64:
-    name: upload extension arm64
-    needs:
-      - release
-    strategy:
-      matrix:
-        postgres: [14, 15]
-    runs-on: arm-runner
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: build release artifacts
-        run: |
-          # Add postgres package repo
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
-
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
-          sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
-          sudo apt-get install -y --no-install-recommends clang libclang-dev gcc
-
-          # Install requested postgres version
-          sudo apt install -y postgresql-${{ matrix.postgres }} postgresql-server-dev-${{ matrix.postgres }} -y
-
-          # Ensure installed pg_config is first on path
-          export PATH=$PATH:/usr/lib/postgresql/${{ matrix.postgres }}/bin
-
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
-            rustup --version && \
-            rustc --version && \
-            cargo --version
-
-          # Ensure cargo/rust on path
-          source "$HOME/.cargo/env"
-
-          cargo install cargo-pgx --version 0.6.0-alpha.1 --locked
-          cargo pgx init --pg${{ matrix.postgres }}=/usr/lib/postgresql/${{ matrix.postgres }}/bin/pg_config
-
-          # selects the pgVer from pg_config on path
-          # https://github.com/tcdi/pgx/issues/288
-          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
-
-          mkdir archive
-          cp `find target/release -type f -name "pg_graphql*"` archive
-          tar -czf pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-arm64-linux-gnu.tar.gz -C archive .
-
-      - name: Get upload url
-        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/supabase/pg_graphql/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ./pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-arm64-linux-gnu.tar.gz
-          asset_name: pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-arm64-linux-gnu.tar.gz
+          asset_path: ./pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
+          asset_name: pg_graphql-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
           asset_content_type: application/gzip
