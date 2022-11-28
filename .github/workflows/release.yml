@@ -37,6 +37,8 @@ jobs:
       matrix:
         extension_name:
           - pg_graphql
+        package_name:
+          - pg-graphql
         pgx_version:
           - 0.6.0-alpha.1
         postgres: [14, 15]
@@ -80,9 +82,30 @@ jobs:
           # https://github.com/tcdi/pgx/issues/288
           cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
 
+          # Create installable package
           mkdir archive
           cp `find target/release -type f -name "${{ matrix.extension_name }}*"` archive
-          tar -czf ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz -C archive .
+
+          # Create directory structure
+          mkdir -p ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/usr/lib/postgresql/lib
+          mkdir -p ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/var/lib/postgresql/extension
+
+          # Copy files into directory structure
+          cp archive/*.so ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/usr/lib/postgresql/lib
+          cp archive/*.control ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/var/lib/postgresql/extension
+          cp archive/*.sql ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/var/lib/postgresql/extension
+
+          # Create install control file
+          mkdir -p ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN
+          touch ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+          echo 'Package: ${{ matrix.package_name }}' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+          echo 'Version: ${{ github.ref_name }}' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+          echo 'Architecture: ${{ matrix.box.arch }}' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+          echo 'Maintainer: supabase' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+          echo 'Description: A PostgreSQL extension' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+
+          # Create deb package
+          dpkg-deb --build --root-owner-group ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu
 
       - name: Get upload url
         run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/${{ github.repository }}/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
@@ -93,6 +116,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ./${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
-          asset_name: ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz
-          asset_content_type: application/gzip
+          asset_path: ./${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.deb
+          asset_name: ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.deb
+          asset_content_type: application/vnd.debian.binary-package
