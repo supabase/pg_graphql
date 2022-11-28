@@ -37,8 +37,6 @@ jobs:
       matrix:
         extension_name:
           - pg_graphql
-        repo:
-          - supabase/pg_graphql
         pgx_version:
           - 0.6.0-alpha.1
         postgres: [14, 15]
@@ -87,7 +85,7 @@ jobs:
           tar -czf ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu.tar.gz -C archive .
 
       - name: Get upload url
-        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/${{ matrix.repo }}/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
+        run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/${{ github.repository }}/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
