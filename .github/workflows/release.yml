@@ -103,7 +103,7 @@ jobs:
           mkdir -p ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN
           touch ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
           echo 'Package: ${{ matrix.package_name }}' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
-          echo 'Version: ${deb_version}' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
+          echo 'Version:' ${deb_version} >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
           echo 'Architecture: ${{ matrix.box.arch }}' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
           echo 'Maintainer: supabase' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
           echo 'Description: A PostgreSQL extension' >> ${{ matrix.extension_name }}-${{ github.ref_name }}-pg${{ matrix.postgres }}-${{ matrix.box.arch }}-linux-gnu/DEBIAN/control
