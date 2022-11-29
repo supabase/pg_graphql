@@ -33,6 +33,79 @@ pub fn rand_block_name() -> String {
     )
 }
 
+pub trait MutationEntrypoint {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
+
+    fn execute(
+        &self,
+        xact: SubTransaction<SpiClientWrapper>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
+        let mut param_context = ParamContext { params: vec![] };
+        let sql = &self.to_sql_entrypoint(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                xact.rollback();
+                return Err(err.to_string());
+            }
+        };
+
+        let (res_q, next_xact) = xact
+            .checked_update(sql, None, Some(param_context.params))
+            .map_err(|err| match err {
+                CaughtError::PostgresError(error) => error.message().to_string(),
+                _ => "Internal Error: Failed to execute transpiled query".to_string(),
+            })?;
+
+        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
+            Some(dat) => dat,
+            None => {
+                next_xact.rollback();
+                return Err(
+                    "Internal Error: Failed to load result from transpiled query".to_string(),
+                );
+            }
+        };
+
+        Ok((res.0, next_xact))
+    }
+}
+
+pub trait QueryEntrypoint {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
+
+    fn execute(&self) -> Result<serde_json::Value, String> {
+        let mut param_context = ParamContext { params: vec![] };
+        let sql = &self.to_sql_entrypoint(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                return Err(err.to_string());
+            }
+        };
+
+        let spi_result: Option<Result<Option<pgx::JsonB>, CaughtError>> = Spi::connect(|c| {
+            //Create subtransaction
+            let sub_txn_result: Result<Option<pgx::JsonB>, CaughtError> =
+                c.sub_transaction(|xact| {
+                    let (val, _) = xact.checked_select(sql, Some(1), Some(param_context.params))?;
+                    // Get a value from the query
+                    let out_val: Option<pgx::JsonB> = val.first().get_datum::<pgx::JsonB>(1);
+                    Ok(out_val)
+                });
+
+            // Return that value from the closure
+            Ok(Some(sub_txn_result))
+        });
+
+        match spi_result {
+            Some(Ok(Some(jsonb))) => Ok(jsonb.0),
+            Some(Ok(None)) => Ok(serde_json::Value::Null),
+            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
+        }
+    }
+}
+
 impl Table {
     fn to_selectable_columns_clause(&self) -> String {
         self.columns
@@ -182,8 +255,8 @@ impl Table {
     }
 }
 
-impl InsertBuilder {
-    pub fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
+impl MutationEntrypoint for InsertBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -239,40 +312,6 @@ impl InsertBuilder {
             affected as {quoted_block_name};
         "
         ))
-    }
-
-    pub fn execute(
-        &self,
-        xact: SubTransaction<SpiClientWrapper>,
-    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
-        let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context);
-        let sql = match sql {
-            Ok(sql) => sql,
-            Err(err) => {
-                xact.rollback();
-                return Err(err.to_string());
-            }
-        };
-
-        let (res_q, next_xact) = xact
-            .checked_update(sql, None, Some(param_context.params))
-            .map_err(|err| match err {
-                CaughtError::PostgresError(error) => error.message().to_string(),
-                _ => "Internal Error: Failed to execute transpiled query".to_string(),
-            })?;
-
-        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
-            Some(dat) => dat,
-            None => {
-                next_xact.rollback();
-                return Err(
-                    "Internal Error: Failed to load result from transpiled query".to_string(),
-                );
-            }
-        };
-
-        Ok((res.0, next_xact))
     }
 }
 
@@ -352,8 +391,8 @@ impl DeleteSelection {
     }
 }
 
-impl UpdateBuilder {
-    pub fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
+impl MutationEntrypoint for UpdateBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -434,44 +473,10 @@ impl UpdateBuilder {
         "
         ))
     }
-
-    pub fn execute(
-        &self,
-        xact: SubTransaction<SpiClientWrapper>,
-    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
-        let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context);
-        let sql = match sql {
-            Ok(sql) => sql,
-            Err(err) => {
-                xact.rollback();
-                return Err(err.to_string());
-            }
-        };
-
-        let (res_q, next_xact) = xact
-            .checked_update(sql, None, Some(param_context.params))
-            .map_err(|err| match err {
-                CaughtError::PostgresError(error) => error.message().to_string(),
-                _ => "Internal Error: Failed to execute transpiled query".to_string(),
-            })?;
-
-        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
-            Some(dat) => dat,
-            None => {
-                next_xact.rollback();
-                return Err(
-                    "Internal Error: Failed to load result from transpiled query".to_string(),
-                );
-            }
-        };
-
-        Ok((res.0, next_xact))
-    }
 }
 
-impl DeleteBuilder {
-    pub fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
+impl MutationEntrypoint for DeleteBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -529,40 +534,6 @@ impl DeleteBuilder {
             wrapper;
         "
         ))
-    }
-
-    pub fn execute(
-        &self,
-        xact: SubTransaction<SpiClientWrapper>,
-    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
-        let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(&mut param_context);
-        let sql = match sql {
-            Ok(sql) => sql,
-            Err(err) => {
-                xact.rollback();
-                return Err(err.to_string());
-            }
-        };
-
-        let (res_q, next_xact) = xact
-            .checked_update(sql, None, Some(param_context.params))
-            .map_err(|err| match err {
-                CaughtError::PostgresError(error) => error.message().to_string(),
-                _ => "Internal Error: Failed to execute transpiled query".to_string(),
-            })?;
-
-        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
-            Some(dat) => dat,
-            None => {
-                next_xact.rollback();
-                return Err(
-                    "Internal Error: Failed to load result from transpiled query".to_string(),
-                );
-            }
-        };
-
-        Ok((res.0, next_xact))
     }
 }
 
@@ -856,15 +827,11 @@ impl ConnectionBuilder {
             )"
         ))
     }
+}
 
-    pub fn execute(&self) -> Result<serde_json::Value, String> {
-        let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql(None, &mut param_context)?;
-
-        let res: pgx::JsonB = Spi::get_one_with_args(sql, param_context.params)
-            .ok_or("Internal Error: Failed to execute transpiled query")?;
-
-        Ok(res.0)
+impl QueryEntrypoint for ConnectionBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        self.to_sql(None, param_context)
     }
 }
 
@@ -1076,11 +1043,10 @@ impl NodeBuilder {
             )"
         ))
     }
+}
 
-    pub fn to_query_entrypoint_sql(
-        &self,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl QueryEntrypoint for NodeBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -1109,16 +1075,6 @@ impl NodeBuilder {
             )
             "
         ))
-    }
-
-    pub fn execute(&self) -> Result<serde_json::Value, String> {
-        let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_query_entrypoint_sql(&mut param_context)?;
-
-        let res: pgx::JsonB = Spi::get_one_with_args(sql, param_context.params)
-            .unwrap_or(pgx::JsonB(serde_json::Value::Null));
-
-        Ok(res.0)
     }
 }
 

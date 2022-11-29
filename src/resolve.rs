@@ -2,6 +2,7 @@ use crate::builder::*;
 use crate::graphql::*;
 use crate::omit::*;
 use crate::parser_util::*;
+use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, Selection,
     SelectionSet, Text,
