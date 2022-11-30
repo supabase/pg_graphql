@@ -1,0 +1,46 @@
+version: '3'
+x-uffizzi:
+  ingress:
+    service: graphiql
+    port: 80
+services:
+  db:
+    container_name: pg_db
+    image: "${APP_IMAGE}"
+    volumes:
+        - ./dockerfiles/db:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: graphqldb
+
+  rest:
+    container_name: pg_postgrest
+    image: postgrest/postgrest:v10.0.0
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    environment:
+      PGRST_DB_URI: postgres://postgres:password@localhost:5432/graphqldb
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+    depends_on:
+      - db
+
+  graphiql:
+    container_name: pg_graphiql
+    image: nginx
+    volumes:
+      - ./.github/uffizzi/graphiql:/usr/share/nginx/html
+    ports:
+      - 80:80
+    depends_on:
+      - rest
