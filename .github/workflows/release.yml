@@ -43,7 +43,7 @@ jobs:
           - 0.6.0-alpha.1
         postgres: [14, 15]
         box:
-          - { runner: ubuntu-20.04, arch: x86_64 }
+          - { runner: ubuntu-20.04, arch: amd64 }
           - { runner: arm-runner, arch: arm64 }
     runs-on: ${{ matrix.box.runner }}
     timeout-minutes: 45
