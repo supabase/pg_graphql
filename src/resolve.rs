@@ -4,8 +4,8 @@ use crate::omit::*;
 use crate::parser_util::*;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_parser::query::{
-    Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, Selection,
-    SelectionSet, Text,
+    Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, SelectionSet,
+    Text,
 };
 use itertools::Itertools;
 use serde_json::{json, Value};
@@ -138,15 +138,21 @@ where
     let query_type = schema_type.query_type();
     let map = query_type.field_map();
 
-    let selections: Vec<graphql_parser::query::Field<T>> = selection_set
-        .items
-        .into_iter()
-        .filter_map(|def| match def {
-            Selection::Field(field) => Some(field),
-            // TODO, handle fragments
-            _ => panic!("only Selections are supported"),
-        })
-        .collect();
+    let selections = match normalize_selection_set(
+        &selection_set,
+        &fragment_definitions,
+        &query_type.name().unwrap(),
+    ) {
+        Ok(selections) => selections,
+        Err(err) => {
+            return GraphQLResponse {
+                data: Omit::Omitted,
+                errors: Omit::Present(vec![ErrorMessage {
+                    message: err.to_string(),
+                }]),
+            }
+        }
+    };
 
     match selections[..] {
         [] => GraphQLResponse {
@@ -319,15 +325,21 @@ where
 
     let map = mutation_type.field_map();
 
-    let selections: Vec<graphql_parser::query::Field<T>> = selection_set
-        .items
-        .into_iter()
-        .filter_map(|def| match def {
-            Selection::Field(field) => Some(field),
-            // TODO, handle fragments
-            _ => panic!("only Selections are supported"),
-        })
-        .collect();
+    let selections = match normalize_selection_set(
+        &selection_set,
+        &fragment_definitions,
+        &mutation_type.name().unwrap(),
+    ) {
+        Ok(selections) => selections,
+        Err(err) => {
+            return GraphQLResponse {
+                data: Omit::Omitted,
+                errors: Omit::Present(vec![ErrorMessage {
+                    message: err.to_string(),
+                }]),
+            }
+        }
+    };
 
     use pgx::prelude::*;
     use pgx_contrib_spiext::subtxn::*;
