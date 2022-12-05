@@ -593,10 +593,13 @@ impl FromStr for FilterOp {
 }
 
 #[derive(Clone, Debug)]
-pub struct FilterBuilderElem {
-    pub column: Column,
-    pub op: FilterOp,
-    pub value: serde_json::Value, //String, // string repr castable by postgres
+pub enum FilterBuilderElem {
+    Column {
+        column: Column,
+        op: FilterOp,
+        value: serde_json::Value, //String, // string repr castable by postgres
+    },
+    NodeId(NodeIdInstance),
 }
 
 #[derive(Clone, Debug)]
@@ -887,7 +890,7 @@ where
 
             match &filter_iv.sql_type {
                 Some(NodeSQLType::Column(col)) => {
-                    let filter_builder = FilterBuilderElem {
+                    let filter_builder = FilterBuilderElem::Column {
                         column: col.clone(),
                         op: filter_op,
                         value: filter_val.clone(),

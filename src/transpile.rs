@@ -427,9 +427,9 @@ impl MutationEntrypoint for UpdateBuilder {
 
         let selectable_columns_clause = self.table.to_selectable_columns_clause();
 
-        let where_clause = self
-            .filter
-            .to_where_clause(&quoted_block_name, param_context);
+        let where_clause =
+            self.filter
+                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
 
         let at_most = self.at_most;
 
@@ -488,9 +488,9 @@ impl MutationEntrypoint for DeleteBuilder {
             .collect::<Result<Vec<_>, _>>()?;
 
         let select_clause = frags.join(", ");
-        let where_clause = self
-            .filter
-            .to_where_clause(&quoted_block_name, param_context);
+        let where_clause =
+            self.filter
+                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
 
         let selectable_columns_clause = self.table.to_selectable_columns_clause();
 
@@ -603,40 +603,60 @@ impl ParamContext {
     }
 }
 
+impl FilterBuilderElem {
+    fn to_sql(
+        &self,
+        block_name: &str,
+        table: &Table,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        match self {
+            Self::Column { column, op, value } => {
+                let cast_type_name = match op {
+                    FilterOp::In => format!("{}[]", column.type_name),
+                    _ => column.type_name.clone(),
+                };
+
+                let val_clause = param_context.clause_for(value, &cast_type_name);
+
+                let frag = format!(
+                    "{block_name}.{} {} {}",
+                    quote_ident(&column.name),
+                    match op {
+                        FilterOp::Equal => "=",
+                        FilterOp::NotEqual => "<>",
+                        FilterOp::LessThan => "<",
+                        FilterOp::LessThanEqualTo => "<=",
+                        FilterOp::GreaterThan => ">",
+                        FilterOp::GreaterThanEqualTo => ">=",
+                        FilterOp::In => "= any",
+                    },
+                    val_clause
+                );
+                Ok(frag)
+            }
+            Self::NodeId(node_id) => {
+                let pkey_columns = table.primary_key_columns();
+                node_id.to_sql(block_name, &pkey_columns, param_context)
+            }
+        }
+    }
+}
+
 impl FilterBuilder {
-    fn to_where_clause(&self, block_name: &str, param_context: &mut ParamContext) -> String {
+    fn to_where_clause(
+        &self,
+        block_name: &str,
+        table: &Table,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
         let mut frags = vec!["true".to_string()];
 
         for elem in &self.elems {
-            let column = &elem.column;
-            let op = &elem.op;
-            let value = &elem.value;
-
-            let cast_type_name = match op {
-                FilterOp::In => format!("{}[]", column.type_name),
-                _ => column.type_name.clone(),
-            };
-
-            let val_clause = param_context.clause_for(value, &cast_type_name);
-
-            let frag = format!(
-                "{block_name}.{} {} {}",
-                quote_ident(&column.name),
-                match op {
-                    FilterOp::Equal => "=",
-                    FilterOp::NotEqual => "<>",
-                    FilterOp::LessThan => "<",
-                    FilterOp::LessThanEqualTo => "<=",
-                    FilterOp::GreaterThan => ">",
-                    FilterOp::GreaterThanEqualTo => ">=",
-                    FilterOp::In => "= any",
-                },
-                val_clause
-            );
+            let frag = elem.to_sql(block_name, table, param_context)?;
             frags.push(frag);
         }
-
-        frags.join(" and ")
+        Ok(frags.join(" and "))
     }
 }
 
@@ -680,9 +700,10 @@ impl ConnectionBuilder {
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
 
-        let where_clause = self
-            .filter
-            .to_where_clause(&quoted_block_name, param_context);
+        let where_clause =
+            self.filter
+                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
+
         let order_by_clause = self.order_by.to_order_by_clause(&quoted_block_name);
         let order_by_clause_reversed = self
             .order_by
