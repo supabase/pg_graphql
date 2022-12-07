@@ -33,13 +33,13 @@ pub fn rand_block_name() -> String {
     )
 }
 
-pub trait MutationEntrypoint {
+pub trait MutationEntrypoint<'conn> {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
 
     fn execute(
         &self,
-        xact: SubTransaction<SpiClientWrapper>,
-    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
+        xact: SubTransaction<Box<SpiClient<'conn>>>,
+    ) -> Result<(serde_json::Value, SubTransaction<Box<SpiClient<'conn>>>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
@@ -255,7 +255,7 @@ impl Table {
     }
 }
 
-impl MutationEntrypoint for InsertBuilder {
+impl MutationEntrypoint<'_> for InsertBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
@@ -391,7 +391,7 @@ impl DeleteSelection {
     }
 }
 
-impl MutationEntrypoint for UpdateBuilder {
+impl MutationEntrypoint<'_> for UpdateBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
@@ -475,7 +475,7 @@ impl MutationEntrypoint for UpdateBuilder {
     }
 }
 
-impl MutationEntrypoint for DeleteBuilder {
+impl MutationEntrypoint<'_> for DeleteBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
