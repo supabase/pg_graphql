@@ -635,10 +635,7 @@ impl FilterBuilderElem {
                 );
                 Ok(frag)
             }
-            Self::NodeId(node_id) => {
-                let pkey_columns = table.primary_key_columns();
-                node_id.to_sql(block_name, &pkey_columns, param_context)
-            }
+            Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),
         }
     }
 }
@@ -1078,11 +1075,7 @@ impl QueryEntrypoint for NodeBuilder {
         }
         let node_id = self.node_id.as_ref().unwrap();
 
-        let node_id_clause = node_id.to_sql(
-            &quoted_block_name,
-            &self.table.primary_key_columns(),
-            param_context,
-        )?;
+        let node_id_clause = node_id.to_sql(&quoted_block_name, &self.table, param_context)?;
 
         Ok(format!(
             "
@@ -1103,11 +1096,17 @@ impl NodeIdInstance {
     pub fn to_sql(
         &self,
         block_name: &str,
-        pkey_columns: &Vec<&Column>,
+        table: &Table,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
+        // TODO: abstract this logical check into builder. It is not related to
+        // transpiling and should not be in this module
+        if (&self.schema_name, &self.table_name) != (&table.schema, &table.name) {
+            return Err("nodeId belongs to a different collection".to_string());
+        }
+
         let mut col_val_pairs: Vec<String> = vec![];
-        for (col, val) in pkey_columns.iter().zip(self.values.iter()) {
+        for (col, val) in table.primary_key_columns().iter().zip(self.values.iter()) {
             let column_name = &col.name;
             let val_clause = param_context.clause_for(val, &col.type_name);
             col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))
