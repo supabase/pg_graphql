@@ -684,6 +684,14 @@ begin;
                          "name": "FloatFilter",   +
                          "ofType": null           +
                      }                            +
+                 },                               +
+                 {                                +
+                     "name": "nodeId",            +
+                     "type": {                    +
+                         "kind": "INPUT_OBJECT",  +
+                         "name": "IDFilter",      +
+                         "ofType": null           +
+                     }                            +
                  }                                +
              ]                                    +
          }                                        +
