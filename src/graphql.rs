@@ -2885,38 +2885,59 @@ impl ___Type for FilterTypeType {
     fn input_fields(&self) -> Option<Vec<__InputValue>> {
         let mut infields: Vec<__InputValue> = match &self.entity {
             FilterableType::Scalar(scalar) => {
-                let mut scalar_infields = vec![
-                    __InputValue {
-                        name_: "eq".to_string(),
-                        type_: __Type::Scalar(scalar.clone()),
-                        description: None,
-                        default_value: None,
-                        sql_type: None,
-                    },
-                    __InputValue {
-                        name_: "neq".to_string(),
-                        type_: __Type::Scalar(scalar.clone()),
-                        description: None,
-                        default_value: None,
-                        sql_type: None,
-                    },
-                    __InputValue {
-                        name_: "in".to_string(),
-                        type_: __Type::List(ListType {
-                            type_: Box::new(__Type::NonNull(NonNullType {
-                                type_: Box::new(__Type::Scalar(scalar.clone())),
-                            })),
-                        }),
-                        description: None,
-                        default_value: None,
-                        sql_type: None,
-                    },
-                ];
+                let mut scalar_infields = vec![__InputValue {
+                    name_: "eq".to_string(),
+                    type_: __Type::Scalar(scalar.clone()),
+                    description: None,
+                    default_value: None,
+                    sql_type: None,
+                }];
 
                 match scalar {
-                    // Skip advanced filtering options
-                    Scalar::UUID => (),
+                    // IDFilter only supports equality
+                    Scalar::ID => (),
+                    // UUIDs are not ordered
+                    Scalar::UUID => {
+                        scalar_infields.extend(vec![
+                            __InputValue {
+                                name_: "neq".to_string(),
+                                type_: __Type::Scalar(scalar.clone()),
+                                description: None,
+                                default_value: None,
+                                sql_type: None,
+                            },
+                            __InputValue {
+                                name_: "in".to_string(),
+                                type_: __Type::List(ListType {
+                                    type_: Box::new(__Type::NonNull(NonNullType {
+                                        type_: Box::new(__Type::Scalar(scalar.clone())),
+                                    })),
+                                }),
+                                description: None,
+                                default_value: None,
+                                sql_type: None,
+                            },
+                        ]);
+                    }
                     _ => scalar_infields.extend(vec![
+                        __InputValue {
+                            name_: "neq".to_string(),
+                            type_: __Type::Scalar(scalar.clone()),
+                            description: None,
+                            default_value: None,
+                            sql_type: None,
+                        },
+                        __InputValue {
+                            name_: "in".to_string(),
+                            type_: __Type::List(ListType {
+                                type_: Box::new(__Type::NonNull(NonNullType {
+                                    type_: Box::new(__Type::Scalar(scalar.clone())),
+                                })),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: None,
+                        },
                         __InputValue {
                             name_: "gt".to_string(),
                             type_: __Type::Scalar(scalar.clone()),
@@ -2999,47 +3020,67 @@ impl ___Type for FilterEntityType {
     }
 
     fn input_fields(&self) -> Option<Vec<__InputValue>> {
-        Some(
-            self.table
-                .columns
-                .iter()
-                .filter(|x| is_valid_graphql_name(&x.graphql_field_name()))
-                .filter(|x| x.permissions.is_selectable)
-                // No filtering on arrays
-                .filter(|x| !x.type_name.ends_with("[]"))
-                // No filtering on composites
-                .filter(|x| !self.schema.context.is_composite(x.type_oid))
-                // No filtering on json/b. they do not support = or <>
-                .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
-                .filter_map(|col| {
-                    // Should be a scalar
-                    let utype = sql_column_to_graphql_type(col, &self.schema).unmodified_type();
+        let mut f: Vec<__InputValue> = self
+            .table
+            .columns
+            .iter()
+            .filter(|x| is_valid_graphql_name(&x.graphql_field_name()))
+            .filter(|x| x.permissions.is_selectable)
+            // No filtering on arrays
+            .filter(|x| !x.type_name.ends_with("[]"))
+            // No filtering on composites
+            .filter(|x| !self.schema.context.is_composite(x.type_oid))
+            // No filtering on json/b. they do not support = or <>
+            .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
+            .filter_map(|col| {
+                // Should be a scalar
+                let utype = sql_column_to_graphql_type(col, &self.schema).unmodified_type();
 
-                    match utype {
-                        __Type::Scalar(s) => Some(__InputValue {
-                            name_: col.graphql_field_name(),
-                            type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::Scalar(s),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(col.clone())),
+                match utype {
+                    __Type::Scalar(s) => Some(__InputValue {
+                        name_: col.graphql_field_name(),
+                        type_: __Type::FilterType(FilterTypeType {
+                            entity: FilterableType::Scalar(s),
                         }),
-                        // ERROR HERE
-                        __Type::Enum(s) => Some(__InputValue {
-                            name_: col.graphql_field_name(),
-                            type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::Enum(s),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(col.clone())),
+                        description: None,
+                        default_value: None,
+                        sql_type: Some(NodeSQLType::Column(col.clone())),
+                    }),
+                    // ERROR HERE
+                    __Type::Enum(s) => Some(__InputValue {
+                        name_: col.graphql_field_name(),
+                        type_: __Type::FilterType(FilterTypeType {
+                            entity: FilterableType::Enum(s),
                         }),
-                        _ => None,
-                    }
-                })
-                .collect(),
-        )
+                        description: None,
+                        default_value: None,
+                        sql_type: Some(NodeSQLType::Column(col.clone())),
+                    }),
+                    _ => None,
+                }
+            })
+            .collect();
+
+        if self.table.primary_key().is_some() {
+            let pkey_cols = self
+                .table
+                .primary_key_columns()
+                .into_iter()
+                .cloned()
+                .collect();
+
+            f.push(__InputValue {
+                name_: "nodeId".to_string(),
+                type_: __Type::FilterType(FilterTypeType {
+                    entity: FilterableType::Scalar(Scalar::ID),
+                }),
+                description: None,
+                default_value: None,
+                sql_type: Some(NodeSQLType::NodeId(pkey_cols)),
+            });
+        }
+
+        Some(f)
     }
 }
 
@@ -3175,6 +3216,9 @@ impl __Schema {
             __Type::Scalar(Scalar::JSON),
             __Type::Scalar(Scalar::Cursor),
             __Type::OrderBy(OrderByType {}),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::Scalar(Scalar::ID),
+            }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Int),
             }),
