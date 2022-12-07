@@ -89,21 +89,11 @@ where
     }
 }
 
-fn read_argument_node_id<'a, T>(
-    field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
-    variables: &serde_json::Value,
-) -> Result<NodeIdInstance, String>
-where
-    T: Text<'a> + Eq + AsRef<str>,
-{
-    // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
+fn parse_node_id(encoded: serde_json::Value) -> Result<NodeIdInstance, String> {
     extern crate base64;
     use std::str;
 
-    let node_id_base64_encoded_json_string: serde_json::Value =
-        read_argument("nodeId", field, query_field, variables)?;
-    let node_id_base64_encoded_string: String = match node_id_base64_encoded_json_string {
+    let node_id_base64_encoded_string: String = match encoded {
         serde_json::Value::String(s) => s,
         _ => return Err("Invalid value passed to nodeId argument, Error 1".to_string()),
     };
@@ -148,6 +138,21 @@ where
         }
         _ => Err("Invalid value passed to nodeId argument. Error 10".to_string()),
     }
+}
+
+fn read_argument_node_id<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<NodeIdInstance, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
+    let node_id_base64_encoded_json_string: serde_json::Value =
+        read_argument("nodeId", field, query_field, variables)?;
+
+    parse_node_id(node_id_base64_encoded_json_string)
 }
 
 fn read_argument_objects<'a, T>(
@@ -593,10 +598,13 @@ impl FromStr for FilterOp {
 }
 
 #[derive(Clone, Debug)]
-pub struct FilterBuilderElem {
-    pub column: Column,
-    pub op: FilterOp,
-    pub value: serde_json::Value, //String, // string repr castable by postgres
+pub enum FilterBuilderElem {
+    Column {
+        column: Column,
+        op: FilterOp,
+        value: serde_json::Value, //String, // string repr castable by postgres
+    },
+    NodeId(NodeIdInstance),
 }
 
 #[derive(Clone, Debug)]
@@ -887,11 +895,16 @@ where
 
             match &filter_iv.sql_type {
                 Some(NodeSQLType::Column(col)) => {
-                    let filter_builder = FilterBuilderElem {
+                    let filter_builder = FilterBuilderElem::Column {
                         column: col.clone(),
                         op: filter_op,
                         value: filter_val.clone(),
                     };
+                    filters.push(filter_builder);
+                }
+                Some(NodeSQLType::NodeId(_)) => {
+                    let filter_builder =
+                        FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?);
                     filters.push(filter_builder);
                 }
                 _ => return Err("Filter type error, attempted filter on non-column".to_string()),
@@ -1244,57 +1257,6 @@ where
         _ => Err("can not build query for non-edge type".to_string()),
     }
 }
-
-/*
-pub fn to_node_interface_builder<'a, T>(
-    field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
-    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
-    variables: &serde_json::Value,
-) -> Result<NodeBuilder, String>
-where
-    T: Text<'a> + Eq + AsRef<str>,
-{
-    let type_ = field.type_().unmodified_type();
-
-    let type_name = type_
-        .name()
-        .ok_or("Encountered type without name in node builder")?;
-    let field_map = type_.field_map();
-    let alias = alias_or_name(query_field);
-
-    match type_ {
-        __Type::NodeInterface(node_interface) => {
-            restrict_allowed_arguments(vec!["nodeId"], query_field)?;
-
-            // The nodeId argument is only valid on the entrypoint field for Node
-            // relationships to "node" e.g. within edges, do not have any arguments
-            let node_id: NodeIdInstance =
-                read_argument_node_id(table, field, query_field, variables)?;
-
-            let xtype: NodeType = node_interface
-                .possible_types()
-                .iter()
-                .filter_map(|x| match x {
-                    __Type::Node(node_type) => {
-                        match (node_type.table.schema_name, node_type.table.table_name)
-                            == (node_id.schema_name, node_id.table_name)
-                        {
-                            true => Some(node_type),
-                            false => None,
-                        }
-                    }
-                    _ => None,
-                })
-                .next()
-                .unwrap_or(Err(
-                    "Collection referenced by nodeId did not match any known collection",
-                ))?;
-        }
-        _ => Err("can not build query for non-node type".to_string()),
-    }
-}
-*/
 
 pub fn to_node_builder<'a, T>(
     field: &__Field,

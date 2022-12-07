@@ -33,13 +33,13 @@ pub fn rand_block_name() -> String {
     )
 }
 
-pub trait MutationEntrypoint {
+pub trait MutationEntrypoint<'conn> {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
 
     fn execute(
         &self,
-        xact: SubTransaction<SpiClientWrapper>,
-    ) -> Result<(serde_json::Value, SubTransaction<SpiClientWrapper>), String> {
+        xact: SubTransaction<Box<SpiClient<'conn>>>,
+    ) -> Result<(serde_json::Value, SubTransaction<Box<SpiClient<'conn>>>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
@@ -255,7 +255,7 @@ impl Table {
     }
 }
 
-impl MutationEntrypoint for InsertBuilder {
+impl MutationEntrypoint<'_> for InsertBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
@@ -391,7 +391,7 @@ impl DeleteSelection {
     }
 }
 
-impl MutationEntrypoint for UpdateBuilder {
+impl MutationEntrypoint<'_> for UpdateBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
@@ -427,9 +427,9 @@ impl MutationEntrypoint for UpdateBuilder {
 
         let selectable_columns_clause = self.table.to_selectable_columns_clause();
 
-        let where_clause = self
-            .filter
-            .to_where_clause(&quoted_block_name, param_context);
+        let where_clause =
+            self.filter
+                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
 
         let at_most = self.at_most;
 
@@ -475,7 +475,7 @@ impl MutationEntrypoint for UpdateBuilder {
     }
 }
 
-impl MutationEntrypoint for DeleteBuilder {
+impl MutationEntrypoint<'_> for DeleteBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
@@ -488,9 +488,9 @@ impl MutationEntrypoint for DeleteBuilder {
             .collect::<Result<Vec<_>, _>>()?;
 
         let select_clause = frags.join(", ");
-        let where_clause = self
-            .filter
-            .to_where_clause(&quoted_block_name, param_context);
+        let where_clause =
+            self.filter
+                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
 
         let selectable_columns_clause = self.table.to_selectable_columns_clause();
 
@@ -603,40 +603,57 @@ impl ParamContext {
     }
 }
 
+impl FilterBuilderElem {
+    fn to_sql(
+        &self,
+        block_name: &str,
+        table: &Table,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        match self {
+            Self::Column { column, op, value } => {
+                let cast_type_name = match op {
+                    FilterOp::In => format!("{}[]", column.type_name),
+                    _ => column.type_name.clone(),
+                };
+
+                let val_clause = param_context.clause_for(value, &cast_type_name);
+
+                let frag = format!(
+                    "{block_name}.{} {} {}",
+                    quote_ident(&column.name),
+                    match op {
+                        FilterOp::Equal => "=",
+                        FilterOp::NotEqual => "<>",
+                        FilterOp::LessThan => "<",
+                        FilterOp::LessThanEqualTo => "<=",
+                        FilterOp::GreaterThan => ">",
+                        FilterOp::GreaterThanEqualTo => ">=",
+                        FilterOp::In => "= any",
+                    },
+                    val_clause
+                );
+                Ok(frag)
+            }
+            Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),
+        }
+    }
+}
+
 impl FilterBuilder {
-    fn to_where_clause(&self, block_name: &str, param_context: &mut ParamContext) -> String {
+    fn to_where_clause(
+        &self,
+        block_name: &str,
+        table: &Table,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
         let mut frags = vec!["true".to_string()];
 
         for elem in &self.elems {
-            let column = &elem.column;
-            let op = &elem.op;
-            let value = &elem.value;
-
-            let cast_type_name = match op {
-                FilterOp::In => format!("{}[]", column.type_name),
-                _ => column.type_name.clone(),
-            };
-
-            let val_clause = param_context.clause_for(value, &cast_type_name);
-
-            let frag = format!(
-                "{block_name}.{} {} {}",
-                quote_ident(&column.name),
-                match op {
-                    FilterOp::Equal => "=",
-                    FilterOp::NotEqual => "<>",
-                    FilterOp::LessThan => "<",
-                    FilterOp::LessThanEqualTo => "<=",
-                    FilterOp::GreaterThan => ">",
-                    FilterOp::GreaterThanEqualTo => ">=",
-                    FilterOp::In => "= any",
-                },
-                val_clause
-            );
+            let frag = elem.to_sql(block_name, table, param_context)?;
             frags.push(frag);
         }
-
-        frags.join(" and ")
+        Ok(frags.join(" and "))
     }
 }
 
@@ -680,9 +697,10 @@ impl ConnectionBuilder {
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
 
-        let where_clause = self
-            .filter
-            .to_where_clause(&quoted_block_name, param_context);
+        let where_clause =
+            self.filter
+                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
+
         let order_by_clause = self.order_by.to_order_by_clause(&quoted_block_name);
         let order_by_clause_reversed = self
             .order_by
@@ -1057,11 +1075,7 @@ impl QueryEntrypoint for NodeBuilder {
         }
         let node_id = self.node_id.as_ref().unwrap();
 
-        let node_id_clause = node_id.to_sql(
-            &quoted_block_name,
-            &self.table.primary_key_columns(),
-            param_context,
-        )?;
+        let node_id_clause = node_id.to_sql(&quoted_block_name, &self.table, param_context)?;
 
         Ok(format!(
             "
@@ -1082,11 +1096,17 @@ impl NodeIdInstance {
     pub fn to_sql(
         &self,
         block_name: &str,
-        pkey_columns: &Vec<&Column>,
+        table: &Table,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
+        // TODO: abstract this logical check into builder. It is not related to
+        // transpiling and should not be in this module
+        if (&self.schema_name, &self.table_name) != (&table.schema, &table.name) {
+            return Err("nodeId belongs to a different collection".to_string());
+        }
+
         let mut col_val_pairs: Vec<String> = vec![];
-        for (col, val) in pkey_columns.iter().zip(self.values.iter()) {
+        for (col, val) in table.primary_key_columns().iter().zip(self.values.iter()) {
             let column_name = &col.name;
             let val_clause = param_context.clause_for(val, &col.type_name);
             col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))

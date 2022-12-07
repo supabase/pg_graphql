@@ -234,6 +234,10 @@ begin;
                      "name": "ID"                    +
                  },                                  +
                  {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "IDFilter"              +
+                 },                                  +
+                 {                                   +
                      "kind": "SCALAR",               +
                      "name": "Int"                   +
                  },                                  +
