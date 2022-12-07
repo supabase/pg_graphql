@@ -836,7 +836,6 @@ pub struct NonNullType {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SchemaType {
     pub schema: Rc<__Schema>,
-    //pub context: Context,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -851,37 +850,37 @@ pub struct MutationType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertInputType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UpdateInputType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertResponseType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UpdateResponseType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeleteResponseType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ConnectionType {
-    pub table: Table,
+    pub table: Rc<Table>,
 
     // If one is present, both should be present
     // could be improved
@@ -902,7 +901,7 @@ pub struct OrderByType {}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OrderByEntityType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
@@ -919,19 +918,19 @@ pub struct FilterTypeType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FilterEntityType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EdgeType {
-    pub table: Table,
+    pub table: Rc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NodeType {
-    pub table: Table,
+    pub table: Rc<Table>,
 
     // If one is present, both should be present
     // could be improved
@@ -997,7 +996,7 @@ impl ___Type for QueryType {
                         lowercase_first_letter(&table.graphql_base_type_name())
                     ),
                     type_: __Type::Connection(ConnectionType {
-                        table: table.clone(),
+                        table: Rc::clone(table),
                         fkey: None,
                         reverse_reference: None,
                         schema: self.schema.clone(),
@@ -1034,7 +1033,7 @@ impl ___Type for QueryType {
                         __InputValue {
                             name_: "filter".to_string(),
                             type_: __Type::FilterEntity(FilterEntityType {
-                                table: table.clone(),
+                                table: Rc::clone(table),
                                 schema: self.schema.clone(),
                             }),
                             description: Some("Filters to apply to the results set when querying from the collection".to_string()),
@@ -1047,7 +1046,7 @@ impl ___Type for QueryType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::OrderByEntity(
                                         OrderByEntityType {
-                                            table: table.clone(),
+                                            table: Rc::clone(table),
                                             schema: self.schema.clone(),
                                         },
                                     )),
@@ -1126,7 +1125,7 @@ impl ___Type for MutationType {
                     f.push(__Field {
                         name_: format!("insertInto{}Collection", table.graphql_base_type_name()),
                         type_: __Type::InsertResponse(InsertResponseType {
-                            table: table.clone(),
+                            table: Rc::clone(table),
                             schema: self.schema.clone(),
                         }),
                         args: vec![__InputValue {
@@ -1135,7 +1134,7 @@ impl ___Type for MutationType {
                                 type_: Box::new(__Type::List(ListType {
                                     type_: Box::new(__Type::NonNull(NonNullType {
                                         type_: Box::new(__Type::InsertInput(InsertInputType {
-                                            table: table.clone(),
+                                            table: Rc::clone(table),
                                             schema: self.schema.clone(),
                                         })),
                                     })),
@@ -1159,7 +1158,7 @@ impl ___Type for MutationType {
                         name_: format!("update{}Collection", table.graphql_base_type_name()),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::UpdateResponse(UpdateResponseType {
-                                table: table.clone(),
+                                table: Rc::clone(table),
                                 schema: self.schema.clone(),
                             })),
                         }),
@@ -1168,7 +1167,7 @@ impl ___Type for MutationType {
                                 name_: "set".to_string(),
                                 type_: __Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::UpdateInput(UpdateInputType {
-                                        table: table.clone(),
+                                        table: Rc::clone(table),
                                         schema: self.schema.clone(),
                                     })),
                                 }),
@@ -1179,7 +1178,7 @@ impl ___Type for MutationType {
                             __InputValue {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
-                                    table: table.clone(),
+                                    table: Rc::clone(table),
                                     schema: self.schema.clone(),
                                 }),
                                 description: Some("Restricts the mutation's impact to records matching the criteria".to_string()),
@@ -1210,7 +1209,7 @@ impl ___Type for MutationType {
                         name_: format!("deleteFrom{}Collection", table.graphql_base_type_name()),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::DeleteResponse(DeleteResponseType {
-                                table: table.clone(),
+                                table: Rc::clone(table),
                                 schema: self.schema.clone(),
                             })),
                         }),
@@ -1218,7 +1217,7 @@ impl ___Type for MutationType {
                             __InputValue {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
-                                    table: table.clone(),
+                                    table: Rc::clone(table),
                                     schema: self.schema.clone(),
                                 }),
                                 description: Some(
@@ -1640,7 +1639,7 @@ impl ___Type for NodeType {
             .filter(|x| x.permissions.is_selectable)
         {
             let reverse_reference = false;
-            let foreign_table: Option<&Table> = self
+            let foreign_table: Option<&Rc<Table>> = self
                 .schema
                 .context
                 .schemas
@@ -1661,7 +1660,7 @@ impl ___Type for NodeType {
                 name_: fkey.graphql_field_name(reverse_reference),
                 // XXX: column nullability ignored for NonNull type to match pg_graphql
                 type_: __Type::Node(NodeType {
-                    table: foreign_table.clone(),
+                    table: Rc::clone(foreign_table),
                     fkey: Some(fkey.clone()),
                     reverse_reference: Some(reverse_reference),
                     schema: self.schema.clone(),
@@ -1686,7 +1685,7 @@ impl ___Type for NodeType {
             .filter(|x| x.referenced_table_meta.oid == self.table.oid)
         {
             let reverse_reference = true;
-            let foreign_table: Option<&Table> = self
+            let foreign_table: Option<&Rc<Table>> = self
                 .schema
                 .context
                 .schemas
@@ -1709,7 +1708,7 @@ impl ___Type for NodeType {
                         name_: fkey.graphql_field_name(reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Connection(ConnectionType {
-                                table: foreign_table.clone(),
+                                table: Rc::clone(foreign_table),
                                 fkey: Some(fkey.clone()),
                                 reverse_reference: Some(reverse_reference),
                                 schema: self.schema.clone(),
@@ -1746,7 +1745,7 @@ impl ___Type for NodeType {
                             __InputValue {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
-                                    table: foreign_table.clone(),
+                                    table: Rc::clone(foreign_table),
                                     schema: self.schema.clone(),
                                 }),
                                 description: Some("Filters to apply to the results set when querying from the collection".to_string()),
@@ -1759,7 +1758,7 @@ impl ___Type for NodeType {
                                     type_: Box::new(__Type::NonNull(NonNullType {
                                         type_: Box::new(__Type::OrderByEntity(
                                             OrderByEntityType {
-                                                table: foreign_table.clone(),
+                                                table: Rc::clone(foreign_table),
                                                 schema: self.schema.clone(),
                                             },
                                         )),
@@ -1780,7 +1779,7 @@ impl ___Type for NodeType {
                         name_: fkey.graphql_field_name(reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Node(NodeType {
-                            table: foreign_table.clone(),
+                            table: Rc::clone(foreign_table),
                             fkey: Some(fkey.clone()),
                             reverse_reference: Some(reverse_reference),
                             schema: self.schema.clone(),
@@ -3184,7 +3183,7 @@ pub struct GraphQLResponse {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct __Schema {
-    pub context: Context,
+    pub context: Rc<Context>,
 }
 
 impl __Schema {
@@ -3267,57 +3266,57 @@ impl __Schema {
                 .filter(|x| x.graphql_select_types_are_valid())
             {
                 types_.push(__Type::Node(NodeType {
-                    table: table.clone(),
+                    table: Rc::clone(table),
                     fkey: None,
                     reverse_reference: None,
                     schema: schema_rc.clone(),
                 }));
                 types_.push(__Type::Edge(EdgeType {
-                    table: table.clone(),
+                    table: Rc::clone(table),
                     schema: schema_rc.clone(),
                 }));
                 types_.push(__Type::Connection(ConnectionType {
-                    table: table.clone(),
+                    table: Rc::clone(table),
                     fkey: None,
                     reverse_reference: None,
                     schema: schema_rc.clone(),
                 }));
 
                 types_.push(__Type::FilterEntity(FilterEntityType {
-                    table: table.clone(),
+                    table: Rc::clone(table),
                     schema: schema_rc.clone(),
                 }));
 
                 types_.push(__Type::OrderByEntity(OrderByEntityType {
-                    table: table.clone(),
+                    table: Rc::clone(table),
                     schema: schema_rc.clone(),
                 }));
 
                 if table.graphql_insert_types_are_valid() {
                     types_.push(__Type::InsertInput(InsertInputType {
-                        table: table.clone(),
+                        table: Rc::clone(table),
                         schema: schema_rc.clone(),
                     }));
                     types_.push(__Type::InsertResponse(InsertResponseType {
-                        table: table.clone(),
+                        table: Rc::clone(table),
                         schema: schema_rc.clone(),
                     }));
                 }
 
                 if table.graphql_update_types_are_valid() {
                     types_.push(__Type::UpdateInput(UpdateInputType {
-                        table: table.clone(),
+                        table: Rc::clone(table),
                         schema: schema_rc.clone(),
                     }));
                     types_.push(__Type::UpdateResponse(UpdateResponseType {
-                        table: table.clone(),
+                        table: Rc::clone(table),
                         schema: schema_rc.clone(),
                     }));
                 }
 
                 if table.graphql_delete_types_are_valid() {
                     types_.push(__Type::DeleteResponse(DeleteResponseType {
-                        table: table.clone(),
+                        table: Rc::clone(table),
                         schema: schema_rc.clone(),
                     }));
                 }

@@ -1,7 +1,6 @@
-use cached::proc_macro::cached;
-use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
+use std::rc::Rc;
 use std::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -211,12 +210,12 @@ pub struct SchemaDirectives {
 pub struct Schema {
     pub oid: u32,
     pub name: String,
-    pub tables: Vec<Table>,
+    pub tables: Vec<Rc<Table>>,
     pub comment: Option<String>,
     pub directives: SchemaDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Config {
     pub search_path: Vec<String>,
     pub role: String,
@@ -255,17 +254,18 @@ pub fn load_sql_config() -> Config {
     config
 }
 
+/*
 #[cached(
     type = "SizedCache<String, Context>",
     create = "{ SizedCache::with_size(250) }",
     convert = r#"{ format!("{}", _config) }"#,
     sync_writes = true
 )]
+*/
 pub fn load_sql_context(_config: &Config) -> Context {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().0;
-    //thread::sleep(time::Duration::from_secs(1));
     serde_json::from_value(sql_result).unwrap()
 }
 

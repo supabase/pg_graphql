@@ -4,6 +4,7 @@ use graphql_parser::query::parse_query;
 use pgx::*;
 use resolve::resolve_inner;
 use serde_json::json;
+use std::rc::Rc;
 
 mod builder;
 mod graphql;
@@ -44,10 +45,24 @@ fn resolve(
         }
         Ok(query_ast) => {
             let sql_config = sql_types::load_sql_config();
-            let sql_context = sql_types::load_sql_context(&sql_config);
-            let graphql_schema = __Schema {
-                context: sql_context,
+
+            // TODO: COMMENT HERE ABOUNT CACHING, THREAD, ETC
+            let cache = unsafe {
+                let _ = CACHE.get_or_init(|| Cache::new(250, 250));
+                CACHE.get_mut()
+            }
+            .unwrap();
+
+            let context = if let Some(rc_sql_context) = cache.get(&sql_config) {
+                rc_sql_context.clone()
+            } else {
+                let sql_context = sql_types::load_sql_context(&sql_config);
+                let rc_sql_context = Rc::new(sql_context);
+                cache.insert(sql_config, rc_sql_context.clone());
+                rc_sql_context
             };
+
+            let graphql_schema = __Schema { context };
             let variables = variables.map_or(json!({}), |v| v.0);
             resolve_inner(query_ast, &variables, &operationName, &graphql_schema)
         }
@@ -57,6 +72,11 @@ fn resolve(
 
     pgx::JsonB(value)
 }
+
+use once_cell::unsync::OnceCell;
+use quick_cache::unsync::Cache;
+
+static mut CACHE: OnceCell<Cache<sql_types::Config, Rc<sql_types::Context>>> = OnceCell::new();
 
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]

@@ -4,6 +4,7 @@ use crate::sql_types::*;
 use graphql_parser::query::*;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::str::FromStr;
 
 #[derive(Clone, Debug)]
@@ -14,7 +15,7 @@ pub struct InsertBuilder {
     pub objects: Vec<InsertRowBuilder>,
 
     // metadata
-    pub table: Table,
+    pub table: Rc<Table>,
 
     //fields
     pub selections: Vec<InsertSelection>,
@@ -304,7 +305,7 @@ pub struct UpdateBuilder {
     pub at_most: i32,
 
     // metadata
-    pub table: Table,
+    pub table: Rc<Table>,
 
     //fields
     pub selections: Vec<UpdateSelection>,
@@ -463,7 +464,7 @@ pub struct DeleteBuilder {
     pub at_most: i32,
 
     // metadata
-    pub table: Table,
+    pub table: Rc<Table>,
 
     //fields
     pub selections: Vec<DeleteSelection>,
@@ -561,7 +562,7 @@ pub struct ConnectionBuilder {
     pub order_by: OrderByBuilder,
 
     // metadata
-    pub table: Table,
+    pub table: Rc<Table>,
     pub fkey: Option<ForeignKey>,
     pub reverse_reference: Option<bool>,
 
@@ -778,7 +779,7 @@ pub struct NodeBuilder {
     pub alias: String,
 
     // metadata
-    pub table: Table,
+    pub table: Rc<Table>,
     pub fkey: Option<ForeignKey>,
     pub reverse_reference: Option<bool>,
 
