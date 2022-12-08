@@ -7,6 +7,7 @@ use pgx::*;
 use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
+use std::sync::Arc;
 
 pub fn quote_ident(ident: &str) -> String {
     unsafe {
@@ -119,7 +120,7 @@ impl Table {
     /// a priamry key tuple clause selects the columns of the primary key as a composite record
     /// that is useful in "has_previous_page" by letting us compare records on a known unique key
     fn to_primary_key_tuple_clause(&self, block_name: &str) -> String {
-        let pkey_cols: Vec<&Column> = self.primary_key_columns();
+        let pkey_cols: Vec<&Arc<Column>> = self.primary_key_columns();
 
         let pkey_frags: Vec<String> = pkey_cols
             .iter()
@@ -271,7 +272,7 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 
         let select_clause = frags.join(", ");
 
-        let columns: &Vec<Column> = &self.table.columns;
+        let columns: &Vec<Arc<Column>> = &self.table.columns;
 
         let mut values_rows_clause: Vec<String> = vec![];
 

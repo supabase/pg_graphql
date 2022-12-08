@@ -5,6 +5,7 @@ use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::Arc;
 
 impl Context {
     fn inflect_names(&self, schema_oid: u32) -> bool {
@@ -326,9 +327,9 @@ pub trait ___Field {
 
 #[derive(Clone, Debug)]
 pub enum NodeSQLType {
-    Column(Column),
-    NodeId(Vec<Column>),
-    Function(Function),
+    Column(Arc<Column>),
+    NodeId(Vec<Arc<Column>>),
+    Function(Arc<Function>),
 }
 
 #[derive(Clone, Debug)]
@@ -850,41 +851,41 @@ pub struct MutationType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertInputType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UpdateInputType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertResponseType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UpdateResponseType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeleteResponseType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ConnectionType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
 
     // If one is present, both should be present
     // could be improved
-    pub fkey: Option<ForeignKey>,
+    pub fkey: Option<Arc<ForeignKey>>,
     pub reverse_reference: Option<bool>,
 
     pub schema: Rc<__Schema>,
@@ -892,7 +893,7 @@ pub struct ConnectionType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EnumType {
-    pub enum_: Enum,
+    pub enum_: Arc<Enum>,
     pub schema: Rc<__Schema>,
 }
 
@@ -901,7 +902,7 @@ pub struct OrderByType {}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OrderByEntityType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
@@ -918,23 +919,23 @@ pub struct FilterTypeType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FilterEntityType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EdgeType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
     pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NodeType {
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
 
     // If one is present, both should be present
     // could be improved
-    pub fkey: Option<ForeignKey>,
+    pub fkey: Option<Arc<ForeignKey>>,
     pub reverse_reference: Option<bool>,
 
     pub schema: Rc<__Schema>,
@@ -967,7 +968,7 @@ impl ___Type for QueryType {
         let single_entrypoint = __Field {
             name_: "node".to_string(),
             type_: __Type::NodeInterface(NodeInterfaceType {
-                schema: self.schema.clone(),
+                schema: Rc::clone(&self.schema),
             }),
             args: vec![__InputValue {
                 name_: "nodeId".to_string(),
@@ -996,10 +997,10 @@ impl ___Type for QueryType {
                         lowercase_first_letter(&table.graphql_base_type_name())
                     ),
                     type_: __Type::Connection(ConnectionType {
-                        table: Rc::clone(table),
+                        table: Arc::clone(table),
                         fkey: None,
                         reverse_reference: None,
-                        schema: self.schema.clone(),
+                        schema: Rc::clone(&self.schema),
                     }),
                     args: vec![
                         __InputValue {
@@ -1033,7 +1034,7 @@ impl ___Type for QueryType {
                         __InputValue {
                             name_: "filter".to_string(),
                             type_: __Type::FilterEntity(FilterEntityType {
-                                table: Rc::clone(table),
+                                table: Arc::clone(table),
                                 schema: self.schema.clone(),
                             }),
                             description: Some("Filters to apply to the results set when querying from the collection".to_string()),
@@ -1046,7 +1047,7 @@ impl ___Type for QueryType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::OrderByEntity(
                                         OrderByEntityType {
-                                            table: Rc::clone(table),
+                                            table: Arc::clone(table),
                                             schema: self.schema.clone(),
                                         },
                                     )),
@@ -1125,8 +1126,8 @@ impl ___Type for MutationType {
                     f.push(__Field {
                         name_: format!("insertInto{}Collection", table.graphql_base_type_name()),
                         type_: __Type::InsertResponse(InsertResponseType {
-                            table: Rc::clone(table),
-                            schema: self.schema.clone(),
+                            table: Arc::clone(table),
+                            schema: Rc::clone(&self.schema),
                         }),
                         args: vec![__InputValue {
                             name_: "objects".to_string(),
@@ -1134,8 +1135,8 @@ impl ___Type for MutationType {
                                 type_: Box::new(__Type::List(ListType {
                                     type_: Box::new(__Type::NonNull(NonNullType {
                                         type_: Box::new(__Type::InsertInput(InsertInputType {
-                                            table: Rc::clone(table),
-                                            schema: self.schema.clone(),
+                                            table: Arc::clone(table),
+                                            schema: Rc::clone(&self.schema),
                                         })),
                                     })),
                                 })),
@@ -1158,8 +1159,8 @@ impl ___Type for MutationType {
                         name_: format!("update{}Collection", table.graphql_base_type_name()),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::UpdateResponse(UpdateResponseType {
-                                table: Rc::clone(table),
-                                schema: self.schema.clone(),
+                                table: Arc::clone(table),
+                                schema: Rc::clone(&self.schema),
                             })),
                         }),
                         args: vec![
@@ -1167,8 +1168,8 @@ impl ___Type for MutationType {
                                 name_: "set".to_string(),
                                 type_: __Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::UpdateInput(UpdateInputType {
-                                        table: Rc::clone(table),
-                                        schema: self.schema.clone(),
+                                        table: Arc::clone(table),
+                                        schema: Rc::clone(&self.schema),
                                     })),
                                 }),
                                 description: Some("Fields that are set will be updated for all records matching the `filter`".to_string()),
@@ -1178,8 +1179,8 @@ impl ___Type for MutationType {
                             __InputValue {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
-                                    table: Rc::clone(table),
-                                    schema: self.schema.clone(),
+                                    table: Arc::clone(table),
+                                    schema: Rc::clone(&self.schema),
                                 }),
                                 description: Some("Restricts the mutation's impact to records matching the criteria".to_string()),
                                 default_value: None,
@@ -1209,16 +1210,16 @@ impl ___Type for MutationType {
                         name_: format!("deleteFrom{}Collection", table.graphql_base_type_name()),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::DeleteResponse(DeleteResponseType {
-                                table: Rc::clone(table),
-                                schema: self.schema.clone(),
+                                table: Arc::clone(table),
+                                schema: Rc::clone(&self.schema),
                             })),
                         }),
                         args: vec![
                             __InputValue {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
-                                    table: Rc::clone(table),
-                                    schema: self.schema.clone(),
+                                    table: Arc::clone(table),
+                                    schema: Rc::clone(&self.schema),
                                 }),
                                 description: Some(
                                     "Restricts the mutation's impact to records matching the criteria"
@@ -1312,8 +1313,8 @@ impl ___Type for ConnectionType {
                     type_: Box::new(__Type::List(ListType {
                         type_: Box::new(__Type::NonNull(NonNullType {
                             type_: Box::new(__Type::Edge(EdgeType {
-                                table: self.table.clone(),
-                                schema: self.schema.clone(),
+                                table: Arc::clone(&self.table),
+                                schema: Rc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -1421,10 +1422,10 @@ impl ___Type for EdgeType {
                 name_: "node".to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Node(NodeType {
-                        table: self.table.clone(),
+                        table: Arc::clone(&self.table),
                         fkey: None,
                         reverse_reference: None,
-                        schema: self.schema.clone(),
+                        schema: Rc::clone(&self.schema),
                     })),
                 }),
                 args: vec![],
@@ -1502,7 +1503,7 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
         },
     };
 
-    let enums: Vec<&Enum> = schema
+    let enums: Vec<&Arc<Enum>> = schema
         .context
         .enums
         .iter()
@@ -1520,8 +1521,8 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
         {
             type_w_list_mod = __Type::List(ListType {
                 type_: Box::new(__Type::Enum(EnumType {
-                    enum_: enum_.clone(),
-                    schema: schema.clone(),
+                    enum_: Arc::clone(enum_),
+                    schema: Rc::clone(schema),
                 })),
             })
         }
@@ -1554,7 +1555,7 @@ impl ___Type for NodeType {
 
         if self.table.primary_key().is_some() {
             interfaces.push(__Type::NodeInterface(NodeInterfaceType {
-                schema: self.schema.clone(),
+                schema: Rc::clone(&self.schema),
             }))
         }
 
@@ -1578,7 +1579,7 @@ impl ___Type for NodeType {
                 args: vec![],
                 description: None,
                 deprecation_reason: None,
-                sql_type: Some(NodeSQLType::Column(col.clone())),
+                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
             })
             .collect();
 
@@ -1598,8 +1599,8 @@ impl ___Type for NodeType {
                     self.table
                         .primary_key_columns()
                         .iter()
-                        .map(|x| (*x).clone())
-                        .collect::<Vec<Column>>(),
+                        .map(|x| Arc::clone(x))
+                        .collect::<Vec<Arc<Column>>>(),
                 )),
             };
             node_id_field.push(node_id);
@@ -1625,7 +1626,7 @@ impl ___Type for NodeType {
                     args: vec![],
                     description: None,
                     deprecation_reason: None,
-                    sql_type: Some(NodeSQLType::Function(func.clone())),
+                    sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
                 })
                 .collect();
         }
@@ -1639,7 +1640,7 @@ impl ___Type for NodeType {
             .filter(|x| x.permissions.is_selectable)
         {
             let reverse_reference = false;
-            let foreign_table: Option<&Rc<Table>> = self
+            let foreign_table: Option<&Arc<Table>> = self
                 .schema
                 .context
                 .schemas
@@ -1660,10 +1661,10 @@ impl ___Type for NodeType {
                 name_: fkey.graphql_field_name(reverse_reference),
                 // XXX: column nullability ignored for NonNull type to match pg_graphql
                 type_: __Type::Node(NodeType {
-                    table: Rc::clone(foreign_table),
-                    fkey: Some(fkey.clone()),
+                    table: Arc::clone(foreign_table),
+                    fkey: Some(Arc::clone(fkey)),
                     reverse_reference: Some(reverse_reference),
-                    schema: self.schema.clone(),
+                    schema: Rc::clone(&self.schema),
                 }),
                 args: vec![],
                 description: None,
@@ -1685,7 +1686,7 @@ impl ___Type for NodeType {
             .filter(|x| x.referenced_table_meta.oid == self.table.oid)
         {
             let reverse_reference = true;
-            let foreign_table: Option<&Rc<Table>> = self
+            let foreign_table: Option<&Arc<Table>> = self
                 .schema
                 .context
                 .schemas
@@ -1708,10 +1709,10 @@ impl ___Type for NodeType {
                         name_: fkey.graphql_field_name(reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Connection(ConnectionType {
-                                table: Rc::clone(foreign_table),
-                                fkey: Some(fkey.clone()),
+                                table: Arc::clone(foreign_table),
+                                fkey: Some(Arc::clone(fkey)),
                                 reverse_reference: Some(reverse_reference),
-                                schema: self.schema.clone(),
+                                schema: Rc::clone(&self.schema),
                             }),
                         args: vec![
                             __InputValue {
@@ -1745,8 +1746,8 @@ impl ___Type for NodeType {
                             __InputValue {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
-                                    table: Rc::clone(foreign_table),
-                                    schema: self.schema.clone(),
+                                    table: Arc::clone(foreign_table),
+                                    schema: Rc::clone(&self.schema),
                                 }),
                                 description: Some("Filters to apply to the results set when querying from the collection".to_string()),
                                 default_value: None,
@@ -1758,8 +1759,8 @@ impl ___Type for NodeType {
                                     type_: Box::new(__Type::NonNull(NonNullType {
                                         type_: Box::new(__Type::OrderByEntity(
                                             OrderByEntityType {
-                                                table: Rc::clone(foreign_table),
-                                                schema: self.schema.clone(),
+                                                table: Arc::clone(foreign_table),
+                                                schema: Rc::clone(&self.schema),
                                             },
                                         )),
                                     })),
@@ -1779,10 +1780,10 @@ impl ___Type for NodeType {
                         name_: fkey.graphql_field_name(reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Node(NodeType {
-                            table: Rc::clone(foreign_table),
-                            fkey: Some(fkey.clone()),
+                            table: Arc::clone(foreign_table),
+                            fkey: Some(Arc::clone(fkey)),
                             reverse_reference: Some(reverse_reference),
-                            schema: self.schema.clone(),
+                            schema: Rc::clone(&self.schema),
                         }),
                         args: vec![],
                         description: None,
@@ -2669,7 +2670,7 @@ impl ___Type for InsertInputType {
                     type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
                     description: None,
                     default_value: None,
-                    sql_type: Some(NodeSQLType::Column(col.clone())),
+                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                 })
                 .collect(),
         )
@@ -2705,10 +2706,10 @@ impl ___Type for InsertResponseType {
                     type_: Box::new(__Type::List(ListType {
                         type_: Box::new(__Type::NonNull(NonNullType {
                             type_: Box::new(__Type::Node(NodeType {
-                                table: self.table.clone(),
+                                table: Arc::clone(&self.table),
                                 fkey: None,
                                 reverse_reference: None,
-                                schema: self.schema.clone(),
+                                schema: Rc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -2754,7 +2755,7 @@ impl ___Type for UpdateInputType {
                     type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
                     description: None,
                     default_value: None,
-                    sql_type: Some(NodeSQLType::Column(col.clone())),
+                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                 })
                 .collect(),
         )
@@ -2790,10 +2791,10 @@ impl ___Type for UpdateResponseType {
                     type_: Box::new(__Type::List(ListType {
                         type_: Box::new(__Type::NonNull(NonNullType {
                             type_: Box::new(__Type::Node(NodeType {
-                                table: self.table.clone(),
+                                table: Arc::clone(&self.table),
                                 fkey: None,
                                 reverse_reference: None,
-                                schema: self.schema.clone(),
+                                schema: Rc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -2837,10 +2838,10 @@ impl ___Type for DeleteResponseType {
                     type_: Box::new(__Type::List(ListType {
                         type_: Box::new(__Type::NonNull(NonNullType {
                             type_: Box::new(__Type::Node(NodeType {
-                                table: self.table.clone(),
+                                table: Arc::clone(&self.table),
                                 fkey: None,
                                 reverse_reference: None,
-                                schema: self.schema.clone(),
+                                schema: Rc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -3043,7 +3044,7 @@ impl ___Type for FilterEntityType {
                         }),
                         description: None,
                         default_value: None,
-                        sql_type: Some(NodeSQLType::Column(col.clone())),
+                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                     }),
                     // ERROR HERE
                     __Type::Enum(s) => Some(__InputValue {
@@ -3053,7 +3054,7 @@ impl ___Type for FilterEntityType {
                         }),
                         description: None,
                         default_value: None,
-                        sql_type: Some(NodeSQLType::Column(col.clone())),
+                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                     }),
                     _ => None,
                 }
@@ -3158,7 +3159,7 @@ impl ___Type for OrderByEntityType {
                     type_: __Type::OrderBy(OrderByType {}),
                     description: None,
                     default_value: None,
-                    sql_type: Some(NodeSQLType::Column(col.clone())),
+                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                 })
                 .collect(),
         )
@@ -3183,13 +3184,13 @@ pub struct GraphQLResponse {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct __Schema {
-    pub context: Rc<Context>,
+    pub context: Arc<Context>,
 }
 
 impl __Schema {
     // types: [__Type!]!
     pub fn types(&self) -> Vec<__Type> {
-        // This is certainly not the right way to do this
+        // This is is lightweight because context is Rc
         let schema_rc = Rc::new(self.clone());
 
         let mut types_: Vec<__Type> = vec![
@@ -3255,7 +3256,7 @@ impl __Schema {
 
         if self.mutations_exist() {
             types_.push(__Type::Mutation(MutationType {
-                schema: schema_rc.clone(),
+                schema: Rc::clone(&schema_rc),
             }));
         }
 
@@ -3266,58 +3267,58 @@ impl __Schema {
                 .filter(|x| x.graphql_select_types_are_valid())
             {
                 types_.push(__Type::Node(NodeType {
-                    table: Rc::clone(table),
+                    table: Arc::clone(table),
                     fkey: None,
                     reverse_reference: None,
-                    schema: schema_rc.clone(),
+                    schema: Rc::clone(&schema_rc),
                 }));
                 types_.push(__Type::Edge(EdgeType {
-                    table: Rc::clone(table),
-                    schema: schema_rc.clone(),
+                    table: Arc::clone(table),
+                    schema: Rc::clone(&schema_rc),
                 }));
                 types_.push(__Type::Connection(ConnectionType {
-                    table: Rc::clone(table),
+                    table: Arc::clone(table),
                     fkey: None,
                     reverse_reference: None,
-                    schema: schema_rc.clone(),
+                    schema: Rc::clone(&schema_rc),
                 }));
 
                 types_.push(__Type::FilterEntity(FilterEntityType {
-                    table: Rc::clone(table),
-                    schema: schema_rc.clone(),
+                    table: Arc::clone(table),
+                    schema: Rc::clone(&schema_rc),
                 }));
 
                 types_.push(__Type::OrderByEntity(OrderByEntityType {
-                    table: Rc::clone(table),
-                    schema: schema_rc.clone(),
+                    table: Arc::clone(table),
+                    schema: Rc::clone(&schema_rc),
                 }));
 
                 if table.graphql_insert_types_are_valid() {
                     types_.push(__Type::InsertInput(InsertInputType {
-                        table: Rc::clone(table),
-                        schema: schema_rc.clone(),
+                        table: Arc::clone(table),
+                        schema: Rc::clone(&schema_rc),
                     }));
                     types_.push(__Type::InsertResponse(InsertResponseType {
-                        table: Rc::clone(table),
-                        schema: schema_rc.clone(),
+                        table: Arc::clone(table),
+                        schema: Rc::clone(&schema_rc),
                     }));
                 }
 
                 if table.graphql_update_types_are_valid() {
                     types_.push(__Type::UpdateInput(UpdateInputType {
-                        table: Rc::clone(table),
-                        schema: schema_rc.clone(),
+                        table: Arc::clone(table),
+                        schema: Rc::clone(&schema_rc),
                     }));
                     types_.push(__Type::UpdateResponse(UpdateResponseType {
-                        table: Rc::clone(table),
-                        schema: schema_rc.clone(),
+                        table: Arc::clone(table),
+                        schema: Rc::clone(&schema_rc),
                     }));
                 }
 
                 if table.graphql_delete_types_are_valid() {
                     types_.push(__Type::DeleteResponse(DeleteResponseType {
-                        table: Rc::clone(table),
-                        schema: schema_rc.clone(),
+                        table: Arc::clone(table),
+                        schema: Rc::clone(&schema_rc),
                     }));
                 }
             }
@@ -3329,8 +3330,8 @@ impl __Schema {
                 .filter(|x| x.permissions.is_usable)
             {
                 let enum_type = EnumType {
-                    enum_: enum_.clone(),
-                    schema: schema_rc.clone(),
+                    enum_: Arc::clone(&enum_),
+                    schema: Rc::clone(&schema_rc),
                 };
 
                 types_.push(__Type::Enum(enum_type.clone()));
@@ -3376,7 +3377,6 @@ impl __Schema {
     #[allow(dead_code)]
     pub fn query_type(&self) -> __Type {
         __Type::Query(QueryType {
-            //schema: Rc::new(*self),
             schema: Rc::new(self.clone()),
         })
     }
@@ -3385,7 +3385,6 @@ impl __Schema {
     #[allow(dead_code)]
     pub fn mutation_type(&self) -> Option<__Type> {
         let mutation = MutationType {
-            //schema: Rc::new(*self),
             schema: Rc::new(self.clone()),
         };
 

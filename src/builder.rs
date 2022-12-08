@@ -4,8 +4,8 @@ use crate::sql_types::*;
 use graphql_parser::query::*;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct InsertBuilder {
@@ -15,7 +15,7 @@ pub struct InsertBuilder {
     pub objects: Vec<InsertRowBuilder>,
 
     // metadata
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
 
     //fields
     pub selections: Vec<InsertSelection>,
@@ -283,7 +283,7 @@ where
             }
             Ok(InsertBuilder {
                 alias,
-                table: xtype.table.clone(),
+                table: Arc::clone(&xtype.table),
                 objects,
                 selections: builder_fields,
             })
@@ -305,7 +305,7 @@ pub struct UpdateBuilder {
     pub at_most: i32,
 
     // metadata
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
 
     //fields
     pub selections: Vec<UpdateSelection>,
@@ -444,7 +444,7 @@ where
                 filter,
                 set,
                 at_most,
-                table: xtype.table.clone(),
+                table: Arc::clone(&xtype.table),
                 selections: builder_fields,
             })
         }
@@ -464,7 +464,7 @@ pub struct DeleteBuilder {
     pub at_most: i32,
 
     // metadata
-    pub table: Rc<Table>,
+    pub table: Arc<Table>,
 
     //fields
     pub selections: Vec<DeleteSelection>,
@@ -538,7 +538,7 @@ where
                 alias,
                 filter,
                 at_most,
-                table: xtype.table.clone(),
+                table: Arc::clone(&xtype.table),
                 selections: builder_fields,
             })
         }
@@ -562,8 +562,8 @@ pub struct ConnectionBuilder {
     pub order_by: OrderByBuilder,
 
     // metadata
-    pub table: Rc<Table>,
-    pub fkey: Option<ForeignKey>,
+    pub table: Arc<Table>,
+    pub fkey: Option<Arc<ForeignKey>>,
     pub reverse_reference: Option<bool>,
 
     //fields
@@ -601,7 +601,7 @@ impl FromStr for FilterOp {
 #[derive(Clone, Debug)]
 pub enum FilterBuilderElem {
     Column {
-        column: Column,
+        column: Arc<Column>,
         op: FilterOp,
         value: serde_json::Value, //String, // string repr castable by postgres
     },
@@ -668,7 +668,7 @@ impl OrderDirection {
 impl OrderByBuilderElem {
     fn reverse(&self) -> Self {
         Self {
-            column: self.column.clone(),
+            column: Arc::clone(&self.column),
             direction: self.direction.reverse(),
         }
     }
@@ -725,7 +725,7 @@ impl FromStr for Cursor {
 
 #[derive(Clone, Debug)]
 pub struct OrderByBuilderElem {
-    pub column: Column,
+    pub column: Arc<Column>,
     pub direction: OrderDirection,
 }
 
@@ -779,8 +779,8 @@ pub struct NodeBuilder {
     pub alias: String,
 
     // metadata
-    pub table: Rc<Table>,
-    pub fkey: Option<ForeignKey>,
+    pub table: Arc<Table>,
+    pub fkey: Option<Arc<ForeignKey>>,
     pub reverse_reference: Option<bool>,
 
     pub selections: Vec<NodeSelection>,
@@ -809,19 +809,19 @@ pub struct NodeIdBuilder {
     pub alias: String,
     pub schema_name: String,
     pub table_name: String,
-    pub columns: Vec<Column>,
+    pub columns: Vec<Arc<Column>>,
 }
 
 #[derive(Clone, Debug)]
 pub struct ColumnBuilder {
     pub alias: String,
-    pub column: Column,
+    pub column: Arc<Column>,
 }
 
 #[derive(Clone, Debug)]
 pub struct FunctionBuilder {
     pub alias: String,
-    pub function: Function,
+    pub function: Arc<Function>,
 }
 
 fn restrict_allowed_arguments<'a, T>(
@@ -897,7 +897,7 @@ where
             match &filter_iv.sql_type {
                 Some(NodeSQLType::Column(col)) => {
                     let filter_builder = FilterBuilderElem::Column {
-                        column: col.clone(),
+                        column: Arc::clone(col),
                         op: filter_op,
                         value: filter_val.clone(),
                     };
@@ -964,7 +964,7 @@ where
                             match &column_input_value.sql_type {
                                 Some(NodeSQLType::Column(col)) => {
                                     let order_rec = OrderByBuilderElem {
-                                        column: col.clone(),
+                                        column: Arc::clone(col),
                                         direction: order_direction,
                                     };
                                     orders.push(order_rec);
@@ -990,7 +990,7 @@ where
         for col in &order_type.table.columns {
             if &col.attribute_num == col_attnum {
                 let order_rec = OrderByBuilderElem {
-                    column: col.clone(),
+                    column: Arc::clone(col),
                     direction: OrderDirection::AscNullsLast,
                 };
                 orders.push(order_rec);
@@ -1119,7 +1119,7 @@ where
             }
             Ok(ConnectionBuilder {
                 alias,
-                table: xtype.table.clone(),
+                table: Arc::clone(&xtype.table),
                 fkey: xtype.fkey.clone(),
                 reverse_reference: xtype.reverse_reference,
                 first,
@@ -1369,18 +1369,18 @@ where
                             Some(node_sql_type) => match node_sql_type {
                                 NodeSQLType::Column(col) => NodeSelection::Column(ColumnBuilder {
                                     alias,
-                                    column: col.clone(),
+                                    column: Arc::clone(col),
                                 }),
                                 NodeSQLType::Function(func) => {
                                     NodeSelection::Function(FunctionBuilder {
                                         alias,
-                                        function: func.clone(),
+                                        function: Arc::clone(func),
                                     })
                                 }
                                 NodeSQLType::NodeId(pkey_columns) => {
                                     NodeSelection::NodeId(NodeIdBuilder {
                                         alias,
-                                        columns: pkey_columns.clone(),
+                                        columns: pkey_columns.clone(), // interior is arc
                                         table_name: xtype.table.name.clone(),
                                         schema_name: xtype.table.schema.clone(),
                                     })
@@ -1408,7 +1408,7 @@ where
     Ok(NodeBuilder {
         node_id,
         alias,
-        table: xtype.table.clone(),
+        table: Arc::clone(&xtype.table),
         fkey: xtype.fkey.clone(),
         reverse_reference: xtype.reverse_reference,
         selections: builder_fields,
