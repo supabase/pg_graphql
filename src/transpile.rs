@@ -540,7 +540,7 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
 
 impl OrderByBuilder {
     fn to_order_by_clause(&self, block_name: &str) -> String {
-        let mut frags = vec!["true".to_string()];
+        let mut frags = vec![];
 
         for elem in &self.elems {
             let quoted_column_name = quote_ident(&elem.column.name);
