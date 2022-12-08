@@ -2,6 +2,7 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -162,12 +163,12 @@ pub struct Table {
     pub oid: u32,
     pub name: String,
     pub schema: String,
-    pub columns: Vec<Column>,
+    pub columns: Vec<Arc<Column>>,
     pub comment: Option<String>,
     pub permissions: TablePermissions,
     pub indexes: Vec<Index>,
-    pub functions: Vec<Function>,
-    pub foreign_keys: Vec<ForeignKey>,
+    pub functions: Vec<Arc<Function>>,
+    pub foreign_keys: Vec<Arc<ForeignKey>>,
     pub directives: TableDirectives,
 }
 
@@ -176,7 +177,7 @@ impl Table {
         self.indexes.iter().find(|x| x.is_primary_key)
     }
 
-    pub fn primary_key_columns(&self) -> Vec<&Column> {
+    pub fn primary_key_columns(&self) -> Vec<&Arc<Column>> {
         self.primary_key()
             .map(|x| &x.column_attnums)
             .unwrap_or(&vec![])
@@ -187,7 +188,7 @@ impl Table {
                     .find(|col| &col.attribute_num == col_num)
                     .expect("Failed to unwrap pkey by attnum")
             })
-            .collect::<Vec<&Column>>()
+            .collect::<Vec<&Arc<Column>>>()
     }
 
     pub fn is_any_column_selectable(&self) -> bool {
@@ -211,12 +212,12 @@ pub struct SchemaDirectives {
 pub struct Schema {
     pub oid: u32,
     pub name: String,
-    pub tables: Vec<Table>,
+    pub tables: Vec<Arc<Table>>,
     pub comment: Option<String>,
     pub directives: SchemaDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Config {
     pub search_path: Vec<String>,
     pub role: String,
@@ -238,8 +239,8 @@ impl fmt::Display for Config {
 pub struct Context {
     pub config: Config,
     pub schemas: Vec<Schema>,
-    pub enums: Vec<Enum>,
-    pub composites: Vec<Composite>,
+    pub enums: Vec<Arc<Enum>>,
+    pub composites: Vec<Arc<Composite>>,
 }
 
 impl Context {
@@ -256,17 +257,17 @@ pub fn load_sql_config() -> Config {
 }
 
 #[cached(
-    type = "SizedCache<String, Context>",
+    type = "SizedCache<String, Arc<Context>>",
     create = "{ SizedCache::with_size(250) }",
     convert = r#"{ format!("{}", _config) }"#,
     sync_writes = true
 )]
-pub fn load_sql_context(_config: &Config) -> Context {
+pub fn load_sql_context(_config: &Config) -> Arc<Context> {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().0;
-    //thread::sleep(time::Duration::from_secs(1));
-    serde_json::from_value(sql_result).unwrap()
+    let context: Context = serde_json::from_value(sql_result).unwrap();
+    Arc::new(context)
 }
 
 #[cfg(any(test, feature = "pg_test"))]

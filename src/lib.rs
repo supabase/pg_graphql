@@ -44,10 +44,9 @@ fn resolve(
         }
         Ok(query_ast) => {
             let sql_config = sql_types::load_sql_config();
-            let sql_context = sql_types::load_sql_context(&sql_config);
-            let graphql_schema = __Schema {
-                context: sql_context,
-            };
+            let context = sql_types::load_sql_context(&sql_config);
+
+            let graphql_schema = __Schema { context };
             let variables = variables.map_or(json!({}), |v| v.0);
             resolve_inner(query_ast, &variables, &operationName, &graphql_schema)
         }
