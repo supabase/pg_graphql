@@ -539,6 +539,10 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
 
 impl OrderByBuilder {
     fn to_order_by_clause(&self, block_name: &str) -> String {
+        #[cfg(feature = "pg15")]
+        let mut frags = vec![];
+
+        #[cfg(not(feature = "pg15"))]
         let mut frags = vec!["true".to_string()];
 
         for elem in &self.elems {
