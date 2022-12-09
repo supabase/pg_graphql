@@ -551,7 +551,7 @@ We expect to expand support to user defined `AND` and `OR` composition in a futu
 
 #### Ordering
 
-The default order of results is defined by the underlying table's primary key column/s in ascending order. That default can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
+The default order of results is defined by the underlying table's primary key column in ascending order. That default can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
 
 === "QueryType"
 
