@@ -17,13 +17,13 @@ The `node` interface allows for retrieving records that are uniquely identifiabl
 
 **SQL Setup**
 ```sql
-  create table "Blog"(
-    id serial primary key,
-    name varchar(255) not null,
-    description varchar(255),
-    "createdAt" timestamp not null,
-    "updatedAt" timestamp not null
-  );
+create table "Blog"(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null,
+  "updatedAt" timestamp not null
+);
 ```
 
 **GraphQL Types**
@@ -81,7 +81,7 @@ Each table has top level entry in the `Query` type for selecting records from th
 **SQL Setup**
 
 ```sql
-create table blog(
+create table "Blog"(
   id serial primary key,
   name varchar(255) not null,
   description varchar(255),
@@ -498,7 +498,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 | lt          | Less Than                |
 | lte         | Less Than Or Equal To    |
 
-Not all operators are avaiable on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
+Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
 
 **Example**
@@ -551,7 +551,7 @@ We expect to expand support to user defined `AND` and `OR` composition in a futu
 
 #### Ordering
 
-The default order of results is defined by the underlying table's primary key column in ascending order. That default can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
+The default order of results is defined by the underlying table's primary key column/s in ascending order. That default can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
 
 === "QueryType"
 
@@ -663,7 +663,7 @@ Each table has top level entry in the `Mutation` type for [inserting](#insert) `
 
 **SQL Setup**
 ```sql
-create table blog(
+create table "Blog"(
   id serial primary key,
   name varchar(255) not null,
   description varchar(255),
@@ -724,7 +724,7 @@ To add records to a collection, use the `insertInto<Table>Collection` field on t
 
 **SQL Setup**
 ```sql
-create table blog(
+create table "Blog"(
   id serial primary key,
   name varchar(255) not null,
   description varchar(255),
@@ -826,7 +826,7 @@ To update records in a collection, use the `update<Table>Collection` field on th
 
 **SQL Setup**
 ```sql
-create table blog(
+create table "Blog"(
   id serial primary key,
   name varchar(255) not null,
   description varchar(255),
@@ -935,7 +935,7 @@ To remove records from a collection, use the `deleteFrom<Table>Collection` field
 
 **SQL Setup**
 ```sql
-create table blog(
+create table "Blog"(
   id serial primary key,
   name varchar(255) not null,
   description varchar(255),
@@ -1033,6 +1033,10 @@ Where `filter` controls which records should be deleted and `atMost` restricts t
 ### nodeId
 
 The base GraphQL type for every table with a primary key is automatically assigned a `nodeId: ID!` field. That value, can be passed to the [node](#node) entrypoint of the `Query` type to retrieve its other fields. `nodeId` may also be used as a caching key.
+
+!!!note "relay support"
+    By default relay expects the `ID` field for types to have the name `id`. pg_graphql uses `nodeId` by default to avoid conflicting with user defined `id` columns. You can configure relay to work with pg_graphql's `nodeId` field with relay's `nodeInterfaceIdField` option. More info available [here](https://github.com/facebook/relay/tree/main/packages/relay-compiler#supported-compiler-configuration-options).
+
 
 
 **SQL Setup**
