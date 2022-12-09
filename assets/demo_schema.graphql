@@ -44,6 +44,7 @@ type AccountEdge {
 }
 
 input AccountFilter {
+  nodeId: IDFilter
   id: IntFilter
   email: StringFilter
   createdAt: DatetimeFilter
@@ -79,21 +80,6 @@ type AccountUpdateResponse {
 
   """Array of records impacted by the mutation"""
   records: [Account!]!
-}
-
-scalar BigInt
-
-"""
-Boolean expression comparing fields on type "BigInt"
-"""
-input BigIntFilter {
-  eq: BigInt
-  gt: BigInt
-  gte: BigInt
-  in: [BigInt!]
-  lt: BigInt
-  lte: BigInt
-  neq: BigInt
 }
 
 type Blog implements Node {
@@ -145,6 +131,7 @@ type BlogEdge {
 }
 
 input BlogFilter {
+  nodeId: IDFilter
   id: IntFilter
   ownerId: IntFilter
   name: StringFilter
@@ -206,6 +193,7 @@ type BlogPostEdge {
 }
 
 input BlogPostFilter {
+  nodeId: IDFilter
   id: UUIDFilter
   blogId: IntFilter
   title: StringFilter
@@ -284,6 +272,28 @@ type BlogUpdateResponse {
 
   """Array of records impacted by the mutation"""
   records: [Blog!]!
+}
+
+"""
+Boolean expression comparing fields on type "ID"
+"""
+input IDFilter {
+  eq: ID
+}
+
+scalar BigInt
+
+"""
+Boolean expression comparing fields on type "BigInt"
+"""
+input BigIntFilter {
+  eq: BigInt
+  gt: BigInt
+  gte: BigInt
+  in: [BigInt!]
+  lt: BigInt
+  lte: BigInt
+  neq: BigInt
 }
 
 """

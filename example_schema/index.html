@@ -1051,7 +1051,17 @@
 <span class="normal">588</span>
 <span class="normal">589</span>
 <span class="normal">590</span>
-<span class="normal">591</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
   <span class="c c-Multi">&quot;&quot;&quot;Globally Unique Record Identifier&quot;&quot;&quot;</span>
   nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">Int</span><span class="p">!</span>
@@ -1097,6 +1107,7 @@
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">AccountFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
   id: <span class="k">IntFilter</span>
   email: <span class="k">StringFilter</span>
   createdAt: <span class="k">DatetimeFilter</span>
@@ -1132,21 +1143,6 @@
 
   <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
   records: <span class="p">[</span><span class="k">Account</span><span class="p">!]!</span>
-<span class="p">}</span>
-
-<span class="k">scalar</span> <span class="k">BigInt</span>
-
-<span class="c c-Multi">&quot;&quot;&quot;</span>
-<span class="c c-Multi">Boolean expression comparing fields on type &quot;BigInt&quot;</span>
-<span class="c c-Multi">&quot;&quot;&quot;</span>
-<span class="kt">input</span> <span class="k">BigIntFilter</span> <span class="p">{</span>
-  eq: <span class="k">BigInt</span>
-  gt: <span class="k">BigInt</span>
-  gte: <span class="k">BigInt</span>
-  in: <span class="p">[</span><span class="k">BigInt</span><span class="p">!]</span>
-  lt: <span class="k">BigInt</span>
-  lte: <span class="k">BigInt</span>
-  neq: <span class="k">BigInt</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">Blog</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
@@ -1198,6 +1194,7 @@
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
   id: <span class="k">IntFilter</span>
   ownerId: <span class="k">IntFilter</span>
   name: <span class="k">StringFilter</span>
@@ -1259,6 +1256,7 @@
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogPostFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
   id: <span class="k">UUIDFilter</span>
   blogId: <span class="k">IntFilter</span>
   title: <span class="k">StringFilter</span>
@@ -1337,6 +1335,28 @@
 
   <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
   records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
+<span class="p">}</span>
+
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;ID&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">IDFilter</span> <span class="p">{</span>
+  eq: <span class="k">ID</span>
+<span class="p">}</span>
+
+<span class="k">scalar</span> <span class="k">BigInt</span>
+
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;BigInt&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">BigIntFilter</span> <span class="p">{</span>
+  eq: <span class="k">BigInt</span>
+  gt: <span class="k">BigInt</span>
+  gte: <span class="k">BigInt</span>
+  in: <span class="p">[</span><span class="k">BigInt</span><span class="p">!]</span>
+  lt: <span class="k">BigInt</span>
+  lte: <span class="k">BigInt</span>
+  neq: <span class="k">BigInt</span>
 <span class="p">}</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>

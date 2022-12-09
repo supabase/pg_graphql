@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#type-conversion" class="md-skip">
+        <a href="#querytype" class="md-skip">
           Skip to content
         </a>
       
@@ -286,14 +286,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#type-conversion" class="md-nav__link">
-    Type Conversion
-  </a>
-  
-    <nav class="md-nav" aria-label="Type Conversion">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#querytype" class="md-nav__link">
     QueryType
   </a>
@@ -346,8 +338,8 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#mutationtype" class="md-nav__link">
     MutationType
   </a>
@@ -380,8 +372,8 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#concepts" class="md-nav__link">
     Concepts
   </a>
@@ -422,11 +414,6 @@
   <a href="#one-to-one" class="md-nav__link">
     One-to-One
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -563,14 +550,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#type-conversion" class="md-nav__link">
-    Type Conversion
-  </a>
-  
-    <nav class="md-nav" aria-label="Type Conversion">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#querytype" class="md-nav__link">
     QueryType
   </a>
@@ -623,8 +602,8 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#mutationtype" class="md-nav__link">
     MutationType
   </a>
@@ -657,8 +636,8 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#concepts" class="md-nav__link">
     Concepts
   </a>
@@ -711,11 +690,6 @@
     </nav>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
     </ul>
   
@@ -742,12 +716,27 @@
 <p>In our API, each SQL table is reflected as a set of GraphQL types. At a high level, tables become types and columns/foreign keys become fields on those types.</p>
 <p>By default, PostgreSQL table and column names are not inflected when reflecting GraphQL  names. For example, an <code>account_holder</code> table has GraphQL type name <code>account_holder</code>. In cases where SQL entities are named using <code>snake_case</code>, <a href="/pg_graphql/configuration/#inflection">enable inflection</a> to match GraphQL/Javascript conventions e.g. <code>account_holder</code> -&gt; <code>AccountHolder</code>.</p>
 <p>Individual table, column, and relationship names may also be <a href="/pg_graphql/configuration/#tables-type">manually overridden</a>.</p>
-<h2 id="type-conversion">Type Conversion</h2>
-<h3 id="querytype">QueryType</h3>
+<h2 id="querytype">QueryType</h2>
 <p>The <code>Query</code> type is the entrypoint for all read access into the graph.</p>
-<h4 id="node">Node</h4>
+<h3 id="node">Node</h3>
 <p>The <code>node</code> interface allows for retrieving records that are uniquely identifiable by a globally unique <code>nodeId: ID!</code> field. For more information about nodeId, see <a href="#nodeid">nodeId</a>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">QueryType</label><label for="__tabbed_1_2">SQL</label></div>
+<p><strong>SQL Setup</strong>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">QueryType</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -765,25 +754,10 @@
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>To query the <code>node</code> interface effectively, use <a href="https://graphql.org/learn/queries/#inline-fragments">inline fragments</a> to specify which fields to return for each type.</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Query</label><label for="__tabbed_2_2">Response</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -834,9 +808,25 @@
 </div>
 </div>
 </div>
-<h4 id="collections">Collections</h4>
-<p>Each table has top level entry in the <code>Query</code> type for selecting records from that table. Collections return a <a href="#connection-types">connection type</a> and can be <a href="#pagination">paginated</a>, <a href="#filtering">filtered</a>, and <a href="#sorting">sorted</a> using the available arguments.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">QueryType</label><label for="__tabbed_3_2">SQL</label></div>
+<h3 id="collections">Collections</h3>
+<p>Each table has top level entry in the <code>Query</code> type for selecting records from that table. Collections return a connection type and can be <a href="#pagination">paginated</a>, <a href="#filtering">filtered</a>, and <a href="#ordering">sorted</a> using the available arguments.</p>
+<p><strong>SQL Setup</strong></p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:1"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">QueryType</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -890,27 +880,11 @@
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>Connection types are the primary interface to returning records from a collection.</p>
 <p>Connections wrap a result set with some additional metadata.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:7"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><input id="__tabbed_4_4" name="__tabbed_4" type="radio" /><input id="__tabbed_4_5" name="__tabbed_4" type="radio" /><input id="__tabbed_4_6" name="__tabbed_4" type="radio" /><input id="__tabbed_4_7" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">BlogConnection</label><label for="__tabbed_4_2">BlogEdge</label><label for="__tabbed_4_3">PageInfo</label><label for="__tabbed_4_4">Blog</label><label for="__tabbed_4_5">BlogOrderBy</label><label for="__tabbed_4_6">BlogFilter</label><label for="__tabbed_4_7">SQL</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:6"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><input id="__tabbed_4_4" name="__tabbed_4" type="radio" /><input id="__tabbed_4_5" name="__tabbed_4" type="radio" /><input id="__tabbed_4_6" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">BlogConnection</label><label for="__tabbed_4_2">BlogEdge</label><label for="__tabbed_4_3">PageInfo</label><label for="__tabbed_4_4">Blog</label><label for="__tabbed_4_5">BlogOrderBy</label><label for="__tabbed_4_6">BlogFilter</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -1057,7 +1031,9 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
   id: <span class="k">IntFilter</span>
   name: <span class="k">StringFilter</span>
   description: <span class="k">StringFilter</span>
@@ -1066,29 +1042,13 @@
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">updated_at</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The <code>totalCount</code> field is disabled by default because it can be expensive on larget tables. To enable it use a <a href="../configuration/#totalcount">comment directive</a></p>
+<p>The <code>totalCount</code> field is disabled by default because it can be expensive on large tables. To enable it use a <a href="../configuration/#totalcount">comment directive</a></p>
 </div>
-<h5 id="pagination">Pagination</h5>
+<h4 id="pagination">Pagination</h4>
 <p>Paginating forwards and backwards through collections is handled using the <code>first</code>, <code>last</code>, <code>before</code>, and <code>after</code> parameters, following the <a href="https://relay.dev/graphql/connections.htm#">relay spec</a>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:1"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">QueryType</label></div>
 <div class="tabbed-content">
@@ -1137,27 +1097,9 @@
 </div>
 </div>
 <p>Metadata relating to the current page of a result set is available on the <code>pageInfo</code> field of the connection type returned from a collection.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">GraphQL</label><label for="__tabbed_6_2">SQL</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">PageInfo</label><label for="__tabbed_6_2">BlogConnection</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
-
-  <span class="c c-Singline"># Pagination metadata</span>
-  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
-
-  <span class="c c-Singline"># Result set</span>
-  edges: <span class="p">[</span><span class="k">BlogEdge</span><span class="p">!]!</span>
-
-<span class="p">}</span>
-</code></pre></div></td></tr></table></div>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1194,18 +1136,23 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
+
+  <span class="c c-Singline"># Pagination metadata</span>
+  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
+
+  <span class="c c-Singline"># Result set</span>
+  edges: <span class="p">[</span><span class="k">BlogEdge</span><span class="p">!]!</span>
+
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 </div>
 </div>
-<p>To paginate forward in the collection, use the <code>first</code> and <code>after</code> aguments. To retrive the first page, the <code>after</code> argument should be null.</p>
+<p>To paginate forward in the collection, use the <code>first</code> and <code>after</code> aguments. To retrive the first page, the <code>after</code> argument should be null or absent.</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Query</label><label for="__tabbed_7_2">Page 1</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1381,14 +1328,9 @@
 </div>
 <p>once the collection has been fully enumerated, <code>data.blogConnection.pageInfo.hasNextPage</code> returns false.</p>
 <p>To paginate backwards through a collection, repeat the process substituting <code>first</code> -&gt; <code>last</code>, <code>after</code> -&gt; <code>before</code>, <code>hasNextPage</code> -&gt; <code>hasPreviousPage</code></p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Do not use cursors as unique identifiers.
-Cursors are not stable across versions of pg_graphql and should only be persisted within a single user session.</p>
-</div>
-<h5 id="filtering">Filtering</h5>
+<h4 id="filtering">Filtering</h4>
 <p>To filter the result set, use the <code>filter</code> argument.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">QueryType</label><label for="__tabbed_9_2">SQL</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:1"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">QueryType</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -1414,22 +1356,6 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>Where the <code>&lt;Table&gt;Filter</code> type enumerates filterable fields and their associated <code>&lt;Type&gt;Filter</code>.</p>
@@ -1442,7 +1368,9 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
   id: <span class="k">IntFilter</span>
   name: <span class="k">StringFilter</span>
   description: <span class="k">StringFilter</span>
@@ -1544,8 +1472,8 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </tr>
 </tbody>
 </table>
-<p>Not all operators are avaiable on every <code>&lt;Type&gt;Filter</code> type. For example, <code>UUIDFilter</code> only supports <code>eq</code> and <code>neq</code> because <code>UUID</code>s are not ordered.</p>
-<p>Example usage:</p>
+<p>Not all operators are available on every <code>&lt;Type&gt;Filter</code> type. For example, <code>UUIDFilter</code> only supports <code>eq</code> and <code>neq</code> because <code>UUID</code>s are not ordered.</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Query</label><label for="__tabbed_11_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1620,8 +1548,8 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 <p>When multiple filters are provided to the <code>filter</code> argument, all conditions must be met for a record to be returned. In other words, multiple filters are composed with <code>AND</code> boolean logic.</p>
 <p>We expect to expand support to user defined <code>AND</code> and <code>OR</code> composition in a future release.</p>
-<h5 id="ordering">Ordering</h5>
-<p>The default order of results is defined by the underlying table's primary key column in ascending order. That default can be overridden by passing an array of <code>&lt;Table&gt;OrderBy</code> to the collection's <code>orderBy</code> argument.</p>
+<h4 id="ordering">Ordering</h4>
+<p>The default order of results is defined by the underlying table's primary key column/s in ascending order. That default can be overridden by passing an array of <code>&lt;Table&gt;OrderBy</code> to the collection's <code>orderBy</code> argument.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="12:3"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><input id="__tabbed_12_3" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">QueryType</label><label for="__tabbed_12_2">BlogOrderBy</label><label for="__tabbed_12_3">OrderByDirection</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1696,7 +1624,7 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 </div>
-<p>Example usage:</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Query</label><label for="__tabbed_13_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1784,10 +1712,25 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 <p>Note, only one key value pair may be provided to each element of the input array. For example, <code>[{name: AscNullsLast}, {id: AscNullFirst}]</code> is valid. Passing multiple key value pairs in a single element of the input array e.g. <code>[{name: AscNullsLast, id: AscNullFirst}]</code>, is invalid.</p>
-<h3 id="mutationtype">MutationType</h3>
+<h2 id="mutationtype">MutationType</h2>
 <p>The <code>Mutation</code> type is the entrypoint for mutations/edits.</p>
 <p>Each table has top level entry in the <code>Mutation</code> type for <a href="#insert">inserting</a> <code>insertInto&lt;Table&gt;Collection</code>, <a href="#update">updating</a> <code>update&lt;Table&gt;Collection</code> and <a href="#delete">deleting</a> <code>deleteFrom&lt;Table&gt;Collection</code>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MutationType</label><label for="__tabbed_14_2">SQL</label></div>
+<p><strong>SQL Setup</strong>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:1"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MutationType</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -1873,27 +1816,27 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
+</div>
+</div>
+<h3 id="insert">Insert</h3>
+<p>To add records to a collection, use the <code>insertInto&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
+<p><strong>SQL Setup</strong>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
 <span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
 <span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
 <span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
 <span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
 <span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
 <span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
-</div>
-</div>
-<h4 id="insert">Insert</h4>
-<p>To add records to a collection, use the <code>insertInto&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="15:4"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><input id="__tabbed_15_3" name="__tabbed_15" type="radio" /><input id="__tabbed_15_4" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MutationType</label><label for="__tabbed_15_2">BlogInsertInput</label><label for="__tabbed_15_3">BlogInsertResponse</label><label for="__tabbed_15_4">SQL</label></div>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:3"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><input id="__tabbed_15_3" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MutationType</label><label for="__tabbed_15_2">BlogInsertInput</label><label for="__tabbed_15_3">BlogInsertResponse</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -1951,26 +1894,10 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>Where elements in the <code>objects</code> array are inserted into the underlying table.</p>
-<p>Example usage:</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">Query</label><label for="__tabbed_16_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2041,9 +1968,25 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 </div>
-<h4 id="update">Update</h4>
+<h3 id="update">Update</h3>
 <p>To update records in a collection, use the <code>update&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="17:4"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><input id="__tabbed_17_3" name="__tabbed_17" type="radio" /><input id="__tabbed_17_4" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MutationType</label><label for="__tabbed_17_2">BlogUpdateInput</label><label for="__tabbed_17_3">BlogUpdateResponse</label><label for="__tabbed_17_4">SQL</label></div>
+<p><strong>SQL Setup</strong>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:3"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><input id="__tabbed_17_3" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MutationType</label><label for="__tabbed_17_2">BlogUpdateInput</label><label for="__tabbed_17_3">BlogUpdateResponse</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2123,26 +2066,10 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>Where the <code>set</code> argument is a key value pair describing the values to update, <code>filter</code> controls which records should be updated, and <code>atMost</code> restricts the maximum number of records that may be impacted. If the number of records impacted by the mutation exceeds the <code>atMost</code> parameter the operation will return an error.</p>
-<p>Example usage:</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="18:2"><input checked="checked" id="__tabbed_18_1" name="__tabbed_18" type="radio" /><input id="__tabbed_18_2" name="__tabbed_18" type="radio" /><div class="tabbed-labels"><label for="__tabbed_18_1">Query</label><label for="__tabbed_18_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2201,9 +2128,25 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 </div>
-<h4 id="delete">Delete</h4>
+<h3 id="delete">Delete</h3>
 <p>To remove records from a collection, use the <code>deleteFrom&lt;Table&gt;Collection</code> field on the <code>Mutation</code> type.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="19:4"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><input id="__tabbed_19_3" name="__tabbed_19" type="radio" /><input id="__tabbed_19_4" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MutationType</label><label for="__tabbed_19_2">BlogFilter</label><label for="__tabbed_19_3">BlogDeleteResponse</label><label for="__tabbed_19_4">SQL</label></div>
+<p><strong>SQL Setup</strong>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="19:3"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><input id="__tabbed_19_3" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MutationType</label><label for="__tabbed_19_2">BlogFilter</label><label for="__tabbed_19_3">BlogDeleteResponse</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2271,26 +2214,10 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">blog</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">description</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;createdAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">now</span><span class="p">(),</span><span class="w"></span>
-<span class="w">  </span><span class="ss">&quot;updatedAt&quot;</span><span class="w"> </span><span class="k">timestamp</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>Where <code>filter</code> controls which records should be deleted and <code>atMost</code> restricts the maximum number of records that may be deleted. If the number of records impacted by the mutation exceeds the <code>atMost</code> parameter the operation will return an error.</p>
-<p>Example usage:</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">Query</label><label for="__tabbed_20_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2347,10 +2274,24 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 </div>
-<h3 id="concepts">Concepts</h3>
-<h4 id="nodeid">nodeId</h4>
+<h2 id="concepts">Concepts</h2>
+<h3 id="nodeid">nodeId</h3>
 <p>The base GraphQL type for every table with a primary key is automatically assigned a <code>nodeId: ID!</code> field. That value, can be passed to the <a href="#node">node</a> entrypoint of the <code>Query</code> type to retrieve its other fields. <code>nodeId</code> may also be used as a caching key.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="21:2"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">GraphQL</label><label for="__tabbed_21_2">SQL</label></div>
+<div class="admonition note">
+<p class="admonition-title">relay support</p>
+<p>By default relay expects the <code>ID</code> field for types to have the name <code>id</code>. pg_graphql uses <code>nodeId</code> by default to avoid conflicting with user defined <code>id</code> columns. You can configure relay to work with pg_graphql's <code>nodeId</code> field with relay's <code>nodeInterfaceIdField</code> option. More info available <a href="https://github.com/facebook/relay/tree/main/packages/relay-compiler#supported-compiler-configuration-options">here</a>.</p>
+</div>
+<p><strong>SQL Setup</strong>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="21:1"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">Blog</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -2364,23 +2305,37 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="err">}</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
+</div>
+</div>
+<h3 id="relationships">Relationships</h3>
+<p>Relationships between collections in the Graph are derived from foreign keys.</p>
+<h4 id="one-to-many">One-to-Many</h4>
+<p>A foreign key on table A referencing table B defines a one-to-many relationship from table A to table B.</p>
+<p><strong>SQL Setup</strong>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
 <span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
 <span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
 <span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
-</div>
-</div>
-<h4 id="relationships">Relationships</h4>
-<p>Relationships between collections in the Graph are derived from foreign keys.</p>
-<h5 id="one-to-many">One-to-Many</h5>
-<p>A foreign key on table A referencing table B defines a one-to-many relationship from table A to table B.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">GraphQL</label><label for="__tabbed_22_2">SQL</label></div>
+
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;blogId&quot;</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">body</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="22:1"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">Blog</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2444,34 +2399,10 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="err">}</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 </div>
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-
-<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;BlogPost&quot;</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="ss">&quot;blogId&quot;</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">),</span><span class="w"></span>
-<span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">body</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
 </div>
 </div>
 <p>Where <code>blogPostCollection</code> exposes the full <code>Query</code> interface to <code>BlogPost</code>s.</p>
-<p>Example usage:</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="23:2"><input checked="checked" id="__tabbed_23_1" name="__tabbed_23" type="radio" /><input id="__tabbed_23_2" name="__tabbed_23" type="radio" /><div class="tabbed-labels"><label for="__tabbed_23_1">Query</label><label for="__tabbed_23_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2572,31 +2503,9 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 </div>
-<h5 id="many-to-one">Many-to-One</h5>
+<h4 id="many-to-one">Many-to-One</h4>
 <p>A foreign key on table A referencing table B defines a many-to-one relationship from table B to table A.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="24:2"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><input id="__tabbed_24_2" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">GraphQL</label><label for="__tabbed_24_2">SQL</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">BlogPost</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">blogId</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">title</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">body</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="w"></span>
-
-<span class="w">  </span><span class="n">blog</span><span class="p">:</span><span class="w"> </span><span class="n">Blog</span><span class="w"></span>
-<span class="err">}</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
-<div class="tabbed-block">
+<p><strong>SQL Setup</strong>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2618,12 +2527,33 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
 <span class="w">    </span><span class="n">body</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="w"></span>
 <span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="24:1"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">BlogPost</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">BlogPost</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">blogId</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">title</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">body</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">blog</span><span class="p">:</span><span class="w"> </span><span class="n">Blog</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 </div>
 </div>
 </div>
 <p>Where <code>blog</code> exposes the <code>Blog</code> record associated with the <code>BlogPost</code>.</p>
-<p>Example usage:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="25:2"><input checked="checked" id="__tabbed_25_1" name="__tabbed_25" type="radio" /><input id="__tabbed_25_2" name="__tabbed_25" type="radio" /><div class="tabbed-labels"><label for="__tabbed_25_1">Query</label><label for="__tabbed_25_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2704,41 +2634,9 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 </div>
 </div>
 </div>
-<h5 id="one-to-one">One-to-One</h5>
+<h4 id="one-to-one">One-to-One</h4>
 <p>A one-to-one relationship is defined by a foreign key on table A referencing table B where the columns making up the foreign key on table A are unique.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="26:2"><input checked="checked" id="__tabbed_26_1" name="__tabbed_26" type="radio" /><input id="__tabbed_26_2" name="__tabbed_26" type="radio" /><div class="tabbed-labels"><label for="__tabbed_26_1">GraphQL</label><label for="__tabbed_26_2">SQL</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">Employee</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">emailAddressId</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="w"></span>
-<span class="w">  </span><span class="n">emailAddress</span><span class="p">:</span><span class="w"> </span><span class="n">EmailAddress</span><span class="w"></span>
-<span class="err">}</span><span class="w"></span>
-
-<span class="k">type</span><span class="w"> </span><span class="n">EmailAddress</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
-<span class="w">  </span><span class="n">employee</span><span class="p">:</span><span class="w"> </span><span class="n">Employee</span><span class="w"></span>
-<span class="err">}</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-</div>
-<div class="tabbed-block">
+<p><strong>SQL Setup</strong>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2758,11 +2656,43 @@ Cursors are not stable across versions of pg_graphql and should only be persiste
 <span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
 <span class="w">    </span><span class="n">email_address_id</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">unique</span><span class="w"> </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"></span>
 <span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p><strong>GraphQL Types</strong></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="26:2"><input checked="checked" id="__tabbed_26_1" name="__tabbed_26" type="radio" /><input id="__tabbed_26_2" name="__tabbed_26" type="radio" /><div class="tabbed-labels"><label for="__tabbed_26_1">Employee</label><label for="__tabbed_26_2">Employee</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">Employee</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">emailAddressId</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="w"></span>
+<span class="w">  </span><span class="n">emailAddress</span><span class="p">:</span><span class="w"> </span><span class="n">EmailAddress</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">EmailAddress</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">employee</span><span class="p">:</span><span class="w"> </span><span class="n">Employee</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 </div>
 </div>
 </div>
-<p>Example usage:</p>
+<p><strong>Example</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="27:2"><input checked="checked" id="__tabbed_27_1" name="__tabbed_27" type="radio" /><input id="__tabbed_27_2" name="__tabbed_27" type="radio" /><div class="tabbed-labels"><label for="__tabbed_27_1">Query</label><label for="__tabbed_27_2">Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
