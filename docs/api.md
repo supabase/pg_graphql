@@ -6,17 +6,27 @@ By default, PostgreSQL table and column names are not inflected when reflecting 
 
 Individual table, column, and relationship names may also be [manually overridden](/pg_graphql/configuration/#tables-type).
 
-## Type Conversion
 
-### QueryType
+## QueryType
 
 The `Query` type is the entrypoint for all read access into the graph.
 
-
-#### Node
+### Node
 
 The `node` interface allows for retrieving records that are uniquely identifiable by a globally unique `nodeId: ID!` field. For more information about nodeId, see [nodeId](#nodeid).
 
+**SQL Setup**
+```sql
+  create table "Blog"(
+    id serial primary key,
+    name varchar(255) not null,
+    description varchar(255),
+    "createdAt" timestamp not null,
+    "updatedAt" timestamp not null
+  );
+```
+
+**GraphQL Types**
 === "QueryType"
 
     ```graphql
@@ -29,21 +39,9 @@ The `node` interface allows for retrieving records that are uniquely identifiabl
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table "Blog"(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null,
-      "updatedAt" timestamp not null
-    );
-    ```
-
-
 To query the `node` interface effectively, use [inline fragments](https://graphql.org/learn/queries/#inline-fragments) to specify which fields to return for each type.
 
+**Example**
 === "Query"
 
     ```graphql
@@ -76,10 +74,24 @@ To query the `node` interface effectively, use [inline fragments](https://graphq
     ```
 
 
-#### Collections
+### Collections
 
-Each table has top level entry in the `Query` type for selecting records from that table. Collections return a [connection type](#connection-types) and can be [paginated](#pagination), [filtered](#filtering), and [sorted](#sorting) using the available arguments.
+Each table has top level entry in the `Query` type for selecting records from that table. Collections return a connection type and can be [paginated](#pagination), [filtered](#filtering), and [sorted](#ordering) using the available arguments.
 
+**SQL Setup**
+
+```sql
+create table blog(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null,
+  "updatedAt" timestamp not null
+);
+```
+
+
+**GraphQL Types**
 === "QueryType"
 
     ```graphql
@@ -108,18 +120,6 @@ Each table has top level entry in the `Query` type for selecting records from th
         orderBy: [BlogOrderBy!]
       ): BlogConnection
     }
-    ```
-
-=== "SQL"
-
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null,
-      "updatedAt" timestamp not null
-    );
     ```
 
 
@@ -223,6 +223,7 @@ Connections wrap a result set with some additional metadata.
 
     ```graphql
     input BlogFilter {
+      nodeId: IDFilter
       id: IntFilter
       name: StringFilter
       description: StringFilter
@@ -231,26 +232,14 @@ Connections wrap a result set with some additional metadata.
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table blog(
-        id serial primary key,
-        name varchar(255) not null,
-        description varchar(255),
-        created_at timestamp not null,
-        updated_at timestamp not null
-    );
-    ```
-
 !!! note
 
-    The `totalCount` field is disabled by default because it can be expensive on larget tables. To enable it use a [comment directive](configuration.md#totalcount)
+    The `totalCount` field is disabled by default because it can be expensive on large tables. To enable it use a [comment directive](configuration.md#totalcount)
 
 
 
 
-##### Pagination
+#### Pagination
 
 Paginating forwards and backwards through collections is handled using the `first`, `last`, `before`, and `after` parameters, following the [relay spec](https://relay.dev/graphql/connections.htm#).
 
@@ -283,21 +272,7 @@ Paginating forwards and backwards through collections is handled using the `firs
 
 Metadata relating to the current page of a result set is available on the `pageInfo` field of the connection type returned from a collection.
 
-
-=== "GraphQL"
-
-    ```graphql
-    type BlogConnection {
-
-      # Pagination metadata
-      pageInfo: PageInfo!
-
-      # Result set
-      edges: [BlogEdge!]!
-
-    }
-    ```
-
+=== "PageInfo"
     ```graphql
     type PageInfo {
 
@@ -315,19 +290,23 @@ Metadata relating to the current page of a result set is available on the `pageI
     }
     ```
 
-=== "SQL"
+=== "BlogConnection"
 
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null,
-      "updatedAt" timestamp not null
-    );
+    ```graphql
+    type BlogConnection {
+
+      # Pagination metadata
+      pageInfo: PageInfo!
+
+      # Result set
+      edges: [BlogEdge!]!
+
+    }
     ```
 
-To paginate forward in the collection, use the `first` and `after` aguments. To retrive the first page, the `after` argument should be null.
+To paginate forward in the collection, use the `first` and `after` aguments. To retrive the first page, the `after` argument should be null or absent.
+
+**Example**
 
 === "Query"
 
@@ -433,12 +412,9 @@ once the collection has been fully enumerated, `data.blogConnection.pageInfo.has
 
 
 To paginate backwards through a collection, repeat the process substituting `first` -> `last`, `after` -> `before`, `hasNextPage` -> `hasPreviousPage`
-!!! warning
-    Do not use cursors as unique identifiers.
-    Cursors are not stable across versions of pg_graphql and should only be persisted within a single user session.
 
 
-##### Filtering
+#### Filtering
 
 To filter the result set, use the `filter` argument.
 
@@ -458,18 +434,6 @@ To filter the result set, use the `filter` argument.
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null,
-      "updatedAt" timestamp not null
-    );
-    ```
-
 Where the `<Table>Filter` type enumerates filterable fields and their associated `<Type>Filter`.
 
 
@@ -477,6 +441,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
 
     ```graphql
     input BlogFilter {
+      nodeId: IDFilter
       id: IntFilter
       name: StringFilter
       description: StringFilter
@@ -536,8 +501,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 Not all operators are avaiable on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
 
-Example usage:
-
+**Example**
 
 === "Query"
     ```graphql
@@ -585,7 +549,7 @@ When multiple filters are provided to the `filter` argument, all conditions must
 We expect to expand support to user defined `AND` and `OR` composition in a future release.
 
 
-##### Ordering
+#### Ordering
 
 The default order of results is defined by the underlying table's primary key column in ascending order. That default can be overridden by passing an array of `<Table>OrderBy` to the collection's `orderBy` argument.
 
@@ -637,8 +601,8 @@ The default order of results is defined by the underlying table's primary key co
     }
     ```
 
-Example usage:
 
+**Example**
 
 === "Query"
 
@@ -691,14 +655,22 @@ Example usage:
 
 Note, only one key value pair may be provided to each element of the input array. For example, `[{name: AscNullsLast}, {id: AscNullFirst}]` is valid. Passing multiple key value pairs in a single element of the input array e.g. `[{name: AscNullsLast, id: AscNullFirst}]`, is invalid.
 
-
-
-
-### MutationType
+## MutationType
 
 The `Mutation` type is the entrypoint for mutations/edits.
 
 Each table has top level entry in the `Mutation` type for [inserting](#insert) `insertInto<Table>Collection`, [updating](#update) `update<Table>Collection` and [deleting](#delete) `deleteFrom<Table>Collection`.
+
+**SQL Setup**
+```sql
+create table blog(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null default now(),
+  "updatedAt" timestamp
+);
+```
 
 === "MutationType"
 
@@ -746,22 +718,22 @@ Each table has top level entry in the `Mutation` type for [inserting](#insert) `
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null default now(),
-      "updatedAt" timestamp
-    );
-    ```
-
-#### Insert
+### Insert
 
 To add records to a collection, use the `insertInto<Table>Collection` field on the `Mutation` type.
 
+**SQL Setup**
+```sql
+create table blog(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null default now(),
+  "updatedAt" timestamp
+);
+```
+
+**GraphQL Types**
 === "MutationType"
 
     ```graphql
@@ -802,22 +774,10 @@ To add records to a collection, use the `insertInto<Table>Collection` field on t
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null default now(),
-      "updatedAt" timestamp
-    );
-    ```
-
 Where elements in the `objects` array are inserted into the underlying table.
 
 
-Example usage:
+**Example**
 
 === "Query"
     ```graphql
@@ -859,11 +819,23 @@ Example usage:
     }
     ```
 
-#### Update
+### Update
 
 
 To update records in a collection, use the `update<Table>Collection` field on the `Mutation` type.
 
+**SQL Setup**
+```sql
+create table blog(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null default now(),
+  "updatedAt" timestamp
+);
+```
+
+**GraphQL Types**
 === "MutationType"
 
     ```graphql
@@ -916,21 +888,9 @@ To update records in a collection, use the `update<Table>Collection` field on th
     ```
 
 
-=== "SQL"
-
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null default now(),
-      "updatedAt" timestamp
-    );
-    ```
-
 Where the `set` argument is a key value pair describing the values to update, `filter` controls which records should be updated, and `atMost` restricts the maximum number of records that may be impacted. If the number of records impacted by the mutation exceeds the `atMost` parameter the operation will return an error.
 
-Example usage:
+**Example**
 
 === "Query"
     ```graphql
@@ -968,10 +928,23 @@ Example usage:
 
 
 
-#### Delete
+### Delete
 
 To remove records from a collection, use the `deleteFrom<Table>Collection` field on the `Mutation` type.
 
+
+**SQL Setup**
+```sql
+create table blog(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null default now(),
+  "updatedAt" timestamp
+);
+```
+
+**GraphQL Types**
 === "MutationType"
 
     ```graphql
@@ -1017,22 +990,9 @@ To remove records from a collection, use the `deleteFrom<Table>Collection` field
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table blog(
-      id serial primary key,
-      name varchar(255) not null,
-      description varchar(255),
-      "createdAt" timestamp not null default now(),
-      "updatedAt" timestamp
-    );
-    ```
-
 Where `filter` controls which records should be deleted and `atMost` restricts the maximum number of records that may be deleted. If the number of records impacted by the mutation exceeds the `atMost` parameter the operation will return an error.
 
-Example usage:
-
+**Example**
 === "Query"
 
     ```graphql
@@ -1068,13 +1028,23 @@ Example usage:
     ```
 
 
-### Concepts
+## Concepts
 
-#### nodeId
+### nodeId
 
 The base GraphQL type for every table with a primary key is automatically assigned a `nodeId: ID!` field. That value, can be passed to the [node](#node) entrypoint of the `Query` type to retrieve its other fields. `nodeId` may also be used as a caching key.
 
-=== "GraphQL"
+
+**SQL Setup**
+```sql
+create table "Blog"(
+    id serial primary key,
+    name varchar(255) not null
+);
+```
+
+**GraphQL Types**
+=== "Blog"
 
     ```sql
     type Blog {
@@ -1084,26 +1054,32 @@ The base GraphQL type for every table with a primary key is automatically assign
     }
     ```
 
-=== "SQL"
 
-    ```sql
-    create table "Blog"(
-        id serial primary key,
-        name varchar(255) not null
-    );
-    ```
-
-
-#### Relationships
+### Relationships
 
 Relationships between collections in the Graph are derived from foreign keys.
 
-##### One-to-Many
+#### One-to-Many
 
 A foreign key on table A referencing table B defines a one-to-many relationship from table A to table B.
 
+**SQL Setup**
+```sql
+create table "Blog"(
+    id serial primary key,
+    name varchar(255) not null
+);
 
-=== "GraphQL"
+create table "BlogPost"(
+    id serial primary key,
+    "blogId" integer not null references "Blog"(id),
+    title varchar(255) not null,
+    body varchar(10000)
+);
+```
+
+**GraphQL Types**
+=== "Blog"
 
     ```sql
     type Blog {
@@ -1138,28 +1114,11 @@ A foreign key on table A referencing table B defines a one-to-many relationship 
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table "Blog"(
-        id serial primary key,
-        name varchar(255) not null
-    );
-
-    create table "BlogPost"(
-        id serial primary key,
-        "blogId" integer not null references "Blog"(id),
-        title varchar(255) not null,
-        body varchar(10000)
-    );
-    ```
 
 Where `blogPostCollection` exposes the full `Query` interface to `BlogPost`s.
 
 
-Example usage:
-
-
+**Example**
 === "Query"
 
     ```graphql
@@ -1216,11 +1175,27 @@ Example usage:
     }
     ```
 
-##### Many-to-One
+#### Many-to-One
 
 A foreign key on table A referencing table B defines a many-to-one relationship from table B to table A.
 
-=== "GraphQL"
+**SQL Setup**
+```sql
+create table "Blog"(
+    id serial primary key,
+    name varchar(255) not null
+);
+
+create table "BlogPost"(
+    id serial primary key,
+    "blogId" integer not null references "Blog"(id),
+    title varchar(255) not null,
+    body varchar(10000)
+);
+```
+
+**GraphQL Types**
+=== "BlogPost"
 
     ```sql
     type BlogPost {
@@ -1234,27 +1209,7 @@ A foreign key on table A referencing table B defines a many-to-one relationship 
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table "Blog"(
-        id serial primary key,
-        name varchar(255) not null
-    );
-
-    create table "BlogPost"(
-        id serial primary key,
-        "blogId" integer not null references "Blog"(id),
-        title varchar(255) not null,
-        body varchar(10000)
-    );
-    ```
-
 Where `blog` exposes the `Blog` record associated with the `BlogPost`.
-
-
-Example usage:
-
 
 === "Query"
 
@@ -1302,15 +1257,26 @@ Example usage:
     }
     ```
 
-
-
-
-##### One-to-One
-
+#### One-to-One
 
 A one-to-one relationship is defined by a foreign key on table A referencing table B where the columns making up the foreign key on table A are unique.
 
-=== "GraphQL"
+**SQL Setup**
+```sql
+create table "EmailAddress"(
+    id serial primary key,
+    address text unique not null
+);
+
+create table "Employee"(
+    id serial primary key,
+    name text not null,
+    email_address_id int unique references "EmailAddress"(id)
+);
+```
+
+**GraphQL Types**
+=== "Employee"
 
     ```sql
     type Employee {
@@ -1320,7 +1286,10 @@ A one-to-one relationship is defined by a foreign key on table A referencing tab
       emailAddressId: Int
       emailAddress: EmailAddress
     }
+    ```
 
+=== "Employee"
+    ```sql
     type EmailAddress {
       nodeId: ID!
       id: Int!
@@ -1329,25 +1298,7 @@ A one-to-one relationship is defined by a foreign key on table A referencing tab
     }
     ```
 
-=== "SQL"
-
-    ```sql
-    create table "EmailAddress"(
-        id serial primary key,
-        address text unique not null
-    );
-
-    create table "Employee"(
-        id serial primary key,
-        name text not null,
-        email_address_id int unique references "EmailAddress"(id)
-    );
-    ```
-
-
-Example usage:
-
-
+**Example**
 === "Query"
 
     ```graphql
