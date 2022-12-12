@@ -67,7 +67,7 @@ jobs:
           # Ensure installed pg_config is first on path
           export PATH=$PATH:/usr/lib/postgresql/${{ matrix.postgres }}/bin
 
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain nightly && \
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain stable && \
             rustup --version && \
             rustc --version && \
             cargo --version
@@ -100,26 +100,19 @@ jobs:
           mkdir -p ${package_dir}/usr/lib/postgresql/${{ matrix.postgres }}/lib
           cd ${package_dir}/usr/lib/postgresql/${{ matrix.postgres }}/lib
           cp -s ../../lib/*.so .
-          cd ~/
+          cd ../../../../../..
 
           mkdir -p ${package_dir}/usr/share/postgresql/${{ matrix.postgres }}/extension
           cd ${package_dir}/usr/share/postgresql/${{ matrix.postgres }}/extension
 
-          echo 'pkg root'
-          ls ../../../../..
-
-          echo 'ext r'
-          ls ../../../../../var/lib/postgresql/extension
-
           cp -s ../../../../../var/lib/postgresql/extension/pg_graphql.control .
           cp -s ../../../../../var/lib/postgresql/extension/pg_graphql*.sql .
-          cd ~/
+          cd ../../../../../..
 
           # Create install control file
           extension_version=${{ github.ref_name }}
           # strip the leading v
           deb_version=${extension_version:1}
-
 
           mkdir -p ${package_dir}/DEBIAN
           touch ${package_dir}/DEBIAN/control
