@@ -100,13 +100,20 @@ jobs:
           mkdir -p ${package_dir}/usr/lib/postgresql/${{ matrix.postgres }}/lib
           cd ${package_dir}/usr/lib/postgresql/${{ matrix.postgres }}/lib
           cp -s ../../lib/*.so .
-          cd ../../../../..
+          cd ~/
 
           mkdir -p ${package_dir}/usr/share/postgresql/${{ matrix.postgres }}/extension
           cd ${package_dir}/usr/share/postgresql/${{ matrix.postgres }}/extension
+
+          echo 'pkg root'
+          ls ../../../../..
+
+          echo 'ext r'
+          ls ../../../../../var/lib/postgresql/extension
+
           cp -s ../../../../../var/lib/postgresql/extension/pg_graphql.control .
           cp -s ../../../../../var/lib/postgresql/extension/pg_graphql*.sql .
-          cd ../../../../..
+          cd ~/
 
           # Create install control file
           extension_version=${{ github.ref_name }}
