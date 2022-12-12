@@ -59,7 +59,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
           sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
-          sudo apt-get install -y --no-install-recommends clang libclang-dev gcc
+          sudo apt-get install -y --no-install-recommends clang libclang-dev gcc tree
 
           # Install requested postgres version
           sudo apt install -y postgresql-${{ matrix.postgres }} postgresql-server-dev-${{ matrix.postgres }} -y
@@ -125,7 +125,7 @@ jobs:
           # Create deb package
           sudo chown -R root:root ${package_dir}
           sudo chmod -R 00755 ${package_dir}
-          sudo dpkg-deb --build --root-owner-group ${package_dir}-linux-gnu
+          sudo dpkg-deb --build --root-owner-group ${package_dir}
 
       - name: Get upload url
         run: echo UPLOAD_URL=$(curl --silent https://api.github.com/repos/${{ github.repository }}/releases/latest | jq .upload_url --raw-output) >> $GITHUB_ENV
