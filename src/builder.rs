@@ -31,7 +31,7 @@ pub struct InsertRowBuilder {
 #[derive(Clone, Debug)]
 pub enum InsertElemValue {
     Default,
-    Value(serde_json::Value),
+    Value(gson::Value),
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -76,27 +76,24 @@ fn read_argument_at_most<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
-) -> Result<i32, String>
+) -> Result<i64, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let at_most: serde_json::Value = read_argument("atMost", field, query_field, variables)
-        .unwrap_or_else(|_| serde_json::json!(1));
-    let at_most: Option<i32> = serde_json::from_value(at_most)
-        .map_err(|_| "Internal Error: failed to parse validated atFirst".to_string())?;
-
+    let at_most: gson::Value = read_argument("atMost", field, query_field, variables)
+        .unwrap_or_else(|_| gson::Value::Number(gson::Number::Integer(1)));
     match at_most {
-        Some(val) => Ok(val),
-        None => Ok(1), // default
+        gson::Value::Number(gson::Number::Integer(x)) => Ok(x),
+        _ => Err("Internal Error: failed to parse validated atFirst".to_string()),
     }
 }
 
-fn parse_node_id(encoded: serde_json::Value) -> Result<NodeIdInstance, String> {
+fn parse_node_id(encoded: gson::Value) -> Result<NodeIdInstance, String> {
     extern crate base64;
     use std::str;
 
     let node_id_base64_encoded_string: String = match encoded {
-        serde_json::Value::String(s) => s,
+        gson::Value::String(s) => s,
         _ => return Err("Invalid value passed to nodeId argument, Error 1".to_string()),
     };
 
@@ -151,7 +148,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
-    let node_id_base64_encoded_json_string: serde_json::Value =
+    let node_id_base64_encoded_json_string: gson::Value =
         read_argument("nodeId", field, query_field, variables)?;
 
     parse_node_id(node_id_base64_encoded_json_string)
@@ -165,10 +162,8 @@ fn read_argument_objects<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    use serde_json::Value as JsonValue;
-
     // [{"name": "bob", "email": "a@b.com"}, {..}]
-    let validated: serde_json::Value = read_argument("objects", field, query_field, variables)?;
+    let validated: gson::Value = read_argument("objects", field, query_field, variables)?;
 
     // [<Table>OrderBy!]
     let insert_type: InsertInputType =
@@ -183,14 +178,16 @@ where
 
     // validated user input kv map
     match validated {
-        JsonValue::Null => (),
-        JsonValue::Array(x_arr) => {
+        gson::Value::Absent => (),
+        gson::Value::Null => (),
+        gson::Value::Array(x_arr) => {
             for row in x_arr.iter() {
                 let mut column_elems: HashMap<String, InsertElemValue> = HashMap::new();
 
                 match row {
-                    JsonValue::Null => continue,
-                    JsonValue::Object(obj) => {
+                    gson::Value::Absent => continue,
+                    gson::Value::Null => continue,
+                    gson::Value::Object(obj) => {
                         for (column_field_name, col_input_value) in obj.iter() {
                             let column_input_value: &__InputValue =
                                 match insert_type_field_map.get(column_field_name) {
@@ -201,7 +198,7 @@ where
                             match &column_input_value.sql_type {
                                 Some(NodeSQLType::Column(col)) => {
                                     let insert_col_builder = match col_input_value {
-                                        JsonValue::Null => InsertElemValue::Default,
+                                        gson::Value::Absent => InsertElemValue::Default,
                                         _ => InsertElemValue::Value(col_input_value.clone()),
                                     };
                                     column_elems.insert(col.name.clone(), insert_col_builder);
@@ -303,7 +300,7 @@ pub struct UpdateBuilder {
     // args
     pub filter: FilterBuilder,
     pub set: SetBuilder,
-    pub at_most: i32,
+    pub at_most: i64,
 
     // metadata
     pub table: Arc<Table>,
@@ -315,7 +312,7 @@ pub struct UpdateBuilder {
 #[derive(Clone, Debug)]
 pub struct SetBuilder {
     // String is Column name
-    pub set: HashMap<String, serde_json::Value>,
+    pub set: HashMap<String, gson::Value>,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -334,9 +331,7 @@ fn read_argument_set<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    use serde_json::Value as JsonValue;
-
-    let validated: serde_json::Value = read_argument("set", field, query_field, variables)?;
+    let validated: gson::Value = read_argument("set", field, query_field, variables)?;
 
     let update_type: UpdateInputType = match field.get_arg("set").unwrap().type_().unmodified_type()
     {
@@ -344,14 +339,15 @@ where
         _ => return Err("Could not locate update entity type".to_string()),
     };
 
-    let mut set: HashMap<String, serde_json::Value> = HashMap::new();
+    let mut set: HashMap<String, gson::Value> = HashMap::new();
 
     let update_type_field_map = update_type.input_field_map();
 
     // validated user input kv map
     match validated {
-        JsonValue::Null => (),
-        JsonValue::Object(obj) => {
+        gson::Value::Absent => (),
+        gson::Value::Null => (),
+        gson::Value::Object(obj) => {
             for (column_field_name, col_input_value) in obj.iter() {
                 let column_input_value: &__InputValue =
                     match update_type_field_map.get(column_field_name) {
@@ -400,7 +396,7 @@ where
 
             let set: SetBuilder = read_argument_set(field, query_field, variables)?;
             let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
-            let at_most: i32 = read_argument_at_most(field, query_field, variables)?;
+            let at_most: i64 = read_argument_at_most(field, query_field, variables)?;
 
             let mut builder_fields: Vec<UpdateSelection> = vec![];
 
@@ -456,7 +452,7 @@ pub struct DeleteBuilder {
 
     // args
     pub filter: FilterBuilder,
-    pub at_most: i32,
+    pub at_most: i64,
 
     // metadata
     pub table: Arc<Table>,
@@ -495,7 +491,7 @@ where
             restrict_allowed_arguments(vec!["filter", "atMost"], query_field)?;
 
             let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
-            let at_most: i32 = read_argument_at_most(field, query_field, variables)?;
+            let at_most: i64 = read_argument_at_most(field, query_field, variables)?;
 
             let mut builder_fields: Vec<DeleteSelection> = vec![];
 
@@ -598,7 +594,7 @@ pub enum FilterBuilderElem {
     Column {
         column: Arc<Column>,
         op: FilterOp,
-        value: serde_json::Value, //String, // string repr castable by postgres
+        value: gson::Value, //String, // string repr castable by postgres
     },
     NodeId(NodeIdInstance),
 }
@@ -848,9 +844,7 @@ fn read_argument_filter<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    use serde_json::Value as JsonValue;
-
-    let validated: serde_json::Value = read_argument("filter", field, query_field, variables)?;
+    let validated: gson::Value = read_argument("filter", field, query_field, variables)?;
 
     let filter_type: FilterEntityType =
         match field.get_arg("filter").unwrap().type_().unmodified_type() {
@@ -862,8 +856,8 @@ where
 
     // validated user input kv map
     let kv_map = match validated {
-        JsonValue::Null => return Ok(FilterBuilder { elems: filters }),
-        JsonValue::Object(kv) => kv,
+        gson::Value::Absent | gson::Value::Null => return Ok(FilterBuilder { elems: filters }),
+        gson::Value::Object(kv) => kv,
         _ => return Err("Filter re-validation errror".to_string()),
     };
 
@@ -875,9 +869,9 @@ where
             None => return Err("Filter re-validation error in filter_iv".to_string()),
         };
 
-        let filter_op_to_value_map: &serde_json::Map<String, JsonValue> = match op_to_v {
-            JsonValue::Null => continue,
-            JsonValue::Object(op_to_v_map) => op_to_v_map,
+        let filter_op_to_value_map: &HashMap<String, gson::Value> = match op_to_v {
+            gson::Value::Absent | gson::Value::Null => continue,
+            gson::Value::Object(op_to_v_map) => op_to_v_map,
             _ => return Err("Filter re-validation errror op_to_value map".to_string()),
         };
 
@@ -885,8 +879,9 @@ where
             let filter_op = FilterOp::from_str(filter_op_str)?;
 
             // Treat nulls as not provided
-            if let JsonValue::Null = filter_val {
-                continue;
+            match filter_val {
+                gson::Value::Absent | gson::Value::Null => continue,
+                _ => (),
             }
 
             match &filter_iv.sql_type {
@@ -919,10 +914,8 @@ fn read_argument_order_by<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    use serde_json::Value as JsonValue;
-
     // [{"id": "DescNullsLast"}]
-    let validated: serde_json::Value = read_argument("orderBy", field, query_field, variables)?;
+    let validated: gson::Value = read_argument("orderBy", field, query_field, variables)?;
 
     // [<Table>OrderBy!]
     let order_type: OrderByEntityType =
@@ -937,17 +930,17 @@ where
 
     // validated user input kv map
     match validated {
-        JsonValue::Null => (),
-        JsonValue::Array(x_arr) => {
+        gson::Value::Null | gson::Value::Absent => (),
+        gson::Value::Array(x_arr) => {
             for elem in x_arr.iter() {
                 // {"id", DescNullsLast}
                 match elem {
-                    JsonValue::Null => continue,
-                    JsonValue::Object(obj) => {
+                    gson::Value::Null | gson::Value::Absent => continue,
+                    gson::Value::Object(obj) => {
                         for (column_field_name, order_direction_json) in obj.iter() {
                             let order_direction = match order_direction_json {
-                                JsonValue::Null => continue,
-                                JsonValue::String(x) => OrderDirection::from_str(x)?,
+                                gson::Value::Null | gson::Value::Absent => continue,
+                                gson::Value::String(x) => OrderDirection::from_str(x)?,
                                 _ => return Err("Order re-validation error 6".to_string()),
                             };
                             let column_input_value: &__InputValue =
@@ -1006,9 +999,7 @@ fn read_argument_cursor<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    use serde_json::Value as JsonValue;
-
-    let validated: serde_json::Value = read_argument(arg_name, field, query_field, variables)?;
+    let validated: gson::Value = read_argument(arg_name, field, query_field, variables)?;
 
     let _: Scalar = match field.get_arg(arg_name).unwrap().type_().unmodified_type() {
         __Type::Scalar(x) => x,
@@ -1016,8 +1007,8 @@ where
     };
 
     match validated {
-        JsonValue::Null => Ok(None),
-        JsonValue::String(x) => Ok(Some(Cursor::from_str(&x)?)),
+        gson::Value::Null | gson::Value::Absent => Ok(None),
+        gson::Value::String(x) => Ok(Some(Cursor::from_str(&x)?)),
         _ => Err("Cursor re-validation errror".to_string()),
     }
 }
@@ -1048,13 +1039,23 @@ where
 
             // TODO: only one of first/last, before/after provided
 
-            let first: serde_json::Value = read_argument("first", field, query_field, variables)?;
-            let first: Option<i64> = serde_json::from_value(first)
-                .map_err(|_| "Internal Error: failed to parse validated first".to_string())?;
+            let first: gson::Value = read_argument("first", field, query_field, variables)?;
+            let first: Option<i64> = match first {
+                gson::Value::Null | gson::Value::Absent => None,
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n),
+                _ => {
+                    return Err("Internal Error: failed to parse validated first".to_string());
+                }
+            };
 
-            let last: serde_json::Value = read_argument("last", field, query_field, variables)?;
-            let last: Option<i64> = serde_json::from_value(last)
-                .map_err(|_| "Internal Error: failed to parse validated last".to_string())?;
+            let last: gson::Value = read_argument("last", field, query_field, variables)?;
+            let last: Option<i64> = match last {
+                gson::Value::Null | gson::Value::Absent => None,
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n),
+                _ => {
+                    return Err("Internal Error: failed to parse validated last".to_string());
+                }
+            };
 
             let before: Option<Cursor> =
                 read_argument_cursor("before", field, query_field, variables)?;
@@ -1736,13 +1737,17 @@ impl __Schema {
             return Err("can not build query for non-__type type".to_string());
         }
 
-        let name_arg_result: Result<serde_json::Value, String> =
+        let name_arg_result: Result<gson::Value, String> =
             read_argument("name", field, query_field, variables);
         let name_arg: Option<String> = match name_arg_result {
             // This builder (too) is overloaded and the arg is not present in all uses
             Err(_) => None,
-            Ok(name_arg) => serde_json::from_value(name_arg)
-                .map_err(|_| "Internal Error: failed to parse validated name".to_string())?,
+            Ok(name_arg) => match name_arg {
+                gson::Value::String(narg) => Some(narg),
+                _ => {
+                    return Err("Internal Error: failed to parse validated name".to_string());
+                }
+            },
         };
 
         if name_arg.is_some() {

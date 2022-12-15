@@ -111,7 +111,7 @@ where
 {
     let result = match graphql_value {
         Value::Null => gson::Value::Null,
-        Value::Boolean(x) => gson::Value::Boolean(*x),
+        Value::Boolean(x) => gson::Value::Boolean(x.clone()),
         Value::Int(x) => {
             let val = x.as_i64();
             match val {
@@ -123,7 +123,7 @@ where
             }
         }
         Value::Float(x) => {
-            let val: gson::Number = gson::Number::Float(*x);
+            let val: gson::Number = gson::Number::Float(x.clone());
             gson::Value::Number(val)
         }
         Value::String(x) => gson::Value::String(x.to_owned()),
@@ -156,9 +156,34 @@ where
 }
 
 pub fn json_to_gson(val: &serde_json::Value) -> gson::Value {
-    // TODO
-    // use serde_json::Value as JsonValue;
-    gson::Value::Absent
+    use serde_json::Value as JsonValue;
+
+    match val {
+        JsonValue::Null => gson::Value::Null,
+        JsonValue::Bool(x) => gson::Value::Boolean(x.to_owned()),
+        JsonValue::String(x) => gson::Value::String(x.to_owned()),
+        JsonValue::Array(x) => gson::Value::Array(x.iter().map(json_to_gson).collect()),
+        JsonValue::Number(x) => {
+            let val: Option<i64> = x.as_i64();
+            match val {
+                Some(num) => {
+                    let i_val = gson::Number::Integer(num);
+                    gson::Value::Number(i_val)
+                }
+                None => {
+                    let f_val: f64 = x.as_f64().unwrap();
+                    gson::Value::Number(gson::Number::Float(f_val))
+                }
+            }
+        }
+        JsonValue::Object(kv) => {
+            let mut hmap = HashMap::new();
+            for (key, val) in kv.iter() {
+                hmap.insert(key.to_owned(), json_to_gson(val));
+            }
+            gson::Value::Object(hmap)
+        }
+    }
 }
 
 pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gson::Value, String> {
@@ -170,46 +195,46 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
         __Type::Scalar(scalar) => {
             match scalar {
                 Scalar::String => match value {
-                    GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                    GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Int => match value {
-                    GsonValue::Absent => *value,
-                    GsonValue::Null => *value,
+                    GsonValue::Absent => value.clone(),
+                    GsonValue::Null => value.clone(),
                     GsonValue::Number(x) => match x {
-                        GsonNumber::Integer(_) => *value,
+                        GsonNumber::Integer(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     },
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Float => match value {
-                    GsonValue::Absent => *value,
-                    GsonValue::Null => *value,
-                    GsonValue::Number(_) => *value,
+                    GsonValue::Absent => value.clone(),
+                    GsonValue::Null => value.clone(),
+                    GsonValue::Number(_) => value.clone(),
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Boolean => match value {
-                    GsonValue::Absent | GsonValue::Null | GsonValue::Boolean(_) => *value,
+                    GsonValue::Absent | GsonValue::Null | GsonValue::Boolean(_) => value.clone(),
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Date => {
                     match value {
                         // XXX: future - validate date here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::Time => {
                     match value {
                         // XXX: future - validate time here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::Datetime => {
                     match value {
                         // XXX: future - validate datetime here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
@@ -217,42 +242,42 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                     GsonValue::Absent
                     | GsonValue::Null
                     | GsonValue::String(_)
-                    | GsonValue::Number(_) => *value,
+                    | GsonValue::Number(_) => value.clone(),
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::UUID => {
                     match value {
                         // XXX: future - validate uuid here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::JSON => {
                     match value {
                         // XXX: future - validate json here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::Cursor => {
                     match value {
                         // XXX: future - validate cursor here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::ID => {
                     match value {
                         // XXX: future - validate cursor here
-                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
             }
         }
         __Type::Enum(enum_) => match value {
-            GsonValue::Absent => *value,
-            GsonValue::Null => *value,
+            GsonValue::Absent => value.clone(),
+            GsonValue::Null => value.clone(),
             GsonValue::String(user_input_string) => {
                 let matches_enum_value = enum_
                     .enum_values(true)
@@ -260,7 +285,7 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                     .flatten()
                     .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
-                    Some(_) => *value,
+                    Some(_) => value.clone(),
                     None => {
                         return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
                     }
@@ -269,8 +294,8 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
             _ => return Err(format!("Invalid input for {} type", enum_.name().unwrap())),
         },
         __Type::OrderBy(enum_) => match value {
-            GsonValue::Absent => *value,
-            GsonValue::Null => *value,
+            GsonValue::Absent => value.clone(),
+            GsonValue::Null => value.clone(),
             GsonValue::String(user_input_string) => {
                 let matches_enum_value = enum_
                     .enum_values(true)
@@ -278,7 +303,7 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                     .flatten()
                     .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
-                    Some(_) => *value,
+                    Some(_) => value.clone(),
                     None => {
                         return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
                     }
@@ -289,8 +314,8 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
         __Type::List(list_type) => {
             let inner_type: __Type = *list_type.type_.clone();
             match value {
-                GsonValue::Absent => *value,
-                GsonValue::Null => *value,
+                GsonValue::Absent => value.clone(),
+                GsonValue::Null => value.clone(),
                 GsonValue::Array(input_arr) => {
                     let mut output_arr = vec![];
                     for input_elem in input_arr {
@@ -345,8 +370,8 @@ pub fn validate_arg_from_input_object(
     }
 
     let res: GsonValue = match value {
-        GsonValue::Absent => *value,
-        GsonValue::Null => *value,
+        GsonValue::Absent => value.clone(),
+        GsonValue::Null => value.clone(),
         GsonValue::Object(input_obj) => {
             let mut out_map: HashMap<String, GsonValue> = HashMap::new();
             let type_input_fields: Vec<__InputValue> =
