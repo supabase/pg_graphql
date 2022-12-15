@@ -1,5 +1,7 @@
 use crate::graphql::{__InputValue, __Type, ___Type};
+use crate::gson;
 use graphql_parser::query::*;
+use std::collections::HashMap;
 
 pub fn alias_or_name<'a, T>(query_field: &graphql_parser::query::Field<'a, T>) -> String
 where
@@ -100,160 +102,165 @@ where
     Ok(selections)
 }
 
-pub fn to_json<'a, T>(
+pub fn to_gson<'a, T>(
     graphql_value: &Value<'a, T>,
     variables: &serde_json::Value,
-) -> Result<serde_json::Value, String>
+) -> Result<gson::Value, String>
 where
     T: Text<'a> + AsRef<str>,
 {
-    use serde_json::value::Number;
-    use serde_json::Map;
-    use serde_json::Value as JsonValue;
-
     let result = match graphql_value {
-        Value::Null => JsonValue::Null,
-        Value::Boolean(x) => JsonValue::Bool(*x),
-        // Why is as_i64 optional?
+        Value::Null => gson::Value::Null,
+        Value::Boolean(x) => gson::Value::Boolean(*x),
         Value::Int(x) => {
             let val = x.as_i64();
             match val {
-                Some(num) => JsonValue::Number(Number::from(num)),
+                Some(num) => {
+                    let i_val = gson::Number::Integer(num);
+                    gson::Value::Number(i_val)
+                }
                 None => return Err("Invalid Int input".to_string()),
             }
         }
         Value::Float(x) => {
-            let val = Number::from_f64(*x);
-            match val {
-                Some(num) => JsonValue::Number(num),
-                None => return Err("Invalid Float input".to_string()),
-            }
+            let val: gson::Number = gson::Number::Float(*x);
+            gson::Value::Number(val)
         }
-        Value::String(x) => JsonValue::String(x.to_owned()),
-        Value::Enum(x) => JsonValue::String(x.as_ref().to_string()),
+        Value::String(x) => gson::Value::String(x.to_owned()),
+        Value::Enum(x) => gson::Value::String(x.as_ref().to_string()),
         Value::List(x_arr) => {
-            let mut out_arr: Vec<JsonValue> = vec![];
+            let mut out_arr: Vec<gson::Value> = vec![];
             for x in x_arr {
-                let val = to_json(x, variables)?;
+                let val = to_gson(x, variables)?;
                 out_arr.push(val);
             }
-            JsonValue::Array(out_arr)
+            gson::Value::Array(out_arr)
         }
         Value::Object(obj) => {
-            let mut out_map: Map<String, JsonValue> = Map::new();
+            let mut out_map: HashMap<String, gson::Value> = HashMap::new();
             for (key, graphql_val) in obj.iter() {
-                let val = to_json(graphql_val, variables)?;
+                let val = to_gson(graphql_val, variables)?;
                 out_map.insert(key.as_ref().to_string(), val);
             }
-            JsonValue::Object(out_map)
+            gson::Value::Object(out_map)
         }
-        Value::Variable(var_name) => variables
-            .get(var_name.as_ref())
-            .unwrap_or(&JsonValue::Null)
-            .to_owned(),
+        Value::Variable(var_name) => {
+            let var = variables.get(var_name.as_ref());
+            match var {
+                None => gson::Value::Absent,
+                Some(x) => json_to_gson(x),
+            }
+        }
     };
     Ok(result)
 }
 
-pub fn validate_arg_from_type(
-    type_: &__Type,
-    value: &serde_json::Value,
-) -> Result<serde_json::Value, String> {
-    use crate::graphql::Scalar;
-    use serde_json::Value as JsonValue;
+pub fn json_to_gson(val: &serde_json::Value) -> gson::Value {
+    // TODO
+    // use serde_json::Value as JsonValue;
+    gson::Value::Absent
+}
 
-    let res = match type_ {
+pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gson::Value, String> {
+    use crate::graphql::Scalar;
+    use crate::gson::Number as GsonNumber;
+    use crate::gson::Value as GsonValue;
+
+    let res: GsonValue = match type_ {
         __Type::Scalar(scalar) => {
             match scalar {
                 Scalar::String => match value {
-                    JsonValue::Null | JsonValue::String(_) => value.clone(),
+                    GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Int => match value {
-                    JsonValue::Null => value.clone(),
-                    JsonValue::Number(x) => match x.is_i64() {
-                        true => value.clone(),
-                        false => return Err(format!("Invalid input for {:?} type", scalar)),
+                    GsonValue::Absent => *value,
+                    GsonValue::Null => *value,
+                    GsonValue::Number(x) => match x {
+                        GsonNumber::Integer(_) => *value,
+                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     },
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Float => match value {
-                    JsonValue::Null => value.clone(),
-                    JsonValue::Number(x) => match x.is_f64() || x.is_i64() {
-                        true => value.clone(),
-                        false => return Err(format!("Invalid input for {:?} type", scalar)),
-                    },
+                    GsonValue::Absent => *value,
+                    GsonValue::Null => *value,
+                    GsonValue::Number(_) => *value,
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Boolean => match value {
-                    JsonValue::Null | JsonValue::Bool(_) => value.clone(),
+                    GsonValue::Absent | GsonValue::Null | GsonValue::Boolean(_) => *value,
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Date => {
                     match value {
                         // XXX: future - validate date here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::Time => {
                     match value {
                         // XXX: future - validate time here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::Datetime => {
                     match value {
                         // XXX: future - validate datetime here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::BigInt => match value {
-                    JsonValue::Null | JsonValue::String(_) | JsonValue::Number(_) => value.clone(),
+                    GsonValue::Absent
+                    | GsonValue::Null
+                    | GsonValue::String(_)
+                    | GsonValue::Number(_) => *value,
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::UUID => {
                     match value {
                         // XXX: future - validate uuid here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::JSON => {
                     match value {
                         // XXX: future - validate json here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::Cursor => {
                     match value {
                         // XXX: future - validate cursor here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
                 Scalar::ID => {
                     match value {
                         // XXX: future - validate cursor here
-                        JsonValue::Null | JsonValue::String(_) => value.clone(),
+                        GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => *value,
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
             }
         }
         __Type::Enum(enum_) => match value {
-            JsonValue::Null => value.clone(),
-            JsonValue::String(user_input_string) => {
+            GsonValue::Absent => *value,
+            GsonValue::Null => *value,
+            GsonValue::String(user_input_string) => {
                 let matches_enum_value = enum_
                     .enum_values(true)
                     .into_iter()
                     .flatten()
                     .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
-                    Some(_) => value.clone(),
+                    Some(_) => *value,
                     None => {
                         return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
                     }
@@ -262,15 +269,16 @@ pub fn validate_arg_from_type(
             _ => return Err(format!("Invalid input for {} type", enum_.name().unwrap())),
         },
         __Type::OrderBy(enum_) => match value {
-            JsonValue::Null => value.clone(),
-            JsonValue::String(user_input_string) => {
+            GsonValue::Absent => *value,
+            GsonValue::Null => *value,
+            GsonValue::String(user_input_string) => {
                 let matches_enum_value = enum_
                     .enum_values(true)
                     .into_iter()
                     .flatten()
                     .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
-                    Some(_) => value.clone(),
+                    Some(_) => *value,
                     None => {
                         return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
                     }
@@ -281,19 +289,20 @@ pub fn validate_arg_from_type(
         __Type::List(list_type) => {
             let inner_type: __Type = *list_type.type_.clone();
             match value {
-                JsonValue::Null => value.clone(),
-                JsonValue::Array(input_arr) => {
+                GsonValue::Absent => *value,
+                GsonValue::Null => *value,
+                GsonValue::Array(input_arr) => {
                     let mut output_arr = vec![];
                     for input_elem in input_arr {
                         let out_elem = validate_arg_from_type(&inner_type, input_elem)?;
                         output_arr.push(out_elem);
                     }
-                    JsonValue::Array(output_arr)
+                    GsonValue::Array(output_arr)
                 }
                 _ => {
                     // Single elements must be coerced to a single element list
                     let out_elem = validate_arg_from_type(&inner_type, value)?;
-                    JsonValue::Array(vec![out_elem])
+                    GsonValue::Array(vec![out_elem])
                 }
             }
         }
@@ -301,7 +310,9 @@ pub fn validate_arg_from_type(
             let inner_type: __Type = *nonnull_type.type_.clone();
             let out_elem = validate_arg_from_type(&inner_type, value)?;
             match out_elem {
-                JsonValue::Null => return Err("Invalid input for NonNull type".to_string()),
+                GsonValue::Absent | GsonValue::Null => {
+                    return Err("Invalid input for NonNull type".to_string())
+                }
                 _ => out_elem,
             }
         }
@@ -322,25 +333,22 @@ pub fn validate_arg_from_type(
 
 pub fn validate_arg_from_input_object(
     input_type: &__Type,
-    value: &serde_json::Value,
-) -> Result<serde_json::Value, String> {
+    value: &gson::Value,
+) -> Result<gson::Value, String> {
     use crate::graphql::__TypeKind;
-    use serde_json::Map;
-    use serde_json::Value as JsonValue;
+    use crate::gson::Value as GsonValue;
 
     let input_type_name = input_type.name().unwrap_or_default();
-
-    //let allowed_kinds = vec![__TypeKind::INPUT_OBJECT, __TypeKind::ENUM];
-    //if allowed_kinds.contains(&input_type.kind()) {
 
     if input_type.kind() != __TypeKind::INPUT_OBJECT {
         return Err(format!("Invalid input type {}", input_type_name));
     }
 
-    let res = match value {
-        JsonValue::Null => value.clone(),
-        JsonValue::Object(input_obj) => {
-            let mut out_map: Map<String, JsonValue> = Map::new();
+    let res: GsonValue = match value {
+        GsonValue::Absent => *value,
+        GsonValue::Null => *value,
+        GsonValue::Object(input_obj) => {
+            let mut out_map: HashMap<String, GsonValue> = HashMap::new();
             let type_input_fields: Vec<__InputValue> =
                 input_type.input_fields().unwrap_or_default();
 
@@ -362,13 +370,17 @@ pub fn validate_arg_from_input_object(
                 let obj_field_type: __Type = obj_field.type_();
                 let obj_field_key: String = obj_field.name();
 
-                let out_val = match input_obj.get(&obj_field_key) {
-                    None => validate_arg_from_type(&obj_field_type, &JsonValue::Null)?,
-                    Some(x) => validate_arg_from_type(&obj_field_type, x)?,
+                match input_obj.get(&obj_field_key) {
+                    None => {
+                        validate_arg_from_type(&obj_field_type, &GsonValue::Null)?;
+                    }
+                    Some(x) => {
+                        let out_val = validate_arg_from_type(&obj_field_type, x)?;
+                        out_map.insert(obj_field_key, out_val);
+                    }
                 };
-                out_map.insert(obj_field_key, out_val);
             }
-            JsonValue::Object(out_map)
+            GsonValue::Object(out_map)
         }
         _ => return Err(format!("Invalid input for {} type", input_type_name)),
     };

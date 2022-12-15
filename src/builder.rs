@@ -1,4 +1,5 @@
 use crate::graphql::*;
+use crate::gson;
 use crate::parser_util::*;
 use crate::sql_types::*;
 use graphql_parser::query::*;
@@ -46,7 +47,7 @@ fn read_argument<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
-) -> Result<serde_json::Value, String>
+) -> Result<gson::Value, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
@@ -63,8 +64,8 @@ where
         .next();
 
     let user_json_unvalidated = match user_input {
-        None => serde_json::Value::Null,
-        Some(val) => to_json(val, variables)?,
+        None => gson::Value::Absent,
+        Some(val) => to_gson(val, variables)?,
     };
 
     let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
@@ -352,23 +353,17 @@ where
         JsonValue::Null => (),
         JsonValue::Object(obj) => {
             for (column_field_name, col_input_value) in obj.iter() {
-                match col_input_value {
-                    JsonValue::Null => { // null value sets are ignored. per gql spec
-                    }
-                    _ => {
-                        let column_input_value: &__InputValue =
-                            match update_type_field_map.get(column_field_name) {
-                                Some(input_field) => input_field,
-                                None => return Err("Update re-validation error 3".to_string()),
-                            };
+                let column_input_value: &__InputValue =
+                    match update_type_field_map.get(column_field_name) {
+                        Some(input_field) => input_field,
+                        None => return Err("Update re-validation error 3".to_string()),
+                    };
 
-                        match &column_input_value.sql_type {
-                            Some(NodeSQLType::Column(col)) => {
-                                set.insert(col.name.clone(), col_input_value.clone());
-                            }
-                            _ => return Err("Update re-validation error 4".to_string()),
-                        }
+                match &column_input_value.sql_type {
+                    Some(NodeSQLType::Column(col)) => {
+                        set.insert(col.name.clone(), col_input_value.clone());
                     }
+                    _ => return Err("Update re-validation error 4".to_string()),
                 }
             }
         }
