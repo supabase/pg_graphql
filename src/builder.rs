@@ -30,8 +30,8 @@ pub struct InsertRowBuilder {
 
 #[derive(Clone, Debug)]
 pub enum InsertElemValue {
-    Default,
-    Value(gson::Value),
+    Default, // Equivalent to gson::Absent
+    Value(serde_json::Value),
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -197,7 +197,9 @@ where
                                 Some(NodeSQLType::Column(col)) => {
                                     let insert_col_builder = match col_input_value {
                                         gson::Value::Absent => InsertElemValue::Default,
-                                        _ => InsertElemValue::Value(col_input_value.clone()),
+                                        _ => InsertElemValue::Value(gson::gson_to_json(
+                                            col_input_value,
+                                        )?),
                                     };
                                     column_elems.insert(col.name.clone(), insert_col_builder);
                                 }
@@ -310,7 +312,7 @@ pub struct UpdateBuilder {
 #[derive(Clone, Debug)]
 pub struct SetBuilder {
     // String is Column name
-    pub set: HashMap<String, gson::Value>,
+    pub set: HashMap<String, serde_json::Value>,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -337,7 +339,7 @@ where
         _ => return Err("Could not locate update entity type".to_string()),
     };
 
-    let mut set: HashMap<String, gson::Value> = HashMap::new();
+    let mut set: HashMap<String, serde_json::Value> = HashMap::new();
 
     let update_type_field_map = update_type.input_field_map();
 
@@ -358,7 +360,7 @@ where
 
                 match &column_input_value.sql_type {
                     Some(NodeSQLType::Column(col)) => {
-                        set.insert(col.name.clone(), col_input_value.clone());
+                        set.insert(col.name.clone(), gson::gson_to_json(col_input_value)?);
                     }
                     _ => return Err("Update re-validation error 4".to_string()),
                 }
@@ -595,7 +597,7 @@ pub enum FilterBuilderElem {
     Column {
         column: Arc<Column>,
         op: FilterOp,
-        value: gson::Value, //String, // string repr castable by postgres
+        value: serde_json::Value, //String, // string repr castable by postgres
     },
     NodeId(NodeIdInstance),
 }
@@ -892,7 +894,7 @@ where
                     let filter_builder = FilterBuilderElem::Column {
                         column: Arc::clone(col),
                         op: filter_op,
-                        value: filter_val.clone(),
+                        value: gson::gson_to_json(filter_val)?,
                     };
                     filters.push(filter_builder);
                 }
@@ -1010,6 +1012,12 @@ where
     };
 
     match validated {
+        // Technically null should be treated as a literal here causing no result to return
+        // however:
+        // - there is no reason to ever intentionally pass a null literal to this argument
+        // - alternate implementations treat null as absent for this argument
+        // - passing null appears to be a common mistake
+        // so for backwards compatibility and ease of use, we'll treat null literal as absent
         gson::Value::Absent | gson::Value::Null => Ok(None),
         gson::Value::String(x) => Ok(Some(Cursor::from_str(&x)?)),
         _ => Err("Cursor re-validation errror".to_string()),

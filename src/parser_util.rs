@@ -148,53 +148,11 @@ where
             let var = variables.get(var_name.as_ref());
             match var {
                 None => gson::Value::Absent,
-                Some(x) => json_to_gson(x)?,
+                Some(x) => gson::json_to_gson(x)?,
             }
         }
     };
     Ok(result)
-}
-
-pub fn json_to_gson(val: &serde_json::Value) -> Result<gson::Value, String> {
-    use serde_json::Value as JsonValue;
-
-    let v = match val {
-        JsonValue::Null => gson::Value::Null,
-        JsonValue::Bool(x) => gson::Value::Boolean(x.to_owned()),
-        JsonValue::String(x) => gson::Value::String(x.to_owned()),
-        JsonValue::Array(x) => {
-            let mut arr = vec![];
-            for jelem in x {
-                let gelem = json_to_gson(jelem)?;
-                arr.push(gelem);
-            }
-            gson::Value::Array(arr)
-        }
-        JsonValue::Number(x) => {
-            let val: Option<i64> = x.as_i64();
-            match val {
-                Some(num) => {
-                    let i_val = gson::Number::Integer(num);
-                    gson::Value::Number(i_val)
-                }
-                None => {
-                    let f_val: f64 = x
-                        .as_f64()
-                        .ok_or("Failed to handle numeric user input".to_string())?;
-                    gson::Value::Number(gson::Number::Float(f_val))
-                }
-            }
-        }
-        JsonValue::Object(kv) => {
-            let mut hmap = HashMap::new();
-            for (key, val) in kv.iter() {
-                let gson_val = json_to_gson(val)?;
-                hmap.insert(key.to_owned(), gson_val);
-            }
-            gson::Value::Object(hmap)
-        }
-    };
-    Ok(v)
 }
 
 pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gson::Value, String> {
