@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Absent,
     Null,
@@ -11,7 +11,7 @@ pub enum Value {
     Object(HashMap<String, Value>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Number {
     Integer(i64),
     Float(f64),

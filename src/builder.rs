@@ -178,15 +178,13 @@ where
 
     // validated user input kv map
     match validated {
-        gson::Value::Absent => (),
-        gson::Value::Null => (),
+        gson::Value::Absent | gson::Value::Null => (),
         gson::Value::Array(x_arr) => {
             for row in x_arr.iter() {
                 let mut column_elems: HashMap<String, InsertElemValue> = HashMap::new();
 
                 match row {
-                    gson::Value::Absent => continue,
-                    gson::Value::Null => continue,
+                    gson::Value::Absent | gson::Value::Null => continue,
                     gson::Value::Object(obj) => {
                         for (column_field_name, col_input_value) in obj.iter() {
                             let column_input_value: &__InputValue =
@@ -345,10 +343,13 @@ where
 
     // validated user input kv map
     match validated {
-        gson::Value::Absent => (),
-        gson::Value::Null => (),
+        gson::Value::Absent | gson::Value::Null => (),
         gson::Value::Object(obj) => {
             for (column_field_name, col_input_value) in obj.iter() {
+                // If value is absent, skip it. Nulls are handled as literals
+                if col_input_value == &gson::Value::Absent {
+                    continue;
+                }
                 let column_input_value: &__InputValue =
                     match update_type_field_map.get(column_field_name) {
                         Some(input_field) => input_field,
@@ -935,11 +936,11 @@ where
             for elem in x_arr.iter() {
                 // {"id", DescNullsLast}
                 match elem {
-                    gson::Value::Null | gson::Value::Absent => continue,
+                    gson::Value::Absent | gson::Value::Null => continue,
                     gson::Value::Object(obj) => {
                         for (column_field_name, order_direction_json) in obj.iter() {
                             let order_direction = match order_direction_json {
-                                gson::Value::Null | gson::Value::Absent => continue,
+                                gson::Value::Absent | gson::Value::Null => continue,
                                 gson::Value::String(x) => OrderDirection::from_str(x)?,
                                 _ => return Err("Order re-validation error 6".to_string()),
                             };
@@ -1007,7 +1008,7 @@ where
     };
 
     match validated {
-        gson::Value::Null | gson::Value::Absent => Ok(None),
+        gson::Value::Absent | gson::Value::Null => Ok(None),
         gson::Value::String(x) => Ok(Some(Cursor::from_str(&x)?)),
         _ => Err("Cursor re-validation errror".to_string()),
     }
@@ -1041,7 +1042,7 @@ where
 
             let first: gson::Value = read_argument("first", field, query_field, variables)?;
             let first: Option<i64> = match first {
-                gson::Value::Null | gson::Value::Absent => None,
+                gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) => Some(n),
                 _ => {
                     return Err("Internal Error: failed to parse validated first".to_string());
@@ -1050,7 +1051,7 @@ where
 
             let last: gson::Value = read_argument("last", field, query_field, variables)?;
             let last: Option<i64> = match last {
-                gson::Value::Null | gson::Value::Absent => None,
+                gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) => Some(n),
                 _ => {
                     return Err("Internal Error: failed to parse validated last".to_string());

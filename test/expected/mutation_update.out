@@ -1,7 +1,7 @@
 begin;
     create table account(
         id serial primary key,
-        email varchar(255) not null,
+        email varchar(255),
         team_id int
     );
     create function _echo_email(account)
@@ -107,6 +107,93 @@ begin;
          }               +
      }                   +
  }
+(1 row)
+
+    rollback to savepoint a;
+    -- Update value to literal null
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation {
+              updateAccountCollection(
+                set: { email: null }
+                filter: { id: {eq: 1} }
+              ) {
+                records { id email }
+              }
+            }
+        $$)
+    );
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "updateAccountCollection": {+
+             "records": [            +
+                 {                   +
+                     "id": 1,        +
+                     "email": null   +
+                 }                   +
+             ]                       +
+         }                           +
+     }                               +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- Update value to literal null via variable
+    select graphql.resolve($$
+        mutation SetVar($email: String) {
+          updateAccountCollection(
+            set: { email: $email }
+            filter: { id: {eq: 1} }
+          ) {
+            records { id email }
+          }
+        }
+    $$,
+    '{"email": null}'
+    );
+                                    resolve                                     
+--------------------------------------------------------------------------------
+ {"data": {"updateAccountCollection": {"records": [{"id": 1, "email": null}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- Single omitted variable results in "at least one mapping required"
+    select graphql.resolve($$
+        mutation SetVar($email: String) {
+          updateAccountCollection(
+            set: { email: $email }
+            filter: { id: {eq: 1} }
+          ) {
+            records { id email }
+          }
+        }
+    $$,
+    '{}'
+    );
+                                             resolve                                              
+--------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "At least one mapping must be provided to set argument"}]}
+(1 row)
+
+    rollback to savepoint a;
+    -- One omitted variable gets ignored if other update is present
+    select graphql.resolve($$
+        mutation SetVar($email: String) {
+          updateAccountCollection(
+            set: { email: $email teamId: 99 }
+            filter: { id: {eq: 1} }
+          ) {
+            records { id email teamId }
+          }
+        }
+    $$,
+    '{}'
+    );
+                                                 resolve                                                  
+----------------------------------------------------------------------------------------------------------
+ {"data": {"updateAccountCollection": {"records": [{"id": 1, "email": "aardvark@x.com", "teamId": 99}]}}}
 (1 row)
 
     rollback to savepoint a;

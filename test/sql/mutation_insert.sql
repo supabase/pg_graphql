@@ -3,7 +3,8 @@ begin;
     create table account(
         id serial primary key,
         email varchar(255) not null,
-        priority int
+        priority int,
+        status text default 'active'
     );
 
     create table blog(
@@ -31,6 +32,7 @@ begin;
         affectedCount
         records {
           id
+          status
           echoEmail
           blogCollection {
             totalCount
@@ -55,6 +57,23 @@ begin;
     }
     $$);
 
+
+    -- Override a default on status with null
+    select graphql.resolve($$
+    mutation {
+      insertIntoAccountCollection(objects: [
+        { email: "baz@baz.com", status: null },
+      ]) {
+        affectedCount
+        records {
+          email
+          status
+        }
+      }
+    }
+    $$);
+
+
     /*
         Variables
     */
@@ -74,6 +93,41 @@ begin;
     }
     $$,
     variables := '{"emailAddress": "foo@bar.com"}'::jsonb
+    );
+
+
+    -- Variable override of default with null results in null
+    select graphql.resolve($$
+    mutation newAccount($status: String) {
+       xyz: insertIntoAccountCollection(objects: [
+        { email: "1@email.com", status: $status}
+       ]) {
+        affectedCount
+        records {
+          email
+          status
+        }
+      }
+    }
+    $$,
+    variables := '{"status": null}'::jsonb
+    );
+
+    -- Skipping variable override of default results in default
+    select graphql.resolve($$
+    mutation newAccount($status: String) {
+       xyz: insertIntoAccountCollection(objects: [
+        { email: "x@y.com", status: $status},
+       ]) {
+        affectedCount
+        records {
+          email
+          status
+        }
+      }
+    }
+    $$,
+    variables := '{}'::jsonb
     );
 
 
@@ -113,7 +167,6 @@ begin;
       }
     }
     $$);
-
 
 
     /*

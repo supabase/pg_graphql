@@ -185,9 +185,9 @@ impl Table {
         let column = order_elem.column;
         let quoted_col = quote_ident(&column.name);
 
-        let val: gson::Value = json_to_gson(&cursor_elem.value);
+        let val: gson::Value = json_to_gson(&cursor_elem.value)?;
 
-        let val_clause = param_context.clause_for(&val, &column.type_name);
+        let val_clause = param_context.clause_for(&val, &column.type_name)?;
 
         let recurse_clause = self.to_pagination_clause(
             block_name,
@@ -286,7 +286,7 @@ impl MutationEntrypoint<'_> for InsertBuilder {
                     Some(elem) => match elem {
                         InsertElemValue::Default => "default".to_string(),
                         InsertElemValue::Value(val) => {
-                            param_context.clause_for(val, &column.type_name)
+                            param_context.clause_for(val, &column.type_name)?
                         }
                     },
                 };
@@ -420,7 +420,7 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
                     .find(|x| &x.name == column_name)
                     .expect("Failed to find field in update builder");
 
-                let value_clause = param_context.clause_for(val, &column.type_name);
+                let value_clause = param_context.clause_for(val, &column.type_name)?;
 
                 let set_clause_frag = format!("{quoted_column} = {value_clause}");
                 set_clause_frags.push(set_clause_frag);
@@ -559,14 +559,14 @@ impl OrderByBuilder {
     }
 }
 
-pub fn gson_to_text_datum(val: &gson::Value) -> Option<pg_sys::Datum> {
+pub fn gson_to_text_datum(val: &gson::Value) -> Result<Option<pg_sys::Datum>, String> {
     let null: Option<i32> = None;
     match val {
-        gson::Value::Null => null.into_datum(),
-        gson::Value::Boolean(x) => x.to_string().into_datum(),
-        gson::Value::String(x) => x.into_datum(),
-        gson::Value::Number(gson::Number::Integer(x)) => x.to_string().into_datum(),
-        gson::Value::Number(gson::Number::Float(x)) => x.to_string().into_datum(),
+        gson::Value::Null => Ok(null.into_datum()),
+        gson::Value::Boolean(x) => Ok(x.to_string().into_datum()),
+        gson::Value::String(x) => Ok(x.into_datum()),
+        gson::Value::Number(gson::Number::Integer(x)) => Ok(x.to_string().into_datum()),
+        gson::Value::Number(gson::Number::Float(x)) => Ok(x.to_string().into_datum()),
         gson::Value::Array(xarr) => {
             let inner_vals: Vec<Option<String>> = xarr
                 .iter()
@@ -580,18 +580,20 @@ pub fn gson_to_text_datum(val: &gson::Value) -> Option<pg_sys::Datum> {
                     gson::Value::Object(_) => {
                         panic!("Unexpected object in input value array")
                     }
+                    // Logic associated with absent values should always be handled in the
+                    // builders. We should never see an absent value here.
                     gson::Value::Absent => {
                         panic!("Unexpected absent value in array")
                     }
                 })
                 .collect();
-            inner_vals.into_datum()
+            Ok(inner_vals.into_datum())
         }
         // Should this ever happen? json input is escaped so it would be a string.
-        gson::Value::Object(_) => panic!("Unexpected object in input value"),
-        gson::Value::Absent => {
-            panic!("Unexpected absent value in array")
-        }
+        gson::Value::Object(_) => Err("Unexpected object in input value".to_string()),
+        // Logic associated with absent values should always be handled in the
+        // builders. We should never see an absent value here.
+        gson::Value::Absent => Err("Unexpected absent value".to_string()),
     }
 }
 
@@ -602,15 +604,15 @@ pub struct ParamContext {
 impl ParamContext {
     // Pushes a parameter into the context and returns a SQL clause to reference it
     //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
-    fn clause_for(&mut self, value: &gson::Value, type_name: &String) -> String {
+    fn clause_for(&mut self, value: &gson::Value, type_name: &String) -> Result<String, String> {
         let type_oid = match type_name.ends_with("[]") {
             true => PgOid::from(1009), // text[]
             false => PgOid::from(25),  // text
         };
 
-        let val_datum = gson_to_text_datum(value);
+        let val_datum = gson_to_text_datum(value)?;
         self.params.push((type_oid, val_datum));
-        format!("(${}::{})", self.params.len(), type_name)
+        Ok(format!("(${}::{})", self.params.len(), type_name))
     }
 }
 
@@ -628,7 +630,7 @@ impl FilterBuilderElem {
                     _ => column.type_name.clone(),
                 };
 
-                let val_clause = param_context.clause_for(value, &cast_type_name);
+                let val_clause = param_context.clause_for(value, &cast_type_name)?;
 
                 let frag = format!(
                     "{block_name}.{} {} {}",
@@ -1119,8 +1121,8 @@ impl NodeIdInstance {
         let mut col_val_pairs: Vec<String> = vec![];
         for (col, val) in table.primary_key_columns().iter().zip(self.values.iter()) {
             let column_name = &col.name;
-            let gson_val = json_to_gson(val);
-            let val_clause = param_context.clause_for(&gson_val, &col.type_name);
+            let gson_val = json_to_gson(val)?;
+            let val_clause = param_context.clause_for(&gson_val, &col.type_name)?;
             col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))
         }
         Ok(col_val_pairs.join(" and "))
