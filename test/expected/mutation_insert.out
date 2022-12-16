@@ -103,7 +103,7 @@ begin;
  {"data": {"xyz": {"records": [{"id": 4, "email": "foo@bar.com"}, {"id": 5, "email": "other@email.com"}], "affectedCount": 2}}}
 (1 row)
 
-    -- Variable override of default with null results in null 
+    -- Variable override of default with null results in null
     select graphql.resolve($$
     mutation newAccount($status: String) {
        xyz: insertIntoAccountCollection(objects: [

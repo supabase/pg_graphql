@@ -879,9 +879,11 @@ where
         for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
             let filter_op = FilterOp::from_str(filter_op_str)?;
 
-            // Treat nulls as not provided
+            // Skip absent
+            // Technically nulls should be treated as literals. It will always filter out all rows
+            // val <op> null is never true
             match filter_val {
-                gson::Value::Absent | gson::Value::Null => continue,
+                gson::Value::Absent => continue,
                 _ => (),
             }
 
