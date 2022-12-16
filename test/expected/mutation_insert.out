@@ -2,7 +2,8 @@ begin;
     create table account(
         id serial primary key,
         email varchar(255) not null,
-        priority int
+        priority int,
+        status text default 'active'
     );
     create table blog(
         id serial primary key,
@@ -26,6 +27,7 @@ begin;
         affectedCount
         records {
           id
+          status
           echoEmail
           blogCollection {
             totalCount
@@ -34,9 +36,9 @@ begin;
       }
     }
     $$);
-                                                                                                                    resolve                                                                                                                     
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountCollection": {"records": [{"id": 1, "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}, {"id": 2, "echoEmail": "bar@foosworth.com", "blogCollection": {"totalCount": 0}}], "affectedCount": 2}}}
+                                                                                                                                        resolve                                                                                                                                         
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 1, "status": "active", "echoEmail": "foo@barsley.com", "blogCollection": {"totalCount": 0}}, {"id": 2, "status": "active", "echoEmail": "bar@foosworth.com", "blogCollection": {"totalCount": 0}}], "affectedCount": 2}}}
 (1 row)
 
     select graphql.resolve($$
@@ -56,6 +58,25 @@ begin;
                                        resolve                                        
 --------------------------------------------------------------------------------------
  {"data": {"insertIntoBlogCollection": {"records": [{"id": 1, "owner": {"id": 1}}]}}}
+(1 row)
+
+    -- Override a default on status with null
+    select graphql.resolve($$
+    mutation {
+      insertIntoAccountCollection(objects: [
+        { email: "baz@baz.com", status: null },
+      ]) {
+        affectedCount
+        records {
+          email
+          status
+        }
+      }
+    }
+    $$);
+                                                        resolve                                                         
+------------------------------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountCollection": {"records": [{"email": "baz@baz.com", "status": null}], "affectedCount": 1}}}
 (1 row)
 
     /*
@@ -79,7 +100,49 @@ begin;
     );
                                                             resolve                                                             
 --------------------------------------------------------------------------------------------------------------------------------
- {"data": {"xyz": {"records": [{"id": 3, "email": "foo@bar.com"}, {"id": 4, "email": "other@email.com"}], "affectedCount": 2}}}
+ {"data": {"xyz": {"records": [{"id": 4, "email": "foo@bar.com"}, {"id": 5, "email": "other@email.com"}], "affectedCount": 2}}}
+(1 row)
+
+    -- Variable override of default with null results in null
+    select graphql.resolve($$
+    mutation newAccount($status: String) {
+       xyz: insertIntoAccountCollection(objects: [
+        { email: "1@email.com", status: $status}
+       ]) {
+        affectedCount
+        records {
+          email
+          status
+        }
+      }
+    }
+    $$,
+    variables := '{"status": null}'::jsonb
+    );
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": {"xyz": {"records": [{"email": "1@email.com", "status": null}], "affectedCount": 1}}}
+(1 row)
+
+    -- Skipping variable override of default results in default
+    select graphql.resolve($$
+    mutation newAccount($status: String) {
+       xyz: insertIntoAccountCollection(objects: [
+        { email: "x@y.com", status: $status},
+       ]) {
+        affectedCount
+        records {
+          email
+          status
+        }
+      }
+    }
+    $$,
+    variables := '{}'::jsonb
+    );
+                                            resolve                                             
+------------------------------------------------------------------------------------------------
+ {"data": {"xyz": {"records": [{"email": "x@y.com", "status": "active"}], "affectedCount": 1}}}
 (1 row)
 
     select graphql.resolve($$
@@ -97,7 +160,7 @@ begin;
     );
                                                      resolve                                                     
 -----------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountCollection": {"records": [{"id": 5, "email": "bar@foo.com"}], "affectedCount": 1}}}
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 8, "email": "bar@foo.com"}], "affectedCount": 1}}}
 (1 row)
 
     select graphql.resolve($$
@@ -115,7 +178,7 @@ begin;
     );
                                                      resolve                                                     
 -----------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoAccountCollection": {"records": [{"id": 6, "email": "bar@foo.com"}], "affectedCount": 1}}}
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 9, "email": "bar@foo.com"}], "affectedCount": 1}}}
 (1 row)
 
     -- Single object coerces to a list

@@ -88,7 +88,7 @@ begin;
     select graphql.resolve($${accountCollection(filter: {id: {lt: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- lt - null - should be ignored
+    -- lt - null - treated as literal
     select graphql.resolve($${accountCollection(filter: {id: {lt: null}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
@@ -128,8 +128,12 @@ begin;
     select graphql.resolve($${accountCollection(filter: {name: {in: []}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- in - null
+    -- in - null literal returns nothing
     select graphql.resolve($${accountCollection(filter: {name: {in: null}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
+
+    -- variable in - absent treated as ignored / returns all
+    select graphql.resolve($$query AAA($nin: [String!]) { accountCollection(filter: {name: {in: $nin}}) { edges { node { id } } }}$$, '{}');
     rollback to savepoint a;
 
     -- Variable: In, mixed List Int

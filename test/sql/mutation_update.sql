@@ -2,7 +2,7 @@ begin;
 
     create table account(
         id serial primary key,
-        email varchar(255) not null,
+        email varchar(255),
         team_id int
     );
 
@@ -97,6 +97,70 @@ begin;
               }
             }
         $$)
+    );
+
+    rollback to savepoint a;
+
+    -- Update value to literal null
+    select jsonb_pretty(
+        graphql.resolve($$
+            mutation {
+              updateAccountCollection(
+                set: { email: null }
+                filter: { id: {eq: 1} }
+              ) {
+                records { id email }
+              }
+            }
+        $$)
+    );
+
+    rollback to savepoint a;
+
+    -- Update value to literal null via variable
+    select graphql.resolve($$
+        mutation SetVar($email: String) {
+          updateAccountCollection(
+            set: { email: $email }
+            filter: { id: {eq: 1} }
+          ) {
+            records { id email }
+          }
+        }
+    $$,
+    '{"email": null}'
+    );
+
+    rollback to savepoint a;
+
+    -- Single omitted variable results in "at least one mapping required"
+    select graphql.resolve($$
+        mutation SetVar($email: String) {
+          updateAccountCollection(
+            set: { email: $email }
+            filter: { id: {eq: 1} }
+          ) {
+            records { id email }
+          }
+        }
+    $$,
+    '{}'
+    );
+
+    rollback to savepoint a;
+
+    -- One omitted variable gets ignored if other update is present
+    select graphql.resolve($$
+        mutation SetVar($email: String) {
+          updateAccountCollection(
+            set: { email: $email teamId: 99 }
+            filter: { id: {eq: 1} }
+          ) {
+            records { id email teamId }
+          }
+        }
+    $$,
+    '{}'
     );
 
     rollback to savepoint a;
