@@ -1,16 +1,13 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <title>GraphiQL - pg_graphql</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/graphiql/2.0.4/graphiql.css" rel="stylesheet" />
-    <style>
-      table, tr, td{
-        color: hsla(var(--color-neutral),1);
-      }
-    </style>
-  </head>
-  <body style="margin: 0;">
-    <div id="graphiql" style="height: 100vh;"></div>
 
+    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+  </head>
+
+  <body style="margin: 0">
+    <div id="graphiql" style="height: 100vh"></div>
     <script
       crossorigin
       src="https://unpkg.com/react/umd/react.production.min.js"
@@ -21,15 +18,15 @@
     ></script>
     <script
       crossorigin
-      src="https://cdnjs.cloudflare.com/ajax/libs/graphiql/2.0.4/graphiql.js"
+      src="https://unpkg.com/graphiql/graphiql.min.js"
     ></script>
     <script>
       const fetcher = GraphiQL.createFetcher({
-             url: 'http://localhost:3001/rpc/graphql',
+        url: "http://localhost:3001/rpc/graphql",
       });
       ReactDOM.render(
         React.createElement(GraphiQL, { fetcher: fetcher }),
-        document.getElementById('graphiql'),
+        document.getElementById("graphiql")
       );
     </script>
   </body>
