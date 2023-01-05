@@ -8,6 +8,8 @@ begin;
     );
     comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
 
+    create view accountv as
+        select * from account;
 
     create table blog(
         id serial primary key,

@@ -102,13 +102,13 @@ pub struct Composite {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Index {
-    pub oid: u32,
+    //pub oid: u32,
     pub table_oid: u32,
-    pub name: String,
+    //pub name: String,
     pub column_attnums: Vec<i32>,
     pub is_unique: bool,
     pub is_primary_key: bool,
-    pub comment: Option<String>,
+    //pub comment: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -156,6 +156,10 @@ pub struct TableDirectives {
     pub name: Option<String>,
     // XXX: comment directive key is totalCount
     pub total_count: Option<TableDirectiveTotalCount>,
+
+    // Views / Materialized Views only:
+    // @graphql({"primary_key_columns": ["id"]})
+    pub primary_key_columns: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -165,6 +169,7 @@ pub struct Table {
     pub schema: String,
     pub columns: Vec<Arc<Column>>,
     pub comment: Option<String>,
+    pub relkind: String, // r = table, v = view, m = mat view, f = foreign table
     pub permissions: TablePermissions,
     pub indexes: Vec<Index>,
     pub functions: Vec<Arc<Function>>,
@@ -173,14 +178,45 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn primary_key(&self) -> Option<&Index> {
-        self.indexes.iter().find(|x| x.is_primary_key)
+    pub fn primary_key(&self) -> Option<Index> {
+        let real_pkey = self.indexes.iter().find(|x| x.is_primary_key);
+
+        if real_pkey.is_some() {
+            return real_pkey.cloned();
+        }
+
+        // Check for a primary key definition in comment directives
+        if let Some(column_names) = &self.directives.primary_key_columns {
+            let mut column_attnums: Vec<i32> = vec![];
+            for column_name in column_names {
+                for column in &self.columns {
+                    if column_name == &column.name {
+                        column_attnums.push(column.attribute_num);
+                    }
+                }
+            }
+            if column_attnums.len() != column_names.len() {
+                // At least one of the column names didn't exist on the table
+                // so the primary key directive is not valid
+                // Ideally we'd throw an error here instead
+                None
+            } else {
+                Some(Index {
+                    table_oid: self.oid,
+                    column_attnums,
+                    is_unique: true,
+                    is_primary_key: true,
+                })
+            }
+        } else {
+            None
+        }
     }
 
     pub fn primary_key_columns(&self) -> Vec<&Arc<Column>> {
         self.primary_key()
-            .map(|x| &x.column_attnums)
-            .unwrap_or(&vec![])
+            .map(|x| x.column_attnums)
+            .unwrap_or(vec![])
             .iter()
             .map(|col_num| {
                 self.columns

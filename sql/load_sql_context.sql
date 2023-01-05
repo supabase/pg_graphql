@@ -84,11 +84,13 @@ select
                                     jsonb_build_object(
                                         'oid', pc.oid::int,
                                         'name', pc.relname::text,
+                                        'relkind', pc.relkind::text,
                                         'schema', pn.nspname::text,
                                         'comment', pg_catalog.obj_description(pc.oid, 'pg_class'),
                                         'directives', jsonb_build_object(
                                             'inflect_names', schema_directives.inflect_names,
                                             'name', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) ->> 'name',
+                                            'primary_key_columns', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) -> 'primary_key_columns',
                                             'total_count', jsonb_build_object(
                                                 'enabled', coalesce(
                                                     (
@@ -345,7 +347,12 @@ select
                             pg_class pc
                         where
                             pc.relnamespace = pn.oid
-                            and pc.relkind = 'r' -- tables
+                            and pc.relkind in (
+                                'r', -- table
+                                'v', -- view
+                                'm', -- mat view
+                                'f'  -- foreign table
+                            )
                         ),
                         jsonb_build_array()
                     )
