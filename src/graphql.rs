@@ -104,21 +104,23 @@ impl Enum {
     }
 }
 
-impl ForeignKey {
-    fn graphql_field_name(&self, reverse_reference: bool) -> String {
-        let mut table_ref: &ForeignKeyTableInfo = &self.referenced_table_meta;
-        let mut name_override: &Option<String> = &self.directives.foreign_name;
+impl Context {
+    fn graphql_foreign_key_field_name(&self, fkey: &ForeignKey, reverse_reference: bool) -> String {
+        let mut table_ref: &ForeignKeyTableInfo = &fkey.referenced_table_meta;
+        let mut name_override: &Option<String> = &fkey.directives.foreign_name;
         let mut is_unique: bool = true;
-        let mut column_names: &Vec<String> = &self.local_table_meta.column_names;
+        let mut column_names: &Vec<String> = &fkey.local_table_meta.column_names;
 
         if reverse_reference {
-            table_ref = &self.local_table_meta;
-            name_override = &self.directives.local_name;
-            is_unique = self.is_locally_unique;
-            column_names = &self.referenced_table_meta.column_names;
+            table_ref = &fkey.local_table_meta;
+            name_override = &fkey.directives.local_name;
+            is_unique = self.is_locally_unique(fkey);
+            column_names = &fkey.referenced_table_meta.column_names;
         }
 
-        let is_inflection_on = table_ref.directives.inflect_names;
+        let table: &Arc<Table> = self.get_table_by_oid(table_ref.oid).unwrap();
+
+        let is_inflection_on = table.directives.inflect_names;
 
         // If name is overridden, return immediately
         match name_override {
@@ -126,11 +128,8 @@ impl ForeignKey {
             None => (),
         }
         // "AccountHolder"
-        let base_type_name = to_base_type_name(
-            &table_ref.name,
-            &table_ref.directives.name,
-            is_inflection_on,
-        );
+        let base_type_name =
+            to_base_type_name(&table.name, &table.directives.name, is_inflection_on);
 
         // "accountHolder"
         let base_type_as_field_name = lowercase_first_letter(&base_type_name);
@@ -142,7 +141,7 @@ impl ForeignKey {
                         let base = to_base_type_name(
                             column_name_stripped,
                             &None,
-                            table_ref.directives.inflect_names,
+                            table.directives.inflect_names,
                         );
                         lowercase_first_letter(&base)
                     }
@@ -153,7 +152,7 @@ impl ForeignKey {
                         let base = to_base_type_name(
                             column_name_stripped,
                             &None,
-                            table_ref.directives.inflect_names,
+                            table.directives.inflect_names,
                         );
                         lowercase_first_letter(&base)
                     }
@@ -1634,19 +1633,19 @@ impl ___Type for NodeType {
         let mut relation_fields: Vec<__Field> = vec![];
 
         for fkey in self
-            .table
-            .foreign_keys
+            .schema
+            .context
+            .foreign_keys()
             .iter()
-            .filter(|x| x.permissions.is_selectable)
+            .filter(|x| x.local_table_meta.oid == self.table.oid)
+            .filter(|fk| self.schema.context.fkey_is_selectable(fk))
         {
             let reverse_reference = false;
+
             let foreign_table: Option<&Arc<Table>> = self
                 .schema
                 .context
-                .schemas
-                .iter()
-                .flat_map(|x| x.tables.iter())
-                .find(|x| x.oid == fkey.referenced_table_meta.oid);
+                .get_table_by_oid(fkey.referenced_table_meta.oid);
             // this should never happen but if there is an unhandled edge case panic-ing here
             // would block
             if foreign_table.is_none() {
@@ -1658,7 +1657,10 @@ impl ___Type for NodeType {
             }
 
             let relation_field = __Field {
-                name_: fkey.graphql_field_name(reverse_reference),
+                name_: self
+                    .schema
+                    .context
+                    .graphql_foreign_key_field_name(fkey, reverse_reference),
                 // XXX: column nullability ignored for NonNull type to match pg_graphql
                 type_: __Type::Node(NodeType {
                     table: Arc::clone(foreign_table),
@@ -1677,11 +1679,9 @@ impl ___Type for NodeType {
         for fkey in self
             .schema
             .context
-            .schemas
+            .foreign_keys()
             .iter()
-            .flat_map(|schema| schema.tables.iter())
-            .flat_map(|tab| tab.foreign_keys.iter())
-            .filter(|x| x.permissions.is_selectable)
+            .filter(|fk| self.schema.context.fkey_is_selectable(fk))
             // inbound references
             .filter(|x| x.referenced_table_meta.oid == self.table.oid)
         {
@@ -1689,10 +1689,7 @@ impl ___Type for NodeType {
             let foreign_table: Option<&Arc<Table>> = self
                 .schema
                 .context
-                .schemas
-                .iter()
-                .flat_map(|x| x.tables.iter())
-                .find(|x| x.oid == fkey.local_table_meta.oid);
+                .get_table_by_oid(fkey.local_table_meta.oid);
             // this should never happen but if there is an unhandled edge case panic-ing here
             // would block
             if foreign_table.is_none() {
@@ -1703,10 +1700,10 @@ impl ___Type for NodeType {
                 continue;
             }
 
-            let relation_field = match fkey.is_locally_unique {
+            let relation_field = match self.schema.context.is_locally_unique(fkey) {
                 false => {
                     __Field {
-                        name_: fkey.graphql_field_name(reverse_reference),
+                        name_: self.schema.context.graphql_foreign_key_field_name(fkey, reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Connection(ConnectionType {
                                 table: Arc::clone(foreign_table),
@@ -1777,7 +1774,10 @@ impl ___Type for NodeType {
                 }
                 true => {
                     __Field {
-                        name_: fkey.graphql_field_name(reverse_reference),
+                        name_: self
+                            .schema
+                            .context
+                            .graphql_foreign_key_field_name(fkey, reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Node(NodeType {
                             table: Arc::clone(foreign_table),

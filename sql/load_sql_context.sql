@@ -68,6 +68,68 @@ select
             ),
             jsonb_build_array()
         ),
+        'foreign_keys', (
+            coalesce(
+                (
+                    select
+                        jsonb_agg(
+                            jsonb_build_object(
+                                'local_table_meta', jsonb_build_object(
+                                    'oid', pf.conrelid::int,
+                                    'name', pa_local.relname::text,
+                                    'schema', pa_local.relnamespace::regnamespace::text,
+                                    'column_names', (
+                                        select
+                                            array_agg(pa.attname order by pfck.attnum_ix asc)
+                                        from
+                                            unnest(pf.conkey) with ordinality pfck(attnum, attnum_ix)
+                                            join pg_attribute pa
+                                                on pfck.attnum = pa.attnum
+                                        where
+                                            pa.attrelid = pf.conrelid
+                                    )
+                                ),
+                                'referenced_table_meta', jsonb_build_object(
+                                    'oid', pf.confrelid::int,
+                                    'name', pa_referenced.relname::text,
+                                    'schema', pa_referenced.relnamespace::regnamespace::text,
+                                    'column_names', (
+                                        select
+                                            array_agg(pa.attname order by pfck.attnum_ix asc)
+                                        from
+                                            unnest(pf.confkey) with ordinality pfck(attnum, attnum_ix)
+                                            join pg_attribute pa
+                                                on pfck.attnum = pa.attnum
+                                        where
+                                            pa.attrelid = pf.confrelid
+                                    )
+                                ),
+                                'directives', jsonb_build_object(
+                                    'local_name', graphql.comment_directive(pg_catalog.obj_description(pf.oid, 'pg_constraint')) ->> 'local_name',
+                                    'foreign_name', graphql.comment_directive(pg_catalog.obj_description(pf.oid, 'pg_constraint')) ->> 'foreign_name'
+                                )
+                            )
+                        )
+                    from
+                        pg_catalog.pg_constraint pf
+                        join pg_class pa_local
+                            on pf.conrelid = pa_local.oid
+                        join pg_class pa_referenced
+                            on pf.confrelid = pa_referenced.oid
+                        -- Referenced tables must also be on the search path
+                        join (
+                            select
+                                x.y::regnamespace::oid
+                            from
+                                unnest(current_schemas(false)) x(y)
+                        ) ref_schemas(oid)
+                            on pa_referenced.relnamespace = ref_schemas.oid
+                    where
+                        pf.contype = 'f' -- foreign key
+                ),
+                jsonb_build_array()
+            )
+        ),
         'schemas', coalesce(
             jsonb_agg(
                 jsonb_build_object(
@@ -140,13 +202,21 @@ select
                                                 select
                                                     jsonb_agg(
                                                         jsonb_build_object(
-                                                            'oid', pi.indexrelid::int,
                                                             'table_oid', pi.indrelid::int,
-                                                            'name', pi.indexrelid::regclass::text,
-                                                            'column_attnums', coalesce((select array_agg(x.y::int) from unnest(pi.indkey) x(y)), array[]::int[]),
+                                                            'column_names', coalesce(
+                                                                (
+                                                                    select
+                                                                        array_agg(pa_i.attname)
+                                                                    from
+                                                                        unnest(pi.indkey) pic(attnum)
+                                                                        join pg_catalog.pg_attribute pa_i
+                                                                            on pa_i.attrelid = pi.indrelid -- same table
+                                                                            and pic.attnum = pa_i.attnum -- same attribute
+                                                                ),
+                                                                array[]::text[]
+                                                            ),
                                                             'is_unique', pi.indisunique,
-                                                            'is_primary_key', pi.indisprimary,
-                                                            'comment', pg_catalog.obj_description(pi.indexrelid, 'pg_index')
+                                                            'is_primary_key', pi.indisprimary
                                                         )
                                                     )
                                                 from
@@ -156,120 +226,7 @@ select
                                             ),
                                             jsonb_build_array()
                                         ),
-                                        'foreign_keys', (
-                                            coalesce(
-                                                (
-                                                    select
-                                                        jsonb_agg(
-                                                            jsonb_build_object(
-                                                                'oid', pf.oid::int,
-                                                                'name', pf.conname::text,
-                                                                'local_table_meta', jsonb_build_object(
-                                                                    'oid', pf.conrelid::int,
-                                                                    'name', pa_local.relname::text,
-                                                                    'column_attnums', pf.conkey,
-                                                                      'column_names', (
-                                                                        select
-                                                                            array_agg(pa.attname order by pfck.attnum_ix asc)
-                                                                        from
-                                                                            unnest(pf.conkey) with ordinality pfck(attnum, attnum_ix)
-                                                                            join pg_attribute pa
-                                                                                on pfck.attnum = pa.attnum
-                                                                        where
-                                                                            pa.attrelid = pf.conrelid
-                                                                    ),
-                                                                    'directives', jsonb_build_object(
-                                                                        'inflect_names', schema_directives.inflect_names,
-                                                                        'name', graphql.comment_directive(pg_catalog.obj_description(pf.conrelid, 'pg_class')) ->> 'name'
-                                                                    )
-                                                                ),
-                                                                'referenced_table_meta', jsonb_build_object(
-                                                                    'oid', pf.confrelid::int,
-                                                                    'name', pa_referenced.relname::text,
-                                                                    'column_attnums', pf.confkey,
-                                                                    'column_names', (
-                                                                        select
-                                                                            array_agg(pa.attname order by pfck.attnum_ix asc)
-                                                                        from
-                                                                            unnest(pf.confkey) with ordinality pfck(attnum, attnum_ix)
-                                                                            join pg_attribute pa
-                                                                                on pfck.attnum = pa.attnum
-                                                                        where
-                                                                            pa.attrelid = pf.confrelid
-                                                                    ),
-                                                                    'directives', jsonb_build_object(
-                                                                        'inflect_names', schema_directives.inflect_names,
-                                                                        'name', graphql.comment_directive(pg_catalog.obj_description(pf.confrelid, 'pg_class')) ->> 'name'
-                                                                    )
-                                                                ),
-                                                                'directives', jsonb_build_object(
-                                                                    'inflect_names', schema_directives.inflect_names,
-                                                                    'local_name', graphql.comment_directive(pg_catalog.obj_description(pf.oid, 'pg_constraint')) ->> 'local_name',
-                                                                    'foreign_name', graphql.comment_directive(pg_catalog.obj_description(pf.oid, 'pg_constraint')) ->> 'foreign_name'
-                                                                ),
-                                                                'comment', pg_catalog.obj_description(pf.oid, 'pg_constraint'),
-                                                                -- If the local fkey columns are unique, the connection type based on
-                                                                -- this foregin key should be to-one vs to-many so we check pg_index
-                                                                -- to find any unique combinations of keys in the referenced table
-                                                                'is_locally_unique', x.is_unique,
-                                                                'permissions', jsonb_build_object(
-                                                                    -- all columns reference by fkey are selectable
-                                                                    'is_selectable', (
-                                                                        select
-                                                                            bool_and(
-                                                                                pg_catalog.has_column_privilege(
-                                                                                    current_user,
-                                                                                    pa.attrelid,
-                                                                                    pa.attname,
-                                                                                    'SELECT'
-                                                                                )
-                                                                            )
-                                                                        from
-                                                                            pg_attribute pa
-                                                                        where
-                                                                            (pa.attrelid = pf.conrelid and pa.attnum = any(pf.conkey))
-                                                                            or (pa.attrelid = pf.confrelid and pa.attnum = any(pf.confkey))
-                                                                    )
-                                                                )
-                                                            )
-                                                        )
-                                                    from
-                                                        pg_catalog.pg_constraint pf
-                                                        join pg_class pa_local
-                                                            on pf.conrelid = pa_local.oid
-                                                        join pg_class pa_referenced
-                                                            on pf.confrelid = pa_referenced.oid
-                                                        -- Referenced tables must also be on the search path
-                                                        join (
-                                                            select
-                                                                x.y::regnamespace::oid
-                                                            from
-                                                                unnest(current_schemas(false)) x(y)
-                                                        ) ref_schemas(oid)
-                                                            on pa_referenced.relnamespace = ref_schemas.oid,
-                                                        lateral (
-                                                            select
-                                                                exists(
-                                                                        select
-                                                                            1
-                                                                        from
-                                                                            pg_index pi
-                                                                        where
-                                                                            pi.indrelid = pf.conrelid
-                                                                            and pi.indkey::int2[] <@ pf.conkey -- are the unique cols in by the fkey cols
-                                                                            and pi.indisunique
-                                                                            and pi.indisready
-                                                                            and pi.indisvalid
-                                                                            and pi.indpred is null -- exclude partial indexes
-                                                                ) is_unique
-                                                        ) x
-                                                    where
-                                                        pf.contype = 'f' -- foreign key
-                                                        and pf.conrelid = pc.oid
-                                                ),
-                                                jsonb_build_array()
-                                            )
-                                        ),
+
                                         'columns', (
                                             select
                                                 jsonb_agg(

@@ -979,9 +979,9 @@ where
         .primary_key()
         .ok_or_else(|| "Found table with no primary key".to_string())?;
 
-    for col_attnum in &pkey.column_attnums {
+    for col_name in &pkey.column_names {
         for col in &order_type.table.columns {
-            if &col.attribute_num == col_attnum {
+            if &col.name == col_name {
                 let order_rec = OrderByBuilderElem {
                     column: Arc::clone(col),
                     direction: OrderDirection::AscNullsLast,

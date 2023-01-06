@@ -2,6 +2,7 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::*;
 
@@ -102,19 +103,10 @@ pub struct Composite {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Index {
-    //pub oid: u32,
     pub table_oid: u32,
-    //pub name: String,
-    pub column_attnums: Vec<i32>,
+    pub column_names: Vec<String>,
     pub is_unique: bool,
     pub is_primary_key: bool,
-    //pub comment: Option<String>,
-}
-
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
-pub struct ForeignKeyPermissions {
-    // Are tables + columns on both sides of the fkey selectable?
-    pub is_selectable: bool,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -122,24 +114,18 @@ pub struct ForeignKeyTableInfo {
     pub oid: u32,
     // The table's actual name
     pub name: String,
-    pub column_attnums: Vec<i32>,
+    pub schema: String,
     pub column_names: Vec<String>,
-    pub directives: TableDirectives,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ForeignKeyDirectives {
-    pub inflect_names: bool,
     pub local_name: Option<String>,
     pub foreign_name: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ForeignKey {
-    pub oid: u32,
-    pub name: String,
-    pub is_locally_unique: bool,
-    pub permissions: ForeignKeyPermissions,
     pub directives: ForeignKeyDirectives,
     pub local_table_meta: ForeignKeyTableInfo,
     pub referenced_table_meta: ForeignKeyTableInfo,
@@ -173,7 +159,6 @@ pub struct Table {
     pub permissions: TablePermissions,
     pub indexes: Vec<Index>,
     pub functions: Vec<Arc<Function>>,
-    pub foreign_keys: Vec<Arc<ForeignKey>>,
     pub directives: TableDirectives,
 }
 
@@ -187,15 +172,16 @@ impl Table {
 
         // Check for a primary key definition in comment directives
         if let Some(column_names) = &self.directives.primary_key_columns {
-            let mut column_attnums: Vec<i32> = vec![];
+            // validate that columns exist on the table
+            let mut valid_column_names: Vec<&String> = vec![];
             for column_name in column_names {
                 for column in &self.columns {
                     if column_name == &column.name {
-                        column_attnums.push(column.attribute_num);
+                        valid_column_names.push(&column.name);
                     }
                 }
             }
-            if column_attnums.len() != column_names.len() {
+            if valid_column_names.len() != column_names.len() {
                 // At least one of the column names didn't exist on the table
                 // so the primary key directive is not valid
                 // Ideally we'd throw an error here instead
@@ -203,7 +189,7 @@ impl Table {
             } else {
                 Some(Index {
                     table_oid: self.oid,
-                    column_attnums,
+                    column_names: column_names.clone(),
                     is_unique: true,
                     is_primary_key: true,
                 })
@@ -215,14 +201,14 @@ impl Table {
 
     pub fn primary_key_columns(&self) -> Vec<&Arc<Column>> {
         self.primary_key()
-            .map(|x| x.column_attnums)
+            .map(|x| x.column_names)
             .unwrap_or(vec![])
             .iter()
-            .map(|col_num| {
+            .map(|col_name| {
                 self.columns
                     .iter()
-                    .find(|col| &col.attribute_num == col_num)
-                    .expect("Failed to unwrap pkey by attnum")
+                    .find(|col| &col.name == col_name)
+                    .expect("Failed to unwrap pkey by column names")
             })
             .collect::<Vec<&Arc<Column>>>()
     }
@@ -253,7 +239,7 @@ pub struct Schema {
     pub directives: SchemaDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Config {
     pub search_path: Vec<String>,
     pub role: String,
@@ -264,13 +250,104 @@ pub struct Config {
 pub struct Context {
     pub config: Config,
     pub schemas: Vec<Schema>,
+    foreign_keys: Vec<Arc<ForeignKey>>,
     pub enums: Vec<Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
 }
 
 impl Context {
+    pub fn foreign_keys(&self) -> Vec<Arc<ForeignKey>> {
+        self.foreign_keys.clone()
+        // TODO: add fkeys from comment directives
+    }
+
+    /// Check if a type is a composite type
     pub fn is_composite(&self, type_oid: u32) -> bool {
         self.composites.iter().any(|x| x.oid == type_oid)
+    }
+
+    pub fn get_table_by_name(
+        &self,
+        schema_name: &String,
+        table_name: &String,
+    ) -> Option<&Arc<Table>> {
+        self.schemas
+            .iter()
+            .flat_map(|x| x.tables.iter())
+            .find(|x| &x.schema == schema_name && &x.name == table_name)
+    }
+
+    pub fn get_table_by_oid(&self, oid: u32) -> Option<&Arc<Table>> {
+        self.schemas
+            .iter()
+            .flat_map(|x| x.tables.iter())
+            .find(|x| x.oid == oid)
+    }
+
+    /// Check if the local side of a foreign key is comprised of unique columns
+    pub fn is_locally_unique(&self, fkey: &ForeignKey) -> bool {
+        let table: &Arc<Table> = match self.get_table_by_oid(fkey.local_table_meta.oid) {
+            Some(table) => table,
+            None => {
+                return false;
+            }
+        };
+
+        let fkey_columns: HashSet<&String> = fkey.local_table_meta.column_names.iter().collect();
+
+        for index in table.indexes.iter().filter(|x| x.is_unique) {
+            let index_column_names: HashSet<&String> = index.column_names.iter().collect();
+
+            if index_column_names
+                .iter()
+                .all(|col_name| fkey_columns.contains(col_name))
+            {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Are both sides of the foreign key composed of selectable columns
+    pub fn fkey_is_selectable(&self, fkey: &ForeignKey) -> bool {
+        let local_table: &Arc<Table> = match self.get_table_by_oid(fkey.local_table_meta.oid) {
+            Some(table) => table,
+            None => {
+                return false;
+            }
+        };
+
+        let referenced_table: &Arc<Table> =
+            match self.get_table_by_oid(fkey.referenced_table_meta.oid) {
+                Some(table) => table,
+                None => {
+                    return false;
+                }
+            };
+
+        let fkey_local_columns = &fkey.local_table_meta.column_names;
+        let fkey_referenced_columns = &fkey.referenced_table_meta.column_names;
+
+        let local_columns_selectable: HashSet<&String> = local_table
+            .columns
+            .iter()
+            .filter(|x| x.permissions.is_selectable)
+            .map(|col| &col.name)
+            .collect();
+
+        let referenced_columns_selectable: HashSet<&String> = referenced_table
+            .columns
+            .iter()
+            .filter(|x| x.permissions.is_selectable)
+            .map(|col| &col.name)
+            .collect();
+
+        fkey_local_columns
+            .iter()
+            .all(|col| local_columns_selectable.contains(col))
+            && fkey_referenced_columns
+                .iter()
+                .all(|col| referenced_columns_selectable.contains(col))
     }
 }
 
@@ -294,5 +371,6 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
     context
         .map(Arc::new)
-        .map_err(|_| "Error parsing schema. Check comment directives".to_string())
+        //.map_err(|_| "Error parsing schema. Check comment directives".to_string())
+        .map_err(|e| e.to_string())
 }
