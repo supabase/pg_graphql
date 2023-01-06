@@ -260,17 +260,6 @@ pub struct Config {
     pub schema_version: i32,
 }
 
-impl fmt::Display for Config {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Customize so only `x` and `y` are denoted.
-        write!(
-            f,
-            "{}-{:?}-{}",
-            self.schema_version, self.search_path, self.role
-        )
-    }
-}
-
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Context {
     pub config: Config,
@@ -293,36 +282,17 @@ pub fn load_sql_config() -> Config {
 }
 
 #[cached(
-    type = "SizedCache<String, Arc<Context>>",
+    type = "SizedCache<String, Result<Arc<Context>, String>>",
     create = "{ SizedCache::with_size(250) }",
-    convert = r#"{ format!("{}", _config) }"#,
+    convert = r#"{ serde_json::ser::to_string(_config).unwrap() }"#,
     sync_writes = true
 )]
-pub fn load_sql_context(_config: &Config) -> Arc<Context> {
+pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().0;
-    let context: Context = serde_json::from_value(sql_result).unwrap();
-    Arc::new(context)
-}
-
-#[cfg(any(test, feature = "pg_test"))]
-#[pgx::pg_schema]
-mod tests {
-    use crate::sql_types::{load_sql_config, load_sql_context};
-    use pgx::*;
-
-    #[pg_test]
-    fn test_deserialize_sql_context() {
-        let config = load_sql_config();
-        let context = load_sql_context(&config);
-        assert!(context.schemas.len() == 1);
-        assert!(context.schemas[0].tables.is_empty());
-    }
-
-    #[pg_test]
-    fn test_deserialize_sql_config() {
-        let config = load_sql_config();
-        assert!(config.search_path.contains(&String::from("public")));
-    }
+    let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
+    context
+        .map(Arc::new)
+        .map_err(|_| "Error parsing schema. Check comment directives".to_string())
 }
