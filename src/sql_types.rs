@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::*;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ColumnPermissions {
     pub is_insertable: bool,
     pub is_selectable: bool,
@@ -14,13 +14,13 @@ pub struct ColumnPermissions {
     // alterable?
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ColumnDirectives {
     pub inflect_names: bool,
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Column {
     pub name: String,
     pub type_oid: u32,
@@ -35,18 +35,18 @@ pub struct Column {
     pub directives: ColumnDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct FunctionDirectives {
     pub inflect_names: bool,
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct FunctionPermissions {
     pub is_executable: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Function {
     pub oid: u32,
     pub name: String,
@@ -58,7 +58,7 @@ pub struct Function {
     pub permissions: FunctionPermissions,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TablePermissions {
     pub is_insertable: bool,
     pub is_selectable: bool,
@@ -66,19 +66,19 @@ pub struct TablePermissions {
     pub is_deletable: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct EnumPermissions {
     pub is_usable: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct EnumValue {
     pub oid: u32,
     pub name: String,
     pub sort_order: i32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Enum {
     pub oid: u32,
     pub schema_oid: u32,
@@ -89,18 +89,18 @@ pub struct Enum {
     pub directives: EnumDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct EnumDirectives {
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Composite {
     pub oid: u32,
     pub schema_oid: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Index {
     //pub oid: u32,
     pub table_oid: u32,
@@ -111,13 +111,13 @@ pub struct Index {
     //pub comment: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ForeignKeyPermissions {
     // Are tables + columns on both sides of the fkey selectable?
     pub is_selectable: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ForeignKeyTableInfo {
     pub oid: u32,
     // The table's actual name
@@ -127,14 +127,14 @@ pub struct ForeignKeyTableInfo {
     pub directives: TableDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ForeignKeyDirectives {
     pub inflect_names: bool,
     pub local_name: Option<String>,
     pub foreign_name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ForeignKey {
     pub oid: u32,
     pub name: String,
@@ -145,12 +145,12 @@ pub struct ForeignKey {
     pub referenced_table_meta: ForeignKeyTableInfo,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TableDirectiveTotalCount {
     pub enabled: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TableDirectives {
     pub inflect_names: bool,
     pub name: Option<String>,
@@ -162,7 +162,7 @@ pub struct TableDirectives {
     pub primary_key_columns: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Table {
     pub oid: u32,
     pub name: String,
@@ -239,12 +239,12 @@ impl Table {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct SchemaDirectives {
     pub inflect_names: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Schema {
     pub oid: u32,
     pub name: String,
@@ -271,7 +271,7 @@ impl fmt::Display for Config {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Context {
     pub config: Config,
     pub schemas: Vec<Schema>,
