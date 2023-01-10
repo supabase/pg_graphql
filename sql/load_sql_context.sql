@@ -152,7 +152,6 @@ select
                                         'directives', jsonb_build_object(
                                             'inflect_names', schema_directives.inflect_names,
                                             'name', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) ->> 'name',
-                                            'primary_key_columns', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) -> 'primary_key_columns',
                                             'total_count', jsonb_build_object(
                                                 'enabled', coalesce(
                                                     (
@@ -162,7 +161,9 @@ select
                                                     ),
                                                     false
                                                 )
-                                            )
+                                            ),
+                                            'primary_key_columns', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) -> 'primary_key_columns',
+                                            'foreign_keys', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) -> 'foreign_keys'
                                         ),
                                         'functions', coalesce(
                                             (

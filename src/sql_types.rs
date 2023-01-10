@@ -137,15 +137,51 @@ pub struct TableDirectiveTotalCount {
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+pub struct TableDirectiveForeignKey {
+    // Equivalent to ForeignKeyDirectives.local_name
+    pub local_name: Option<String>,
+    pub local_columns: Vec<String>,
+
+    // Equivalent to ForeignKeyDirectives.foreign_name
+    pub foreign_name: Option<String>,
+    pub foreign_schema: String,
+    pub foreign_table: String,
+    pub foreign_columns: Vec<String>,
+}
+
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TableDirectives {
     pub inflect_names: bool,
+
+    // @graphql({"name": "Foo" })
     pub name: Option<String>,
-    // XXX: comment directive key is totalCount
+
+    // @graphql({"totalCount": { "enabled": true } })
     pub total_count: Option<TableDirectiveTotalCount>,
 
-    // Views / Materialized Views only:
     // @graphql({"primary_key_columns": ["id"]})
     pub primary_key_columns: Option<Vec<String>>,
+
+    /*
+    @graphql(
+      {
+        "foreign_keys": [
+          {
+            <REQUIRED>
+            "local_columns": ["account_id"],
+            "foriegn_schema": "public",
+            "foriegn_table": "account",
+            "foriegn_columns": ["id"],
+
+            <OPTIONAL>
+            "local_name": "foo",
+            "foreign_name": "bar",
+          },
+        ]
+      }
+    )
+    */
+    pub foreign_keys: Option<Vec<TableDirectiveForeignKey>>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -256,9 +292,72 @@ pub struct Context {
 }
 
 impl Context {
+    /// Collect all foreign keys referencing (inbound or outbound) a table
     pub fn foreign_keys(&self) -> Vec<Arc<ForeignKey>> {
-        self.foreign_keys.clone()
-        // TODO: add fkeys from comment directives
+        let mut fkeys: Vec<Arc<ForeignKey>> = self.foreign_keys.clone();
+
+        // Add foreign keys defined in comment directives
+        for table in self.schemas.iter().flat_map(|x| &x.tables) {
+            let directive_fkeys: Vec<TableDirectiveForeignKey> =
+                match &table.directives.foreign_keys {
+                    Some(keys) => keys.clone(),
+                    None => vec![],
+                };
+
+            for directive_fkey in directive_fkeys.iter() {
+                let referenced_t = match self.get_table_by_name(
+                    &directive_fkey.foreign_schema,
+                    &directive_fkey.foreign_table,
+                ) {
+                    Some(t) => t,
+                    None => {
+                        // No table found with requested name. Skip.
+                        continue;
+                    }
+                };
+
+                let referenced_t_column_names: HashSet<&String> =
+                    referenced_t.columns.iter().map(|x| &x.name).collect();
+
+                // Verify all foreign column references are valid
+                if !directive_fkey
+                    .foreign_columns
+                    .iter()
+                    .all(|col| referenced_t_column_names.contains(col))
+                {
+                    // Skip if invalid references exist
+                    continue;
+                }
+
+                let fk = ForeignKey {
+                    local_table_meta: ForeignKeyTableInfo {
+                        oid: table.oid,
+                        name: table.name.clone(),
+                        schema: table.schema.clone(),
+                        column_names: directive_fkey.local_columns.clone(),
+                    },
+                    referenced_table_meta: ForeignKeyTableInfo {
+                        oid: referenced_t.oid,
+                        name: referenced_t.name.clone(),
+                        schema: referenced_t.schema.clone(),
+                        column_names: directive_fkey.foreign_columns.clone(),
+                    },
+                    directives: ForeignKeyDirectives {
+                        local_name: directive_fkey.local_name.clone(),
+                        foreign_name: directive_fkey.foreign_name.clone(),
+                    },
+                };
+
+                //panic!("{:?}, {}", fk, self.fkey_is_selectable(&fk));
+
+                fkeys.push(Arc::new(fk));
+            }
+        }
+
+        fkeys
+            .into_iter()
+            .filter(|fk| self.fkey_is_selectable(fk))
+            .collect()
     }
 
     /// Check if a type is a composite type
@@ -285,7 +384,7 @@ impl Context {
     }
 
     /// Check if the local side of a foreign key is comprised of unique columns
-    pub fn is_locally_unique(&self, fkey: &ForeignKey) -> bool {
+    pub fn fkey_is_locally_unique(&self, fkey: &ForeignKey) -> bool {
         let table: &Arc<Table> = match self.get_table_by_oid(fkey.local_table_meta.oid) {
             Some(table) => table,
             None => {
@@ -342,6 +441,18 @@ impl Context {
             .map(|col| &col.name)
             .collect();
 
+        /*
+        if referenced_table.name == "person".to_string() {
+            panic!(
+                "local {:?}-{:?} remote {:?}-{:?}",
+                fkey_local_columns,
+                local_columns_selectable,
+                fkey_referenced_columns,
+                referenced_columns_selectable
+            );
+        }
+        */
+
         fkey_local_columns
             .iter()
             .all(|col| local_columns_selectable.contains(col))
@@ -369,8 +480,10 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
-    context
-        .map(Arc::new)
-        //.map_err(|_| "Error parsing schema. Check comment directives".to_string())
-        .map_err(|e| e.to_string())
+    context.map(Arc::new).map_err(|e| {
+        format!(
+            "Error while loading schema, check comment directives. {}",
+            e.to_string()
+        )
+    })
 }

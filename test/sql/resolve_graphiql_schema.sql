@@ -8,8 +8,13 @@ begin;
     );
     comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
 
-    create view accountv as
+    create view person as
         select * from account;
+
+    comment on view person is e'
+    @graphql({
+        "primary_key_columns": ["id"]
+    })';
 
     create table blog(
         id serial primary key,
@@ -21,6 +26,19 @@ begin;
         updated_at timestamp not null
     );
 
+    comment on table blog is e'
+    @graphql({
+        "foreign_keys": [
+          {
+            "local_name": "blogs",
+            "local_columns": ["owner_id"],
+            "foreign_name": "personAuthor",
+            "foreign_schema": "public",
+            "foreign_table": "person",
+            "foreign_columns": ["id"]
+          }
+        ]
+    })';
 
     create type blog_post_status as enum ('PENDING', 'RELEASED');
 

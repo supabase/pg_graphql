@@ -114,7 +114,7 @@ impl Context {
         if reverse_reference {
             table_ref = &fkey.local_table_meta;
             name_override = &fkey.directives.local_name;
-            is_unique = self.is_locally_unique(fkey);
+            is_unique = self.fkey_is_locally_unique(fkey);
             column_names = &fkey.referenced_table_meta.column_names;
         }
 
@@ -1638,7 +1638,6 @@ impl ___Type for NodeType {
             .foreign_keys()
             .iter()
             .filter(|x| x.local_table_meta.oid == self.table.oid)
-            .filter(|fk| self.schema.context.fkey_is_selectable(fk))
         {
             let reverse_reference = false;
 
@@ -1681,7 +1680,6 @@ impl ___Type for NodeType {
             .context
             .foreign_keys()
             .iter()
-            .filter(|fk| self.schema.context.fkey_is_selectable(fk))
             // inbound references
             .filter(|x| x.referenced_table_meta.oid == self.table.oid)
         {
@@ -1700,7 +1698,7 @@ impl ___Type for NodeType {
                 continue;
             }
 
-            let relation_field = match self.schema.context.is_locally_unique(fkey) {
+            let relation_field = match self.schema.context.fkey_is_locally_unique(fkey) {
                 false => {
                     __Field {
                         name_: self.schema.context.graphql_foreign_key_field_name(fkey, reverse_reference),
