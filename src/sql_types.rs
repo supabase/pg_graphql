@@ -441,18 +441,6 @@ impl Context {
             .map(|col| &col.name)
             .collect();
 
-        /*
-        if referenced_table.name == "person".to_string() {
-            panic!(
-                "local {:?}-{:?} remote {:?}-{:?}",
-                fkey_local_columns,
-                local_columns_selectable,
-                fkey_referenced_columns,
-                referenced_columns_selectable
-            );
-        }
-        */
-
         fkey_local_columns
             .iter()
             .all(|col| local_columns_selectable.contains(col))
