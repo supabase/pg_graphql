@@ -4,7 +4,7 @@ Views, materialized views, and foreign tables can be exposed with pg_graphql.
 
 ## Primary Keys (Required)
 
-The minimum requirement for any entity to be visible in the GraphQL schema is the presence of a primary key. For tables, primary keys can be defined with SQL DDL but primary keys are not supported for views, materialized views, or foreign tables. For those entities you can communicate the intended primary key column/s with a [comment directive](/pg_graphql/configuration/#comment-directives)
+A primary key is required for an entity to be reflected in the GraphQL schema. Tables can define primary keys with SQL DDL, but primary keys are not available for views, materialized views, or foreign tables. For those entities, you can set a "fake" primary key with a [comment directive](/pg_graphql/configuration/#comment-directives).
 ```json
 {"primary_key_columns": [<column_name_1>, ..., <column_name_n>]}
 ```
@@ -32,7 +32,7 @@ type Person {
 ```
 
 !!! warning
-    The primary key column/s must be unique within the table. If they are not unique, you will experience inconsistent behavior with `ID!` types, sorting, and pagination.
+    Values of the primary key column/s must be unique within the table. If they are not unique, you will experience inconsistent behavior with `ID!` types, sorting, and pagination.
 
 [Updatable views](https://www.postgresql.org/docs/current/sql-createview.html#SQL-CREATEVIEW-UPDATABLE-VIEWS) are reflected in the `Query` and `Mutation` types identically to tables. Non-updatable views are read-only and accessible via the `Query` type only.
 
@@ -98,7 +98,7 @@ comment on constraint fkey_email_address_to_account
   is E'@graphql({"foreign_name": "account", "local_name": "addresses"})';
 ```
 
-yielding the following GraphQL types:
+yielding the GraphQL types:
 
 ```graphql
 type Account {
