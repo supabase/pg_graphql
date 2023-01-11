@@ -47,9 +47,17 @@ fn resolve(
             let sql_config = sql_types::load_sql_config();
             let context = sql_types::load_sql_context(&sql_config);
 
-            let graphql_schema = __Schema { context };
-            let variables = variables.map_or(json!({}), |v| v.0);
-            resolve_inner(query_ast, &variables, &operationName, &graphql_schema)
+            match context {
+                Ok(context) => {
+                    let graphql_schema = __Schema { context };
+                    let variables = variables.map_or(json!({}), |v| v.0);
+                    resolve_inner(query_ast, &variables, &operationName, &graphql_schema)
+                }
+                Err(err) => GraphQLResponse {
+                    data: Omit::Omitted,
+                    errors: Omit::Present(vec![ErrorMessage { message: err }]),
+                },
+            }
         }
     };
 

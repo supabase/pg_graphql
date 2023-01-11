@@ -185,8 +185,8 @@ create table "Post"(
 );
 
 comment on constraint post_owner_id_fkey
-on post
-is E'@graphql({"foreign_name": "author", "local_name": "posts"})';
+  on "Post"
+  is E'@graphql({"foreign_name": "author", "local_name": "posts"})';
 ```
 
 results in:
