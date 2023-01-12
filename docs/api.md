@@ -464,6 +464,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       lt: Int
       lte: Int
       neq: Int
+      is: FilterIs
     }
     ```
 
@@ -481,9 +482,18 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       lt: String
       lte: String
       neq: String
+      is: FilterIs
     }
     ```
 
+=== "FilterIs"
+
+    ```graphql
+    enum FilterIs {
+      NULL
+      NOT_NULL
+    }
+    ```
 
 The following list shows the operators that may be available on `<Type>Filter` types.
 
@@ -497,6 +507,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 | in          | Contained by Value List  |
 | lt          | Less Than                |
 | lte         | Less Than Or Equal To    |
+| is          | Null or Not Null         |
 
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 

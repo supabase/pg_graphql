@@ -621,27 +621,56 @@ impl FilterBuilderElem {
     ) -> Result<String, String> {
         match self {
             Self::Column { column, op, value } => {
-                let cast_type_name = match op {
-                    FilterOp::In => format!("{}[]", column.type_name),
-                    _ => column.type_name.clone(),
+                let frag = match op {
+                    FilterOp::Is => {
+                        format!(
+                            "{block_name}.{} {}",
+                            quote_ident(&column.name),
+                            match value {
+                                serde_json::Value::String(x) => {
+                                    match x.as_str() {
+                                        "NULL" => "is null",
+                                        "NOT_NULL" => "is not null",
+                                        _ => {
+                                            return Err(
+                                                "Error transpiling Is filter value".to_string()
+                                            )
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    return Err("Error transpiling Is filter value type".to_string());
+                                }
+                            }
+                        )
+                    }
+                    _ => {
+                        let cast_type_name = match op {
+                            FilterOp::In => format!("{}[]", column.type_name),
+                            _ => column.type_name.clone(),
+                        };
+
+                        let val_clause = param_context.clause_for(value, &cast_type_name)?;
+
+                        format!(
+                            "{block_name}.{} {} {}",
+                            quote_ident(&column.name),
+                            match op {
+                                FilterOp::Equal => "=",
+                                FilterOp::NotEqual => "<>",
+                                FilterOp::LessThan => "<",
+                                FilterOp::LessThanEqualTo => "<=",
+                                FilterOp::GreaterThan => ">",
+                                FilterOp::GreaterThanEqualTo => ">=",
+                                FilterOp::In => "= any",
+                                FilterOp::Is => {
+                                    return Err("Error transpiling Is filter".to_string());
+                                }
+                            },
+                            val_clause
+                        )
+                    }
                 };
-
-                let val_clause = param_context.clause_for(value, &cast_type_name)?;
-
-                let frag = format!(
-                    "{block_name}.{} {} {}",
-                    quote_ident(&column.name),
-                    match op {
-                        FilterOp::Equal => "=",
-                        FilterOp::NotEqual => "<>",
-                        FilterOp::LessThan => "<",
-                        FilterOp::LessThanEqualTo => "<=",
-                        FilterOp::GreaterThan => ">",
-                        FilterOp::GreaterThanEqualTo => ">=",
-                        FilterOp::In => "= any",
-                    },
-                    val_clause
-                );
                 Ok(frag)
             }
             Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),

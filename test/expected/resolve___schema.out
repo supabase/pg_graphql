@@ -222,6 +222,10 @@ begin;
                      "name": "DatetimeFilter"        +
                  },                                  +
                  {                                   +
+                     "kind": "ENUM",                 +
+                     "name": "FilterIs"              +
+                 },                                  +
+                 {                                   +
                      "kind": "SCALAR",               +
                      "name": "Float"                 +
                  },                                  +

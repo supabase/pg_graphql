@@ -228,6 +228,11 @@ input BlogPostOrderBy {
   createdAt: OrderByDirection
 }
 
+enum FilterIs {
+  PENDING
+  RELEASED
+}
+
 enum BlogPostStatus {
   PENDING
   RELEASED
@@ -240,6 +245,7 @@ input BlogPostStatusFilter {
   eq: BlogPostStatus
   in: [BlogPostStatus!]
   neq: BlogPostStatus
+  is: FilterIs
 }
 
 input BlogPostUpdateInput {
@@ -294,6 +300,7 @@ input BigIntFilter {
   lt: BigInt
   lte: BigInt
   neq: BigInt
+  is: FilterIs
 }
 
 """
@@ -307,6 +314,7 @@ input BooleanFilter {
   lt: Boolean
   lte: Boolean
   neq: Boolean
+  is: FilterIs
 }
 
 scalar Cursor
@@ -324,6 +332,7 @@ input DateFilter {
   lt: Date
   lte: Date
   neq: Date
+  is: FilterIs
 }
 
 scalar Datetime
@@ -339,6 +348,7 @@ input DatetimeFilter {
   lt: Datetime
   lte: Datetime
   neq: Datetime
+  is: FilterIs
 }
 
 """
@@ -352,6 +362,7 @@ input FloatFilter {
   lt: Float
   lte: Float
   neq: Float
+  is: FilterIs
 }
 
 """
@@ -365,6 +376,7 @@ input IntFilter {
   lt: Int
   lte: Int
   neq: Int
+  is: FilterIs
 }
 
 scalar JSON
@@ -572,6 +584,7 @@ input StringFilter {
   lt: String
   lte: String
   neq: String
+  is: FilterIs
 }
 
 scalar Time
@@ -587,6 +600,7 @@ input TimeFilter {
   lt: Time
   lte: Time
   neq: Time
+  is: FilterIs
 }
 
 scalar UUID
@@ -598,4 +612,5 @@ input UUIDFilter {
   eq: UUID
   in: [UUID!]
   neq: UUID
+  is: FilterIs
 }
