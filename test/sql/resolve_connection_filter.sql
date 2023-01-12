@@ -117,6 +117,18 @@ begin;
     select graphql.resolve($${accountCollection(filter: {phone: {is: INVALID}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
+    -- is - null literal returns error (this may change but currently seems like the best option and "unbreaking" it is backwards compatible)
+    select graphql.resolve($${accountCollection(filter: {phone: {is: null}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
+
+    -- variable is - is null
+    select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{"nis": "NULL"}');
+    rollback to savepoint a;
+
+    -- variable is - absent treated as ignored / returns all
+    select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{}');
+    rollback to savepoint a;
+
     -- in - int
     select graphql.resolve($${accountCollection(filter: {id: {in: [1, 2]}}) { edges { node { id } } }}$$);
     rollback to savepoint a;

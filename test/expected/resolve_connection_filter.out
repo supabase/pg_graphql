@@ -223,6 +223,30 @@ begin;
 (1 row)
 
     rollback to savepoint a;
+    -- is - null literal returns error (this may change but currently seems like the best option and "unbreaking" it is backwards compatible)
+    select graphql.resolve($${accountCollection(filter: {phone: {is: null}}) { edges { node { id } } }}$$);
+                                      resolve                                      
+-----------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Error transpiling Is filter value type"}]}
+(1 row)
+
+    rollback to savepoint a;
+    -- variable is - is null
+    select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{"nis": "NULL"}');
+                              resolve                              
+-------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 2}}]}}}
+(1 row)
+
+    rollback to savepoint a;
+    -- variable is - absent treated as ignored / returns all
+    select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{}');
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
+(1 row)
+
+    rollback to savepoint a;
     -- in - int
     select graphql.resolve($${accountCollection(filter: {id: {in: [1, 2]}}) { edges { node { id } } }}$$);
                                         resolve                                         
