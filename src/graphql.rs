@@ -3041,6 +3041,16 @@ impl ___Type for FilterTypeType {
                         default_value: None,
                         sql_type: None,
                     },
+                    __InputValue {
+                        name_: "is".to_string(),
+                        type_: __Type::Enum(EnumType {
+                            enum_: EnumSource::FilterIs,
+                            schema: Rc::clone(&self.schema),
+                        }),
+                        description: None,
+                        default_value: None,
+                        sql_type: None,
+                    },
                 ]
             }
         };
