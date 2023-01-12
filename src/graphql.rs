@@ -891,8 +891,14 @@ pub struct ConnectionType {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub enum EnumSource {
+    Enum(Arc<Enum>),
+    FilterIs,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EnumType {
-    pub enum_: Arc<Enum>,
+    pub enum_: EnumSource,
     pub schema: Rc<__Schema>,
 }
 
@@ -914,6 +920,7 @@ pub enum FilterableType {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FilterTypeType {
     pub entity: FilterableType,
+    pub schema: Rc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1272,8 +1279,13 @@ impl ___Type for EnumType {
     }
 
     fn name(&self) -> Option<String> {
-        let inflect_names = self.schema.context.inflect_names(self.enum_.schema_oid);
-        Some(self.enum_.graphql_base_type_name(inflect_names))
+        match &self.enum_ {
+            EnumSource::Enum(enum_) => {
+                let inflect_names = self.schema.context.inflect_names(enum_.schema_oid);
+                Some(enum_.graphql_base_type_name(inflect_names))
+            }
+            EnumSource::FilterIs => Some("FilterIs".to_string()),
+        }
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -1281,8 +1293,8 @@ impl ___Type for EnumType {
     }
 
     fn enum_values(&self, _include_deprecated: bool) -> Option<Vec<__EnumValue>> {
-        Some(
-            self.enum_
+        Some(match &self.enum_ {
+            EnumSource::Enum(enum_) => enum_
                 .values
                 .iter()
                 .map(|x| __EnumValue {
@@ -1291,7 +1303,21 @@ impl ___Type for EnumType {
                     deprecation_reason: None,
                 })
                 .collect(),
-        )
+            EnumSource::FilterIs => {
+                vec![
+                    __EnumValue {
+                        name: "NULL".to_string(),
+                        description: None,
+                        deprecation_reason: None,
+                    },
+                    __EnumValue {
+                        name: "NOT_NULL".to_string(),
+                        description: None,
+                        deprecation_reason: None,
+                    },
+                ]
+            }
+        })
     }
 }
 
@@ -1512,7 +1538,7 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
     for enum_ in enums {
         if enum_.oid == type_oid {
             type_w_list_mod = __Type::Enum(EnumType {
-                enum_: enum_.clone(),
+                enum_: EnumSource::Enum(Arc::clone(enum_)),
                 schema: schema.clone(),
             })
         } else if format!("{}[]", enum_.name) == type_name
@@ -1520,7 +1546,7 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
         {
             type_w_list_mod = __Type::List(ListType {
                 type_: Box::new(__Type::Enum(EnumType {
-                    enum_: Arc::clone(enum_),
+                    enum_: EnumSource::Enum(Arc::clone(enum_)),
                     schema: Rc::clone(schema),
                 })),
             })
@@ -2915,6 +2941,16 @@ impl ___Type for FilterTypeType {
                                 default_value: None,
                                 sql_type: None,
                             },
+                            __InputValue {
+                                name_: "is".to_string(),
+                                type_: __Type::Enum(EnumType {
+                                    enum_: EnumSource::FilterIs,
+                                    schema: Rc::clone(&self.schema),
+                                }),
+                                description: None,
+                                default_value: None,
+                                sql_type: None,
+                            },
                         ]);
                     }
                     _ => scalar_infields.extend(vec![
@@ -2960,6 +2996,16 @@ impl ___Type for FilterTypeType {
                         __InputValue {
                             name_: "lte".to_string(),
                             type_: __Type::Scalar(scalar.clone()),
+                            description: None,
+                            default_value: None,
+                            sql_type: None,
+                        },
+                        __InputValue {
+                            name_: "is".to_string(),
+                            type_: __Type::Enum(EnumType {
+                                enum_: EnumSource::FilterIs,
+                                schema: Rc::clone(&self.schema),
+                            }),
                             description: None,
                             default_value: None,
                             sql_type: None,
@@ -3039,6 +3085,7 @@ impl ___Type for FilterEntityType {
                         name_: col.graphql_field_name(),
                         type_: __Type::FilterType(FilterTypeType {
                             entity: FilterableType::Scalar(s),
+                            schema: Rc::clone(&self.schema),
                         }),
                         description: None,
                         default_value: None,
@@ -3049,6 +3096,7 @@ impl ___Type for FilterEntityType {
                         name_: col.graphql_field_name(),
                         type_: __Type::FilterType(FilterTypeType {
                             entity: FilterableType::Enum(s),
+                            schema: Rc::clone(&self.schema),
                         }),
                         description: None,
                         default_value: None,
@@ -3071,6 +3119,7 @@ impl ___Type for FilterEntityType {
                 name_: "nodeId".to_string(),
                 type_: __Type::FilterType(FilterTypeType {
                     entity: FilterableType::Scalar(Scalar::ID),
+                    schema: Rc::clone(&self.schema),
                 }),
                 description: None,
                 default_value: None,
@@ -3213,36 +3262,50 @@ impl __Schema {
             __Type::Scalar(Scalar::UUID),
             __Type::Scalar(Scalar::JSON),
             __Type::Scalar(Scalar::Cursor),
+            __Type::Enum(EnumType {
+                enum_: EnumSource::FilterIs,
+                schema: Rc::clone(&schema_rc),
+            }),
             __Type::OrderBy(OrderByType {}),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::ID),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Int),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Float),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::String),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Boolean),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Date),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Time),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Datetime),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::BigInt),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::UUID),
+                schema: Rc::clone(&schema_rc),
             }),
             __Type::Query(QueryType {
                 schema: schema_rc.clone(),
@@ -3328,7 +3391,7 @@ impl __Schema {
                 .filter(|x| x.permissions.is_usable)
             {
                 let enum_type = EnumType {
-                    enum_: Arc::clone(&enum_),
+                    enum_: EnumSource::Enum(Arc::clone(&enum_)),
                     schema: Rc::clone(&schema_rc),
                 };
 
@@ -3336,6 +3399,7 @@ impl __Schema {
 
                 let enum_filter = __Type::FilterType(FilterTypeType {
                     entity: FilterableType::Enum(enum_type.clone()),
+                    schema: Rc::clone(&schema_rc),
                 });
 
                 types_.push(__Type::Enum(enum_type));
