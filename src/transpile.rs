@@ -7,6 +7,7 @@ use pgx::*;
 use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
+use std::collections::HashSet;
 use std::sync::Arc;
 
 pub fn quote_ident(ident: &str) -> String {
@@ -272,13 +273,29 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 
         let select_clause = frags.join(", ");
 
-        let columns: &Vec<Arc<Column>> = &self.table.columns;
+        // Identify all columns provided in any of `object` rows
+        let referenced_column_names: HashSet<&String> =
+            self.objects.iter().flat_map(|x| x.row.keys()).collect();
+
+        let referenced_columns: Vec<&Arc<Column>> = self
+            .table
+            .columns
+            .iter()
+            .filter(|c| referenced_column_names.contains(&c.name))
+            .collect();
+
+        // Order matters. This must be in the same order as `referenced_columns`
+        let referenced_columns_clause: String = referenced_columns
+            .iter()
+            .map(|c| quote_ident(&c.name))
+            .collect::<Vec<String>>()
+            .join(", ");
 
         let mut values_rows_clause: Vec<String> = vec![];
 
         for row_map in &self.objects {
             let mut working_row = vec![];
-            for column in columns {
+            for column in referenced_columns.iter() {
                 let elem_clause = match row_map.row.get(&column.name) {
                     None => "default".to_string(),
                     Some(elem) => match elem {
@@ -297,13 +314,10 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 
         let values_clause = values_rows_clause.join(", ");
 
-        let column_names: Vec<String> = columns.iter().map(|x| quote_ident(&x.name)).collect();
-        let columns_clause: String = column_names.join(", ");
-
         Ok(format!(
             "
         with affected as (
-            insert into {quoted_schema}.{quoted_table}({columns_clause})
+            insert into {quoted_schema}.{quoted_table}({referenced_columns_clause})
             values {values_clause}
             returning {selectable_columns_clause}
         )
@@ -639,7 +653,9 @@ impl FilterBuilderElem {
                                     }
                                 }
                                 _ => {
-                                    return Err("Error transpiling Is filter value type".to_string());
+                                    return Err(
+                                        "Error transpiling Is filter value type".to_string()
+                                    );
                                 }
                             }
                         )

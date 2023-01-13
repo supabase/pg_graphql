@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::*;
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ColumnPermissions {
     pub is_insertable: bool,
     pub is_selectable: bool,
@@ -15,13 +15,13 @@ pub struct ColumnPermissions {
     // alterable?
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ColumnDirectives {
     pub inflect_names: bool,
     pub name: Option<String>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Column {
     pub name: String,
     pub type_oid: u32,

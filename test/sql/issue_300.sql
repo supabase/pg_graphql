@@ -5,11 +5,12 @@ begin;
     create table project (
         id serial primary key,
         title text not null,
-        created_at timestamptz not null default now(),
-        updated_at timestamptz not null default now()
+        created_at int not null default '1',
+        updated_at int not null default '2'
     );
 
     grant usage on schema graphql to api;
+    grant usage on all sequences in schema public to api;
 
     revoke all on table project from api;
     grant select on table project to api;
