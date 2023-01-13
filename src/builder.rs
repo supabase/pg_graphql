@@ -562,6 +562,8 @@ pub struct ConnectionBuilder {
 
     //fields
     pub selections: Vec<ConnectionSelection>,
+
+    pub max_rows: i64,
 }
 
 #[derive(Clone, Debug)]
@@ -1051,7 +1053,6 @@ where
             )?;
 
             // TODO: only one of first/last, before/after provided
-
             let first: gson::Value = read_argument("first", field, query_field, variables)?;
             let first: Option<i64> = match first {
                 gson::Value::Absent | gson::Value::Null => None,
@@ -1069,6 +1070,15 @@ where
                     return Err("Internal Error: failed to parse validated last".to_string());
                 }
             };
+
+            let max_rows: i64 = xtype
+                .schema
+                .context
+                .schemas
+                .iter()
+                .find(|s| s.oid == xtype.table.schema_oid)
+                .map(|x| x.directives.max_rows)
+                .unwrap_or(30);
 
             let before: Option<Cursor> =
                 read_argument_cursor("before", field, query_field, variables)?;
@@ -1138,6 +1148,7 @@ where
                 filter,
                 order_by,
                 selections: builder_fields,
+                max_rows: max_rows,
             })
         }
         _ => Err(format!(

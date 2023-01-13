@@ -137,7 +137,8 @@ select
                     'name', pn.nspname::text,
                     'comment', pg_catalog.obj_description(pn.oid, 'pg_namespace'),
                     'directives', jsonb_build_object(
-                        'inflect_names', schema_directives.inflect_names
+                        'inflect_names', schema_directives.inflect_names,
+                        'max_rows', schema_directives.max_rows
                     ),
                     'tables', coalesce(
                         (
@@ -148,6 +149,7 @@ select
                                         'name', pc.relname::text,
                                         'relkind', pc.relkind::text,
                                         'schema', pn.nspname::text,
+                                        'schema_oid', pn.oid::int,
                                         'comment', pg_catalog.obj_description(pc.oid, 'pg_class'),
                                         'directives', jsonb_build_object(
                                             'inflect_names', schema_directives.inflect_names,
@@ -227,7 +229,6 @@ select
                                             ),
                                             jsonb_build_array()
                                         ),
-
                                         'columns', (
                                             select
                                                 jsonb_agg(
@@ -334,7 +335,11 @@ from
             coalesce(
                 (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) -> 'inflect_names') = to_jsonb(true),
                 false
-            ) as inflect_names
+            ) as inflect_names,
+            coalesce(
+                (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) ->> 'max_rows')::int,
+                30
+            ) as max_rows
     ) schema_directives
 where
     pg_catalog.has_schema_privilege(

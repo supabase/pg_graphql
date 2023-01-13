@@ -188,6 +188,7 @@ pub struct TableDirectives {
 pub struct Table {
     pub oid: u32,
     pub name: String,
+    pub schema_oid: u32,
     pub schema: String,
     pub columns: Vec<Arc<Column>>,
     pub comment: Option<String>,
@@ -263,7 +264,10 @@ impl Table {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct SchemaDirectives {
+    // @graphql({"inflect_names": true})
     pub inflect_names: bool,
+    // @graphql({"max_rows": 20})
+    pub max_rows: i64,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
