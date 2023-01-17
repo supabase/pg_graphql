@@ -797,7 +797,11 @@ impl ConnectionBuilder {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        let limit: i64 = cmp::min(self.first.unwrap_or_else(|| self.last.unwrap_or(30)), 30);
+        let limit: i64 = cmp::min(
+            self.first
+                .unwrap_or_else(|| self.last.unwrap_or(self.max_rows)),
+            self.max_rows,
+        );
 
         let object_clause = frags.join(", ");
 
