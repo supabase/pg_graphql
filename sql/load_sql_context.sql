@@ -4,7 +4,7 @@ with search_path_oids(schema_oid) as (
 select
     jsonb_build_object(
         'config', jsonb_build_object(
-            'search_path', current_schemas(false),
+            'search_path', (select array_agg(schema_oid) from search_path_oids),
             'role', current_role,
             'schema_version', graphql.get_schema_version()
         ),
@@ -29,7 +29,7 @@ select
                                             'name', pe.enumlabel,
                                             'sort_order', pe.enumsortorder
                                         )
-                                        order by enumsortorder asc
+                                        order by pe.enumsortorder asc
                                     )
                                 from
                                     pg_enum pe
@@ -117,13 +117,8 @@ select
                         join pg_class pa_referenced
                             on pf.confrelid = pa_referenced.oid
                         -- Referenced tables must also be on the search path
-                        join (
-                            select
-                                x.y::regnamespace::oid
-                            from
-                                unnest(current_schemas(false)) x(y)
-                        ) ref_schemas(oid)
-                            on pa_referenced.relnamespace = ref_schemas.oid
+                        join search_path_oids spo
+                            on pa_referenced.relnamespace = spo.schema_oid
                     where
                         pf.contype = 'f' -- foreign key
                 ),
@@ -323,12 +318,7 @@ select
 from
     pg_namespace pn
     -- filter to current schemas only
-    join (
-        select
-            x.y::regnamespace::oid
-        from
-            unnest(current_schemas(false)) x(y)
-    ) cur_schemas(oid)
+    join search_path_oids cur_schemas(oid)
         on pn.oid = cur_schemas.oid,
     lateral (
         select
