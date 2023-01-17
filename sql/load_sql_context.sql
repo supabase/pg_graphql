@@ -171,6 +171,7 @@ select
                                                             'name', pp.proname::text,
                                                             'type_oid', pp.prorettype::oid::int,
                                                             'type_name', pp.prorettype::regtype::text,
+                                                            'schema_oid', pronamespace::int,
                                                             'schema_name', pronamespace::regnamespace::text,
                                                             'comment', pg_catalog.obj_description(pp.oid, 'pg_proc'),
                                                             'directives', jsonb_build_object(
@@ -231,6 +232,7 @@ select
                                                         'name', pa.attname::text,
                                                         'type_oid', pa.atttypid::int,
                                                         'type_name', pa.atttypid::regtype::text,
+                                                        'schema_oid', pn.oid::int,
                                                         'is_not_null', pa.attnotnull,
                                                         'attribute_num', pa.attnum,
                                                         'has_default', pd.adbin is not null, -- pg_get_expr(pd.adbin, pd.adrelid) shows expression

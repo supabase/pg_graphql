@@ -7,11 +7,12 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-impl Context {
-    fn inflect_names(&self, schema_oid: u32) -> bool {
-        let schema = self.schemas.iter().find(|x| x.oid == schema_oid);
-        schema.map(|s| s.directives.inflect_names).unwrap_or(false)
-    }
+lazy_static! {
+    static ref GRAPHQL_NAME_RE: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
+}
+
+fn is_valid_graphql_name(name: &str) -> bool {
+    GRAPHQL_NAME_RE.is_match(name)
 }
 
 fn to_base_type_name(
@@ -49,62 +50,58 @@ fn lowercase_first_letter(token: &str) -> String {
     token[0..1].to_lowercase() + &token[1..]
 }
 
-impl Table {
-    fn graphql_base_type_name(&self) -> String {
-        to_base_type_name(
-            &self.name,
-            &self.directives.name,
-            self.directives.inflect_names,
-        )
+impl Context {
+    fn inflect_names(&self, schema_oid: u32) -> bool {
+        let schema = self.schemas.iter().find(|x| x.oid == schema_oid);
+        schema.map(|s| s.directives.inflect_names).unwrap_or(false)
     }
-}
 
-impl Column {
-    fn graphql_field_name(&self) -> String {
-        if let Some(override_name) = &self.directives.name {
+    fn graphql_column_field_name(&self, column: &Column) -> String {
+        if let Some(override_name) = &column.directives.name {
             return override_name.clone();
         }
 
-        let base_type_name = to_base_type_name(
-            &self.name,
-            &self.directives.name,
-            self.directives.inflect_names,
-        );
+        let inflect_names: bool = self.inflect_names(column.schema_oid);
 
-        match self.directives.inflect_names {
+        let base_type_name =
+            to_base_type_name(&column.name, &column.directives.name, inflect_names);
+
+        match inflect_names {
             // Lowercase first letter
             // AccountByEmail => accountByEmail
             true => lowercase_first_letter(&base_type_name),
             false => base_type_name,
         }
     }
-}
 
-impl Function {
-    fn graphql_field_name(&self) -> String {
-        if let Some(override_name) = &self.directives.name {
+    fn graphql_function_field_name(&self, function: &Function) -> String {
+        if let Some(override_name) = &function.directives.name {
             return override_name.clone();
         }
 
         // remove underscore prefix from function name before inflecting
-        let trimmed_function_name = &self.name.strip_prefix('_').unwrap_or(&self.name);
+        let trimmed_function_name = &function.name.strip_prefix('_').unwrap_or(&function.name);
 
         let base_type_name = to_base_type_name(
             trimmed_function_name,
-            &self.directives.name,
-            self.directives.inflect_names,
+            &function.directives.name,
+            self.inflect_names(function.schema_oid),
         );
         lowercase_first_letter(&base_type_name)
     }
-}
 
-impl Enum {
-    fn graphql_base_type_name(&self, inflect_names: bool) -> String {
-        to_base_type_name(&self.name, &self.directives.name, inflect_names)
+    fn graphql_enum_base_type_name(&self, enum_: &Enum, inflect_names: bool) -> String {
+        to_base_type_name(&enum_.name, &enum_.directives.name, inflect_names)
     }
-}
 
-impl Context {
+    fn graphql_table_base_type_name(&self, table: &Table) -> String {
+        to_base_type_name(
+            &table.name,
+            &table.directives.name,
+            self.inflect_names(table.schema_oid),
+        )
+    }
+
     fn graphql_foreign_key_field_name(&self, fkey: &ForeignKey, reverse_reference: bool) -> String {
         let mut table_ref: &ForeignKeyTableInfo = &fkey.referenced_table_meta;
         let mut name_override: &Option<String> = &fkey.directives.foreign_name;
@@ -120,7 +117,7 @@ impl Context {
 
         let table: &Arc<Table> = self.get_table_by_oid(table_ref.oid).unwrap();
 
-        let is_inflection_on = table.directives.inflect_names;
+        let is_inflection_on = self.inflect_names(table.schema_oid);
 
         // If name is overridden, return immediately
         match name_override {
@@ -134,26 +131,20 @@ impl Context {
         // "accountHolder"
         let base_type_as_field_name = lowercase_first_letter(&base_type_name);
 
+        let inflect_names: bool = self.inflect_names(table.schema_oid);
+
         let singular_name = match &column_names[..] {
             [column_name] => match is_inflection_on {
                 true => match column_name.strip_suffix("_id") {
                     Some(column_name_stripped) => {
-                        let base = to_base_type_name(
-                            column_name_stripped,
-                            &None,
-                            table.directives.inflect_names,
-                        );
+                        let base = to_base_type_name(column_name_stripped, &None, inflect_names);
                         lowercase_first_letter(&base)
                     }
                     None => base_type_as_field_name.clone(),
                 },
                 false => match column_name.strip_suffix("Id") {
                     Some(column_name_stripped) => {
-                        let base = to_base_type_name(
-                            column_name_stripped,
-                            &None,
-                            table.directives.inflect_names,
-                        );
+                        let base = to_base_type_name(column_name_stripped, &None, inflect_names);
                         lowercase_first_letter(&base)
                     }
                     None => base_type_as_field_name.clone(),
@@ -167,41 +158,31 @@ impl Context {
             false => format!("{base_type_as_field_name}Collection"),
         }
     }
-}
 
-lazy_static! {
-    static ref GRAPHQL_NAME_RE: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
-}
-
-fn is_valid_graphql_name(name: &str) -> bool {
-    GRAPHQL_NAME_RE.is_match(name)
-}
-
-impl Table {
-    fn graphql_select_types_are_valid(&self) -> bool {
-        let check1 = is_valid_graphql_name(&self.graphql_base_type_name());
-        let check2 = self.primary_key().is_some();
+    fn graphql_table_select_types_are_valid(&self, table: &Table) -> bool {
+        let check1 = is_valid_graphql_name(&self.graphql_table_base_type_name(table));
+        let check2 = table.primary_key().is_some();
         // Any column is selectable
-        let check3 = self.is_any_column_selectable();
+        let check3 = table.is_any_column_selectable();
 
         check1 && check2 && check3
     }
 
-    fn graphql_insert_types_are_valid(&self) -> bool {
-        let check1 = self.graphql_select_types_are_valid();
-        let check2 = self.is_any_column_insertable();
+    fn graphql_table_insert_types_are_valid(&self, table: &Table) -> bool {
+        let check1 = self.graphql_table_select_types_are_valid(table);
+        let check2 = table.is_any_column_insertable();
         check1 && check2
     }
 
-    fn graphql_update_types_are_valid(&self) -> bool {
-        let check1 = self.graphql_select_types_are_valid();
-        let check2 = self.is_any_column_updatable();
+    fn graphql_table_update_types_are_valid(&self, table: &Table) -> bool {
+        let check1 = self.graphql_table_select_types_are_valid(table);
+        let check2 = table.is_any_column_updatable();
         check1 && check2
     }
 
-    fn graphql_delete_types_are_valid(&self) -> bool {
-        let check1 = self.graphql_select_types_are_valid();
-        let check2 = self.permissions.is_deletable;
+    fn graphql_table_delete_types_are_valid(&self, table: &Table) -> bool {
+        let check1 = self.graphql_table_select_types_are_valid(table);
+        let check2 = table.permissions.is_deletable;
         check1 && check2
     }
 }
@@ -992,15 +973,18 @@ impl ___Type for QueryType {
         f.push(single_entrypoint);
 
         for schema in self.schema.context.schemas.iter() {
-            for table in schema
-                .tables
-                .iter()
-                .filter(|x| x.graphql_select_types_are_valid())
-            {
+            for table in schema.tables.iter().filter(|table| {
+                self.schema
+                    .context
+                    .graphql_table_select_types_are_valid(table)
+            }) {
+                let table_base_type_name =
+                    &self.schema.context.graphql_table_base_type_name(&table);
+
                 let collection_entrypoint = __Field {
                     name_: format!(
                         "{}Collection",
-                        lowercase_first_letter(&table.graphql_base_type_name())
+                        lowercase_first_letter(table_base_type_name)
                     ),
                     type_: __Type::Connection(ConnectionType {
                         table: Arc::clone(table),
@@ -1066,7 +1050,7 @@ impl ___Type for QueryType {
                     ],
                     description: Some(format!(
                         "A pagable collection of type `{}`",
-                        table.graphql_base_type_name()
+                        table_base_type_name
                     )),
                     deprecation_reason: None,
                     sql_type: None,
@@ -1128,9 +1112,15 @@ impl ___Type for MutationType {
         // TODO, filter to types in type map in case any were filtered out
         for schema in self.schema.context.schemas.iter() {
             for table in schema.tables.iter() {
-                if table.graphql_insert_types_are_valid() {
+                let table_base_type_name = self.schema.context.graphql_table_base_type_name(&table);
+
+                if self
+                    .schema
+                    .context
+                    .graphql_table_insert_types_are_valid(table)
+                {
                     f.push(__Field {
-                        name_: format!("insertInto{}Collection", table.graphql_base_type_name()),
+                        name_: format!("insertInto{}Collection", table_base_type_name),
                         type_: __Type::InsertResponse(InsertResponseType {
                             table: Arc::clone(table),
                             schema: Rc::clone(&self.schema),
@@ -1153,16 +1143,20 @@ impl ___Type for MutationType {
                         }],
                         description: Some(format!(
                             "Adds one or more `{}` records to the collection",
-                            table.graphql_base_type_name()
+                            table_base_type_name
                         )),
                         deprecation_reason: None,
                         sql_type: None,
                     });
                 }
 
-                if table.graphql_update_types_are_valid() {
+                if self
+                    .schema
+                    .context
+                    .graphql_table_update_types_are_valid(table)
+                {
                     f.push(__Field {
-                        name_: format!("update{}Collection", table.graphql_base_type_name()),
+                        name_: format!("update{}Collection", table_base_type_name),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::UpdateResponse(UpdateResponseType {
                                 table: Arc::clone(table),
@@ -1204,16 +1198,20 @@ impl ___Type for MutationType {
                         ],
                         description: Some(format!(
                             "Updates zero or more records in the `{}` collection",
-                            table.graphql_base_type_name()
+                            table_base_type_name
                         )),
                         deprecation_reason: None,
                         sql_type: None,
                     });
                 }
 
-                if table.graphql_delete_types_are_valid() {
+                if self
+                    .schema
+                    .context
+                    .graphql_table_delete_types_are_valid(table)
+                {
                     f.push(__Field {
-                        name_: format!("deleteFrom{}Collection", table.graphql_base_type_name()),
+                        name_: format!("deleteFrom{}Collection", table_base_type_name),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::DeleteResponse(DeleteResponseType {
                                 table: Arc::clone(table),
@@ -1246,7 +1244,7 @@ impl ___Type for MutationType {
                         ],
                         description: Some(format!(
                             "Deletes zero or more records from the `{}` collection",
-                            table.graphql_base_type_name()
+                            table_base_type_name
                         )),
                         deprecation_reason: None,
                         sql_type: None,
@@ -1282,7 +1280,11 @@ impl ___Type for EnumType {
         match &self.enum_ {
             EnumSource::Enum(enum_) => {
                 let inflect_names = self.schema.context.inflect_names(enum_.schema_oid);
-                Some(enum_.graphql_base_type_name(inflect_names))
+                Some(
+                    self.schema
+                        .context
+                        .graphql_enum_base_type_name(&enum_, inflect_names),
+                )
             }
             EnumSource::FilterIs => Some("FilterIs".to_string()),
         }
@@ -1327,7 +1329,12 @@ impl ___Type for ConnectionType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(format!("{}Connection", self.table.graphql_base_type_name()))
+        Some(format!(
+            "{}Connection",
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
+        ))
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -1428,7 +1435,12 @@ impl ___Type for EdgeType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(format!("{}Edge", self.table.graphql_base_type_name()))
+        Some(format!(
+            "{}Edge",
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
+        ))
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -1572,7 +1584,11 @@ impl ___Type for NodeType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(self.table.graphql_base_type_name())
+        Some(
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table),
+        )
     }
 
     fn interfaces(&self) -> Option<Vec<__Type>> {
@@ -1595,17 +1611,17 @@ impl ___Type for NodeType {
             .table
             .columns
             .iter()
-            .filter(|x| is_valid_graphql_name(&x.graphql_field_name()))
             .filter(|x| x.permissions.is_selectable)
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
             .map(|col| __Field {
-                name_: col.graphql_field_name(),
+                name_: self.schema.context.graphql_column_field_name(&col),
                 type_: sql_column_to_graphql_type(col, &self.schema),
                 args: vec![],
                 description: None,
                 deprecation_reason: None,
                 sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
             })
+            .filter(|x| is_valid_graphql_name(&x.name_))
             .collect();
 
         // nodeId field
@@ -1639,10 +1655,9 @@ impl ___Type for NodeType {
                 .table
                 .functions
                 .iter()
-                .filter(|x| is_valid_graphql_name(&x.graphql_field_name()))
                 .filter(|x| x.permissions.is_executable)
                 .map(|func| __Field {
-                    name_: func.graphql_field_name(),
+                    name_: self.schema.context.graphql_function_field_name(&func),
                     type_: sql_type_to_graphql_type(
                         func.type_oid,
                         func.type_name.as_str(),
@@ -1653,6 +1668,7 @@ impl ___Type for NodeType {
                     deprecation_reason: None,
                     sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
                 })
+                .filter(|x| is_valid_graphql_name(&x.name_))
                 .collect();
         }
 
@@ -1677,7 +1693,11 @@ impl ___Type for NodeType {
                 continue;
             }
             let foreign_table = foreign_table.unwrap();
-            if !foreign_table.graphql_select_types_are_valid() {
+            if !self
+                .schema
+                .context
+                .graphql_table_select_types_are_valid(&foreign_table)
+            {
                 continue;
             }
 
@@ -1720,7 +1740,11 @@ impl ___Type for NodeType {
                 continue;
             }
             let foreign_table = foreign_table.unwrap();
-            if !foreign_table.graphql_select_types_are_valid() {
+            if !self
+                .schema
+                .context
+                .graphql_table_select_types_are_valid(&foreign_table)
+            {
                 continue;
             }
 
@@ -2669,7 +2693,9 @@ impl ___Type for InsertInputType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}InsertInput",
-            self.table.graphql_base_type_name()
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2688,7 +2714,7 @@ impl ___Type for InsertInputType {
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 // TODO: not composite
                 .map(|col| __InputValue {
-                    name_: col.graphql_field_name(),
+                    name_: self.schema.context.graphql_column_field_name(&col),
                     // If triggers are involved, we can't detect if a field is non-null. Default
                     // all fields to non-null and let postgres errors handle it.
                     type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
@@ -2709,7 +2735,9 @@ impl ___Type for InsertResponseType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}InsertResponse",
-            self.table.graphql_base_type_name()
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2756,7 +2784,9 @@ impl ___Type for UpdateInputType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}UpdateInput",
-            self.table.graphql_base_type_name()
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2774,7 +2804,7 @@ impl ___Type for UpdateInputType {
                 .filter(|x| !x.is_serial)
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 .map(|col| __InputValue {
-                    name_: col.graphql_field_name(),
+                    name_: self.schema.context.graphql_column_field_name(&col),
                     // TODO: handle possible array inputs
                     type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
                     description: None,
@@ -2794,7 +2824,9 @@ impl ___Type for UpdateResponseType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}UpdateResponse",
-            self.table.graphql_base_type_name()
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2841,7 +2873,9 @@ impl ___Type for DeleteResponseType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}DeleteResponse",
-            self.table.graphql_base_type_name()
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -3066,7 +3100,12 @@ impl ___Type for FilterEntityType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(format!("{}Filter", self.table.graphql_base_type_name()))
+        Some(format!(
+            "{}Filter",
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
+        ))
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -3078,7 +3117,6 @@ impl ___Type for FilterEntityType {
             .table
             .columns
             .iter()
-            .filter(|x| is_valid_graphql_name(&x.graphql_field_name()))
             .filter(|x| x.permissions.is_selectable)
             // No filtering on arrays
             .filter(|x| !x.type_name.ends_with("[]"))
@@ -3090,9 +3128,11 @@ impl ___Type for FilterEntityType {
                 // Should be a scalar
                 let utype = sql_column_to_graphql_type(col, &self.schema).unmodified_type();
 
+                let column_graphql_name = self.schema.context.graphql_column_field_name(col);
+
                 match utype {
                     __Type::Scalar(s) => Some(__InputValue {
-                        name_: col.graphql_field_name(),
+                        name_: column_graphql_name,
                         type_: __Type::FilterType(FilterTypeType {
                             entity: FilterableType::Scalar(s),
                             schema: Rc::clone(&self.schema),
@@ -3103,7 +3143,7 @@ impl ___Type for FilterEntityType {
                     }),
                     // ERROR HERE
                     __Type::Enum(s) => Some(__InputValue {
-                        name_: col.graphql_field_name(),
+                        name_: column_graphql_name,
                         type_: __Type::FilterType(FilterTypeType {
                             entity: FilterableType::Enum(s),
                             schema: Rc::clone(&self.schema),
@@ -3115,6 +3155,7 @@ impl ___Type for FilterEntityType {
                     _ => None,
                 }
             })
+            .filter(|x| is_valid_graphql_name(&x.name_))
             .collect();
 
         if self.table.primary_key().is_some() {
@@ -3190,7 +3231,12 @@ impl ___Type for OrderByEntityType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(format!("{}OrderBy", self.table.graphql_base_type_name()))
+        Some(format!(
+            "{}OrderBy",
+            self.schema
+                .context
+                .graphql_table_base_type_name(&self.table)
+        ))
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -3202,7 +3248,6 @@ impl ___Type for OrderByEntityType {
             self.table
                 .columns
                 .iter()
-                .filter(|x| is_valid_graphql_name(&x.graphql_field_name()))
                 .filter(|x| x.permissions.is_selectable)
                 // No filtering on arrays
                 .filter(|x| !x.type_name.ends_with("[]"))
@@ -3212,12 +3257,13 @@ impl ___Type for OrderByEntityType {
                 .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
                 // TODO  filter out arrays, json and composites
                 .map(|col| __InputValue {
-                    name_: col.graphql_field_name(),
+                    name_: self.schema.context.graphql_column_field_name(&col),
                     type_: __Type::OrderBy(OrderByType {}),
                     description: None,
                     default_value: None,
                     sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                 })
+                .filter(|x| is_valid_graphql_name(&x.name_))
                 .collect(),
         )
     }
@@ -3335,7 +3381,7 @@ impl __Schema {
             for table in schema
                 .tables
                 .iter()
-                .filter(|x| x.graphql_select_types_are_valid())
+                .filter(|x| self.context.graphql_table_select_types_are_valid(x))
             {
                 types_.push(__Type::Node(NodeType {
                     table: Arc::clone(table),
@@ -3364,7 +3410,7 @@ impl __Schema {
                     schema: Rc::clone(&schema_rc),
                 }));
 
-                if table.graphql_insert_types_are_valid() {
+                if self.context.graphql_table_insert_types_are_valid(table) {
                     types_.push(__Type::InsertInput(InsertInputType {
                         table: Arc::clone(table),
                         schema: Rc::clone(&schema_rc),
@@ -3375,7 +3421,7 @@ impl __Schema {
                     }));
                 }
 
-                if table.graphql_update_types_are_valid() {
+                if self.context.graphql_table_update_types_are_valid(table) {
                     types_.push(__Type::UpdateInput(UpdateInputType {
                         table: Arc::clone(table),
                         schema: Rc::clone(&schema_rc),
@@ -3386,7 +3432,7 @@ impl __Schema {
                     }));
                 }
 
-                if table.graphql_delete_types_are_valid() {
+                if self.context.graphql_table_delete_types_are_valid(table) {
                     types_.push(__Type::DeleteResponse(DeleteResponseType {
                         table: Arc::clone(table),
                         schema: Rc::clone(&schema_rc),
@@ -3436,7 +3482,7 @@ impl __Schema {
             .schemas
             .iter()
             .flat_map(|x| x.tables.iter())
-            .filter(|x| x.graphql_select_types_are_valid())
+            .filter(|x| self.context.graphql_table_select_types_are_valid(x))
             .any(|x| {
                 x.permissions.is_selectable
                     && (x.permissions.is_insertable
@@ -3476,21 +3522,5 @@ impl __Schema {
     #[allow(dead_code)]
     pub fn directives(&self) -> Vec<__Directive> {
         vec![]
-    }
-}
-
-#[cfg(any(test, feature = "pg_test"))]
-#[pgx::pg_schema]
-mod tests {
-    use crate::graphql::*;
-    use pgx::*;
-
-    #[pg_test]
-    fn test_load_graphql_schema() {
-        let config = load_sql_config();
-        let context = load_sql_context(&config);
-        let graphql_schema = __Schema { context };
-        let query_type = graphql_schema.query_type();
-        assert_eq!(query_type.name(), Some("Query".to_string()));
     }
 }

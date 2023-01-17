@@ -17,7 +17,6 @@ pub struct ColumnPermissions {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ColumnDirectives {
-    pub inflect_names: bool,
     pub name: Option<String>,
 }
 
@@ -26,6 +25,7 @@ pub struct Column {
     pub name: String,
     pub type_oid: u32,
     pub type_name: String,
+    pub schema_oid: u32,
     pub is_not_null: bool,
     pub is_serial: bool,
     pub is_generated: bool,
@@ -38,7 +38,6 @@ pub struct Column {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct FunctionDirectives {
-    pub inflect_names: bool,
     pub name: Option<String>,
 }
 
@@ -51,6 +50,7 @@ pub struct FunctionPermissions {
 pub struct Function {
     pub oid: u32,
     pub name: String,
+    pub schema_oid: u32,
     pub schema_name: String,
     pub type_oid: u32,
     pub type_name: String,
@@ -151,8 +151,6 @@ pub struct TableDirectiveForeignKey {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TableDirectives {
-    pub inflect_names: bool,
-
     // @graphql({"name": "Foo" })
     pub name: Option<String>,
 
