@@ -50,9 +50,9 @@ fn lowercase_first_letter(token: &str) -> String {
     token[0..1].to_lowercase() + &token[1..]
 }
 
-impl Context {
+impl __Schema {
     fn inflect_names(&self, schema_oid: u32) -> bool {
-        let schema = self.schemas.iter().find(|x| x.oid == schema_oid);
+        let schema = self.context.schemas.iter().find(|x| x.oid == schema_oid);
         schema.map(|s| s.directives.inflect_names).unwrap_or(false)
     }
 
@@ -111,11 +111,11 @@ impl Context {
         if reverse_reference {
             table_ref = &fkey.local_table_meta;
             name_override = &fkey.directives.local_name;
-            is_unique = self.fkey_is_locally_unique(fkey);
+            is_unique = self.context.fkey_is_locally_unique(fkey);
             column_names = &fkey.referenced_table_meta.column_names;
         }
 
-        let table: &Arc<Table> = self.get_table_by_oid(table_ref.oid).unwrap();
+        let table: &Arc<Table> = self.context.get_table_by_oid(table_ref.oid).unwrap();
 
         let is_inflection_on = self.inflect_names(table.schema_oid);
 
@@ -973,13 +973,12 @@ impl ___Type for QueryType {
         f.push(single_entrypoint);
 
         for schema in self.schema.context.schemas.iter() {
-            for table in schema.tables.iter().filter(|table| {
-                self.schema
-                    .context
-                    .graphql_table_select_types_are_valid(table)
-            }) {
-                let table_base_type_name =
-                    &self.schema.context.graphql_table_base_type_name(&table);
+            for table in schema
+                .tables
+                .iter()
+                .filter(|table| self.schema.graphql_table_select_types_are_valid(table))
+            {
+                let table_base_type_name = &self.schema.graphql_table_base_type_name(&table);
 
                 let collection_entrypoint = __Field {
                     name_: format!(
@@ -1112,13 +1111,9 @@ impl ___Type for MutationType {
         // TODO, filter to types in type map in case any were filtered out
         for schema in self.schema.context.schemas.iter() {
             for table in schema.tables.iter() {
-                let table_base_type_name = self.schema.context.graphql_table_base_type_name(&table);
+                let table_base_type_name = self.schema.graphql_table_base_type_name(&table);
 
-                if self
-                    .schema
-                    .context
-                    .graphql_table_insert_types_are_valid(table)
-                {
+                if self.schema.graphql_table_insert_types_are_valid(table) {
                     f.push(__Field {
                         name_: format!("insertInto{}Collection", table_base_type_name),
                         type_: __Type::InsertResponse(InsertResponseType {
@@ -1150,11 +1145,7 @@ impl ___Type for MutationType {
                     });
                 }
 
-                if self
-                    .schema
-                    .context
-                    .graphql_table_update_types_are_valid(table)
-                {
+                if self.schema.graphql_table_update_types_are_valid(table) {
                     f.push(__Field {
                         name_: format!("update{}Collection", table_base_type_name),
                         type_: __Type::NonNull(NonNullType {
@@ -1205,11 +1196,7 @@ impl ___Type for MutationType {
                     });
                 }
 
-                if self
-                    .schema
-                    .context
-                    .graphql_table_delete_types_are_valid(table)
-                {
+                if self.schema.graphql_table_delete_types_are_valid(table) {
                     f.push(__Field {
                         name_: format!("deleteFrom{}Collection", table_base_type_name),
                         type_: __Type::NonNull(NonNullType {
@@ -1279,10 +1266,9 @@ impl ___Type for EnumType {
     fn name(&self) -> Option<String> {
         match &self.enum_ {
             EnumSource::Enum(enum_) => {
-                let inflect_names = self.schema.context.inflect_names(enum_.schema_oid);
+                let inflect_names = self.schema.inflect_names(enum_.schema_oid);
                 Some(
                     self.schema
-                        .context
                         .graphql_enum_base_type_name(&enum_, inflect_names),
                 )
             }
@@ -1331,9 +1317,7 @@ impl ___Type for ConnectionType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}Connection",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -1437,9 +1421,7 @@ impl ___Type for EdgeType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}Edge",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -1584,11 +1566,7 @@ impl ___Type for NodeType {
     }
 
     fn name(&self) -> Option<String> {
-        Some(
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table),
-        )
+        Some(self.schema.graphql_table_base_type_name(&self.table))
     }
 
     fn interfaces(&self) -> Option<Vec<__Type>> {
@@ -1614,7 +1592,7 @@ impl ___Type for NodeType {
             .filter(|x| x.permissions.is_selectable)
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
             .map(|col| __Field {
-                name_: self.schema.context.graphql_column_field_name(&col),
+                name_: self.schema.graphql_column_field_name(&col),
                 type_: sql_column_to_graphql_type(col, &self.schema),
                 args: vec![],
                 description: None,
@@ -1657,7 +1635,7 @@ impl ___Type for NodeType {
                 .iter()
                 .filter(|x| x.permissions.is_executable)
                 .map(|func| __Field {
-                    name_: self.schema.context.graphql_function_field_name(&func),
+                    name_: self.schema.graphql_function_field_name(&func),
                     type_: sql_type_to_graphql_type(
                         func.type_oid,
                         func.type_name.as_str(),
@@ -1695,7 +1673,6 @@ impl ___Type for NodeType {
             let foreign_table = foreign_table.unwrap();
             if !self
                 .schema
-                .context
                 .graphql_table_select_types_are_valid(&foreign_table)
             {
                 continue;
@@ -1704,7 +1681,6 @@ impl ___Type for NodeType {
             let relation_field = __Field {
                 name_: self
                     .schema
-                    .context
                     .graphql_foreign_key_field_name(fkey, reverse_reference),
                 // XXX: column nullability ignored for NonNull type to match pg_graphql
                 type_: __Type::Node(NodeType {
@@ -1742,7 +1718,6 @@ impl ___Type for NodeType {
             let foreign_table = foreign_table.unwrap();
             if !self
                 .schema
-                .context
                 .graphql_table_select_types_are_valid(&foreign_table)
             {
                 continue;
@@ -1751,7 +1726,7 @@ impl ___Type for NodeType {
             let relation_field = match self.schema.context.fkey_is_locally_unique(fkey) {
                 false => {
                     __Field {
-                        name_: self.schema.context.graphql_foreign_key_field_name(fkey, reverse_reference),
+                        name_: self.schema.graphql_foreign_key_field_name(fkey, reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Connection(ConnectionType {
                                 table: Arc::clone(foreign_table),
@@ -1824,7 +1799,6 @@ impl ___Type for NodeType {
                     __Field {
                         name_: self
                             .schema
-                            .context
                             .graphql_foreign_key_field_name(fkey, reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
                         type_: __Type::Node(NodeType {
@@ -2693,9 +2667,7 @@ impl ___Type for InsertInputType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}InsertInput",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2714,7 +2686,7 @@ impl ___Type for InsertInputType {
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 // TODO: not composite
                 .map(|col| __InputValue {
-                    name_: self.schema.context.graphql_column_field_name(&col),
+                    name_: self.schema.graphql_column_field_name(&col),
                     // If triggers are involved, we can't detect if a field is non-null. Default
                     // all fields to non-null and let postgres errors handle it.
                     type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
@@ -2735,9 +2707,7 @@ impl ___Type for InsertResponseType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}InsertResponse",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2784,9 +2754,7 @@ impl ___Type for UpdateInputType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}UpdateInput",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2804,7 +2772,7 @@ impl ___Type for UpdateInputType {
                 .filter(|x| !x.is_serial)
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 .map(|col| __InputValue {
-                    name_: self.schema.context.graphql_column_field_name(&col),
+                    name_: self.schema.graphql_column_field_name(&col),
                     // TODO: handle possible array inputs
                     type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
                     description: None,
@@ -2824,9 +2792,7 @@ impl ___Type for UpdateResponseType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}UpdateResponse",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -2873,9 +2839,7 @@ impl ___Type for DeleteResponseType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}DeleteResponse",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -3102,9 +3066,7 @@ impl ___Type for FilterEntityType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}Filter",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -3128,7 +3090,7 @@ impl ___Type for FilterEntityType {
                 // Should be a scalar
                 let utype = sql_column_to_graphql_type(col, &self.schema).unmodified_type();
 
-                let column_graphql_name = self.schema.context.graphql_column_field_name(col);
+                let column_graphql_name = self.schema.graphql_column_field_name(col);
 
                 match utype {
                     __Type::Scalar(s) => Some(__InputValue {
@@ -3233,9 +3195,7 @@ impl ___Type for OrderByEntityType {
     fn name(&self) -> Option<String> {
         Some(format!(
             "{}OrderBy",
-            self.schema
-                .context
-                .graphql_table_base_type_name(&self.table)
+            self.schema.graphql_table_base_type_name(&self.table)
         ))
     }
 
@@ -3257,7 +3217,7 @@ impl ___Type for OrderByEntityType {
                 .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
                 // TODO  filter out arrays, json and composites
                 .map(|col| __InputValue {
-                    name_: self.schema.context.graphql_column_field_name(&col),
+                    name_: self.schema.graphql_column_field_name(&col),
                     type_: __Type::OrderBy(OrderByType {}),
                     description: None,
                     default_value: None,
@@ -3381,7 +3341,7 @@ impl __Schema {
             for table in schema
                 .tables
                 .iter()
-                .filter(|x| self.context.graphql_table_select_types_are_valid(x))
+                .filter(|x| self.graphql_table_select_types_are_valid(x))
             {
                 types_.push(__Type::Node(NodeType {
                     table: Arc::clone(table),
@@ -3410,7 +3370,7 @@ impl __Schema {
                     schema: Rc::clone(&schema_rc),
                 }));
 
-                if self.context.graphql_table_insert_types_are_valid(table) {
+                if self.graphql_table_insert_types_are_valid(table) {
                     types_.push(__Type::InsertInput(InsertInputType {
                         table: Arc::clone(table),
                         schema: Rc::clone(&schema_rc),
@@ -3421,7 +3381,7 @@ impl __Schema {
                     }));
                 }
 
-                if self.context.graphql_table_update_types_are_valid(table) {
+                if self.graphql_table_update_types_are_valid(table) {
                     types_.push(__Type::UpdateInput(UpdateInputType {
                         table: Arc::clone(table),
                         schema: Rc::clone(&schema_rc),
@@ -3432,7 +3392,7 @@ impl __Schema {
                     }));
                 }
 
-                if self.context.graphql_table_delete_types_are_valid(table) {
+                if self.graphql_table_delete_types_are_valid(table) {
                     types_.push(__Type::DeleteResponse(DeleteResponseType {
                         table: Arc::clone(table),
                         schema: Rc::clone(&schema_rc),
@@ -3482,7 +3442,7 @@ impl __Schema {
             .schemas
             .iter()
             .flat_map(|x| x.tables.iter())
-            .filter(|x| self.context.graphql_table_select_types_are_valid(x))
+            .filter(|x| self.graphql_table_select_types_are_valid(x))
             .any(|x| {
                 x.permissions.is_selectable
                     && (x.permissions.is_insertable
