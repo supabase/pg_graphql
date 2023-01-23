@@ -293,9 +293,9 @@ begin;
              ],                          +
              "pageInfo": {               +
                  "endCursor": "WzEwXQ==",+
-                 "hasNextPage": true,    +
+                 "hasNextPage": false,   +
                  "startCursor": "WzZd",  +
-                 "hasPreviousPage": false+
+                 "hasPreviousPage": true +
              }                           +
          }                               +
      }                                   +
@@ -392,27 +392,27 @@ begin;
         }
         $$)
     );
-              jsonb_pretty               
------------------------------------------
- {                                      +
-     "data": {                          +
-         "accountCollection": {         +
-             "edges": [                 +
-                 {                      +
-                     "node": {          +
-                         "id": 1        +
-                     },                 +
-                     "cursor": "WzFd"   +
-                 }                      +
-             ],                         +
-             "pageInfo": {              +
-                 "endCursor": "WzFd",   +
-                 "hasNextPage": false,  +
-                 "startCursor": "WzFd", +
-                 "hasPreviousPage": true+
-             }                          +
-         }                              +
-     }                                  +
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "accountCollection": {          +
+             "edges": [                  +
+                 {                       +
+                     "node": {           +
+                         "id": 1         +
+                     },                  +
+                     "cursor": "WzFd"    +
+                 }                       +
+             ],                          +
+             "pageInfo": {               +
+                 "endCursor": "WzFd",    +
+                 "hasNextPage": true,    +
+                 "startCursor": "WzFd",  +
+                 "hasPreviousPage": false+
+             }                           +
+         }                               +
+     }                                   +
  }
 (1 row)
 
