@@ -233,7 +233,7 @@ begin;
 (1 row)
 
     -- Backward pagination
-    -- hasPreviousPage is false, hasNextPage is true
+    -- hasPreviousPage is true, hasNextPage is false
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -371,7 +371,7 @@ begin;
  }
 (1 row)
 
-    -- hasPreviousPage is true, hasNextPage is false
+    -- hasPreviousPage is false, hasNextPage is true
     select jsonb_pretty(
         graphql.resolve($$
         {
