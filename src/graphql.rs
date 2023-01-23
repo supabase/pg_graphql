@@ -1522,30 +1522,39 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
         },
     };
 
-    let enums: Vec<&Arc<Enum>> = schema
-        .context
-        .enums
-        .iter()
-        .filter(|x| x.permissions.is_usable)
-        .collect();
-
-    for enum_ in enums {
-        if enum_.oid == type_oid {
-            type_w_list_mod = __Type::Enum(EnumType {
-                enum_: EnumSource::Enum(Arc::clone(enum_)),
-                schema: schema.clone(),
-            })
-        } else if format!("{}[]", enum_.name) == type_name
-            || format!("\"{}\"[]", enum_.name) == type_name
-        {
-            type_w_list_mod = __Type::List(ListType {
-                type_: Box::new(__Type::Enum(EnumType {
-                    enum_: EnumSource::Enum(Arc::clone(enum_)),
-                    schema: Rc::clone(schema),
-                })),
-            })
+    if let Some(exact_type) = schema.context.types.get(&type_oid) {
+        if exact_type.permissions.is_usable {
+            match exact_type.category {
+                TypeCategory::Enum => match schema.context.enums.get(&exact_type.oid) {
+                    Some(enum_) => {
+                        type_w_list_mod = __Type::Enum(EnumType {
+                            enum_: EnumSource::Enum(Arc::clone(enum_)),
+                            schema: schema.clone(),
+                        })
+                    }
+                    None => {}
+                },
+                TypeCategory::Array => {
+                    match schema
+                        .context
+                        .enums
+                        .get(&exact_type.array_element_type_oid.unwrap())
+                    {
+                        Some(base_enum) => {
+                            type_w_list_mod = __Type::List(ListType {
+                                type_: Box::new(__Type::Enum(EnumType {
+                                    enum_: EnumSource::Enum(Arc::clone(base_enum)),
+                                    schema: Rc::clone(schema),
+                                })),
+                            })
+                        }
+                        None => {}
+                    }
+                }
+                _ => {}
+            }
         }
-    }
+    };
     type_w_list_mod
 }
 
@@ -3400,11 +3409,11 @@ impl __Schema {
                 }
             }
 
-            for enum_ in self
+            for (_, enum_) in self
                 .context
                 .enums
                 .iter()
-                .filter(|x| x.permissions.is_usable)
+                .filter(|(_, x)| x.permissions.is_usable)
             {
                 let enum_type = EnumType {
                     enum_: EnumSource::Enum(Arc::clone(&enum_)),

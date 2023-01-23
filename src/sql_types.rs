@@ -2,7 +2,7 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::*;
 
@@ -68,8 +68,28 @@ pub struct TablePermissions {
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
-pub struct EnumPermissions {
+pub struct TypePermissions {
     pub is_usable: bool,
+}
+
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+pub enum TypeCategory {
+    Enum,
+    Composite,
+    Array,
+    Other,
+}
+
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+pub struct Type {
+    pub oid: u32,
+    pub schema_oid: u32,
+    pub name: String,
+    pub category: TypeCategory,
+    pub array_element_type_oid: Option<u32>,
+    pub comment: Option<String>,
+    pub permissions: TypePermissions,
+    pub directives: EnumDirectives,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -85,8 +105,9 @@ pub struct Enum {
     pub schema_oid: u32,
     pub name: String,
     pub values: Vec<EnumValue>,
+    pub array_element_type_oid: Option<u32>,
     pub comment: Option<String>,
-    pub permissions: EnumPermissions,
+    pub permissions: TypePermissions,
     pub directives: EnumDirectives,
 }
 
@@ -289,7 +310,8 @@ pub struct Context {
     pub config: Config,
     pub schemas: Vec<Schema>,
     foreign_keys: Vec<Arc<ForeignKey>>,
-    pub enums: Vec<Arc<Enum>>,
+    pub types: HashMap<u32, Arc<Type>>,
+    pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
 }
 

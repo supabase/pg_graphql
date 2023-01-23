@@ -11,8 +11,8 @@ select
         'enums', coalesce(
             (
                 select
-                    jsonb_agg(
-                        distinct -- needed?
+                    jsonb_object_agg(
+                        distinct pt.oid::int,
                         jsonb_build_object(
                             'oid', pt.oid::int,
                             'schema_oid', pt.typnamespace::int,
@@ -48,7 +48,40 @@ select
                     join search_path_oids spo
                         on pt.typnamespace = spo.schema_oid
             ),
-            jsonb_build_array()
+            jsonb_build_object()
+        ),
+        'types', coalesce(
+            (
+                select
+                    jsonb_object_agg(
+                        pt.oid::int,
+                        jsonb_build_object(
+                            'oid', pt.oid::int,
+                            'schema_oid', pt.typnamespace::int,
+                            'name', pt.typname,
+                            -- if type is an array, points at the underlying element type
+                            'category', case
+                                when pt.typcategory = 'A' then 'Array'
+                                when pt.typcategory = 'E' then 'Enum'
+                                when pt.typcategory = 'C' then 'Composite'
+                                else 'Other'
+                            end,
+                            'array_element_type_oid', nullif(pt.typelem::int, 0),
+                            'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
+                            'directives', jsonb_build_object(
+                                'name', graphql.comment_directive(pg_catalog.obj_description(pt.oid, 'pg_type')) ->> 'name'
+                            ),
+                            'permissions', jsonb_build_object(
+                                'is_usable', pg_catalog.has_type_privilege(current_user, pt.oid, 'USAGE')
+                            )
+                        )
+                    )
+                from
+                    pg_type pt
+                    join search_path_oids spo
+                        on pt.typnamespace = spo.schema_oid
+            ),
+            jsonb_build_object()
         ),
         'composites', coalesce(
             (
