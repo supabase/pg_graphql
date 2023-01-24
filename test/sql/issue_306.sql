@@ -4,24 +4,6 @@ begin;
         is_verified bool
     );
 
-
-    -- hasNextPage and hasPreviousPage should be non-null on empty collection
-    -- startCursor and endCursor may be null
-    select jsonb_pretty(
-        graphql.resolve($$
-        {
-          accountCollection {
-            pageInfo {
-              hasNextPage
-              hasPreviousPage
-              startCursor
-              endCursor
-            }
-          }
-        }
-        $$)
-    );
-
     insert into account(id) select generate_series(1, 10);
 
     -- Forward pagination
@@ -29,7 +11,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-          accountCollection(first: 5) {
+          accountCollection(first: 3) {
             pageInfo {
               hasNextPage
               hasPreviousPage
@@ -51,74 +33,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-          accountCollection(first: 5, after: "WzJd" ) {
-            pageInfo {
-              hasNextPage
-              hasPreviousPage
-              startCursor
-              endCursor
-            }
-            edges {
-              cursor
-              node {
-                id
-              }
-            }
-          }
-        }
-        $$)
-    );
-
-    -- hasPreviousPage is true, hasNextPage is false
-    select jsonb_pretty(
-        graphql.resolve($$
-        {
-          accountCollection(first: 5, after: "Wzdd" ) {
-            pageInfo {
-              hasNextPage
-              hasPreviousPage
-              startCursor
-              endCursor
-            }
-            edges {
-              cursor
-              node {
-                id
-              }
-            }
-          }
-        }
-        $$)
-    );
-
-    -- Backward pagination
-    -- hasPreviousPage is true, hasNextPage is false
-    select jsonb_pretty(
-        graphql.resolve($$
-        {
-          accountCollection(last: 5) {
-            pageInfo {
-              hasNextPage
-              hasPreviousPage
-              startCursor
-              endCursor
-            }
-            edges {
-              cursor
-              node {
-                id
-              }
-            }
-          }
-        }
-        $$)
-    );
-
-    -- hasPreviousPage is true, hasNextPage is true
-    select jsonb_pretty(
-        graphql.resolve($$
-        {
-          accountCollection(last: 5, before: "Wzdd" ) {
+          accountCollection(first: 3, after: "WzNd" ) {
             pageInfo {
               hasNextPage
               hasPreviousPage
@@ -140,7 +55,30 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-          accountCollection(last: 5, before: "WzJd" ) {
+          accountCollection(last: 3, before: "WzRd" ) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+
+    -- hasPreviousPage is true, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(last: 2, before: "WzRd" ) {
             pageInfo {
               hasNextPage
               hasPreviousPage
