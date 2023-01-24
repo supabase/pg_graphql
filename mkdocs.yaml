@@ -17,6 +17,7 @@ nav:
     - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
     - Contributing: 'contributing.md'
+    - Changelog: 'changelog.md'
 
 theme:
     name: 'material'
