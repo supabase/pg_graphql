@@ -761,7 +761,7 @@ impl ConnectionBuilder {
             .reverse()
             .to_order_by_clause(&quoted_block_name);
 
-        let is_reverse_pagination = self.last.is_some();
+        let is_reverse_pagination = self.last.is_some() || self.before.is_some();
 
         let order_by_clause_records = match is_reverse_pagination {
             true => &order_by_clause_reversed,
@@ -814,8 +814,6 @@ impl ConnectionBuilder {
         let pkey_tuple_clause_from_block =
             self.table.to_primary_key_tuple_clause(&quoted_block_name);
         let pkey_tuple_clause_from_records = self.table.to_primary_key_tuple_clause("__records");
-
-        let is_reverse_pagination = self.last.is_some() || self.before.is_some();
 
         let pagination_clause = {
             let order_by = match is_reverse_pagination {
