@@ -293,7 +293,6 @@ pub struct SchemaDirectives {
 pub struct Schema {
     pub oid: u32,
     pub name: String,
-    pub tables: Vec<Arc<Table>>,
     pub comment: Option<String>,
     pub directives: SchemaDirectives,
 }
@@ -308,7 +307,8 @@ pub struct Config {
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Context {
     pub config: Config,
-    pub schemas: Vec<Schema>,
+    pub schemas: HashMap<u32, Schema>,
+    pub tables: HashMap<u32, Arc<Table>>,
     foreign_keys: Vec<Arc<ForeignKey>>,
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
@@ -321,7 +321,7 @@ impl Context {
         let mut fkeys: Vec<Arc<ForeignKey>> = self.foreign_keys.clone();
 
         // Add foreign keys defined in comment directives
-        for table in self.schemas.iter().flat_map(|x| &x.tables) {
+        for (_, table) in &self.tables {
             let directive_fkeys: Vec<TableDirectiveForeignKey> =
                 match &table.directives.foreign_keys {
                     Some(keys) => keys.clone(),
@@ -394,17 +394,13 @@ impl Context {
         schema_name: &String,
         table_name: &String,
     ) -> Option<&Arc<Table>> {
-        self.schemas
-            .iter()
-            .flat_map(|x| x.tables.iter())
+        self.tables
+            .values()
             .find(|x| &x.schema == schema_name && &x.name == table_name)
     }
 
     pub fn get_table_by_oid(&self, oid: u32) -> Option<&Arc<Table>> {
-        self.schemas
-            .iter()
-            .flat_map(|x| x.tables.iter())
-            .find(|x| x.oid == oid)
+        self.tables.get(&oid)
     }
 
     /// Check if the local side of a foreign key is comprised of unique columns

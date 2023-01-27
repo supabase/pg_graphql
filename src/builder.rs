@@ -1075,7 +1075,7 @@ where
                 .schema
                 .context
                 .schemas
-                .iter()
+                .values()
                 .find(|s| s.oid == xtype.table.schema_oid)
                 .map(|x| x.directives.max_rows)
                 .unwrap_or(30);
