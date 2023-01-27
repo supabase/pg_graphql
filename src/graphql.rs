@@ -1,10 +1,11 @@
 use crate::sql_types::*;
+use cached::proc_macro::cached;
+use cached::SizedCache;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::Arc;
 
 lazy_static! {
@@ -816,47 +817,47 @@ pub struct NonNullType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SchemaType {
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct QueryType {
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MutationType {
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertInputType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UpdateInputType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertResponseType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UpdateResponseType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeleteResponseType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -868,7 +869,7 @@ pub struct ConnectionType {
     pub fkey: Option<Arc<ForeignKey>>,
     pub reverse_reference: Option<bool>,
 
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -880,7 +881,7 @@ pub enum EnumSource {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EnumType {
     pub enum_: EnumSource,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -889,7 +890,7 @@ pub struct OrderByType {}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OrderByEntityType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -901,19 +902,19 @@ pub enum FilterableType {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FilterTypeType {
     pub entity: FilterableType,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FilterEntityType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EdgeType {
     pub table: Arc<Table>,
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -925,12 +926,12 @@ pub struct NodeType {
     pub fkey: Option<Arc<ForeignKey>>,
     pub reverse_reference: Option<bool>,
 
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NodeInterfaceType {
-    pub schema: Rc<__Schema>,
+    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -955,7 +956,7 @@ impl ___Type for QueryType {
         let single_entrypoint = __Field {
             name_: "node".to_string(),
             type_: __Type::NodeInterface(NodeInterfaceType {
-                schema: Rc::clone(&self.schema),
+                schema: Arc::clone(&self.schema),
             }),
             args: vec![__InputValue {
                 name_: "nodeId".to_string(),
@@ -991,7 +992,7 @@ impl ___Type for QueryType {
                         table: Arc::clone(table),
                         fkey: None,
                         reverse_reference: None,
-                        schema: Rc::clone(&self.schema),
+                        schema: Arc::clone(&self.schema),
                     }),
                     args: vec![
                         __InputValue {
@@ -1119,7 +1120,7 @@ impl ___Type for MutationType {
                     name_: format!("insertInto{}Collection", table_base_type_name),
                     type_: __Type::InsertResponse(InsertResponseType {
                         table: Arc::clone(table),
-                        schema: Rc::clone(&self.schema),
+                        schema: Arc::clone(&self.schema),
                     }),
                     args: vec![__InputValue {
                         name_: "objects".to_string(),
@@ -1128,7 +1129,7 @@ impl ___Type for MutationType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::InsertInput(InsertInputType {
                                         table: Arc::clone(table),
-                                        schema: Rc::clone(&self.schema),
+                                        schema: Arc::clone(&self.schema),
                                     })),
                                 })),
                             })),
@@ -1152,7 +1153,7 @@ impl ___Type for MutationType {
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::UpdateResponse(UpdateResponseType {
                             table: Arc::clone(table),
-                            schema: Rc::clone(&self.schema),
+                            schema: Arc::clone(&self.schema),
                         })),
                     }),
                     args: vec![
@@ -1161,7 +1162,7 @@ impl ___Type for MutationType {
                             type_: __Type::NonNull(NonNullType {
                                 type_: Box::new(__Type::UpdateInput(UpdateInputType {
                                     table: Arc::clone(table),
-                                    schema: Rc::clone(&self.schema),
+                                    schema: Arc::clone(&self.schema),
                                 })),
                             }),
                             description: Some("Fields that are set will be updated for all records matching the `filter`".to_string()),
@@ -1172,7 +1173,7 @@ impl ___Type for MutationType {
                             name_: "filter".to_string(),
                             type_: __Type::FilterEntity(FilterEntityType {
                                 table: Arc::clone(table),
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             }),
                             description: Some("Restricts the mutation's impact to records matching the criteria".to_string()),
                             default_value: None,
@@ -1203,7 +1204,7 @@ impl ___Type for MutationType {
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::DeleteResponse(DeleteResponseType {
                             table: Arc::clone(table),
-                            schema: Rc::clone(&self.schema),
+                            schema: Arc::clone(&self.schema),
                         })),
                     }),
                     args: vec![
@@ -1211,7 +1212,7 @@ impl ___Type for MutationType {
                             name_: "filter".to_string(),
                             type_: __Type::FilterEntity(FilterEntityType {
                                 table: Arc::clone(table),
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             }),
                             description: Some(
                                 "Restricts the mutation's impact to records matching the criteria"
@@ -1330,7 +1331,7 @@ impl ___Type for ConnectionType {
                         type_: Box::new(__Type::NonNull(NonNullType {
                             type_: Box::new(__Type::Edge(EdgeType {
                                 table: Arc::clone(&self.table),
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -1387,7 +1388,11 @@ impl ___Type for NodeInterfaceType {
 
         let mut possible_types = vec![];
 
-        for type_ in self.schema.types() {
+        // Use type_map(..) not types() because its cached
+        for type_ in type_map(&self.schema)
+            .into_values()
+            .sorted_by(|a, b| a.name().cmp(&b.name()))
+        {
             let type_interfaces: Vec<__Type> = type_.interfaces().unwrap_or(vec![]);
             let interface_names: Vec<String> =
                 type_interfaces.iter().map(|x| x.name().unwrap()).collect();
@@ -1444,7 +1449,7 @@ impl ___Type for EdgeType {
                         table: Arc::clone(&self.table),
                         fkey: None,
                         reverse_reference: None,
-                        schema: Rc::clone(&self.schema),
+                        schema: Arc::clone(&self.schema),
                     })),
                 }),
                 args: vec![],
@@ -1456,7 +1461,7 @@ impl ___Type for EdgeType {
     }
 }
 
-pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Schema>) -> __Type {
+pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Arc<__Schema>) -> __Type {
     let mut type_w_list_mod = match type_oid {
         20 => __Type::Scalar(Scalar::BigInt),     // bigint "
         16 => __Type::Scalar(Scalar::Boolean),    // boolean "
@@ -1544,7 +1549,7 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
                             type_w_list_mod = __Type::List(ListType {
                                 type_: Box::new(__Type::Enum(EnumType {
                                     enum_: EnumSource::Enum(Arc::clone(base_enum)),
-                                    schema: Rc::clone(schema),
+                                    schema: Arc::clone(schema),
                                 })),
                             })
                         }
@@ -1558,7 +1563,7 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Rc<__Sc
     type_w_list_mod
 }
 
-pub fn sql_column_to_graphql_type(col: &Column, schema: &Rc<__Schema>) -> __Type {
+pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> __Type {
     let type_w_list_mod = sql_type_to_graphql_type(col.type_oid, col.type_name.as_str(), schema);
 
     match col.is_not_null {
@@ -1583,7 +1588,7 @@ impl ___Type for NodeType {
 
         if self.table.primary_key().is_some() {
             interfaces.push(__Type::NodeInterface(NodeInterfaceType {
-                schema: Rc::clone(&self.schema),
+                schema: Arc::clone(&self.schema),
             }))
         }
 
@@ -1696,7 +1701,7 @@ impl ___Type for NodeType {
                     table: Arc::clone(foreign_table),
                     fkey: Some(Arc::clone(fkey)),
                     reverse_reference: Some(reverse_reference),
-                    schema: Rc::clone(&self.schema),
+                    schema: Arc::clone(&self.schema),
                 }),
                 args: vec![],
                 description: None,
@@ -1741,7 +1746,7 @@ impl ___Type for NodeType {
                                 table: Arc::clone(foreign_table),
                                 fkey: Some(Arc::clone(fkey)),
                                 reverse_reference: Some(reverse_reference),
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             }),
                         args: vec![
                             __InputValue {
@@ -1776,7 +1781,7 @@ impl ___Type for NodeType {
                                 name_: "filter".to_string(),
                                 type_: __Type::FilterEntity(FilterEntityType {
                                     table: Arc::clone(foreign_table),
-                                    schema: Rc::clone(&self.schema),
+                                    schema: Arc::clone(&self.schema),
                                 }),
                                 description: Some("Filters to apply to the results set when querying from the collection".to_string()),
                                 default_value: None,
@@ -1789,7 +1794,7 @@ impl ___Type for NodeType {
                                         type_: Box::new(__Type::OrderByEntity(
                                             OrderByEntityType {
                                                 table: Arc::clone(foreign_table),
-                                                schema: Rc::clone(&self.schema),
+                                                schema: Arc::clone(&self.schema),
                                             },
                                         )),
                                     })),
@@ -1814,7 +1819,7 @@ impl ___Type for NodeType {
                             table: Arc::clone(foreign_table),
                             fkey: Some(Arc::clone(fkey)),
                             reverse_reference: Some(reverse_reference),
-                            schema: Rc::clone(&self.schema),
+                            schema: Arc::clone(&self.schema),
                         }),
                         args: vec![],
                         description: None,
@@ -2076,8 +2081,6 @@ impl ___Type for __DirectiveLocationType {
         ])
     }
 }
-
-// __Type::NonNull(NonNullType{ type_: Box::new( __Type::List(ListType { type_: Box::new(__Type::NonNull( NonNullType { type_: Box::new(__Type::__Type) } ) )}))})
 
 impl ___Type for __SchemaType {
     fn kind(&self) -> __TypeKind {
@@ -2740,7 +2743,7 @@ impl ___Type for InsertResponseType {
                                 table: Arc::clone(&self.table),
                                 fkey: None,
                                 reverse_reference: None,
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -2825,7 +2828,7 @@ impl ___Type for UpdateResponseType {
                                 table: Arc::clone(&self.table),
                                 fkey: None,
                                 reverse_reference: None,
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -2872,7 +2875,7 @@ impl ___Type for DeleteResponseType {
                                 table: Arc::clone(&self.table),
                                 fkey: None,
                                 reverse_reference: None,
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             })),
                         })),
                     })),
@@ -2952,7 +2955,7 @@ impl ___Type for FilterTypeType {
                                 name_: "is".to_string(),
                                 type_: __Type::Enum(EnumType {
                                     enum_: EnumSource::FilterIs,
-                                    schema: Rc::clone(&self.schema),
+                                    schema: Arc::clone(&self.schema),
                                 }),
                                 description: None,
                                 default_value: None,
@@ -3011,7 +3014,7 @@ impl ___Type for FilterTypeType {
                             name_: "is".to_string(),
                             type_: __Type::Enum(EnumType {
                                 enum_: EnumSource::FilterIs,
-                                schema: Rc::clone(&self.schema),
+                                schema: Arc::clone(&self.schema),
                             }),
                             description: None,
                             default_value: None,
@@ -3052,7 +3055,7 @@ impl ___Type for FilterTypeType {
                         name_: "is".to_string(),
                         type_: __Type::Enum(EnumType {
                             enum_: EnumSource::FilterIs,
-                            schema: Rc::clone(&self.schema),
+                            schema: Arc::clone(&self.schema),
                         }),
                         description: None,
                         default_value: None,
@@ -3106,7 +3109,7 @@ impl ___Type for FilterEntityType {
                         name_: column_graphql_name,
                         type_: __Type::FilterType(FilterTypeType {
                             entity: FilterableType::Scalar(s),
-                            schema: Rc::clone(&self.schema),
+                            schema: Arc::clone(&self.schema),
                         }),
                         description: None,
                         default_value: None,
@@ -3117,7 +3120,7 @@ impl ___Type for FilterEntityType {
                         name_: column_graphql_name,
                         type_: __Type::FilterType(FilterTypeType {
                             entity: FilterableType::Enum(s),
-                            schema: Rc::clone(&self.schema),
+                            schema: Arc::clone(&self.schema),
                         }),
                         description: None,
                         default_value: None,
@@ -3141,7 +3144,7 @@ impl ___Type for FilterEntityType {
                 name_: "nodeId".to_string(),
                 type_: __Type::FilterType(FilterTypeType {
                     entity: FilterableType::Scalar(Scalar::ID),
-                    schema: Rc::clone(&self.schema),
+                    schema: Arc::clone(&self.schema),
                 }),
                 description: None,
                 default_value: None,
@@ -3259,11 +3262,27 @@ pub struct __Schema {
     pub context: Arc<Context>,
 }
 
+#[cached(
+    type = "SizedCache<String, HashMap<String, __Type>>",
+    create = "{ SizedCache::with_size(200) }",
+    convert = r#"{ serde_json::ser::to_string(&schema.context.config).unwrap() }"#,
+    sync_writes = true
+)]
+pub fn type_map(schema: &__Schema) -> HashMap<String, __Type> {
+    let tmap: HashMap<String, __Type> = schema
+        .types()
+        .into_iter()
+        .filter(|x| x.name().is_some())
+        .map(|x| (x.name().unwrap(), x))
+        .collect();
+    tmap
+}
+
 impl __Schema {
     // types: [__Type!]!
     pub fn types(&self) -> Vec<__Type> {
         // This is is lightweight because context is Rc
-        let schema_rc = Rc::new(self.clone());
+        let schema_rc = Arc::new(self.clone());
 
         let mut types_: Vec<__Type> = vec![
             __Type::__TypeKind(__TypeKindType),
@@ -3289,48 +3308,48 @@ impl __Schema {
             __Type::Scalar(Scalar::Cursor),
             __Type::Enum(EnumType {
                 enum_: EnumSource::FilterIs,
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::OrderBy(OrderByType {}),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::ID),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Int),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Float),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::String),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Boolean),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Date),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Time),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Datetime),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::BigInt),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::UUID),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::Query(QueryType {
                 schema: schema_rc.clone(),
@@ -3342,7 +3361,7 @@ impl __Schema {
 
         if self.mutations_exist() {
             types_.push(__Type::Mutation(MutationType {
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }));
         }
 
@@ -3356,55 +3375,55 @@ impl __Schema {
                 table: Arc::clone(table),
                 fkey: None,
                 reverse_reference: None,
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }));
             types_.push(__Type::Edge(EdgeType {
                 table: Arc::clone(table),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }));
             types_.push(__Type::Connection(ConnectionType {
                 table: Arc::clone(table),
                 fkey: None,
                 reverse_reference: None,
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }));
 
             types_.push(__Type::FilterEntity(FilterEntityType {
                 table: Arc::clone(table),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }));
 
             types_.push(__Type::OrderByEntity(OrderByEntityType {
                 table: Arc::clone(table),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             }));
 
             if self.graphql_table_insert_types_are_valid(table) {
                 types_.push(__Type::InsertInput(InsertInputType {
                     table: Arc::clone(table),
-                    schema: Rc::clone(&schema_rc),
+                    schema: Arc::clone(&schema_rc),
                 }));
                 types_.push(__Type::InsertResponse(InsertResponseType {
                     table: Arc::clone(table),
-                    schema: Rc::clone(&schema_rc),
+                    schema: Arc::clone(&schema_rc),
                 }));
             }
 
             if self.graphql_table_update_types_are_valid(table) {
                 types_.push(__Type::UpdateInput(UpdateInputType {
                     table: Arc::clone(table),
-                    schema: Rc::clone(&schema_rc),
+                    schema: Arc::clone(&schema_rc),
                 }));
                 types_.push(__Type::UpdateResponse(UpdateResponseType {
                     table: Arc::clone(table),
-                    schema: Rc::clone(&schema_rc),
+                    schema: Arc::clone(&schema_rc),
                 }));
             }
 
             if self.graphql_table_delete_types_are_valid(table) {
                 types_.push(__Type::DeleteResponse(DeleteResponseType {
                     table: Arc::clone(table),
-                    schema: Rc::clone(&schema_rc),
+                    schema: Arc::clone(&schema_rc),
                 }));
             }
         }
@@ -3417,14 +3436,14 @@ impl __Schema {
         {
             let enum_type = EnumType {
                 enum_: EnumSource::Enum(Arc::clone(&enum_)),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             };
 
             types_.push(__Type::Enum(enum_type.clone()));
 
             let enum_filter = __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Enum(enum_type.clone()),
-                schema: Rc::clone(&schema_rc),
+                schema: Arc::clone(&schema_rc),
             });
 
             types_.push(__Type::Enum(enum_type));
@@ -3433,16 +3452,6 @@ impl __Schema {
 
         types_.sort_by_key(|a| a.name());
         types_
-    }
-
-    pub fn type_map(&self) -> HashMap<String, __Type> {
-        let tmap: HashMap<String, __Type> = self
-            .types()
-            .into_iter()
-            .filter(|x| x.name().is_some())
-            .map(|x| (x.name().unwrap(), x))
-            .collect();
-        tmap
     }
 
     pub fn mutations_exist(&self) -> bool {
@@ -3462,7 +3471,7 @@ impl __Schema {
     #[allow(dead_code)]
     pub fn query_type(&self) -> __Type {
         __Type::Query(QueryType {
-            schema: Rc::new(self.clone()),
+            schema: Arc::new(self.clone()),
         })
     }
 
@@ -3470,7 +3479,7 @@ impl __Schema {
     #[allow(dead_code)]
     pub fn mutation_type(&self) -> Option<__Type> {
         let mutation = MutationType {
-            schema: Rc::new(self.clone()),
+            schema: Arc::new(self.clone()),
         };
 
         match mutation.fields(true).unwrap_or_default().len() {

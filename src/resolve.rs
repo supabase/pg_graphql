@@ -218,14 +218,12 @@ where
                             }
                         }
                         __Type::__Type(_) => {
-                            let type_map = schema_type.type_map();
                             let __type_builder = schema_type.to_type_builder(
                                 field_def,
                                 selection,
                                 &fragment_definitions,
                                 None,
                                 variables,
-                                &type_map,
                             );
 
                             match __type_builder {
