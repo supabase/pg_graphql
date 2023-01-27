@@ -761,7 +761,9 @@ impl ConnectionBuilder {
             .reverse()
             .to_order_by_clause(&quoted_block_name);
 
-        let order_by_clause_records = match self.last.is_some() {
+        let is_reverse_pagination = self.last.is_some() || self.before.is_some();
+
+        let order_by_clause_records = match is_reverse_pagination {
             true => &order_by_clause_reversed,
             false => &order_by_clause,
         };
@@ -807,8 +809,14 @@ impl ConnectionBuilder {
 
         let cursor = &self.before.clone().or_else(|| self.after.clone());
 
+        let selectable_columns_clause = self.table.to_selectable_columns_clause();
+
+        let pkey_tuple_clause_from_block =
+            self.table.to_primary_key_tuple_clause(&quoted_block_name);
+        let pkey_tuple_clause_from_records = self.table.to_primary_key_tuple_clause("__records");
+
         let pagination_clause = {
-            let order_by = match self.last.is_some() {
+            let order_by = match is_reverse_pagination {
                 true => self.order_by.reverse(),
                 false => self.order_by.clone(),
             };
@@ -824,11 +832,54 @@ impl ConnectionBuilder {
             }
         };
 
-        let selectable_columns_clause = self.table.to_selectable_columns_clause();
+        // initialized assuming forwards pagination
+        let mut has_next_page_query = format!(
+            "
+            with page_plus_1 as (
+                select
+                    1
+                from
+                    {quoted_schema}.{quoted_table} {quoted_block_name}
+                where
+                    {join_clause}
+                    and {where_clause}
+                    and {pagination_clause}
+                order by
+                    {order_by_clause}
+                limit ({limit} + 1)
+            )
+            select count(*) > {limit} from page_plus_1
+        "
+        );
 
-        let pkey_tuple_clause_from_block =
-            self.table.to_primary_key_tuple_clause(&quoted_block_name);
-        let pkey_tuple_clause_from_records = self.table.to_primary_key_tuple_clause("__records");
+        let mut has_prev_page_query =  format!("
+            with page_minus_1 as (
+                select
+                    not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
+                from
+                    {quoted_schema}.{quoted_table} {quoted_block_name}
+                    left join (select array_agg({pkey_tuple_clause_from_records}) from __records ) __records(seen)
+                        on true
+                where
+                    {join_clause}
+                    and {where_clause}
+                order by
+                    {order_by_clause_records}
+                limit 1
+            )
+            select coalesce(bool_and(is_pkey_in_records), false) from page_minus_1
+        ");
+
+        if is_reverse_pagination {
+            // Reverse has_next_page and has_previous_page
+            std::mem::swap(&mut has_next_page_query, &mut has_prev_page_query);
+        }
+        if !requested_next_page {
+            has_next_page_query = "select null".to_string()
+        }
+        if !requested_previous_page {
+            has_prev_page_query = "select null".to_string()
+        }
 
         Ok(format!(
             "
@@ -859,39 +910,11 @@ impl ConnectionBuilder {
                         and {where_clause}
                 ),
                 __has_next_page(___has_next_page) as (
-                    with page_plus_1 as (
-                        select
-                            1
-                        from
-                            {quoted_schema}.{quoted_table} {quoted_block_name}
-                        where
-                            {requested_next_page} -- skips when not requested
-                            and {join_clause}
-                            and {where_clause}
-                            and {pagination_clause}
-                        order by
-                            {order_by_clause}
-                        limit ({limit} + 1)
-                    )
-                    select count(*) > {limit} from page_plus_1
+                    {has_next_page_query}
+
                 ),
                 __has_previous_page(___has_previous_page) as (
-                    with page_minus_1 as (
-                        select
-                            not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
-                        from
-                            {quoted_schema}.{quoted_table} {quoted_block_name}
-                            left join (select array_agg({pkey_tuple_clause_from_records}) from __records ) __records(seen)
-                                on true
-                        where
-                            {requested_previous_page} -- skips when not requested
-                            and {join_clause}
-                            and {where_clause}
-                        order by
-                            {order_by_clause_records}
-                        limit 1
-                    )
-                    select coalesce(bool_and(is_pkey_in_records), false) from page_minus_1
+                    {has_prev_page_query}
                 )
                 select
                     jsonb_build_object({object_clause}) -- sorted within edge
