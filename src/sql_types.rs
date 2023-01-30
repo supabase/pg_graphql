@@ -36,17 +36,17 @@ pub struct Column {
     pub directives: ColumnDirectives,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FunctionDirectives {
     pub name: Option<String>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FunctionPermissions {
     pub is_executable: bool,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Function {
     pub oid: u32,
     pub name: String,
@@ -59,7 +59,7 @@ pub struct Function {
     pub permissions: FunctionPermissions,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TablePermissions {
     pub is_insertable: bool,
     pub is_selectable: bool,
@@ -67,12 +67,12 @@ pub struct TablePermissions {
     pub is_deletable: bool,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TypePermissions {
     pub is_usable: bool,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TypeCategory {
     Enum,
     Composite,
@@ -80,7 +80,7 @@ pub enum TypeCategory {
     Other,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Type {
     pub oid: u32,
     pub schema_oid: u32,
@@ -92,14 +92,14 @@ pub struct Type {
     pub directives: EnumDirectives,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EnumValue {
     pub oid: u32,
     pub name: String,
     pub sort_order: i32,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Enum {
     pub oid: u32,
     pub schema_oid: u32,
@@ -111,18 +111,18 @@ pub struct Enum {
     pub directives: EnumDirectives,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EnumDirectives {
     pub name: Option<String>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Composite {
     pub oid: u32,
     pub schema_oid: u32,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Index {
     pub table_oid: u32,
     pub column_names: Vec<String>,
@@ -130,7 +130,7 @@ pub struct Index {
     pub is_primary_key: bool,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ForeignKeyTableInfo {
     pub oid: u32,
     // The table's actual name
@@ -139,25 +139,25 @@ pub struct ForeignKeyTableInfo {
     pub column_names: Vec<String>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ForeignKeyDirectives {
     pub local_name: Option<String>,
     pub foreign_name: Option<String>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ForeignKey {
     pub directives: ForeignKeyDirectives,
     pub local_table_meta: ForeignKeyTableInfo,
     pub referenced_table_meta: ForeignKeyTableInfo,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TableDirectiveTotalCount {
     pub enabled: bool,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TableDirectiveForeignKey {
     // Equivalent to ForeignKeyDirectives.local_name
     pub local_name: Option<String>,
@@ -170,7 +170,7 @@ pub struct TableDirectiveForeignKey {
     pub foreign_columns: Vec<String>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TableDirectives {
     // @graphql({"name": "Foo" })
     pub name: Option<String>,
@@ -203,7 +203,7 @@ pub struct TableDirectives {
     pub foreign_keys: Option<Vec<TableDirectiveForeignKey>>,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Table {
     pub oid: u32,
     pub name: String,
@@ -281,7 +281,7 @@ impl Table {
     }
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct SchemaDirectives {
     // @graphql({"inflect_names": true})
     pub inflect_names: bool,
@@ -289,7 +289,7 @@ pub struct SchemaDirectives {
     pub max_rows: i64,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Schema {
     pub oid: u32,
     pub name: String,
@@ -297,7 +297,7 @@ pub struct Schema {
     pub directives: SchemaDirectives,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Config {
     pub search_path: Vec<String>,
     pub role: String,
@@ -313,6 +313,13 @@ pub struct Context {
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
+}
+
+impl Hash for Context {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Only the config is needed to has ha Context
+        self.config.hash(state);
+    }
 }
 
 impl Context {
@@ -477,10 +484,19 @@ pub fn load_sql_config() -> Config {
     config
 }
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
 #[cached(
-    type = "SizedCache<String, Result<Arc<Context>, String>>",
+    type = "SizedCache<u64, Result<Arc<Context>, String>>",
     create = "{ SizedCache::with_size(250) }",
-    convert = r#"{ serde_json::ser::to_string(_config).unwrap() }"#,
+    convert = r#"{ calculate_hash(_config) }"#,
     sync_writes = true
 )]
 pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {

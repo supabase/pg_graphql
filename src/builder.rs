@@ -174,7 +174,7 @@ where
 
     let mut objects: Vec<InsertRowBuilder> = vec![];
 
-    let insert_type_field_map = insert_type.input_field_map();
+    let insert_type_field_map = input_field_map(&__Type::InsertInput(insert_type));
 
     // validated user input kv map
     match validated {
@@ -236,7 +236,7 @@ where
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in connection builder")?;
-    let field_map = type_.field_map();
+    let field_map = field_map(&type_);
     let alias = alias_or_name(query_field);
 
     match &type_ {
@@ -341,7 +341,7 @@ where
 
     let mut set: HashMap<String, serde_json::Value> = HashMap::new();
 
-    let update_type_field_map = update_type.input_field_map();
+    let update_type_field_map = input_field_map(&__Type::UpdateInput(update_type));
 
     // validated user input kv map
     match validated {
@@ -389,7 +389,7 @@ where
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in update builder")?;
-    let field_map = type_.field_map();
+    let field_map = field_map(&type_);
     let alias = alias_or_name(query_field);
 
     match &type_ {
@@ -485,7 +485,7 @@ where
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in delete builder")?;
-    let field_map = type_.field_map();
+    let field_map = field_map(&type_);
     let alias = alias_or_name(query_field);
 
     match &type_ {
@@ -868,7 +868,7 @@ where
         _ => return Err("Filter re-validation errror".to_string()),
     };
 
-    let filter_field_map = filter_type.input_field_map();
+    let filter_field_map = input_field_map(&__Type::FilterEntity(filter_type));
     for (k, op_to_v) in kv_map.iter() {
         // k = str, v = {"eq": 1}
         let filter_iv: &__InputValue = match filter_field_map.get(k) {
@@ -935,7 +935,7 @@ where
 
     let mut orders = vec![];
 
-    let order_field_map = order_type.input_field_map();
+    let order_field_map = input_field_map(&__Type::OrderByEntity(order_type.clone()));
 
     // validated user input kv map
     match validated {
@@ -978,7 +978,7 @@ where
     };
 
     // To acheive consistent pagination, sorting should always include primary key
-    let pkey = order_type
+    let pkey = &order_type
         .table
         .primary_key()
         .ok_or_else(|| "Found table with no primary key".to_string())?;
@@ -1041,7 +1041,7 @@ where
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in connection builder")?;
-    let field_map = type_.field_map();
+    let field_map = field_map(&type_);
     let alias = alias_or_name(query_field);
 
     match &type_ {
@@ -1171,7 +1171,7 @@ where
         "Encountered type without name in page info builder: {:?}",
         type_
     ))?;
-    let field_map = type_.field_map();
+    let field_map = field_map(&type_);
     let alias = alias_or_name(query_field);
 
     match type_ {
@@ -1231,7 +1231,7 @@ where
         "Encountered type without name in edge builder: {:?}",
         type_
     ))?;
-    let field_map = type_.field_map();
+    let field_map = field_map(&type_);
     let alias = alias_or_name(query_field);
 
     match type_ {
@@ -1337,7 +1337,8 @@ where
     let type_name = xtype
         .name()
         .ok_or("Encountered type without name in node builder")?;
-    let field_map = xtype.field_map();
+
+    let field_map = field_map(&__Type::Node(xtype.clone()));
 
     let mut builder_fields = vec![];
     restrict_allowed_arguments(vec!["nodeId"], query_field)?;
@@ -1809,7 +1810,7 @@ impl __Schema {
     where
         T: Text<'a> + Eq + AsRef<str>,
     {
-        let field_map = __Type::__Type(__TypeType {}).field_map();
+        let field_map = field_map(&__Type::__Type(__TypeType {}));
 
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -1992,7 +1993,7 @@ impl __Schema {
         let type_name = type_
             .name()
             .ok_or("Encountered type without name in schema builder")?;
-        let field_map = type_.field_map();
+        let field_map = field_map(&type_);
 
         match type_ {
             __Type::__Schema(_) => {

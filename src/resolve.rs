@@ -136,7 +136,7 @@ where
     use crate::graphql::*;
 
     let query_type = schema_type.query_type();
-    let map = query_type.field_map();
+    let map = field_map(&query_type);
 
     let selections = match normalize_selection_set(
         &selection_set,
@@ -321,7 +321,7 @@ where
         }
     };
 
-    let map = mutation_type.field_map();
+    let map = field_map(&mutation_type);
 
     let selections = match normalize_selection_set(
         &selection_set,

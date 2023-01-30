@@ -237,35 +237,6 @@ pub trait ___Type {
     fn of_type(&self) -> Option<__Type> {
         None
     }
-
-    fn field_map(&self) -> HashMap<String, __Field> {
-        let mut hmap = HashMap::new();
-        let fields = self.fields(true).unwrap_or_default();
-        for field in fields {
-            hmap.insert(field.name(), field);
-        }
-        hmap.insert(
-            "__typename".to_string(),
-            __Field {
-                name_: "__typename".to_string(),
-                description: None,
-                type_: __Type::Scalar(Scalar::String),
-                args: vec![],
-                deprecation_reason: None,
-                sql_type: None,
-            },
-        );
-        hmap
-    }
-
-    fn input_field_map(&self) -> HashMap<String, __InputValue> {
-        let mut hmap = HashMap::new();
-        let fields = self.input_fields().unwrap_or_default();
-        for field in fields {
-            hmap.insert(field.name(), field);
-        }
-        hmap
-    }
 }
 
 pub struct __Directive {}
@@ -451,7 +422,7 @@ impl __EnumValue {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum __Type {
     Scalar(Scalar),
     //Composite(Composite),
@@ -488,6 +459,47 @@ pub enum __Type {
     // Modifiers
     List(ListType),
     NonNull(NonNullType),
+}
+
+#[cached(
+    type = "SizedCache<u64, HashMap<String, __Field>>",
+    create = "{ SizedCache::with_size(1000) }",
+    convert = r#"{ calculate_hash(type_) }"#,
+    sync_writes = true
+)]
+pub fn field_map(type_: &__Type) -> HashMap<String, __Field> {
+    let mut hmap = HashMap::new();
+    let fields = type_.fields(true).unwrap_or_default();
+    for field in fields {
+        hmap.insert(field.name(), field);
+    }
+    hmap.insert(
+        "__typename".to_string(),
+        __Field {
+            name_: "__typename".to_string(),
+            description: None,
+            type_: __Type::Scalar(Scalar::String),
+            args: vec![],
+            deprecation_reason: None,
+            sql_type: None,
+        },
+    );
+    hmap
+}
+
+#[cached(
+    type = "SizedCache<u64, HashMap<String, __InputValue>>",
+    create = "{ SizedCache::with_size(1000) }",
+    convert = r#"{ calculate_hash(type_) }"#,
+    sync_writes = true
+)]
+pub fn input_field_map(type_: &__Type) -> HashMap<String, __InputValue> {
+    let mut hmap = HashMap::new();
+    let fields = type_.input_fields().unwrap_or_default();
+    for field in fields {
+        hmap.insert(field.name(), field);
+    }
+    hmap
 }
 
 impl ___Type for __Type {
@@ -772,7 +784,7 @@ impl __Type {
 }
 
 #[allow(clippy::upper_case_acronyms)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Scalar {
     ID,
     Int,
@@ -788,79 +800,96 @@ pub enum Scalar {
     Cursor,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __TypeKindType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __SchemaType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __TypeType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __FieldType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __InputValueType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __EnumValueType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __DirectiveLocationType;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __DirectiveType;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+/*
+ * TODO(or):
+ * - Revert schema from Arc to Rc
+ * - Update the __Type enum to be
+ *      __Type(Rc<Schema>, SomeInnerType>
+ *      for all implementations
+ *      SCRATCH THAT: Arc is needed so __Schema can be cached.
+ *
+ * - Update __Type::field() to call into a cached function
+ *
+ * - Add a pub fn cache_key(&self) to __Type
+ * so that it can be reused for all field_maps
+ *
+ * fn field_map(type_: __Type).
+ *  since the schema will be availble, at __
+ */
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ListType {
     pub type_: Box<__Type>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct NonNullType {
     pub type_: Box<__Type>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct SchemaType {
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct QueryType {
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct MutationType {
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct InsertInputType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct UpdateInputType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct InsertResponseType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct UpdateResponseType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct DeleteResponseType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ConnectionType {
     pub table: Arc<Table>,
 
@@ -872,52 +901,52 @@ pub struct ConnectionType {
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum EnumSource {
     Enum(Arc<Enum>),
     FilterIs,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EnumType {
     pub enum_: EnumSource,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct OrderByType {}
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct OrderByEntityType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum FilterableType {
     Scalar(Scalar),
     Enum(EnumType),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FilterTypeType {
     pub entity: FilterableType,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FilterEntityType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EdgeType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct NodeType {
     pub table: Arc<Table>,
 
@@ -929,12 +958,12 @@ pub struct NodeType {
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct NodeInterfaceType {
     pub schema: Arc<__Schema>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct PageInfoType;
 
 impl ___Type for QueryType {
@@ -3257,7 +3286,7 @@ pub struct GraphQLResponse {
     pub errors: Omit<Vec<ErrorMessage>>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __Schema {
     pub context: Arc<Context>,
 }
@@ -3352,10 +3381,10 @@ impl __Schema {
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::Query(QueryType {
-                schema: schema_rc.clone(),
+                schema: Arc::clone(&schema_rc),
             }),
             __Type::NodeInterface(NodeInterfaceType {
-                schema: schema_rc.clone(),
+                schema: Arc::clone(&schema_rc),
             }),
         ];
 
