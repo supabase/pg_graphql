@@ -136,7 +136,7 @@ where
     use crate::graphql::*;
 
     let query_type = schema_type.query_type();
-    let map = query_type.field_map();
+    let map = field_map(&query_type);
 
     let selections = match normalize_selection_set(
         &selection_set,
@@ -218,14 +218,12 @@ where
                             }
                         }
                         __Type::__Type(_) => {
-                            let type_map = schema_type.type_map();
                             let __type_builder = schema_type.to_type_builder(
                                 field_def,
                                 selection,
                                 &fragment_definitions,
                                 None,
                                 variables,
-                                &type_map,
                             );
 
                             match __type_builder {
@@ -323,7 +321,7 @@ where
         }
     };
 
-    let map = mutation_type.field_map();
+    let map = field_map(&mutation_type);
 
     let selections = match normalize_selection_set(
         &selection_set,
