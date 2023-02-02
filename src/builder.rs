@@ -576,6 +576,7 @@ pub enum FilterOp {
     NotEqual,
     In,
     Is,
+    StartsWith,
 }
 
 impl FromStr for FilterOp {
@@ -591,6 +592,7 @@ impl FromStr for FilterOp {
             "gte" => Ok(Self::GreaterThanEqualTo),
             "in" => Ok(Self::In),
             "is" => Ok(Self::Is),
+            "startsWith" => Ok(Self::StartsWith),
             _ => Err("Invalid filter operation".to_string()),
         }
     }

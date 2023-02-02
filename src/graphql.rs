@@ -3051,6 +3051,17 @@ impl ___Type for FilterTypeType {
                         },
                     ]),
                 };
+
+                match scalar {
+                    Scalar::String => scalar_infields.push(__InputValue {
+                        name_: "startsWith".to_string(),
+                        type_: __Type::Scalar(scalar.clone()),
+                        description: None,
+                        default_value: None,
+                        sql_type: None,
+                    }),
+                    _ => (),
+                };
                 scalar_infields
             }
             FilterableType::Enum(enum_) => {
