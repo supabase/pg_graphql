@@ -266,6 +266,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../views/" class="md-nav__link">
+        Views
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../computed_fields/" class="md-nav__link">
         Computed Fields
       </a>
@@ -351,6 +366,21 @@
     <li class="md-nav__item">
       <a href="../contributing/" class="md-nav__link">
         Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        Changelog
       </a>
     </li>
   
@@ -1061,7 +1091,22 @@
 <span class="normal">598</span>
 <span class="normal">599</span>
 <span class="normal">600</span>
-<span class="normal">601</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
   <span class="c c-Multi">&quot;&quot;&quot;Globally Unique Record Identifier&quot;&quot;&quot;</span>
   nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">Int</span><span class="p">!</span>
@@ -1291,6 +1336,11 @@
   createdAt: <span class="k">OrderByDirection</span>
 <span class="p">}</span>
 
+<span class="k">enum</span> <span class="k">FilterIs</span> <span class="p">{</span>
+  <span class="k">PENDING</span>
+  <span class="k">RELEASED</span>
+<span class="p">}</span>
+
 <span class="k">enum</span> <span class="k">BlogPostStatus</span> <span class="p">{</span>
   <span class="k">PENDING</span>
   <span class="k">RELEASED</span>
@@ -1303,6 +1353,7 @@
   eq: <span class="k">BlogPostStatus</span>
   in: <span class="p">[</span><span class="k">BlogPostStatus</span><span class="p">!]</span>
   neq: <span class="k">BlogPostStatus</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="kt">input</span> <span class="k">BlogPostUpdateInput</span> <span class="p">{</span>
@@ -1357,6 +1408,7 @@
   lt: <span class="k">BigInt</span>
   lte: <span class="k">BigInt</span>
   neq: <span class="k">BigInt</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1370,6 +1422,7 @@
   lt: <span class="k">Boolean</span>
   lte: <span class="k">Boolean</span>
   neq: <span class="k">Boolean</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">Cursor</span>
@@ -1387,6 +1440,7 @@
   lt: <span class="k">Date</span>
   lte: <span class="k">Date</span>
   neq: <span class="k">Date</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">Datetime</span>
@@ -1402,6 +1456,7 @@
   lt: <span class="k">Datetime</span>
   lte: <span class="k">Datetime</span>
   neq: <span class="k">Datetime</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1415,6 +1470,7 @@
   lt: <span class="k">Float</span>
   lte: <span class="k">Float</span>
   neq: <span class="k">Float</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="c c-Multi">&quot;&quot;&quot;</span>
@@ -1428,6 +1484,7 @@
   lt: <span class="k">Int</span>
   lte: <span class="k">Int</span>
   neq: <span class="k">Int</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">JSON</span>
@@ -1635,6 +1692,7 @@
   lt: <span class="k">String</span>
   lte: <span class="k">String</span>
   neq: <span class="k">String</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">Time</span>
@@ -1650,6 +1708,7 @@
   lt: <span class="k">Time</span>
   lte: <span class="k">Time</span>
   neq: <span class="k">Time</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">UUID</span>
@@ -1661,6 +1720,7 @@
   eq: <span class="k">UUID</span>
   in: <span class="p">[</span><span class="k">UUID</span><span class="p">!]</span>
   neq: <span class="k">UUID</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 

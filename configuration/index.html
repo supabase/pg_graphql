@@ -271,6 +271,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../views/" class="md-nav__link">
+        Views
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../computed_fields/" class="md-nav__link">
         Computed Fields
       </a>
@@ -341,6 +356,13 @@
           <li class="md-nav__item">
   <a href="#inflection" class="md-nav__link">
     Inflection
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max-rows" class="md-nav__link">
+    Max Rows
   </a>
   
 </li>
@@ -451,6 +473,21 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        Changelog
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -486,6 +523,13 @@
           <li class="md-nav__item">
   <a href="#inflection" class="md-nav__link">
     Inflection
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max-rows" class="md-nav__link">
+    Max Rows
   </a>
   
 </li>
@@ -617,6 +661,11 @@ BlogPostConnection
 ...
 </code></pre></div></td></tr></table></div></p>
 <p>For more fine grained adjustments to reflected names, see <a href="#renaming">renaming</a>.</p>
+<h3 id="max-rows">Max Rows</h3>
+<p>The default page size for collections is 30 entries. To adjust the number of entries on each page, set a <code>max_rows</code> directive on the relevant schema entity.</p>
+<p>For example, to increase the max rows per page for each table in the <code>public</code> schema:
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">schema</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;max_rows&quot;: 100})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
 <h3 id="totalcount">totalCount</h3>
 <p><code>totalCount</code> is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -776,8 +825,8 @@ for example
 <span class="p">);</span><span class="w"></span>
 
 <span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">post_owner_id_fkey</span><span class="w"></span>
-<span class="k">on</span><span class="w"> </span><span class="n">post</span><span class="w"></span>
-<span class="k">is</span><span class="w"> </span><span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;author&quot;, &quot;local_name&quot;: &quot;posts&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="ss">&quot;Post&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">is</span><span class="w"> </span><span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;author&quot;, &quot;local_name&quot;: &quot;posts&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 <p>results in:
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>

@@ -10,14 +10,14 @@
       
       
       
-        <link rel="canonical" href="https://supabase.github.io/pg_graphql/sql_interface/">
+        <link rel="canonical" href="https://supabase.github.io/pg_graphql/views/">
       
       <link rel="icon" href="../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
     
     
       
-        <title>SQL Interface - pg_graphql</title>
+        <title>Views - pg_graphql</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#graphqlresolve" class="md-skip">
+        <a href="#primary-keys-required" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SQL Interface
+              Views
             
           </span>
         </div>
@@ -239,75 +239,11 @@
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          SQL Interface
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../sql_interface/" class="md-nav__link">
         SQL Interface
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#graphqlresolve" class="md-nav__link">
-    graphql.resolve
-  </a>
-  
-    <nav class="md-nav" aria-label="graphql.resolve">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#description" class="md-nav__link">
-    description
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#signature" class="md-nav__link">
-    signature
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    usage
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -333,11 +269,55 @@
 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../views/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Views
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Views
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primary-keys-required" class="md-nav__link">
+    Primary Keys (Required)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationships" class="md-nav__link">
+    Relationships
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -472,36 +452,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#graphqlresolve" class="md-nav__link">
-    graphql.resolve
-  </a>
-  
-    <nav class="md-nav" aria-label="graphql.resolve">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#description" class="md-nav__link">
-    description
+  <a href="#primary-keys-required" class="md-nav__link">
+    Primary Keys (Required)
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#signature" class="md-nav__link">
-    signature
+      
+        <li class="md-nav__item">
+  <a href="#relationships" class="md-nav__link">
+    Relationships
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    usage
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -519,19 +479,54 @@
                 
                   
 
-  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/sql_interface.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/views.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>SQL Interface</h1>
+  <h1>Views</h1>
 
-<p>pg_graphql's public facing SQL interface consists of a single SQL function to resolve GraphQL requests. All other entities in the <code>graphql</code> schema are private.</p>
-<h3 id="graphqlresolve">graphql.resolve</h3>
-<h5 id="description">description</h5>
-<p>Resolves a GraphQL query, returning JSONB.</p>
-<h5 id="signature">signature</h5>
+<p>Views, materialized views, and foreign tables can be exposed with pg_graphql.</p>
+<h2 id="primary-keys-required">Primary Keys (Required)</h2>
+<p>A primary key is required for an entity to be reflected in the GraphQL schema. Tables can define primary keys with SQL DDL, but primary keys are not available for views, materialized views, or foreign tables. For those entities, you can set a "fake" primary key with a <a href="/pg_graphql/configuration/#comment-directives">comment directive</a>.
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="nt">&quot;primary_key_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&lt;colum</span><span class="kc">n</span><span class="err">_</span><span class="kc">na</span><span class="err">me_</span><span class="mi">1</span><span class="err">&gt;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">,</span><span class="w"> </span><span class="err">&lt;colum</span><span class="kc">n</span><span class="err">_</span><span class="kc">na</span><span class="err">me_</span><span class="kc">n</span><span class="err">&gt;</span><span class="p">]}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p>For example:</p>
+<p><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">view</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="w"> </span><span class="k">as</span><span class="w"></span>
+<span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="ss">&quot;Account&quot;</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">view</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;primary_key_columns&quot;: [&quot;id&quot;]})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+tells pg_graphql to treat <code>"Person".id</code> as the primary key for the <code>Person</code> entity resulting in the following GraphQL type:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Person</span> <span class="p">{</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  name: <span class="k">String</span><span class="p">!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Values of the primary key column/s must be unique within the table. If they are not unique, you will experience inconsistent behavior with <code>ID!</code> types, sorting, and pagination.</p>
+</div>
+<p><a href="https://www.postgresql.org/docs/current/sql-createview.html#SQL-CREATEVIEW-UPDATABLE-VIEWS">Updatable views</a> are reflected in the <code>Query</code> and <code>Mutation</code> types identically to tables. Non-updatable views are read-only and accessible via the <code>Query</code> type only.</p>
+<h2 id="relationships">Relationships</h2>
+<p>pg_graphql identifies relationships among entites by inspecting foreign keys. Views, materialized views, and foreign tables do not support foreign keys. For this reason, relationships can also be defined in <a href="/pg_graphql/configuration/#comment-directives">comment directive</a> using the structure:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -543,29 +538,21 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="c1">-- graphql query/mutation</span>
-<span class="w">    </span><span class="n">query</span><span class="w"> </span><span class="nb">text</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="c1">-- json key/values pairs for variables</span>
-<span class="w">    </span><span class="n">variables</span><span class="w"> </span><span class="n">jsonb</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="c1">-- the name of the graphql operation in *query* to execute</span>
-<span class="w">    </span><span class="ss">&quot;operationName&quot;</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="c1">-- extensions to include in the request</span>
-<span class="w">    </span><span class="n">extensions</span><span class="w"> </span><span class="n">jsonb</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="k">returns</span><span class="w"> </span><span class="n">jsonb</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">strict</span><span class="w"></span>
-<span class="w">    </span><span class="k">volatile</span><span class="w"></span>
-<span class="w">    </span><span class="n">parallel</span><span class="w"> </span><span class="n">safe</span><span class="w"></span>
-<span class="w">    </span><span class="k">language</span><span class="w"> </span><span class="n">plpgsql</span><span class="w"></span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;foreign_keys&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;local_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// optional</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;local_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;account_id&quot;</span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;foreign_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bar&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// optional</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;foriegn_schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;public&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;foriegn_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;account&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;foriegn_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
-<h5 id="usage">usage</h5>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<p>For example:</p>
+<p><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
 <span class="normal"> 4</span>
@@ -589,37 +576,93 @@
 <span class="normal">22</span>
 <span class="normal">23</span>
 <span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">-- Create the extension</span>
-<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">create</span><span class="w"> </span><span class="n">extension</span><span class="w"> </span><span class="n">pg_graphql</span><span class="p">;</span><span class="w"></span>
-<span class="k">CREATE</span><span class="w"> </span><span class="n">EXTENSION</span><span class="w"></span>
+<span class="normal">25</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="c1">-- Create an example table</span>
-<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"> </span><span class="n">title</span><span class="w"> </span><span class="nb">text</span><span class="p">);</span><span class="w"></span>
-<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;accountId&quot;</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="c1">-- note: no foreign key</span>
+<span class="w">  </span><span class="ss">&quot;isPrimary&quot;</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">address</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="c1">-- Insert a record</span>
-<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">book</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">title</span><span class="p">)</span><span class="w"> </span><span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;book 1&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="k">INSERT</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;</span>
+<span class="s1">    @graphql({</span>
+<span class="s1">        &quot;foreign_keys&quot;: [</span>
+<span class="s1">          {</span>
+<span class="s1">            &quot;local_name&quot;: &quot;addresses&quot;,</span>
+<span class="s1">            &quot;local_columns&quot;: [&quot;accountId&quot;],</span>
+<span class="s1">            &quot;foreign_name&quot;: &quot;account&quot;,</span>
+<span class="s1">            &quot;foreign_schema&quot;: &quot;public&quot;,</span>
+<span class="s1">            &quot;foreign_table&quot;: &quot;Account&quot;,</span>
+<span class="s1">            &quot;foreign_columns&quot;: [&quot;id&quot;]</span>
+<span class="s1">          }</span>
+<span class="s1">        ]</span>
+<span class="s1">    })&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+defines a relationship equivalent to the following foreign key
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">alter</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">add</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">fkey_email_address_to_account</span><span class="w"></span>
+<span class="w">  </span><span class="k">foreign</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="ss">&quot;accountId&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="w"> </span><span class="p">(</span><span class="ss">&quot;id&quot;</span><span class="p">);</span><span class="w"></span>
 
-<span class="c1">-- Query the table via GraphQL</span>
-<span class="n">graphqldb</span><span class="o">=</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="n">graphql</span><span class="p">.</span><span class="n">resolve</span><span class="p">(</span><span class="err">$$</span><span class="w"></span>
-<span class="n">query</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">  </span><span class="n">bookCollection</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">id</span><span class="w"></span>
-<span class="w">      </span><span class="err">}</span><span class="w"></span>
-<span class="w">    </span><span class="err">}</span><span class="w"></span>
-<span class="w">  </span><span class="err">}</span><span class="w"></span>
-<span class="err">}</span><span class="w"></span>
-<span class="err">$$</span><span class="p">);</span><span class="w"></span>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">fkey_email_address_to_account</span><span class="w"></span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">is</span><span class="w"> </span><span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;account&quot;, &quot;local_name&quot;: &quot;addresses&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p>yielding the GraphQL types:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="p">{</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  name: <span class="k">String</span><span class="p">!</span>
+  <span class="k">addresses</span><span class="p">(</span>
+    after: <span class="k">Cursor</span>,
+    before: <span class="k">Cursor</span>,
+    filter: <span class="k">EmailAddressFilter</span>,
+    first: <span class="k">Int</span>,
+    last: <span class="k">Int</span>,
+    orderBy: <span class="p">[</span><span class="k">EmailAddressOrderBy</span><span class="p">!]</span>
+  <span class="p">):</span> <span class="k">EmailAddressConnection</span>
+<span class="p">}</span>
 
-<span class="w">             </span><span class="n">resolve</span><span class="w"></span>
-<span class="c1">----------------------------------------------------------------------</span>
-<span class="err">{</span><span class="ss">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="ss">&quot;bookCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="ss">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">{</span><span class="ss">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="ss">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="err">}}</span><span class="p">]</span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="err">}</span><span class="w"></span>
+<span class="kt">type</span> <span class="k">EmailAddress</span> <span class="p">{</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+  isPrimary: <span class="k">Boolean</span><span class="p">!</span>
+  address: <span class="k">String</span><span class="p">!</span>
+  accountId: <span class="k">Int</span><span class="p">!</span>
+  account: <span class="k">Account</span><span class="p">!</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 
 
@@ -641,7 +684,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quickstart" rel="prev">
+        <a href="../api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -650,20 +693,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Quickstart
+              API
             </div>
           </div>
         </a>
       
       
         
-        <a href="../api/" class="md-footer__link md-footer__link--next" aria-label="Next: API" rel="next">
+        <a href="../computed_fields/" class="md-footer__link md-footer__link--next" aria-label="Next: Computed Fields" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              API
+              Computed Fields
             </div>
           </div>
           <div class="md-footer__button md-icon">
