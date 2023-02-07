@@ -42,7 +42,7 @@ select
                                         jsonb_build_object(
                                             'oid', pe.oid::int,
                                             'name', pe.enumlabel,
-                                            'sort_order', pe.enumsortorder
+                                            'sort_order', (pe.enumsortorder * 100000)::int
                                         )
                                         order by pe.enumsortorder asc
                                     )
