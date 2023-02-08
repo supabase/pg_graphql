@@ -91,5 +91,4 @@ begin;
  {"data": {"memoCollection": {"edges": [{"node": {"id": 1}}]}}}
 (1 row)
 
-    
 rollback;
