@@ -25,6 +25,7 @@ pub struct Column {
     pub name: String,
     pub type_oid: u32,
     pub type_name: String,
+    pub max_characters: Option<i32>,
     pub schema_oid: u32,
     pub is_not_null: bool,
     pub is_serial: bool,
