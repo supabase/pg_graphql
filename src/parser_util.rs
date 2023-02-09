@@ -183,7 +183,6 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                     }
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
-                // TODO(or): add max length validation check
                 Scalar::Int => match value {
                     GsonValue::Absent => value.clone(),
                     GsonValue::Null => value.clone(),
