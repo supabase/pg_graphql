@@ -478,7 +478,7 @@ pub fn field_map(type_: &__Type) -> HashMap<String, __Field> {
         __Field {
             name_: "__typename".to_string(),
             description: None,
-            type_: __Type::Scalar(Scalar::String),
+            type_: __Type::Scalar(Scalar::String(None)),
             args: vec![],
             deprecation_reason: None,
             sql_type: None,
@@ -789,7 +789,10 @@ pub enum Scalar {
     ID,
     Int,
     Float,
-    String,
+    // The Option<u32> is an optional typmod for character length
+    // to support e.g. char(2) and varchar(255) during input validation
+    // It is not exposed in the GraphQL schema
+    String(Option<i32>),
     Boolean,
     Date,
     Time,
@@ -1098,7 +1101,7 @@ impl ___Type for QueryType {
                 type_: __Type::__Type(__TypeType),
                 args: vec![__InputValue {
                     name_: "name".to_string(),
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     description: None,
                     default_value: None,
                     sql_type: None,
@@ -1280,7 +1283,23 @@ impl ___Type for Scalar {
     }
 
     fn name(&self) -> Option<String> {
-        Some(format!("{:?}", self))
+        Some(
+            match self {
+                Self::ID => "ID",
+                Self::Int => "Int",
+                Self::Float => "Float",
+                Self::String(_) => "String",
+                Self::Boolean => "Boolean",
+                Self::Datetime => "Datetime",
+                Self::Date => "Date",
+                Self::Time => "Time",
+                Self::BigInt => "BigInt",
+                Self::UUID => "UUID",
+                Self::JSON => "JSON",
+                Self::Cursor => "Cursor",
+            }
+            .to_string(),
+        )
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -1464,7 +1483,7 @@ impl ___Type for EdgeType {
             __Field {
                 name_: "cursor".to_string(),
                 type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::Scalar(Scalar::String)),
+                    type_: Box::new(__Type::Scalar(Scalar::String(None))),
                 }),
                 args: vec![],
                 description: None,
@@ -1490,69 +1509,80 @@ impl ___Type for EdgeType {
     }
 }
 
-pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Arc<__Schema>) -> __Type {
+pub fn sql_type_to_graphql_type(
+    type_oid: u32,
+    type_name: &str,
+    max_characters: Option<i32>,
+    schema: &Arc<__Schema>,
+) -> __Type {
     let mut type_w_list_mod = match type_oid {
-        20 => __Type::Scalar(Scalar::BigInt),     // bigint "
-        16 => __Type::Scalar(Scalar::Boolean),    // boolean "
-        1082 => __Type::Scalar(Scalar::Date),     // date "
-        1184 => __Type::Scalar(Scalar::Datetime), // timestamp with time zone "
-        1114 => __Type::Scalar(Scalar::Datetime), // timestamp without time zone "
-        701 => __Type::Scalar(Scalar::Float),     // double precision "
-        23 => __Type::Scalar(Scalar::Int),        // integer "
-        21 => __Type::Scalar(Scalar::Int),        // smallint "
-        700 => __Type::Scalar(Scalar::Float),     // real "
-        3802 => __Type::Scalar(Scalar::JSON),     // jsonb "
-        114 => __Type::Scalar(Scalar::JSON),      // json "
-        1083 => __Type::Scalar(Scalar::Time),     // time without time zone "
-        2950 => __Type::Scalar(Scalar::UUID),     // uuid "
-        25 => __Type::Scalar(Scalar::String),     // text "
+        20 => __Type::Scalar(Scalar::BigInt),       // bigint
+        16 => __Type::Scalar(Scalar::Boolean),      // boolean
+        1082 => __Type::Scalar(Scalar::Date),       // date
+        1184 => __Type::Scalar(Scalar::Datetime),   // timestamp with time zone
+        1114 => __Type::Scalar(Scalar::Datetime),   // timestamp without time zone
+        701 => __Type::Scalar(Scalar::Float),       // double precision
+        23 => __Type::Scalar(Scalar::Int),          // integer
+        21 => __Type::Scalar(Scalar::Int),          // smallint
+        700 => __Type::Scalar(Scalar::Float),       // real
+        3802 => __Type::Scalar(Scalar::JSON),       // jsonb
+        114 => __Type::Scalar(Scalar::JSON),        // json
+        1083 => __Type::Scalar(Scalar::Time),       // time without time zone
+        2950 => __Type::Scalar(Scalar::UUID),       // uuid
+        25 => __Type::Scalar(Scalar::String(None)), // text
+        // char, bpchar, varchar
+        18 | 1042 | 1043 => __Type::Scalar(Scalar::String(max_characters)),
         1009 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::String)),
-        }), // text[] "
+            type_: Box::new(__Type::Scalar(Scalar::String(None))),
+        }), // text[]
         1016 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::BigInt)),
-        }), // bigint[] "
+        }), // bigint[]
         1000 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Boolean)),
-        }), // boolean[] "
+        }), // boolean[]
         1182 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Date)),
-        }), // date[] "
+        }), // date[]
         1115 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Datetime)),
-        }), // timestamp without time zone[] "
+        }), // timestamp without time zone[]
         1185 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Datetime)),
-        }), // timestamp with time zone[] "
+        }), // timestamp with time zone[]
         1022 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Float)),
-        }), // double precision[] "
+        }), // double precision[]
         1021 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Float)),
-        }), // real[] "
+        }), // real[]
         1005 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Int)),
-        }), // smallint[] "
+        }), // smallint[]
         1007 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Int)),
-        }), // integer[] "
+        }), // integer[]
         199 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::JSON)),
-        }), // json[] "
+        }), // json[]
         3807 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::JSON)),
-        }), // jsonb[] "
+        }), // jsonb[]
         1183 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::Time)),
-        }), // time without time zone[] "
+        }), // time without time zone[]
         2951 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::UUID)),
-        }), // uuid[] "
+        }), // uuid[]
+        // char[], bpchar[], varchar[]
+        1002 | 1014 | 1015 => __Type::List(ListType {
+            type_: Box::new(__Type::Scalar(Scalar::String(max_characters))),
+        }), // char[] or char(n)[]
         _ => match type_name.ends_with("[]") {
             true => __Type::List(ListType {
-                type_: Box::new(__Type::Scalar(Scalar::String)),
+                type_: Box::new(__Type::Scalar(Scalar::String(None))),
             }),
-            false => __Type::Scalar(Scalar::String),
+            false => __Type::Scalar(Scalar::String(None)),
         },
     };
 
@@ -1593,7 +1623,12 @@ pub fn sql_type_to_graphql_type(type_oid: u32, type_name: &str, schema: &Arc<__S
 }
 
 pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> __Type {
-    let type_w_list_mod = sql_type_to_graphql_type(col.type_oid, col.type_name.as_str(), schema);
+    let type_w_list_mod = sql_type_to_graphql_type(
+        col.type_oid,
+        col.type_name.as_str(),
+        col.max_characters,
+        schema,
+    );
 
     match col.is_not_null {
         true => __Type::NonNull(NonNullType {
@@ -1682,6 +1717,7 @@ impl ___Type for NodeType {
                     type_: sql_type_to_graphql_type(
                         func.type_oid,
                         func.type_name.as_str(),
+                        None,
                         &self.schema,
                     ),
                     args: vec![],
@@ -1888,7 +1924,7 @@ impl ___Type for PageInfoType {
         Some(vec![
             __Field {
                 name_: "endCursor".to_string(),
-                type_: __Type::Scalar(Scalar::String),
+                type_: __Type::Scalar(Scalar::String(None)),
                 args: vec![],
                 description: None,
                 deprecation_reason: None,
@@ -1916,7 +1952,7 @@ impl ___Type for PageInfoType {
             },
             __Field {
                 name_: "startCursor".to_string(),
-                type_: __Type::Scalar(Scalar::String),
+                type_: __Type::Scalar(Scalar::String(None)),
                 args: vec![],
                 description: None,
                 deprecation_reason: None,
@@ -2191,7 +2227,7 @@ impl ___Type for __SchemaType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "description".to_string(),
                     args: vec![],
                     description: None,
@@ -2228,7 +2264,7 @@ impl ___Type for __InputValueType {
             vec![
                 __Field {
                     type_: __Type::NonNull(NonNullType {
-                        type_: Box::new(__Type::Scalar(Scalar::String)),
+                        type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
                     name_: "name".to_string(),
                     args: vec![],
@@ -2237,7 +2273,7 @@ impl ___Type for __InputValueType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "description".to_string(),
                     args: vec![],
                     description: None,
@@ -2255,7 +2291,7 @@ impl ___Type for __InputValueType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "defaultValue".to_string(),
                     args: vec![],
                     description: Some("A GraphQL-formatted string representing the default value for this input value.".to_string()),
@@ -2273,7 +2309,7 @@ impl ___Type for __InputValueType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "deprecationReason".to_string(),
                     args: vec![],
                     description: None,
@@ -2305,7 +2341,7 @@ impl ___Type for __TypeType {
         Some(
             vec![
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "name".to_string(),
                     args: vec![],
                     description: None,
@@ -2313,7 +2349,7 @@ impl ___Type for __TypeType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "description".to_string(),
                     args: vec![],
                     description: None,
@@ -2419,7 +2455,7 @@ impl ___Type for __TypeType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "specifiedByURL".to_string(),
                     args: vec![],
                     description: None,
@@ -2452,7 +2488,7 @@ impl ___Type for __FieldType {
             vec![
                 __Field {
                     type_: __Type::NonNull(NonNullType {
-                        type_: Box::new(__Type::Scalar(Scalar::String)),
+                        type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
                     name_: "name".to_string(),
                     args: vec![],
@@ -2461,7 +2497,7 @@ impl ___Type for __FieldType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "description".to_string(),
                     args: vec![],
                     description: None,
@@ -2509,7 +2545,7 @@ impl ___Type for __FieldType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "deprecationReason".to_string(),
                     args: vec![],
                     description: None,
@@ -2542,7 +2578,7 @@ impl ___Type for __EnumValueType {
             vec![
                 __Field {
                     type_: __Type::NonNull(NonNullType {
-                        type_: Box::new(__Type::Scalar(Scalar::String)),
+                        type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
                     name_: "name".to_string(),
                     args: vec![],
@@ -2551,7 +2587,7 @@ impl ___Type for __EnumValueType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "description".to_string(),
                     args: vec![],
                     description: None,
@@ -2569,7 +2605,7 @@ impl ___Type for __EnumValueType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "deprecationReason".to_string(),
                     args: vec![],
                     description: None,
@@ -2602,7 +2638,7 @@ impl ___Type for __DirectiveType {
             vec![
                 __Field {
                     type_: __Type::NonNull(NonNullType {
-                        type_: Box::new(__Type::Scalar(Scalar::String)),
+                        type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
                     name_: "name".to_string(),
                     args: vec![],
@@ -2611,7 +2647,7 @@ impl ___Type for __DirectiveType {
                     sql_type: None,
                 },
                 __Field {
-                    type_: __Type::Scalar(Scalar::String),
+                    type_: __Type::Scalar(Scalar::String(None)),
                     name_: "description".to_string(),
                     args: vec![],
                     description: None,
@@ -3326,7 +3362,7 @@ impl __Schema {
             __Type::Scalar(Scalar::ID),
             __Type::Scalar(Scalar::Int),
             __Type::Scalar(Scalar::Float),
-            __Type::Scalar(Scalar::String),
+            __Type::Scalar(Scalar::String(None)),
             __Type::Scalar(Scalar::Boolean),
             __Type::Scalar(Scalar::Date),
             __Type::Scalar(Scalar::Time),
@@ -3353,7 +3389,7 @@ impl __Schema {
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
-                entity: FilterableType::Scalar(Scalar::String),
+                entity: FilterableType::Scalar(Scalar::String(None)),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
