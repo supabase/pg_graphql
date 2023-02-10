@@ -801,6 +801,11 @@ pub enum Scalar {
     UUID,
     JSON,
     Cursor,
+    BigFloat,
+    // Unknown or unhandled types.
+    // There is no guarentee how they will be serialized
+    // and they can't be filtered or ordered
+    Opaque,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -1297,6 +1302,32 @@ impl ___Type for Scalar {
                 Self::UUID => "UUID",
                 Self::JSON => "JSON",
                 Self::Cursor => "Cursor",
+                Self::BigFloat => "BigFloat",
+                Self::Opaque => "Opaque",
+            }
+            .to_string(),
+        )
+    }
+
+    fn description(&self) -> Option<String> {
+        Some(
+            match self {
+                Self::ID => "A globally unique identifier for a given record",
+                Self::Int => "A scalar integer up to 32 bits",
+                Self::Float => "A scalar floating point value up to 32 bits",
+                Self::String(_) => "A string",
+                Self::Boolean => "A value that is true or false",
+                Self::BigInt => "An arbitrary size integer represented as a string",
+                Self::Date => "A date wihout time information",
+                Self::Time => "A time without date information",
+                Self::Datetime => "A date and time",
+                Self::UUID => "A universally unique identifier",
+                Self::JSON => "A Javascript Object Notation value serialized as a string",
+                Self::Cursor => {
+                    "An opaque string using for tracking a position in results during pagination"
+                }
+                Self::BigFloat => "A high precision floating point value represented as a string",
+                Self::Opaque => "Any type not handled by the type system",
             }
             .to_string(),
         )
@@ -1529,6 +1560,7 @@ pub fn sql_type_to_graphql_type(
         114 => __Type::Scalar(Scalar::JSON),        // json
         1083 => __Type::Scalar(Scalar::Time),       // time without time zone
         2950 => __Type::Scalar(Scalar::UUID),       // uuid
+        1700 => __Type::Scalar(Scalar::BigFloat),   // numeric
         25 => __Type::Scalar(Scalar::String(None)), // text
         // char, bpchar, varchar
         18 | 1042 | 1043 => __Type::Scalar(Scalar::String(max_characters)),
@@ -1574,15 +1606,18 @@ pub fn sql_type_to_graphql_type(
         2951 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::UUID)),
         }), // uuid[]
+        1231 => __Type::List(ListType {
+            type_: Box::new(__Type::Scalar(Scalar::BigFloat)),
+        }), // numeric[]
         // char[], bpchar[], varchar[]
         1002 | 1014 | 1015 => __Type::List(ListType {
             type_: Box::new(__Type::Scalar(Scalar::String(max_characters))),
         }), // char[] or char(n)[]
         _ => match type_name.ends_with("[]") {
             true => __Type::List(ListType {
-                type_: Box::new(__Type::Scalar(Scalar::String(None))),
+                type_: Box::new(__Type::Scalar(Scalar::Opaque)),
             }),
-            false => __Type::Scalar(Scalar::String(None)),
+            false => __Type::Scalar(Scalar::Opaque),
         },
     };
 
@@ -2955,6 +2990,55 @@ impl ___Type for DeleteResponseType {
     }
 }
 
+use std::str::FromStr;
+use std::string::ToString;
+
+#[derive(Clone, Debug)]
+pub enum FilterOp {
+    Equal,
+    NotEqual,
+    LessThan,
+    LessThanEqualTo,
+    GreaterThan,
+    GreaterThanEqualTo,
+    In,
+    Is,
+}
+
+impl ToString for FilterOp {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Equal => "eq",
+            Self::NotEqual => "neq",
+            Self::LessThan => "lt",
+            Self::LessThanEqualTo => "lte",
+            Self::GreaterThan => "gt",
+            Self::GreaterThanEqualTo => "gte",
+            Self::In => "in",
+            Self::Is => "is",
+        }
+        .to_string()
+    }
+}
+
+impl FromStr for FilterOp {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "eq" => Ok(Self::Equal),
+            "neq" => Ok(Self::NotEqual),
+            "lt" => Ok(Self::LessThan),
+            "lte" => Ok(Self::LessThanEqualTo),
+            "gt" => Ok(Self::GreaterThan),
+            "gte" => Ok(Self::GreaterThanEqualTo),
+            "in" => Ok(Self::In),
+            "is" => Ok(Self::Is),
+            _ => Err("Invalid filter operation".to_string()),
+        }
+    }
+}
+
 impl ___Type for FilterTypeType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::INPUT_OBJECT
@@ -2984,59 +3068,120 @@ impl ___Type for FilterTypeType {
     fn input_fields(&self) -> Option<Vec<__InputValue>> {
         let mut infields: Vec<__InputValue> = match &self.entity {
             FilterableType::Scalar(scalar) => {
-                let mut scalar_infields = vec![__InputValue {
-                    name_: "eq".to_string(),
-                    type_: __Type::Scalar(scalar.clone()),
-                    description: None,
-                    default_value: None,
-                    sql_type: None,
-                }];
-
-                match scalar {
+                let supported_ops = match scalar {
                     // IDFilter only supports equality
-                    Scalar::ID => (),
+                    Scalar::ID => vec![FilterOp::Equal],
                     // UUIDs are not ordered
                     Scalar::UUID => {
-                        scalar_infields.extend(vec![
-                            __InputValue {
-                                name_: "neq".to_string(),
-                                type_: __Type::Scalar(scalar.clone()),
-                                description: None,
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "in".to_string(),
-                                type_: __Type::List(ListType {
-                                    type_: Box::new(__Type::NonNull(NonNullType {
-                                        type_: Box::new(__Type::Scalar(scalar.clone())),
-                                    })),
-                                }),
-                                description: None,
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "is".to_string(),
-                                type_: __Type::Enum(EnumType {
-                                    enum_: EnumSource::FilterIs,
-                                    schema: Arc::clone(&self.schema),
-                                }),
-                                description: None,
-                                default_value: None,
-                                sql_type: None,
-                            },
-                        ]);
+                        vec![
+                            FilterOp::Equal,
+                            FilterOp::NotEqual,
+                            FilterOp::In,
+                            FilterOp::Is,
+                        ]
                     }
-                    _ => scalar_infields.extend(vec![
-                        __InputValue {
-                            name_: "neq".to_string(),
+                    Scalar::Boolean => vec![FilterOp::Equal, FilterOp::Is],
+                    Scalar::Int => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::Float => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::String(_) => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::BigInt => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::Date => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::Time => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::Datetime => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::BigFloat => vec![
+                        FilterOp::Equal,
+                        FilterOp::NotEqual,
+                        FilterOp::LessThan,
+                        FilterOp::LessThanEqualTo,
+                        FilterOp::GreaterThan,
+                        FilterOp::GreaterThanEqualTo,
+                        FilterOp::In,
+                        FilterOp::Is,
+                    ],
+                    Scalar::Opaque => vec![FilterOp::Equal],
+                    Scalar::JSON => vec![],   // unreachable, not in schema
+                    Scalar::Cursor => vec![], // unreachable, not in schema
+                };
+
+                supported_ops
+                    .iter()
+                    .map(|op| match op {
+                        FilterOp::Equal
+                        | FilterOp::NotEqual
+                        | FilterOp::GreaterThan
+                        | FilterOp::GreaterThanEqualTo
+                        | FilterOp::LessThan
+                        | FilterOp::LessThanEqualTo => __InputValue {
+                            name_: op.to_string(),
                             type_: __Type::Scalar(scalar.clone()),
                             description: None,
                             default_value: None,
                             sql_type: None,
                         },
-                        __InputValue {
+                        FilterOp::In => __InputValue {
                             name_: "in".to_string(),
                             type_: __Type::List(ListType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
@@ -3047,35 +3192,7 @@ impl ___Type for FilterTypeType {
                             default_value: None,
                             sql_type: None,
                         },
-                        __InputValue {
-                            name_: "gt".to_string(),
-                            type_: __Type::Scalar(scalar.clone()),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "gte".to_string(),
-                            type_: __Type::Scalar(scalar.clone()),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "lt".to_string(),
-                            type_: __Type::Scalar(scalar.clone()),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "lte".to_string(),
-                            type_: __Type::Scalar(scalar.clone()),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
+                        FilterOp::Is => __InputValue {
                             name_: "is".to_string(),
                             type_: __Type::Enum(EnumType {
                                 enum_: EnumSource::FilterIs,
@@ -3085,9 +3202,8 @@ impl ___Type for FilterTypeType {
                             default_value: None,
                             sql_type: None,
                         },
-                    ]),
-                };
-                scalar_infields
+                    })
+                    .collect()
             }
             FilterableType::Enum(enum_) => {
                 vec![
@@ -3371,6 +3487,8 @@ impl __Schema {
             __Type::Scalar(Scalar::UUID),
             __Type::Scalar(Scalar::JSON),
             __Type::Scalar(Scalar::Cursor),
+            __Type::Scalar(Scalar::BigFloat),
+            __Type::Scalar(Scalar::Opaque),
             __Type::Enum(EnumType {
                 enum_: EnumSource::FilterIs,
                 schema: Arc::clone(&schema_rc),
@@ -3414,6 +3532,14 @@ impl __Schema {
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::UUID),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::Scalar(Scalar::BigFloat),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::Scalar(Scalar::Opaque),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::Query(QueryType {

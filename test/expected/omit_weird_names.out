@@ -19,6 +19,12 @@ begin;
          "__schema": {                            +
              "types": [                           +
                  {                                +
+                     "name": "BigFloat"           +
+                 },                               +
+                 {                                +
+                     "name": "BigFloatFilter"     +
+                 },                               +
+                 {                                +
                      "name": "BigInt"             +
                  },                               +
                  {                                +
@@ -71,6 +77,12 @@ begin;
                  },                               +
                  {                                +
                      "name": "Node"               +
+                 },                               +
+                 {                                +
+                     "name": "Opaque"             +
+                 },                               +
+                 {                                +
+                     "name": "OpaqueFilter"       +
                  },                               +
                  {                                +
                      "name": "OrderByDirection"   +
