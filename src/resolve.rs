@@ -256,6 +256,7 @@ where
                             "heartbeat" => {
                                 let now_jsonb: pgx::JsonB =
                                     pgx::Spi::get_one("select to_jsonb(now())")
+                                        .expect("Internal error: queries should not fail")
                                         .expect("Internal Error: queries should not return null");
                                 let now_json = now_jsonb.0;
                                 res_data[alias_or_name(selection)] = now_json;
@@ -436,12 +437,8 @@ where
             Ok(res_data)
         });
 
-        // Spi::connect requires a Result<Option<_>, SpiError>
-        // and unwraps the outer result type, panic-ing if it finds an SpiError.
-        // to return our own result, we must wrap it in an Result<Option<T>>
-        Ok(Some(sub_txn_result))
-    })
-    .unwrap();
+        sub_txn_result
+    });
 
     match spi_result {
         Ok(data) => GraphQLResponse {

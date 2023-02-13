@@ -13,7 +13,7 @@ pg15 = ["pgx/pg15", "pgx-tests/pg15"]
 pg_test = []
 
 [dependencies]
-pgx = "~0.6.1"
+pgx = "~0.7.1"
 graphql-parser = "0.4"
 serde = { version = "1.0", features = ["rc"] }
 serde_json = "1.0"
@@ -24,10 +24,10 @@ uuid = "1"
 regex = "1"
 base64 = "0.13"
 lazy_static = "1"
-pgx-contrib-spiext = { git = "https://github.com/supabase/pgx-contrib-spiext", rev = "153ad2db8bb8634332ad36ffc66dcb017353bf93" }
+pgx-contrib-spiext = { git = "https://github.com/supabase/pgx-contrib-spiext", rev = "a346053" }
 
 [dev-dependencies]
-pgx-tests = "~0.6.1"
+pgx-tests = "~0.7.1"
 
 [profile.dev]
 panic = "unwind"

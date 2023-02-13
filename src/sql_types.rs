@@ -480,7 +480,7 @@ impl Context {
 
 pub fn load_sql_config() -> Config {
     let query = include_str!("../sql/load_sql_config.sql");
-    let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().0;
+    let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let config: Config = serde_json::from_value(sql_result).unwrap();
     config
 }
@@ -503,7 +503,7 @@ pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
 pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
-    let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().0;
+    let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
     context.map(Arc::new).map_err(|e| {
         format!(
