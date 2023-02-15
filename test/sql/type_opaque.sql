@@ -50,4 +50,20 @@ begin;
         $$)
     );
 
+    -- Filter: should work
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              deviceCollection(filter: {val: {is: NOT_NULL}}) {
+                edges {
+                  node {
+                    id
+                    val
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
 rollback;

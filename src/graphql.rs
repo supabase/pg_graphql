@@ -3161,7 +3161,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::In,
                         FilterOp::Is,
                     ],
-                    Scalar::Opaque => vec![FilterOp::Equal],
+                    Scalar::Opaque => vec![FilterOp::Equal, FilterOp::Is],
                     Scalar::JSON => vec![],   // unreachable, not in schema
                     Scalar::Cursor => vec![], // unreachable, not in schema
                 };

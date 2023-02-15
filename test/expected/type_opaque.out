@@ -74,4 +74,37 @@ begin;
  }
 (1 row)
 
+    -- Filter: should work
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              deviceCollection(filter: {val: {is: NOT_NULL}}) {
+                edges {
+                  node {
+                    id
+                    val
+                  }
+                }
+              }
+            }
+        $$)
+    );
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "deviceCollection": {           +
+             "edges": [                  +
+                 {                       +
+                     "node": {           +
+                         "id": 1,        +
+                         "val": "1.1.1.1"+
+                     }                   +
+                 }                       +
+             ]                           +
+         }                               +
+     }                                   +
+ }
+(1 row)
+
 rollback;
