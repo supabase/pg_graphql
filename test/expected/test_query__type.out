@@ -1,8 +1,8 @@
 select graphql.resolve(
     query:='query Abc { __type(name: "Int") { name kind description } }'
 );
-                                   resolve                                    
-------------------------------------------------------------------------------
- {"data": {"__type": {"kind": "SCALAR", "name": "Int", "description": null}}}
+                                                 resolve                                                  
+----------------------------------------------------------------------------------------------------------
+ {"data": {"__type": {"kind": "SCALAR", "name": "Int", "description": "A scalar integer up to 32 bits"}}}
 (1 row)
 

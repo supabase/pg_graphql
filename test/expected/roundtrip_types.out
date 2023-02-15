@@ -475,7 +475,7 @@ begin;
                      "name": "typeNumeric",     +
                      "type": {                  +
                          "kind": "SCALAR",      +
-                         "name": "String",      +
+                         "name": "BigFloat",    +
                          "ofType": null         +
                      }                          +
                  },                             +
@@ -535,7 +535,7 @@ begin;
                          "name": null,          +
                          "ofType": {            +
                              "kind": "SCALAR",  +
-                             "name": "String"   +
+                             "name": "BigFloat" +
                          }                      +
                      }                          +
                  }                              +
@@ -665,7 +665,7 @@ begin;
                      "name": "typeNumeric",       +
                      "type": {                    +
                          "kind": "INPUT_OBJECT",  +
-                         "name": "StringFilter",  +
+                         "name": "BigFloatFilter",+
                          "ofType": null           +
                      }                            +
                  },                               +

@@ -567,36 +567,6 @@ pub struct ConnectionBuilder {
 }
 
 #[derive(Clone, Debug)]
-pub enum FilterOp {
-    GreaterThan,
-    GreaterThanEqualTo,
-    LessThan,
-    LessThanEqualTo,
-    Equal,
-    NotEqual,
-    In,
-    Is,
-}
-
-impl FromStr for FilterOp {
-    type Err = String;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input {
-            "eq" => Ok(Self::Equal),
-            "neq" => Ok(Self::NotEqual),
-            "lt" => Ok(Self::LessThan),
-            "lte" => Ok(Self::LessThanEqualTo),
-            "gt" => Ok(Self::GreaterThan),
-            "gte" => Ok(Self::GreaterThanEqualTo),
-            "in" => Ok(Self::In),
-            "is" => Ok(Self::Is),
-            _ => Err("Invalid filter operation".to_string()),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
 pub enum FilterBuilderElem {
     Column {
         column: Arc<Column>,

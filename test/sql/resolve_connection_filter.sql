@@ -137,10 +137,6 @@ begin;
     select graphql.resolve($${accountCollection(filter: {id: {in: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- in - bool
-    select graphql.resolve($${accountCollection(filter: {isVerified: {in: [false]}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
     -- in - text
     select graphql.resolve($${accountCollection(filter: {name: {in: ["foo", "bar"]}}) { edges { node { id } } }}$$);
     rollback to savepoint a;

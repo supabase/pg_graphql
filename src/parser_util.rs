@@ -258,6 +258,17 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
+                Scalar::BigFloat => match value {
+                    GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
+                    _ => {
+                        return Err(format!(
+                            "Invalid input for {:?} type. String required",
+                            scalar
+                        ))
+                    }
+                },
+                // No validation possible for unknown types. Lean on postgres for parsing
+                Scalar::Opaque => value.clone(),
             }
         }
         __Type::Enum(enum_) => match value {
