@@ -2,7 +2,9 @@ use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table};
 use pgx::pg_sys::submodules::panic::CaughtError;
+use pgx::pg_sys::PgBuiltInOids;
 use pgx::prelude::*;
+use pgx::spi::SpiClient;
 use pgx::*;
 use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -40,8 +42,8 @@ pub trait MutationEntrypoint<'conn> {
 
     fn execute(
         &self,
-        xact: SubTransaction<Box<SpiClient<'conn>>>,
-    ) -> Result<(serde_json::Value, SubTransaction<Box<SpiClient<'conn>>>), String> {
+        xact: SubTransaction<SpiClient<'conn>>,
+    ) -> Result<(serde_json::Value, SubTransaction<SpiClient<'conn>>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
@@ -55,13 +57,16 @@ pub trait MutationEntrypoint<'conn> {
         let (res_q, next_xact) = xact
             .checked_update(sql, None, Some(param_context.params))
             .map_err(|err| match err {
-                CaughtError::PostgresError(error) => error.message().to_string(),
+                CheckedError::CaughtError(CaughtError::PostgresError(error)) => {
+                    error.message().to_string()
+                }
                 _ => "Internal Error: Failed to execute transpiled query".to_string(),
             })?;
 
-        let res: pgx::JsonB = match res_q.first().get_datum::<pgx::JsonB>(1) {
-            Some(dat) => dat,
-            None => {
+        let res: pgx::JsonB = match res_q.first().get::<JsonB>(1) {
+            Ok(Some(dat)) => dat,
+            Ok(None) => JsonB(serde_json::Value::Null),
+            Err(_) => {
                 next_xact.rollback();
                 return Err(
                     "Internal Error: Failed to load result from transpiled query".to_string(),
@@ -86,23 +91,29 @@ pub trait QueryEntrypoint {
             }
         };
 
-        let spi_result: Option<Result<Option<pgx::JsonB>, CaughtError>> = Spi::connect(|c| {
+        let spi_result: Result<Option<pgx::JsonB>, CheckedError> = Spi::connect(|c| {
             //Create subtransaction
-            let sub_txn_result: Result<Option<pgx::JsonB>, CaughtError> =
+            let sub_txn_result: Result<Option<pgx::JsonB>, CheckedError> =
                 c.sub_transaction(|xact| {
-                    let (val, _) = xact.checked_select(sql, Some(1), Some(param_context.params))?;
+                    let (val, _xact) =
+                        xact.checked_select(sql, Some(1), Some(param_context.params))?;
                     // Get a value from the query
-                    let out_val: Option<pgx::JsonB> = val.first().get_datum::<pgx::JsonB>(1);
-                    Ok(out_val)
+                    if val.len() == 0 {
+                        Ok(None)
+                    } else {
+                        val.first()
+                            .get::<pgx::JsonB>(1)
+                            .map_err(|e| CheckedError::SpiError(e))
+                    }
                 });
 
             // Return that value from the closure
-            Ok(Some(sub_txn_result))
+            sub_txn_result
         });
 
         match spi_result {
-            Some(Ok(Some(jsonb))) => Ok(jsonb.0),
-            Some(Ok(None)) => Ok(serde_json::Value::Null),
+            Ok(Some(jsonb)) => Ok(jsonb.0),
+            Ok(None) => Ok(serde_json::Value::Null),
             _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
         }
     }
@@ -616,8 +627,8 @@ impl ParamContext {
         type_name: &String,
     ) -> Result<String, String> {
         let type_oid = match type_name.ends_with("[]") {
-            true => PgOid::from(1009), // text[]
-            false => PgOid::from(25),  // text
+            true => PgOid::BuiltIn(PgBuiltInOids::TEXTARRAYOID),
+            false => PgOid::BuiltIn(PgBuiltInOids::TEXTOID),
         };
 
         let val_datum = json_to_text_datum(value)?;

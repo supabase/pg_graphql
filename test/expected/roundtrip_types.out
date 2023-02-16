@@ -36,7 +36,7 @@ begin;
                     typeText: "1a"
                     typeVarchar: "1a"
                     typeVarchar_n: "1a"
-                    typeChar: "1a"
+                    typeChar: "1"
                     typeUuid: "d4f47ef5-fb25-4d2a-83b2-d5fab114a2e6"
                     typeDate: "1900-01-01"
                     typeTime: "18:23"
@@ -475,7 +475,7 @@ begin;
                      "name": "typeNumeric",     +
                      "type": {                  +
                          "kind": "SCALAR",      +
-                         "name": "String",      +
+                         "name": "BigFloat",    +
                          "ofType": null         +
                      }                          +
                  },                             +
@@ -535,7 +535,7 @@ begin;
                          "name": null,          +
                          "ofType": {            +
                              "kind": "SCALAR",  +
-                             "name": "String"   +
+                             "name": "BigFloat" +
                          }                      +
                      }                          +
                  }                              +
@@ -665,7 +665,7 @@ begin;
                      "name": "typeNumeric",       +
                      "type": {                    +
                          "kind": "INPUT_OBJECT",  +
-                         "name": "StringFilter",  +
+                         "name": "BigFloatFilter",+
                          "ofType": null           +
                      }                            +
                  },                               +

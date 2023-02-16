@@ -95,6 +95,14 @@ begin;
                  },                                  +
                  {                                   +
                      "kind": "SCALAR",               +
+                     "name": "BigFloat"              +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "BigFloatFilter"        +
+                 },                                  +
+                 {                                   +
+                     "kind": "SCALAR",               +
                      "name": "BigInt"                +
                  },                                  +
                  {                                   +
@@ -260,6 +268,14 @@ begin;
                  {                                   +
                      "kind": "INTERFACE",            +
                      "name": "Node"                  +
+                 },                                  +
+                 {                                   +
+                     "kind": "SCALAR",               +
+                     "name": "Opaque"                +
+                 },                                  +
+                 {                                   +
+                     "kind": "INPUT_OBJECT",         +
+                     "name": "OpaqueFilter"          +
                  },                                  +
                  {                                   +
                      "kind": "ENUM",                 +

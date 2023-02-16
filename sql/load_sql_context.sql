@@ -42,7 +42,7 @@ select
                                         jsonb_build_object(
                                             'oid', pe.oid::int,
                                             'name', pe.enumlabel,
-                                            'sort_order', pe.enumsortorder
+                                            'sort_order', (pe.enumsortorder * 100000)::int
                                         )
                                         order by pe.enumsortorder asc
                                     )
@@ -294,7 +294,11 @@ select
                                         jsonb_build_object(
                                             'name', pa.attname::text,
                                             'type_oid', pa.atttypid::int,
-                                            'type_name', pa.atttypid::regtype::text,
+                                            -- includes type mod info like char(4)
+                                            'type_name', pg_catalog.format_type(pa.atttypid, pa.atttypmod),
+                                            -- char, bpchar, varchar, char[], bpchar[], carchar[]
+                                            -- the -4 removes the byte for the null terminated str
+                                            'max_characters', nullif(pa.atttypmod, -1) - 4,
                                             'schema_oid', schemas_.oid::int,
                                             'is_not_null', pa.attnotnull,
                                             'attribute_num', pa.attnum,

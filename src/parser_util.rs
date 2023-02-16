@@ -163,8 +163,24 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
     let res: GsonValue = match type_ {
         __Type::Scalar(scalar) => {
             match scalar {
-                Scalar::String => match value {
+                Scalar::String(None) => match value {
                     GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
+                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                },
+                Scalar::String(Some(max_length)) => match value {
+                    GsonValue::Absent | GsonValue::Null => value.clone(),
+                    GsonValue::String(string_content) => {
+                        match string_content.len() as i32 > *max_length {
+                            false => value.clone(),
+                            true => {
+                                return Err(format!(
+                                    "Invalid input for {} type. Maximum character length {}",
+                                    scalar.name().unwrap_or("String".to_string()),
+                                    max_length
+                                ))
+                            }
+                        }
+                    }
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Int => match value {
@@ -242,6 +258,17 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                         _ => return Err(format!("Invalid input for {:?} type", scalar)),
                     }
                 }
+                Scalar::BigFloat => match value {
+                    GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
+                    _ => {
+                        return Err(format!(
+                            "Invalid input for {:?} type. String required",
+                            scalar
+                        ))
+                    }
+                },
+                // No validation possible for unknown types. Lean on postgres for parsing
+                Scalar::Opaque => value.clone(),
             }
         }
         __Type::Enum(enum_) => match value {
