@@ -691,6 +691,8 @@ impl FilterBuilderElem {
                                 FilterOp::GreaterThanEqualTo => ">=",
                                 FilterOp::In => "= any",
                                 FilterOp::StartsWith => "^@",
+                                FilterOp::Like => "like",
+                                FilterOp::ILike => "ilike",
                                 FilterOp::Is => {
                                     return Err("Error transpiling Is filter".to_string());
                                 }

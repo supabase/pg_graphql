@@ -3004,6 +3004,8 @@ pub enum FilterOp {
     In,
     Is,
     StartsWith,
+    Like,
+    ILike,
 }
 
 impl ToString for FilterOp {
@@ -3018,6 +3020,8 @@ impl ToString for FilterOp {
             Self::In => "in",
             Self::Is => "is",
             Self::StartsWith => "startsWith",
+            Self::Like => "like",
+            Self::ILike => "ilike",
         }
         .to_string()
     }
@@ -3037,6 +3041,8 @@ impl FromStr for FilterOp {
             "in" => Ok(Self::In),
             "is" => Ok(Self::Is),
             "startsWith" => Ok(Self::StartsWith),
+            "like" => Ok(Self::Like),
+            "ilike" => Ok(Self::ILike),
             _ => Err("Invalid filter operation".to_string()),
         }
     }
@@ -3114,6 +3120,8 @@ impl ___Type for FilterTypeType {
                         FilterOp::In,
                         FilterOp::Is,
                         FilterOp::StartsWith,
+                        FilterOp::Like,
+                        FilterOp::ILike,
                     ],
                     Scalar::BigInt => vec![
                         FilterOp::Equal,
@@ -3179,7 +3187,9 @@ impl ___Type for FilterTypeType {
                         | FilterOp::GreaterThanEqualTo
                         | FilterOp::LessThan
                         | FilterOp::LessThanEqualTo
-                        | FilterOp::StartsWith => __InputValue {
+                        | FilterOp::StartsWith
+                        | FilterOp::Like
+                        | FilterOp::ILike => __InputValue {
                             name_: op.to_string(),
                             type_: __Type::Scalar(scalar.clone()),
                             description: None,
