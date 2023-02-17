@@ -303,17 +303,38 @@ input BigIntFilter {
   is: FilterIs
 }
 
+scalar BigFloat
+
+"""
+Boolean expression comparing fields on type "BigInt"
+"""
+input BigFloatFilter {
+  eq: BigFloat
+  gt: BigFloat
+  gte: BigFloat
+  in: [BigFloat!]
+  lt: BigFloat
+  lte: BigFloat
+  neq: BigFloat
+  is: FilterIs
+}
+
+
 """
 Boolean expression comparing fields on type "Boolean"
 """
 input BooleanFilter {
   eq: Boolean
-  gt: Boolean
-  gte: Boolean
-  in: [Boolean!]
-  lt: Boolean
-  lte: Boolean
-  neq: Boolean
+  is: FilterIs
+}
+
+scalar Opaque
+
+"""
+Boolean expression comparing fields on type "Opaque"
+"""
+input OpaqueFilter {
+  eq: Opaque
   is: FilterIs
 }
 
@@ -585,6 +606,9 @@ input StringFilter {
   lte: String
   neq: String
   is: FilterIs
+  startsWith: String
+  like: String
+  ilike: String
 }
 
 scalar Time

@@ -483,6 +483,9 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       lte: String
       neq: String
       is: FilterIs
+      startsWith: String
+      like: String
+      ilike: String
     }
     ```
 
@@ -498,16 +501,19 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
 The following list shows the operators that may be available on `<Type>Filter` types.
 
 
-| Operator    | Description              |
-| ----------- | ------------------------ |
-| eq          | Equal To                 |
-| neq         | Not Equal To             |
-| gt          | Greater Than             |
-| gte         | Greater Than Or Equal To |
-| in          | Contained by Value List  |
-| lt          | Less Than                |
-| lte         | Less Than Or Equal To    |
-| is          | Null or Not Null         |
+| Operator    | Description               |
+| ----------- | ------------------------- |
+| eq          | Equal To                  |
+| neq         | Not Equal To              |
+| gt          | Greater Than              |
+| gte         | Greater Than Or Equal To  |
+| in          | Contained by Value List   |
+| lt          | Less Than                 |
+| lte         | Less Than Or Equal To     |
+| is          | Null or Not Null          |
+| startsWith  | `String` starts with prefix |
+| like        | Case Sensitive `String` Pattern Match. '%' as wildcard |
+| ilike       | Case Snsensitive `String` Pattern Match. '%' as wildcard |
 
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
@@ -1303,7 +1309,7 @@ create table "Employee"(
     }
     ```
 
-=== "Employee"
+=== "EmployeeAddress"
     ```sql
     type EmailAddress {
       nodeId: ID!
@@ -1357,3 +1363,169 @@ create table "Employee"(
       }
     }
     ```
+
+## Custom Scalars
+
+Due to differences among the types supported by PostgreSQL, JSON, and GraphQL, `pg_graphql` adds several new Scalar types to handle PostgreSQL builtins that require special handling.
+
+### BigInt
+
+PostgreSQL `bigint` and `bigserial` types are 64 bit integers. In contrast, JSON supports 32 bit integers.
+
+Since PostgreSQL `bigint` values may be outside the min/max range allowed by JSON, they are represented in the GraphQL schema as `BigInt`s and values are serialized as strings.
+
+```graphql
+scalar BigInt
+
+input BigIntFilter {
+  eq: BigInt
+  gt: BigInt
+  gte: BigInt
+  in: [BigInt!]
+  lt: BigInt
+  lte: BigInt
+  neq: BigInt
+  is: FilterIs
+}
+```
+
+**Example**
+
+Given the setup
+
+=== "SQL"
+    ```sql
+    create table "Person"(
+        id bigserial primary key,
+        name text
+    );
+
+    insert into "Person"(name)
+    values ('J. Bazworth');
+    ```
+
+=== "GraphQL"
+    ```sql
+    type Person {
+      nodeId: ID!
+      id: BigInt!
+      name: String
+    }
+    ```
+
+The query
+
+
+```graphql
+{
+  personCollection {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+```
+
+The returns the following data. Note that `id` is serialized as a string
+
+```json
+{
+  "data": {
+    "personCollection": {
+      "edges": [
+        {
+          "node": {
+            "id": "1",
+            "name": "Foo Barington",
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### BigFloat
+
+PostgreSQL's `numeric` type supports arbitrary precision floating point values. JSON's `float` is limited to 64-bit precision.
+
+Since a PostgreSQL `numeric` may require more precision than can be handled by JSON, `numeric` types are represented in the GraphQL schema as `BigFloat` and values are serialized as strings.
+
+```graphql
+scalar BigFloat
+
+input BigFloatFilter {
+  eq: BigFloat
+  gt: BigFloat
+  gte: BigFloat
+  in: [BigFloat!]
+  lt: BigFloat
+  lte: BigFloat
+  neq: BigFloat
+  is: FilterIs
+}
+```
+
+**Example**
+
+Given the SQL setup
+
+```sql
+create table "GeneralLedger"(
+    id serial primary key,
+    amount numeric(10,2)
+);
+
+insert into "GeneralLedger"(amount)
+values (22.15);
+```
+
+The query
+
+```graphql
+{
+  generalLedgerCollection {
+    edges {
+      node {
+        id
+        amount
+      }
+    }
+  }
+}
+```
+
+The returns the following data. Note that `amount` is serialized as a string
+
+```json
+{
+  "data": {
+    "generalLedgerCollection": {
+      "edges": [
+        {
+          "node": {
+            "id": 1,
+            "amount": "22.15",
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### Opaque
+
+PostgreSQL's type system is extensible and not all types handle all operations e.g. filtering with `like`. To account for these, `pg_graphql` introduces a scalar `Opaque` type. The `Opaque` type uses PostgreSQL's `to_json` method to serialize values. That allows complex or unknown types to be included in the schema by delegating handling to the client.
+
+```graphql
+scalar Opaque
+
+input OpaqueFilter {
+  eq: Opaque
+  is: FilterIs
+}
+```
