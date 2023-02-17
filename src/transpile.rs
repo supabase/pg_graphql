@@ -95,7 +95,7 @@ pub trait QueryEntrypoint {
             //Create subtransaction
             let sub_txn_result: Result<Option<pgx::JsonB>, CheckedError> =
                 c.sub_transaction(|xact| {
-                    let (val, xact) =
+                    let (val, _xact) =
                         xact.checked_select(sql, Some(1), Some(param_context.params))?;
                     // Get a value from the query
                     if val.len() == 0 {
@@ -690,6 +690,9 @@ impl FilterBuilderElem {
                                 FilterOp::GreaterThan => ">",
                                 FilterOp::GreaterThanEqualTo => ">=",
                                 FilterOp::In => "= any",
+                                FilterOp::StartsWith => "^@",
+                                FilterOp::Like => "like",
+                                FilterOp::ILike => "ilike",
                                 FilterOp::Is => {
                                     return Err("Error transpiling Is filter".to_string());
                                 }
