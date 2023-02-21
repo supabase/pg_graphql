@@ -25,43 +25,43 @@ select
         ),
         'enums', coalesce(
             (
-                select
-                    jsonb_object_agg(
-                        distinct pt.oid::int,
+                -- CTE is for performance. Issue #321
+                with enums_(type_oid, enum_record) as (
+                    select
+                        pt.oid,
                         jsonb_build_object(
                             'oid', pt.oid::int,
-                            'schema_oid', pt.typnamespace::int,
-                            'name', pt.typname,
+                            'schema_oid', min(pt.typnamespace)::int,
+                            'name', min(pt.typname),
                             'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
                             'directives', jsonb_build_object(
                                 'name', graphql.comment_directive(pg_catalog.obj_description(pt.oid, 'pg_type')) ->> 'name'
                             ),
-                            'values', (
-                                select
-                                    jsonb_agg(
-                                        jsonb_build_object(
-                                            'oid', pe.oid::int,
-                                            'name', pe.enumlabel,
-                                            'sort_order', (pe.enumsortorder * 100000)::int
-                                        )
-                                        order by pe.enumsortorder asc
-                                    )
-                                from
-                                    pg_enum pe
-                                where
-                                    pt.oid = pe.enumtypid
+                            'values', jsonb_agg(
+                                jsonb_build_object(
+                                    'oid', pe.oid::int,
+                                    'name', pe.enumlabel,
+                                    'sort_order', (pe.enumsortorder * 100000)::int
+                                )
+                                order by pe.enumsortorder asc
                             ),
                             'permissions', jsonb_build_object(
                                 'is_usable', pg_catalog.has_type_privilege(current_user, pt.oid, 'USAGE')
                             )
                         )
-                    )
-                from
-                    pg_enum
+                    from
+                        pg_enum pe
                     join pg_type pt
-                        on pt.oid = pg_enum.enumtypid
+                        on pt.oid = pe.enumtypid
                     join schemas_ spo
                         on pt.typnamespace = spo.oid
+                    group by
+                        pt.oid
+                )
+                select
+                    jsonb_object_agg(enums_.type_oid, enums_.enum_record)
+                from
+                    enums_
             ),
             jsonb_build_object()
         ),
