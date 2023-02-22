@@ -287,7 +287,7 @@ pub struct SchemaDirectives {
     // @graphql({"inflect_names": true})
     pub inflect_names: bool,
     // @graphql({"max_rows": 20})
-    pub max_rows: i64,
+    pub max_rows: u64,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
