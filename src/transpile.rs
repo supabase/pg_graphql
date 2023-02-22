@@ -1,12 +1,10 @@
 use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table};
-use pgx::pg_sys::submodules::panic::CaughtError;
 use pgx::pg_sys::PgBuiltInOids;
 use pgx::prelude::*;
 use pgx::spi::SpiClient;
 use pgx::*;
-use pgx_contrib_spiext::{checked::*, subtxn::*};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
 use std::collections::HashSet;
@@ -42,39 +40,32 @@ pub trait MutationEntrypoint<'conn> {
 
     fn execute(
         &self,
-        xact: SubTransaction<SpiClient<'conn>>,
-    ) -> Result<(serde_json::Value, SubTransaction<SpiClient<'conn>>), String> {
+        mut conn: SpiClient<'conn>,
+    ) -> Result<(serde_json::Value, SpiClient<'conn>), String> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
-                xact.rollback();
                 return Err(err.to_string());
             }
         };
 
-        let (res_q, next_xact) = xact
-            .checked_update(sql, None, Some(param_context.params))
-            .map_err(|err| match err {
-                CheckedError::CaughtError(CaughtError::PostgresError(error)) => {
-                    error.message().to_string()
-                }
-                _ => "Internal Error: Failed to execute transpiled query".to_string(),
-            })?;
+        let res_q = conn
+            .update(sql, None, Some(param_context.params))
+            .map_err(|_| "Internal Error: Failed to execute transpiled query".to_string())?;
 
         let res: pgx::JsonB = match res_q.first().get::<JsonB>(1) {
             Ok(Some(dat)) => dat,
             Ok(None) => JsonB(serde_json::Value::Null),
             Err(_) => {
-                next_xact.rollback();
                 return Err(
                     "Internal Error: Failed to load result from transpiled query".to_string(),
                 );
             }
         };
 
-        Ok((res.0, next_xact))
+        Ok((res.0, conn))
     }
 }
 
@@ -91,24 +82,14 @@ pub trait QueryEntrypoint {
             }
         };
 
-        let spi_result: Result<Option<pgx::JsonB>, CheckedError> = Spi::connect(|c| {
-            //Create subtransaction
-            let sub_txn_result: Result<Option<pgx::JsonB>, CheckedError> =
-                c.sub_transaction(|xact| {
-                    let (val, _xact) =
-                        xact.checked_select(sql, Some(1), Some(param_context.params))?;
-                    // Get a value from the query
-                    if val.len() == 0 {
-                        Ok(None)
-                    } else {
-                        val.first()
-                            .get::<pgx::JsonB>(1)
-                            .map_err(|e| CheckedError::SpiError(e))
-                    }
-                });
-
-            // Return that value from the closure
-            sub_txn_result
+        let spi_result: Result<Option<pgx::JsonB>, spi::Error> = Spi::connect(|c| {
+            let val = c.select(sql, Some(1), Some(param_context.params))?;
+            // Get a value from the query
+            if val.len() == 0 {
+                Ok(None)
+            } else {
+                val.first().get::<pgx::JsonB>(1)
+            }
         });
 
         match spi_result {
