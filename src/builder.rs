@@ -548,8 +548,8 @@ pub struct ConnectionBuilder {
     pub alias: String,
 
     // args
-    pub first: Option<i64>,
-    pub last: Option<i64>,
+    pub first: Option<u64>,
+    pub last: Option<u64>,
     pub before: Option<Cursor>,
     pub after: Option<Cursor>,
     pub filter: FilterBuilder,
@@ -563,7 +563,7 @@ pub struct ConnectionBuilder {
     //fields
     pub selections: Vec<ConnectionSelection>,
 
-    pub max_rows: i64,
+    pub max_rows: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -1024,24 +1024,30 @@ where
 
             // TODO: only one of first/last, before/after provided
             let first: gson::Value = read_argument("first", field, query_field, variables)?;
-            let first: Option<i64> = match first {
+            let first: Option<u64> = match first {
                 gson::Value::Absent | gson::Value::Null => None,
-                gson::Value::Number(gson::Number::Integer(n)) => Some(n),
+                gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
+                    return Err("`first` must be an unsigned integer".to_string())
+                }
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n as u64),
                 _ => {
                     return Err("Internal Error: failed to parse validated first".to_string());
                 }
             };
 
             let last: gson::Value = read_argument("last", field, query_field, variables)?;
-            let last: Option<i64> = match last {
+            let last: Option<u64> = match last {
                 gson::Value::Absent | gson::Value::Null => None,
-                gson::Value::Number(gson::Number::Integer(n)) => Some(n),
+                gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
+                    return Err("`last` must be an unsigned integer".to_string())
+                }
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n as u64),
                 _ => {
                     return Err("Internal Error: failed to parse validated last".to_string());
                 }
             };
 
-            let max_rows: i64 = xtype
+            let max_rows: u64 = xtype
                 .schema
                 .context
                 .schemas

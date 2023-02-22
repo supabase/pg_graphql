@@ -813,7 +813,7 @@ impl ConnectionBuilder {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        let limit: i64 = cmp::min(
+        let limit: u64 = cmp::min(
             self.first
                 .unwrap_or_else(|| self.last.unwrap_or(self.max_rows)),
             self.max_rows,
