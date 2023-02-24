@@ -1,0 +1,76 @@
+begin;
+    create table book(
+        id int primary key,
+        is_verified bool
+    );
+    insert into public.book(id, is_verified)
+    values
+        (1, true);
+    savepoint a;
+    -- Should be skipped
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              bookCollection {
+                edges {
+                  node {
+                    id
+                    isVerified @skip( if: true )
+                  }
+                }
+              }
+            }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "bookCollection": {    +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    -- Should not be skipped
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              bookCollection {
+                edges {
+                  node {
+                    id
+                    isVerified @skip( if: false )
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "bookCollection": {               +
+             "edges": [                    +
+                 {                         +
+                     "node": {             +
+                         "id": 1,          +
+                         "isVerified": true+
+                     }                     +
+                 }                         +
+             ]                             +
+         }                                 +
+     }                                     +
+ }
+(1 row)
+
+    rollback to savepoint a;
+rollback;

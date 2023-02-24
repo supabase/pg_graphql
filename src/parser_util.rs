@@ -34,6 +34,53 @@ where
     Ok(selections)
 }
 
+/// Combines @skip and @include
+pub fn selection_is_skipped<'a, 'b, T>(
+    query_selection: &'b Selection<'a, T>,
+) -> Result<bool, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let directives = match query_selection {
+        Selection::Field(x) => &x.directives,
+        Selection::FragmentSpread(x) => &x.directives,
+        Selection::InlineFragment(x) => &x.directives,
+    };
+
+    if directives.len() > 0 {
+        for directive in directives {
+            let directive_name = directive.name.as_ref();
+            match directive_name {
+                "skip" => {
+                    if directive.arguments.len() != 1 {
+                        return Err(format!("Incorrect arguments to directive @skip"));
+                    }
+                    let arg = &directive.arguments[0];
+                    if arg.0.as_ref() != "if" {
+                        return Err(format!("Unknown argument to @skip: {}", arg.0.as_ref()));
+                    }
+
+                    // the argument to @skip(if: <value>)
+                    match &arg.1 {
+                        Value::Boolean(x) => {
+                            if *x {
+                                return Ok(true);
+                            }
+                        }
+                        Value::Variable(_) => {
+                            // TODO
+                            return Err("Variables in directives not yet implemented".to_string());
+                        }
+                        _ => (),
+                    }
+                }
+                _ => return Err(format!("Unknown directive {}", directive_name)),
+            }
+        }
+    }
+    Ok(false)
+}
+
 /// Normalizes literal selections, fragment spreads, and inline fragments
 pub fn normalize_selection<'a, 'b, T>(
     query_selection: &'b Selection<'a, T>,
@@ -44,6 +91,10 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let mut selections: Vec<&Field<'a, T>> = vec![];
+
+    if selection_is_skipped(query_selection)? {
+        return Ok(selections);
+    }
 
     match query_selection {
         Selection::Field(field) => {
