@@ -427,6 +427,40 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#custom-scalars" class="md-nav__link">
+    Custom Scalars
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Scalars">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bigint" class="md-nav__link">
+    BigInt
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bigfloat" class="md-nav__link">
+    BigFloat
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opaque" class="md-nav__link">
+    Opaque
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -713,6 +747,40 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-scalars" class="md-nav__link">
+    Custom Scalars
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Scalars">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bigint" class="md-nav__link">
+    BigInt
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bigfloat" class="md-nav__link">
+    BigFloat
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opaque" class="md-nav__link">
+    Opaque
+  </a>
   
 </li>
         
@@ -1450,7 +1518,10 @@
 <span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">Boolean expression comparing fields on type &quot;String&quot;</span>
 <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="kt">input</span> <span class="k">StringFilter</span> <span class="p">{</span>
@@ -1462,6 +1533,9 @@
   lte: <span class="k">String</span>
   neq: <span class="k">String</span>
   is: <span class="k">FilterIs</span>
+  startsWith: <span class="k">String</span>
+  like: <span class="k">String</span>
+  ilike: <span class="k">String</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1517,6 +1591,18 @@
 <tr>
 <td>is</td>
 <td>Null or Not Null</td>
+</tr>
+<tr>
+<td>startsWith</td>
+<td><code>String</code> starts with prefix</td>
+</tr>
+<tr>
+<td>like</td>
+<td>Case Sensitive <code>String</code> Pattern Match. '%' as wildcard</td>
+</tr>
+<tr>
+<td>ilike</td>
+<td>Case Snsensitive <code>String</code> Pattern Match. '%' as wildcard</td>
 </tr>
 </tbody>
 </table>
@@ -2706,7 +2792,7 @@
 <span class="p">);</span><span class="w"></span>
 </code></pre></div></td></tr></table></div></p>
 <p><strong>GraphQL Types</strong></p>
-<div class="tabbed-set tabbed-alternate" data-tabs="26:2"><input checked="checked" id="__tabbed_26_1" name="__tabbed_26" type="radio" /><input id="__tabbed_26_2" name="__tabbed_26" type="radio" /><div class="tabbed-labels"><label for="__tabbed_26_1">Employee</label><label for="__tabbed_26_2">Employee</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="26:2"><input checked="checked" id="__tabbed_26_1" name="__tabbed_26" type="radio" /><input id="__tabbed_26_2" name="__tabbed_26" type="radio" /><div class="tabbed-labels"><label for="__tabbed_26_1">Employee</label><label for="__tabbed_26_2">EmployeeAddress</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -2817,6 +2903,226 @@
 </div>
 </div>
 </div>
+<h2 id="custom-scalars">Custom Scalars</h2>
+<p>Due to differences among the types supported by PostgreSQL, JSON, and GraphQL, <code>pg_graphql</code> adds several new Scalar types to handle PostgreSQL builtins that require special handling.</p>
+<h3 id="bigint">BigInt</h3>
+<p>PostgreSQL <code>bigint</code> and <code>bigserial</code> types are 64 bit integers. In contrast, JSON supports 32 bit integers.</p>
+<p>Since PostgreSQL <code>bigint</code> values may be outside the min/max range allowed by JSON, they are represented in the GraphQL schema as <code>BigInt</code>s and values are serialized as strings.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">BigInt</span>
+
+<span class="kt">input</span> <span class="k">BigIntFilter</span> <span class="p">{</span>
+  eq: <span class="k">BigInt</span>
+  gt: <span class="k">BigInt</span>
+  gte: <span class="k">BigInt</span>
+  in: <span class="p">[</span><span class="k">BigInt</span><span class="p">!]</span>
+  lt: <span class="k">BigInt</span>
+  lte: <span class="k">BigInt</span>
+  neq: <span class="k">BigInt</span>
+  is: <span class="k">FilterIs</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<p><strong>Example</strong></p>
+<p>Given the setup</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="28:2"><input checked="checked" id="__tabbed_28_1" name="__tabbed_28" type="radio" /><input id="__tabbed_28_2" name="__tabbed_28" type="radio" /><div class="tabbed-labels"><label for="__tabbed_28_1">SQL</label><label for="__tabbed_28_2">GraphQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="n">bigserial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">text</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"></span>
+<span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;J. Bazworth&#39;</span><span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="n">Person</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">BigInt</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>The query</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">personCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<p>The returns the following data. Note that <code>id</code> is serialized as a string</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;personCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo Barington&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<h3 id="bigfloat">BigFloat</h3>
+<p>PostgreSQL's <code>numeric</code> type supports arbitrary precision floating point values. JSON's <code>float</code> is limited to 64-bit precision.</p>
+<p>Since a PostgreSQL <code>numeric</code> may require more precision than can be handled by JSON, <code>numeric</code> types are represented in the GraphQL schema as <code>BigFloat</code> and values are serialized as strings.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">BigFloat</span>
+
+<span class="kt">input</span> <span class="k">BigFloatFilter</span> <span class="p">{</span>
+  eq: <span class="k">BigFloat</span>
+  gt: <span class="k">BigFloat</span>
+  gte: <span class="k">BigFloat</span>
+  in: <span class="p">[</span><span class="k">BigFloat</span><span class="p">!]</span>
+  lt: <span class="k">BigFloat</span>
+  lte: <span class="k">BigFloat</span>
+  neq: <span class="k">BigFloat</span>
+  is: <span class="k">FilterIs</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<p><strong>Example</strong></p>
+<p>Given the SQL setup</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;GeneralLedger&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">amount</span><span class="w"> </span><span class="nb">numeric</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="ss">&quot;GeneralLedger&quot;</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span><span class="w"></span>
+<span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="mi">22</span><span class="p">.</span><span class="mi">15</span><span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>The query</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">generalLedgerCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">amount</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<p>The returns the following data. Note that <code>amount</code> is serialized as a string</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;generalLedgerCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;amount&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;22.15&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<h3 id="opaque">Opaque</h3>
+<p>PostgreSQL's type system is extensible and not all types handle all operations e.g. filtering with <code>like</code>. To account for these, <code>pg_graphql</code> introduces a scalar <code>Opaque</code> type. The <code>Opaque</code> type uses PostgreSQL's <code>to_json</code> method to serialize values. That allows complex or unknown types to be included in the schema by delegating handling to the client.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">Opaque</span>
+
+<span class="kt">input</span> <span class="k">OpaqueFilter</span> <span class="p">{</span>
+  eq: <span class="k">Opaque</span>
+  is: <span class="k">FilterIs</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
 
 
 

@@ -415,6 +415,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#description" class="md-nav__link">
+    Description
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -579,6 +586,13 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#description" class="md-nav__link">
+    Description
+  </a>
   
 </li>
         
@@ -869,6 +883,38 @@ for example
   <span class="p">):</span> <span class="k">PostConnection</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div></p>
+<h3 id="description">Description</h3>
+<p>Tables, Columns, and Functions accept a <code>description</code> directive to populate user defined descriptions in the GraphQL schema.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="w"></span>
+<span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;description&quot;: &quot;A User Account&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">column</span><span class="w"> </span><span class="k">public</span><span class="p">.</span><span class="n">account</span><span class="p">.</span><span class="n">id</span><span class="w"></span>
+<span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;description&quot;: &quot;The primary key identifier&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;A User Account&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;The primary key identifier&quot;&quot;&quot;</span>
+  id: <span class="k">Int</span><span class="p">!</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
 
 
 

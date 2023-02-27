@@ -1106,7 +1106,31 @@
 <span class="normal">613</span>
 <span class="normal">614</span>
 <span class="normal">615</span>
-<span class="normal">616</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">Node</span> <span class="p">{</span>
   <span class="c c-Multi">&quot;&quot;&quot;Globally Unique Record Identifier&quot;&quot;&quot;</span>
   nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">Int</span><span class="p">!</span>
@@ -1411,17 +1435,38 @@
   is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
+<span class="k">scalar</span> <span class="k">BigFloat</span>
+
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;BigInt&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">BigFloatFilter</span> <span class="p">{</span>
+  eq: <span class="k">BigFloat</span>
+  gt: <span class="k">BigFloat</span>
+  gte: <span class="k">BigFloat</span>
+  in: <span class="p">[</span><span class="k">BigFloat</span><span class="p">!]</span>
+  lt: <span class="k">BigFloat</span>
+  lte: <span class="k">BigFloat</span>
+  neq: <span class="k">BigFloat</span>
+  is: <span class="k">FilterIs</span>
+<span class="p">}</span>
+
+
 <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="c c-Multi">Boolean expression comparing fields on type &quot;Boolean&quot;</span>
 <span class="c c-Multi">&quot;&quot;&quot;</span>
 <span class="kt">input</span> <span class="k">BooleanFilter</span> <span class="p">{</span>
   eq: <span class="k">Boolean</span>
-  gt: <span class="k">Boolean</span>
-  gte: <span class="k">Boolean</span>
-  in: <span class="p">[</span><span class="k">Boolean</span><span class="p">!]</span>
-  lt: <span class="k">Boolean</span>
-  lte: <span class="k">Boolean</span>
-  neq: <span class="k">Boolean</span>
+  is: <span class="k">FilterIs</span>
+<span class="p">}</span>
+
+<span class="k">scalar</span> <span class="k">Opaque</span>
+
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;Opaque&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">OpaqueFilter</span> <span class="p">{</span>
+  eq: <span class="k">Opaque</span>
   is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 
@@ -1693,6 +1738,9 @@
   lte: <span class="k">String</span>
   neq: <span class="k">String</span>
   is: <span class="k">FilterIs</span>
+  startsWith: <span class="k">String</span>
+  like: <span class="k">String</span>
+  ilike: <span class="k">String</span>
 <span class="p">}</span>
 
 <span class="k">scalar</span> <span class="k">Time</span>

@@ -407,28 +407,35 @@
       
         <li class="md-nav__item">
   <a href="#100" class="md-nav__link">
-    [1.0.0]
+    1.0.0
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#101" class="md-nav__link">
-    [1.0.1]
+    1.0.1
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#102" class="md-nav__link">
-    [1.0.2]
+    1.0.2
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#110" class="md-nav__link">
-    [1.1.0]
+    1.1.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#120" class="md-nav__link">
+    1.2.0
   </a>
   
 </li>
@@ -467,28 +474,35 @@
       
         <li class="md-nav__item">
   <a href="#100" class="md-nav__link">
-    [1.0.0]
+    1.0.0
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#101" class="md-nav__link">
-    [1.0.1]
+    1.0.1
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#102" class="md-nav__link">
-    [1.0.2]
+    1.0.2
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#110" class="md-nav__link">
-    [1.1.0]
+    1.1.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#120" class="md-nav__link">
+    1.2.0
   </a>
   
 </li>
@@ -515,25 +529,34 @@
 
   <h1>Changelog</h1>
 
-<h2 id="100">[1.0.0]</h2>
+<h2 id="100">1.0.0</h2>
 <ul>
 <li>Initial release</li>
 </ul>
-<h2 id="101">[1.0.1]</h2>
+<h2 id="101">1.0.1</h2>
 <ul>
 <li>feature: Add support for Postgres 15</li>
 </ul>
-<h2 id="102">[1.0.2]</h2>
+<h2 id="102">1.0.2</h2>
 <ul>
 <li>bugfix: Correct inconsistent treatment of null literals</li>
 </ul>
-<h2 id="110">[1.1.0]</h2>
+<h2 id="110">1.1.0</h2>
 <ul>
 <li>feature: Add support for Views, Materialized Views, and Foreign Tables</li>
 <li>feature: Add support for filtering on <code>is null</code> and <code>is not null</code></li>
 <li>feature: User configurable page size</li>
 <li>bugfix: Remove requirement for <code>insert</code> permission on every column for inserts to succeed</li>
 <li>bugfix: <code>hasNextPage</code> and <code>hasPreviousPage</code> during reverse pagination were backwards</li>
+</ul>
+<h2 id="120">1.2.0</h2>
+<ul>
+<li>feature: <code>String</code> type filters support <code>ilike</code>, <code>like</code>, <code>startsWith</code></li>
+<li>feature: Support for <code>@skip</code> and <code>@include</code> directives</li>
+<li>feature: Custom descriptions via comment directive <code>@graphql({"description": ...})</code></li>
+<li>bugfix: Unknown types are represented in GraphQL schema as <code>Opaque</code> rather than <code>String</code></li>
+<li>bugfix: PostgreSQL type modifiers, e.g. char(n), no longer truncate excess text</li>
+<li>bugfix: Creating a new enum variant between existing variants no longer errors</li>
 </ul>
 
 
