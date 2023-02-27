@@ -253,6 +253,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -407,6 +408,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -502,6 +504,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -1081,35 +1084,37 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err("unknown field in connection".to_string()),
-                    Some(f) => {
-                        builder_fields.push(match &f.type_.unmodified_type() {
-                            __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
-                                f,
-                                selection_field,
-                                fragment_definitions,
-                                variables,
-                            )?),
-                            __Type::PageInfo(_) => ConnectionSelection::PageInfo(
-                                to_page_info_builder(f, selection_field, fragment_definitions)?,
-                            ),
+                    Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
+                        __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
+                            f,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                        )?),
+                        __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
+                            f,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                        )?),
 
-                            _ => match f.name().as_ref() {
-                                "totalCount" => ConnectionSelection::TotalCount {
-                                    alias: alias_or_name(selection_field),
-                                },
-                                "__typename" => ConnectionSelection::Typename {
-                                    alias: alias_or_name(selection_field),
-                                    typename: xtype.name().unwrap(),
-                                },
-                                _ => return Err("unexpected field type on connection".to_string()),
+                        _ => match f.name().as_ref() {
+                            "totalCount" => ConnectionSelection::TotalCount {
+                                alias: alias_or_name(selection_field),
                             },
-                        })
-                    }
+                            "__typename" => ConnectionSelection::Typename {
+                                alias: alias_or_name(selection_field),
+                                typename: xtype.name().unwrap(),
+                            },
+                            _ => return Err("unexpected field type on connection".to_string()),
+                        },
+                    }),
                 }
             }
             Ok(ConnectionBuilder {
@@ -1138,6 +1143,7 @@ fn to_page_info_builder<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
 ) -> Result<PageInfoBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1158,6 +1164,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -1218,6 +1225,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -1326,8 +1334,12 @@ where
         false => None,
     };
 
-    let selection_fields =
-        normalize_selection_set(&query_field.selection_set, fragment_definitions, &type_name)?;
+    let selection_fields = normalize_selection_set(
+        &query_field.selection_set,
+        fragment_definitions,
+        &type_name,
+        variables,
+    )?;
 
     for selection_field in selection_fields {
         match field_map.get(selection_field.name.as_ref()) {
@@ -1545,6 +1557,7 @@ impl __Schema {
         enum_value: &__EnumValue,
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+        variables: &serde_json::Value,
     ) -> Result<__EnumValueBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -1553,6 +1566,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__EnumValue".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1603,6 +1617,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__InputValue".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1665,6 +1680,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__Field".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1792,6 +1808,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__Type".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1884,6 +1901,7 @@ impl __Schema {
                                             enum_value,
                                             selection_field,
                                             fragment_definitions,
+                                            variables,
                                         )?;
                                         f_builders.push(f_builder)
                                     }
@@ -1979,6 +1997,7 @@ impl __Schema {
                     &query_field.selection_set,
                     fragment_definitions,
                     &type_name,
+                    variables,
                 )?;
 
                 for selection_field in selection_fields {
