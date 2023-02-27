@@ -72,5 +72,71 @@ begin;
  }
 (1 row)
 
-    rollback to savepoint a;
+    select jsonb_pretty(
+        graphql.resolve($$
+            query XXX($should_skip: Boolean! ){
+              bookCollection{
+                edges {
+                  node {
+                    id
+                    isVerified @skip(if: $should_skip)
+                  }
+                }
+              }
+            }
+          $$,
+          '{"should_skip": true}'
+        )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "bookCollection": {    +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query XXX($should_skip: Boolean! ){
+              bookCollection{
+                edges {
+                  node {
+                    id
+                    isVerified @skip(if: $should_skip)
+                  }
+                }
+              }
+            }
+          $$,
+          '{"should_skip": false}'
+        )
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "bookCollection": {               +
+             "edges": [                    +
+                 {                         +
+                     "node": {             +
+                         "id": 1,          +
+                         "isVerified": true+
+                     }                     +
+                 }                         +
+             ]                             +
+         }                                 +
+     }                                     +
+ }
+(1 row)
+
 rollback;

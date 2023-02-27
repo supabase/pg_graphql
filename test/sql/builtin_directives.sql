@@ -42,6 +42,39 @@ begin;
         $$)
     );
 
-    rollback to savepoint a;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query XXX($should_skip: Boolean! ){
+              bookCollection{
+                edges {
+                  node {
+                    id
+                    isVerified @skip(if: $should_skip)
+                  }
+                }
+              }
+            }
+          $$,
+          '{"should_skip": true}'
+        )
+    );
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query XXX($should_skip: Boolean! ){
+              bookCollection{
+                edges {
+                  node {
+                    id
+                    isVerified @skip(if: $should_skip)
+                  }
+                }
+              }
+            }
+          $$,
+          '{"should_skip": false}'
+        )
+    );
 
 rollback;
