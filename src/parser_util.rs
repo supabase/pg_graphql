@@ -73,17 +73,63 @@ where
                             let var = variables.get(var_name.as_ref());
                             match var {
                                 None => {
+                                    return Err("Value for \"if\" in @skip directive is required"
+                                        .to_string())
+                                }
+                                Some(val) => match val {
+                                    serde_json::Value::Bool(bool_val) => {
+                                        if *bool_val {
+                                            // skip immediately
+                                            return Ok(true);
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(
+                                            "Value for \"if\" in @skip directive is required"
+                                                .to_string(),
+                                        );
+                                    }
+                                },
+                            }
+                        }
+                        _ => (),
+                    }
+                }
+                "include" => {
+                    if directive.arguments.len() != 1 {
+                        return Err(format!("Incorrect arguments to directive @include"));
+                    }
+                    let arg = &directive.arguments[0];
+                    if arg.0.as_ref() != "if" {
+                        return Err(format!("Unknown argument to @include: {}", arg.0.as_ref()));
+                    }
+
+                    // the argument to @include(if: <value>)
+                    match &arg.1 {
+                        Value::Boolean(x) => {
+                            if !*x {
+                                return Ok(true);
+                            }
+                        }
+                        Value::Variable(var_name) => {
+                            let var = variables.get(var_name.as_ref());
+                            match var {
+                                None => {
                                     return Err(
-                                        "Value for \"if\" in directive is required".to_string()
+                                        "Value for \"if\" in @include directive is required"
+                                            .to_string(),
                                     )
                                 }
                                 Some(val) => match val {
                                     serde_json::Value::Bool(bool_val) => {
-                                        return Ok(bool_val.clone());
+                                        if !bool_val {
+                                            return Ok(true);
+                                        }
                                     }
                                     _ => {
                                         return Err(
-                                            "Value for \"if\" in directive is required".to_string()
+                                            "Value for \"if\" in @include directive is required"
+                                                .to_string(),
                                         );
                                     }
                                 },
