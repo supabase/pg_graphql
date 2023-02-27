@@ -211,20 +211,27 @@ select
                             'schema', schemas_.name,
                             'schema_oid', pc.relnamespace::int,
                             'comment', pg_catalog.obj_description(pc.oid, 'pg_class'),
-                            'directives', jsonb_build_object(
-                                'name', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) ->> 'name',
-                                'total_count', jsonb_build_object(
-                                    'enabled', coalesce(
-                                        (
-                                            graphql.comment_directive(
-                                                pg_catalog.obj_description(pc.oid, 'pg_class')
-                                            ) -> 'totalCount' ->> 'enabled' = 'true'
+                            'directives', (
+                                with directives(directive) as (
+                                    select graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class'))
+                                )
+                                select
+                                    jsonb_build_object(
+                                        'name', d.directive ->> 'name',
+                                        'description', d.directive -> 'description',
+                                        'total_count', jsonb_build_object(
+                                            'enabled', coalesce(
+                                                (
+                                                    d.directive -> 'totalCount' ->> 'enabled' = 'true'
+                                                ),
+                                                false
+                                            )
                                         ),
-                                        false
+                                        'primary_key_columns', d.directive -> 'primary_key_columns',
+                                        'foreign_keys', d.directive -> 'foreign_keys'
                                     )
-                                ),
-                                'primary_key_columns', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) -> 'primary_key_columns',
-                                'foreign_keys', graphql.comment_directive(pg_catalog.obj_description(pc.oid, 'pg_class')) -> 'foreign_keys'
+                                from
+                                    directives d
                             ),
                             'functions', coalesce(
                                 (
@@ -238,8 +245,17 @@ select
                                                 'schema_oid', pronamespace::int,
                                                 'schema_name', pronamespace::regnamespace::text,
                                                 'comment', pg_catalog.obj_description(pp.oid, 'pg_proc'),
-                                                'directives', jsonb_build_object(
-                                                    'name', graphql.comment_directive(pg_catalog.obj_description(pp.oid, 'pg_proc')) ->> 'name'
+                                                'directives', (
+                                                    with directives(directive) as (
+                                                        select graphql.comment_directive(pg_catalog.obj_description(pp.oid, 'pg_proc'))
+                                                    )
+                                                    select
+                                                        jsonb_build_object(
+                                                            'name', d.directive ->> 'name',
+                                                            'description', d.directive ->> 'description'
+                                                        )
+                                                    from
+                                                        directives d
                                                 ),
                                                 'permissions', jsonb_build_object(
                                                     'is_executable', pg_catalog.has_function_privilege(
@@ -326,8 +342,18 @@ select
                                                 )
                                             ),
                                             'comment', pg_catalog.col_description(pc.oid, pa.attnum),
-                                            'directives', jsonb_build_object(
-                                                'name', graphql.comment_directive(pg_catalog.col_description(pc.oid, pa.attnum)) ->> 'name'
+
+                                            'directives', (
+                                                with directives(directive) as (
+                                                    select graphql.comment_directive(pg_catalog.col_description(pc.oid, pa.attnum))
+                                                )
+                                                select
+                                                    jsonb_build_object(
+                                                        'name', d.directive ->> 'name',
+                                                        'description', d.directive -> 'description'
+                                                    )
+                                                from
+                                                    directives d
                                             )
                                         )
                                         order by pa.attnum

@@ -1682,6 +1682,10 @@ impl ___Type for NodeType {
         Some(self.schema.graphql_table_base_type_name(&self.table))
     }
 
+    fn description(&self) -> Option<String> {
+        self.table.directives.description.clone()
+    }
+
     fn interfaces(&self) -> Option<Vec<__Type>> {
         let mut interfaces = vec![];
 
@@ -1708,7 +1712,7 @@ impl ___Type for NodeType {
                 name_: self.schema.graphql_column_field_name(&col),
                 type_: sql_column_to_graphql_type(col, &self.schema),
                 args: vec![],
-                description: None,
+                description: col.directives.description.clone(),
                 deprecation_reason: None,
                 sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
             })
@@ -1756,7 +1760,7 @@ impl ___Type for NodeType {
                         &self.schema,
                     ),
                     args: vec![],
-                    description: None,
+                    description: func.directives.description.clone(),
                     deprecation_reason: None,
                     sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
                 })

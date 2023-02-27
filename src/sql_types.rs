@@ -18,6 +18,7 @@ pub struct ColumnPermissions {
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ColumnDirectives {
     pub name: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -40,6 +41,8 @@ pub struct Column {
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FunctionDirectives {
     pub name: Option<String>,
+    // @graphql({"description": "the address of ..." })
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -175,6 +178,9 @@ pub struct TableDirectiveForeignKey {
 pub struct TableDirectives {
     // @graphql({"name": "Foo" })
     pub name: Option<String>,
+
+    // @graphql({"description": "the address of ..." })
+    pub description: Option<String>,
 
     // @graphql({"totalCount": { "enabled": true } })
     pub total_count: Option<TableDirectiveTotalCount>,
