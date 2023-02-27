@@ -5,7 +5,7 @@ ENV build_deps ca-certificates \
   git \
   build-essential \
   libpq-dev \
-  postgresql-server-dev-14 \
+  postgresql-server-dev-15 \
   curl \
   libreadline6-dev \
   zlib1g-dev
