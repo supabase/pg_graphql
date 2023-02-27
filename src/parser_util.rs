@@ -17,7 +17,8 @@ where
 pub fn normalize_selection_set<'a, 'b, T>(
     selection_set: &'b SelectionSet<'a, T>,
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
-    type_name: &String, // for inline fragments
+    type_name: &String,            // for inline fragments
+    variables: &serde_json::Value, // for directives
 ) -> Result<Vec<&'b Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -26,7 +27,7 @@ where
 
     for selection in &selection_set.items {
         let sel = selection;
-        match normalize_selection(sel, fragment_definitions, type_name) {
+        match normalize_selection(sel, fragment_definitions, type_name, variables) {
             Ok(sels) => selections.extend(sels),
             Err(err) => return Err(err),
         }
@@ -37,6 +38,7 @@ where
 /// Combines @skip and @include
 pub fn selection_is_skipped<'a, 'b, T>(
     query_selection: &'b Selection<'a, T>,
+    variables: &serde_json::Value,
 ) -> Result<bool, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -67,9 +69,25 @@ where
                                 return Ok(true);
                             }
                         }
-                        Value::Variable(_) => {
-                            // TODO
-                            return Err("Variables in directives not yet implemented".to_string());
+                        Value::Variable(var_name) => {
+                            let var = variables.get(var_name.as_ref());
+                            match var {
+                                None => {
+                                    return Err(
+                                        "Value for \"if\" in directive is required".to_string()
+                                    )
+                                }
+                                Some(val) => match val {
+                                    serde_json::Value::Bool(bool_val) => {
+                                        return Ok(bool_val.clone());
+                                    }
+                                    _ => {
+                                        return Err(
+                                            "Value for \"if\" in directive is required".to_string()
+                                        );
+                                    }
+                                },
+                            }
                         }
                         _ => (),
                     }
@@ -85,14 +103,15 @@ where
 pub fn normalize_selection<'a, 'b, T>(
     query_selection: &'b Selection<'a, T>,
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
-    type_name: &String, // for inline fragments
+    type_name: &String,            // for inline fragments
+    variables: &serde_json::Value, // for directives
 ) -> Result<Vec<&'b Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let mut selections: Vec<&Field<'a, T>> = vec![];
 
-    if selection_is_skipped(query_selection)? {
+    if selection_is_skipped(query_selection, variables)? {
         return Ok(selections);
     }
 
@@ -124,8 +143,12 @@ where
             };
 
             // TODO handle directives?
-            let frag_selections =
-                normalize_selection_set(&frag_def.selection_set, fragment_definitions, type_name);
+            let frag_selections = normalize_selection_set(
+                &frag_def.selection_set,
+                fragment_definitions,
+                type_name,
+                variables,
+            );
             match frag_selections {
                 Ok(sels) => selections.extend(sels.iter()),
                 Err(err) => return Err(err),
@@ -144,6 +167,7 @@ where
                     &inline_fragment.selection_set,
                     fragment_definitions,
                     type_name,
+                    variables,
                 )?;
                 selections.extend(infrag_selections.iter());
             }
