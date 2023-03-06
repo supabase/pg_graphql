@@ -1290,7 +1290,11 @@ impl FunctionBuilder {
     pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
         let schema_name = &self.function.schema_name;
         let function_name = &self.function.name;
-        Ok(format!("{schema_name}.{function_name}({block_name})"))
+        Ok(format!(
+            "{schema_name}.{function_name}({block_name}::{}.{})",
+            quote_ident(&self.table.schema),
+            quote_ident(&self.table.name)
+        ))
     }
 }
 
