@@ -793,6 +793,7 @@ pub struct ColumnBuilder {
 pub struct FunctionBuilder {
     pub alias: String,
     pub function: Arc<Function>,
+    pub table: Arc<Table>,
 }
 
 fn restrict_allowed_arguments<'a, T>(
@@ -1384,6 +1385,7 @@ where
                                     NodeSelection::Function(FunctionBuilder {
                                         alias,
                                         function: Arc::clone(func),
+                                        table: Arc::clone(&xtype.table),
                                     })
                                 }
                                 NodeSQLType::NodeId(pkey_columns) => {
