@@ -272,6 +272,7 @@ select
                                         pp.pronargs = 1 -- one argument
                                         and pp.proargtypes[0] = pc.reltype -- first argument is table type
                                         and pp.proname like '\_%' -- starts with underscore
+                                        and not pp.proretset -- disallow set returning functions (for now)
                                 ),
                                 jsonb_build_array()
                             ),

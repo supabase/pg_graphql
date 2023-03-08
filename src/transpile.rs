@@ -1210,6 +1210,18 @@ impl NodeIdInstance {
     }
 }
 
+// Returns a ::<type> casts suffix that can be appended to a type for oids that need special
+// handling
+fn apply_suffix_casts(type_oid: u32) -> String {
+    match type_oid {
+        20 => "::text",           // bigints as text
+        114 | 3802 => "#>> '{}'", // json/b as stringified
+        1700 => "::text",         // numeric as text
+        _ => "",
+    }
+    .to_string()
+}
+
 impl NodeSelection {
     pub fn to_sql(
         &self,
@@ -1229,12 +1241,7 @@ impl NodeSelection {
                 builder.to_relation_sql(block_name, param_context)?
             ),
             Self::Column(builder) => {
-                let type_adjustment_clause = match builder.column.type_oid {
-                    20 => "::text",           // bigints as text
-                    114 | 3802 => "#>> '{}'", // json/b as stringified
-                    1700 => "::text",         // numeric as text
-                    _ => "",
-                };
+                let type_adjustment_clause = apply_suffix_casts(builder.column.type_oid);
 
                 format!(
                     "{}, {}{}",
@@ -1243,11 +1250,15 @@ impl NodeSelection {
                     type_adjustment_clause
                 )
             }
-            Self::Function(builder) => format!(
-                "{}, {}",
-                quote_literal(&builder.alias),
-                builder.to_sql(block_name)?
-            ),
+            Self::Function(builder) => {
+                let type_adjustment_clause = apply_suffix_casts(builder.function.type_oid);
+                format!(
+                    "{}, {}{}",
+                    quote_literal(&builder.alias),
+                    builder.to_sql(block_name)?,
+                    type_adjustment_clause
+                )
+            }
             Self::NodeId(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
