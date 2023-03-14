@@ -1368,6 +1368,75 @@ create table "Employee"(
 
 Due to differences among the types supported by PostgreSQL, JSON, and GraphQL, `pg_graphql` adds several new Scalar types to handle PostgreSQL builtins that require special handling.
 
+### JSON
+
+`pg_graphql` serializes `json` and `jsonb` data types as `String` under the custom scalar name `JSON`.
+
+```graphql
+scalar JSON
+```
+
+**Example**
+
+Given the setup
+
+=== "SQL"
+    ```sql
+    create table "User"(
+        id bigserial primary key,
+        config jsonb
+    );
+
+    insert into "User"(config)
+    values (jsonb_build_object('palette', 'dark-mode'));
+    ```
+
+=== "GraphQL"
+    ```sql
+    type User {
+      nodeId: ID!
+      id: BigInt!
+      config: JSON
+    }
+    ```
+
+The query
+
+
+```graphql
+{
+  userCollection {
+    edges {
+      node {
+        config
+      }
+    }
+  }
+}
+```
+
+The returns the following data. Note that `config` is serialized as a string
+
+```json
+{
+  "data": {
+    "userCollection": {
+      "edges": [
+        {
+          "node": {
+            "config": "{\"palette\": \"dark-mode\"}"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Use serialized JSON strings when updating or inserting `JSON` fields via the GraphQL API.
+
+JSON does not currently support filtering.
+
 ### BigInt
 
 PostgreSQL `bigint` and `bigserial` types are 64 bit integers. In contrast, JSON supports 32 bit integers.
