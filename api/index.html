@@ -436,6 +436,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#json" class="md-nav__link">
+    JSON
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#bigint" class="md-nav__link">
     BigInt
   </a>
@@ -762,6 +769,13 @@
   
     <nav class="md-nav" aria-label="Custom Scalars">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json" class="md-nav__link">
+    JSON
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#bigint" class="md-nav__link">
@@ -2905,6 +2919,92 @@
 </div>
 <h2 id="custom-scalars">Custom Scalars</h2>
 <p>Due to differences among the types supported by PostgreSQL, JSON, and GraphQL, <code>pg_graphql</code> adds several new Scalar types to handle PostgreSQL builtins that require special handling.</p>
+<h3 id="json">JSON</h3>
+<p><code>pg_graphql</code> serializes <code>json</code> and <code>jsonb</code> data types as <code>String</code> under the custom scalar name <code>JSON</code>.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">JSON</span>
+</code></pre></div></td></tr></table></div>
+<p><strong>Example</strong></p>
+<p>Given the setup</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="28:2"><input checked="checked" id="__tabbed_28_1" name="__tabbed_28" type="radio" /><input id="__tabbed_28_2" name="__tabbed_28" type="radio" /><div class="tabbed-labels"><label for="__tabbed_28_1">SQL</label><label for="__tabbed_28_2">GraphQL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;User&quot;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="n">bigserial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">config</span><span class="w"> </span><span class="n">jsonb</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
+
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="ss">&quot;User&quot;</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><span class="w"></span>
+<span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="n">jsonb_build_object</span><span class="p">(</span><span class="s1">&#39;palette&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;dark-mode&#39;</span><span class="p">));</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="k">User</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">BigInt</span><span class="o">!</span><span class="w"></span>
+<span class="w">  </span><span class="n">config</span><span class="p">:</span><span class="w"> </span><span class="n">JSON</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>The query</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+  <span class="k">userCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">config</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+<p>The returns the following data. Note that <code>config</code> is serialized as a string</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;userCollection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;config&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{\&quot;palette\&quot;: \&quot;dark-mode\&quot;}&quot;</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>Use serialized JSON strings when updating or inserting <code>JSON</code> fields via the GraphQL API.</p>
+<p>JSON does not currently support filtering.</p>
 <h3 id="bigint">BigInt</h3>
 <p>PostgreSQL <code>bigint</code> and <code>bigserial</code> types are 64 bit integers. In contrast, JSON supports 32 bit integers.</p>
 <p>Since PostgreSQL <code>bigint</code> values may be outside the min/max range allowed by JSON, they are represented in the GraphQL schema as <code>BigInt</code>s and values are serialized as strings.</p>
@@ -2934,7 +3034,7 @@
 </code></pre></div></td></tr></table></div>
 <p><strong>Example</strong></p>
 <p>Given the setup</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="28:2"><input checked="checked" id="__tabbed_28_1" name="__tabbed_28" type="radio" /><input id="__tabbed_28_2" name="__tabbed_28" type="radio" /><div class="tabbed-labels"><label for="__tabbed_28_1">SQL</label><label for="__tabbed_28_2">GraphQL</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="29:2"><input checked="checked" id="__tabbed_29_1" name="__tabbed_29" type="radio" /><input id="__tabbed_29_2" name="__tabbed_29" type="radio" /><div class="tabbed-labels"><label for="__tabbed_29_1">SQL</label><label for="__tabbed_29_2">GraphQL</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
