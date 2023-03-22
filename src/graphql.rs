@@ -825,23 +825,6 @@ pub struct __DirectiveLocationType;
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct __DirectiveType;
 
-/*
- * TODO(or):
- * - Revert schema from Arc to Rc
- * - Update the __Type enum to be
- *      __Type(Rc<Schema>, SomeInnerType>
- *      for all implementations
- *      SCRATCH THAT: Arc is needed so __Schema can be cached.
- *
- * - Update __Type::field() to call into a cached function
- *
- * - Add a pub fn cache_key(&self) to __Type
- * so that it can be reused for all field_maps
- *
- * fn field_map(type_: __Type).
- *  since the schema will be availble, at __
- */
-
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ListType {
     pub type_: Box<__Type>,
@@ -1540,131 +1523,78 @@ impl ___Type for EdgeType {
     }
 }
 
-pub fn sql_type_to_graphql_type(
-    type_oid: u32,
-    type_name: &str,
-    max_characters: Option<i32>,
-    schema: &Arc<__Schema>,
-) -> __Type {
-    let mut type_w_list_mod = match type_oid {
-        20 => __Type::Scalar(Scalar::BigInt),       // bigint
-        16 => __Type::Scalar(Scalar::Boolean),      // boolean
-        1082 => __Type::Scalar(Scalar::Date),       // date
-        1184 => __Type::Scalar(Scalar::Datetime),   // timestamp with time zone
-        1114 => __Type::Scalar(Scalar::Datetime),   // timestamp without time zone
-        701 => __Type::Scalar(Scalar::Float),       // double precision
-        23 => __Type::Scalar(Scalar::Int),          // integer
-        21 => __Type::Scalar(Scalar::Int),          // smallint
-        700 => __Type::Scalar(Scalar::Float),       // real
-        3802 => __Type::Scalar(Scalar::JSON),       // jsonb
-        114 => __Type::Scalar(Scalar::JSON),        // json
-        1083 => __Type::Scalar(Scalar::Time),       // time without time zone
-        2950 => __Type::Scalar(Scalar::UUID),       // uuid
-        1700 => __Type::Scalar(Scalar::BigFloat),   // numeric
-        25 => __Type::Scalar(Scalar::String(None)), // text
-        // char, bpchar, varchar
-        18 | 1042 | 1043 => __Type::Scalar(Scalar::String(max_characters)),
-        1009 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::String(None))),
-        }), // text[]
-        1016 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::BigInt)),
-        }), // bigint[]
-        1000 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Boolean)),
-        }), // boolean[]
-        1182 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Date)),
-        }), // date[]
-        1115 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Datetime)),
-        }), // timestamp without time zone[]
-        1185 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Datetime)),
-        }), // timestamp with time zone[]
-        1022 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Float)),
-        }), // double precision[]
-        1021 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Float)),
-        }), // real[]
-        1005 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Int)),
-        }), // smallint[]
-        1007 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Int)),
-        }), // integer[]
-        199 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::JSON)),
-        }), // json[]
-        3807 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::JSON)),
-        }), // jsonb[]
-        1183 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::Time)),
-        }), // time without time zone[]
-        2951 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::UUID)),
-        }), // uuid[]
-        1231 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::BigFloat)),
-        }), // numeric[]
-        // char[], bpchar[], varchar[]
-        1002 | 1014 | 1015 => __Type::List(ListType {
-            type_: Box::new(__Type::Scalar(Scalar::String(max_characters))),
-        }), // char[] or char(n)[]
-        _ => match type_name.ends_with("[]") {
-            true => __Type::List(ListType {
-                type_: Box::new(__Type::Scalar(Scalar::Opaque)),
-            }),
-            false => __Type::Scalar(Scalar::Opaque),
-        },
-    };
-
-    if let Some(exact_type) = schema.context.types.get(&type_oid) {
-        if exact_type.permissions.is_usable {
-            match exact_type.category {
-                TypeCategory::Enum => match schema.context.enums.get(&exact_type.oid) {
-                    Some(enum_) => {
-                        type_w_list_mod = __Type::Enum(EnumType {
-                            enum_: EnumSource::Enum(Arc::clone(enum_)),
-                            schema: schema.clone(),
-                        })
-                    }
-                    None => {}
-                },
-                TypeCategory::Array => {
-                    match schema
-                        .context
-                        .enums
-                        .get(&exact_type.array_element_type_oid.unwrap())
-                    {
-                        Some(base_enum) => {
-                            type_w_list_mod = __Type::List(ListType {
-                                type_: Box::new(__Type::Enum(EnumType {
-                                    enum_: EnumSource::Enum(Arc::clone(base_enum)),
-                                    schema: Arc::clone(schema),
-                                })),
-                            })
-                        }
-                        None => {}
-                    }
+impl Type {
+    fn to_graphql_type(
+        &self,
+        max_characters: Option<i32>,
+        is_set_of: bool,
+        schema: &Arc<__Schema>,
+    ) -> __Type {
+        match self.category {
+            TypeCategory::Other => {
+                match self.oid {
+                    20 => __Type::Scalar(Scalar::BigInt),       // bigint
+                    16 => __Type::Scalar(Scalar::Boolean),      // boolean
+                    1082 => __Type::Scalar(Scalar::Date),       // date
+                    1184 => __Type::Scalar(Scalar::Datetime),   // timestamp with time zone
+                    1114 => __Type::Scalar(Scalar::Datetime),   // timestamp without time zone
+                    701 => __Type::Scalar(Scalar::Float),       // double precision
+                    23 => __Type::Scalar(Scalar::Int),          // integer
+                    21 => __Type::Scalar(Scalar::Int),          // smallint
+                    700 => __Type::Scalar(Scalar::Float),       // real
+                    3802 => __Type::Scalar(Scalar::JSON),       // jsonb
+                    114 => __Type::Scalar(Scalar::JSON),        // json
+                    1083 => __Type::Scalar(Scalar::Time),       // time without time zone
+                    2950 => __Type::Scalar(Scalar::UUID),       // uuid
+                    1700 => __Type::Scalar(Scalar::BigFloat),   // numeric
+                    25 => __Type::Scalar(Scalar::String(None)), // text
+                    // char, bpchar, varchar
+                    18 | 1042 | 1043 => __Type::Scalar(Scalar::String(max_characters)),
+                    _ => __Type::Scalar(Scalar::Opaque),
                 }
-                _ => {}
             }
+            TypeCategory::Array => match self.array_element_type_oid {
+                Some(array_element_type_oid) => {
+                    let sql_types = schema.context.types();
+                    let element_sql_type: Option<&Arc<Type>> =
+                        sql_types.get(&array_element_type_oid);
+
+                    let inner_graphql_type: __Type = match element_sql_type {
+                        Some(sql_type) => match sql_type.permissions.is_usable {
+                            true => sql_type.to_graphql_type(None, false, schema),
+                            false => __Type::Scalar(Scalar::Opaque),
+                        },
+                        None => __Type::Scalar(Scalar::Opaque),
+                    };
+                    __Type::List(ListType {
+                        type_: Box::new(inner_graphql_type),
+                    })
+                }
+                // Should not be possible
+                None => __Type::Scalar(Scalar::Opaque),
+            },
+            TypeCategory::Enum => match schema.context.enums.get(&self.oid) {
+                Some(enum_) => __Type::Enum(EnumType {
+                    enum_: EnumSource::Enum(Arc::clone(enum_)),
+                    schema: schema.clone(),
+                }),
+                None => __Type::Scalar(Scalar::Opaque),
+            },
+            // TODO
+            TypeCategory::Table => __Type::Scalar(Scalar::Opaque),
+            TypeCategory::Composite => __Type::Scalar(Scalar::Opaque),
         }
-    };
-    type_w_list_mod
+    }
 }
 
 pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> __Type {
-    let type_w_list_mod = sql_type_to_graphql_type(
-        col.type_oid,
-        col.type_name.as_str(),
-        col.max_characters,
-        schema,
-    );
-
+    let sql_types = schema.context.types();
+    let sql_type = sql_types.get(&col.type_oid);
+    if sql_type.is_none() {
+        return __Type::Scalar(Scalar::Opaque);
+    }
+    let sql_type = sql_type.unwrap();
+    let type_w_list_mod = sql_type.to_graphql_type(col.max_characters, false, schema);
     match col.is_not_null {
         true => __Type::NonNull(NonNullType {
             type_: Box::new(type_w_list_mod),
@@ -1751,18 +1681,23 @@ impl ___Type for NodeType {
                 .functions
                 .iter()
                 .filter(|x| x.permissions.is_executable)
-                .map(|func| __Field {
-                    name_: self.schema.graphql_function_field_name(&func),
-                    type_: sql_type_to_graphql_type(
-                        func.type_oid,
-                        func.type_name.as_str(),
-                        None,
-                        &self.schema,
-                    ),
-                    args: vec![],
-                    description: func.directives.description.clone(),
-                    deprecation_reason: None,
-                    sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
+                .map(|func| {
+                    // unwrap because no sql types are filtered
+                    let sql_types = self.schema.context.types();
+                    let sql_ret_type = sql_types.get(&func.type_oid);
+                    __Field {
+                        name_: self.schema.graphql_function_field_name(&func),
+                        type_: match sql_ret_type {
+                            None => __Type::Scalar(Scalar::Opaque),
+                            Some(sql_type) => {
+                                sql_type.to_graphql_type(None, func.is_set_of, &self.schema)
+                            }
+                        },
+                        args: vec![],
+                        description: func.directives.description.clone(),
+                        deprecation_reason: None,
+                        sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
+                    }
                 })
                 .filter(|x| is_valid_graphql_name(&x.name_))
                 .collect();

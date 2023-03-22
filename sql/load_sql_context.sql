@@ -73,15 +73,19 @@ select
                         jsonb_build_object(
                             'oid', pt.oid::int,
                             'schema_oid', pt.typnamespace::int,
+                           -- 'name', pt.typname::regtype::text,
                             'name', pt.typname,
-                            -- if type is an array, points at the underlying element type
                             'category', case
                                 when pt.typcategory = 'A' then 'Array'
                                 when pt.typcategory = 'E' then 'Enum'
+                                when pt.typcategory = 'C' and tabs.oid is not null  then 'Table'
                                 when pt.typcategory = 'C' then 'Composite'
                                 else 'Other'
                             end,
+                            -- if category is 'Array', points at the underlying element type
                             'array_element_type_oid', nullif(pt.typelem::int, 0),
+                            -- if category is 'Table' points to the table oid
+                            'table_oid', tabs.oid::int,
                             'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
                             'directives', jsonb_build_object(
                                 'name', graphql.comment_directive(pg_catalog.obj_description(pt.oid, 'pg_type')) ->> 'name'
@@ -95,6 +99,8 @@ select
                     pg_type pt
                     join schemas_ spo
                         on pt.typnamespace = spo.oid
+                    left join pg_class tabs
+                        on pt.typrelid = tabs.oid
             ),
             jsonb_build_object()
         ),
@@ -244,6 +250,7 @@ select
                                                 'type_name', pp.prorettype::regtype::text,
                                                 'schema_oid', pronamespace::int,
                                                 'schema_name', pronamespace::regnamespace::text,
+                                                'is_set_of', pp.proretset::bool,
                                                 'comment', pg_catalog.obj_description(pp.oid, 'pg_proc'),
                                                 'directives', (
                                                     with directives(directive) as (
@@ -271,8 +278,6 @@ select
                                     where
                                         pp.pronargs = 1 -- one argument
                                         and pp.proargtypes[0] = pc.reltype -- first argument is table type
-                                        and pp.proname like '\_%' -- starts with underscore
-                                        and not pp.proretset -- disallow set returning functions (for now)
                                 ),
                                 jsonb_build_array()
                             ),
