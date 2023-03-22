@@ -673,7 +673,7 @@ impl FilterBuilderElem {
                     }
                     _ => {
                         let cast_type_name = match op {
-                            FilterOp::In => format!("{}[]", column.type_name),
+                            FilterOp::In | FilterOp::NotIn => format!("{}[]", column.type_name),
                             _ => column.type_name.clone(),
                         };
 
@@ -690,6 +690,7 @@ impl FilterBuilderElem {
                                 FilterOp::GreaterThan => ">",
                                 FilterOp::GreaterThanEqualTo => ">=",
                                 FilterOp::In => "= any",
+                                FilterOp::NotIn => "<> all",
                                 FilterOp::StartsWith => "^@",
                                 FilterOp::Like => "like",
                                 FilterOp::ILike => "ilike",
