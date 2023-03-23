@@ -1570,8 +1570,9 @@ impl Type {
                         type_: Box::new(inner_graphql_type),
                     })
                 }
-                // Should not be possible
-                None => __Type::Scalar(Scalar::Opaque),
+                None => __Type::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Opaque)),
+                }),
             },
             TypeCategory::Enum => match schema.context.enums.get(&self.oid) {
                 Some(enum_) => __Type::Enum(EnumType {
@@ -1581,7 +1582,30 @@ impl Type {
                 None => __Type::Scalar(Scalar::Opaque),
             },
             // TODO
-            TypeCategory::Table => __Type::Scalar(Scalar::Opaque),
+            TypeCategory::Table => {
+                match self.table_oid {
+                    // no guarentees of whats going on here.
+                    None => __Type::Scalar(Scalar::Opaque),
+                    Some(table_oid) => match schema.context.tables.get(&table_oid) {
+                        None => __Type::Scalar(Scalar::Opaque),
+                        Some(table) => match is_set_of {
+                            true => __Type::Connection(ConnectionType {
+                                table: Arc::clone(table),
+                                fkey: None,
+                                reverse_reference: None,
+                                schema: Arc::clone(schema),
+                            }),
+                            false => __Type::Node(NodeType {
+                                table: Arc::clone(table),
+                                fkey: None,
+                                reverse_reference: None,
+                                schema: Arc::clone(schema),
+                            }),
+                        },
+                    },
+                }
+            }
+            // Composites not yet supported
             TypeCategory::Composite => __Type::Scalar(Scalar::Opaque),
         }
     }
