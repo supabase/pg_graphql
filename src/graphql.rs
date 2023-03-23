@@ -3212,19 +3212,8 @@ impl ___Type for FilterTypeType {
                             default_value: None,
                             sql_type: None,
                         },
-                        FilterOp::In => __InputValue {
-                            name_: "in".to_string(),
-                            type_: __Type::List(ListType {
-                                type_: Box::new(__Type::NonNull(NonNullType {
-                                    type_: Box::new(__Type::Scalar(scalar.clone())),
-                                })),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        FilterOp::NotIn => __InputValue {
-                            name_: "nin".to_string(),
+                        FilterOp::In | FilterOp::NotIn => __InputValue {
+                            name_: op.to_string(),
                             type_: __Type::List(ListType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::Scalar(scalar.clone())),
