@@ -22,7 +22,7 @@
 - [x] __Open Source__
 
 ### Overview
-`pg_graphql` is a PostgreSQL extension that enables querying the database with GraphQL using a single a SQL function.
+`pg_graphql` is a PostgreSQL extension that enables querying the database with GraphQL using a single SQL function.
 
 The extension reflects a GraphQL schema from the existing SQL schema and exposes it through a SQL function, `graphql.resolve(...)`. This enables any programming language that can connect to PostgreSQL to query the database via GraphQL with no additional servers, processes, or libraries.
 
