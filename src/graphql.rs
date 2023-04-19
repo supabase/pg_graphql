@@ -2965,6 +2965,7 @@ pub enum FilterOp {
     GreaterThan,
     GreaterThanEqualTo,
     In,
+    NotIn,
     Is,
     StartsWith,
     Like,
@@ -2981,6 +2982,7 @@ impl ToString for FilterOp {
             Self::GreaterThan => "gt",
             Self::GreaterThanEqualTo => "gte",
             Self::In => "in",
+            Self::NotIn => "nin",
             Self::Is => "is",
             Self::StartsWith => "startsWith",
             Self::Like => "like",
@@ -3002,6 +3004,7 @@ impl FromStr for FilterOp {
             "gt" => Ok(Self::GreaterThan),
             "gte" => Ok(Self::GreaterThanEqualTo),
             "in" => Ok(Self::In),
+            "nin" => Ok(Self::NotIn),
             "is" => Ok(Self::Is),
             "startsWith" => Ok(Self::StartsWith),
             "like" => Ok(Self::Like),
@@ -3049,6 +3052,7 @@ impl ___Type for FilterTypeType {
                             FilterOp::Equal,
                             FilterOp::NotEqual,
                             FilterOp::In,
+                            FilterOp::NotIn,
                             FilterOp::Is,
                         ]
                     }
@@ -3061,6 +3065,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::Float => vec![
@@ -3071,6 +3076,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::String(_) => vec![
@@ -3081,6 +3087,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                         FilterOp::StartsWith,
                         FilterOp::Like,
@@ -3094,6 +3101,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::Date => vec![
@@ -3104,6 +3112,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::Time => vec![
@@ -3114,6 +3123,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::Datetime => vec![
@@ -3124,6 +3134,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::BigFloat => vec![
@@ -3134,6 +3145,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::GreaterThan,
                         FilterOp::GreaterThanEqualTo,
                         FilterOp::In,
+                        FilterOp::NotIn,
                         FilterOp::Is,
                     ],
                     Scalar::Opaque => vec![FilterOp::Equal, FilterOp::Is],
@@ -3159,8 +3171,8 @@ impl ___Type for FilterTypeType {
                             default_value: None,
                             sql_type: None,
                         },
-                        FilterOp::In => __InputValue {
-                            name_: "in".to_string(),
+                        FilterOp::In | FilterOp::NotIn => __InputValue {
+                            name_: op.to_string(),
                             type_: __Type::List(ListType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
                                     type_: Box::new(__Type::Scalar(scalar.clone())),
