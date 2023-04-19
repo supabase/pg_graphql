@@ -1257,7 +1257,7 @@ impl NodeSelection {
                 format!(
                     "{}, {}{}",
                     quote_literal(&builder.alias),
-                    builder.to_sql(block_name)?,
+                    builder.to_sql(block_name, param_context)?,
                     type_adjustment_clause
                 )
             }
@@ -1300,7 +1300,7 @@ impl NodeIdBuilder {
 }
 
 impl FunctionBuilder {
-    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+    pub fn to_sql(&self, block_name: &str, param_context: &mut ParamContext,) -> Result<String, String> {
         let schema_name = &self.function.schema_name;
         let function_name = &self.function.name;
 
@@ -1310,7 +1310,26 @@ impl FunctionBuilder {
                 quote_ident(&self.table.schema),
                 quote_ident(&self.table.name)
             ),
-            FunctionSelection::Node(node_builder) => return Err("node builder".to_string()),
+            FunctionSelection::Node(node_builder) => {
+                let func_block_name = rand_block_name();
+                let object_clause = node_builder.to_sql(&func_block_name, param_context)?;
+
+                let from_clause = format!(
+                    "{schema_name}.{function_name}({block_name}::{}.{})",
+                    quote_ident(&self.table.schema),
+                    quote_ident(&self.table.name)
+                );
+                format!(
+                    "
+                    (
+                        select
+                            {object_clause}
+                        from
+                            {from_clause} as {func_block_name}
+                    )
+                    "
+                )
+            }
             FunctionSelection::Connection(connection_builder) => {
                 return Err("connection builder".to_string());
             }
