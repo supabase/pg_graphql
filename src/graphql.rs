@@ -892,6 +892,73 @@ pub struct ConnectionType {
     pub schema: Arc<__Schema>,
 }
 
+impl ConnectionType {
+    // default arguments for all connections
+    fn get_connection_input_args(&self) -> Vec<__InputValue> {
+        vec![
+            __InputValue {
+                name_: "first".to_string(),
+                type_: __Type::Scalar(Scalar::Int),
+                description: Some("Query the first `n` records in the collection".to_string()),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "last".to_string(),
+                type_: __Type::Scalar(Scalar::Int),
+                description: Some("Query the last `n` records in the collection".to_string()),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "before".to_string(),
+                type_: __Type::Scalar(Scalar::Cursor),
+                description: Some(
+                    "Query values in the collection before the provided cursor".to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "after".to_string(),
+                type_: __Type::Scalar(Scalar::Cursor),
+                description: Some(
+                    "Query values in the collection after the provided cursor".to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "filter".to_string(),
+                type_: __Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                }),
+                description: Some(
+                    "Filters to apply to the results set when querying from the collection"
+                        .to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "orderBy".to_string(),
+                type_: __Type::List(ListType {
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::OrderByEntity(OrderByEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        })),
+                    })),
+                }),
+                description: Some("Sort order to apply to the collection".to_string()),
+                default_value: None,
+                sql_type: None,
+            },
+        ]
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum EnumSource {
     Enum(Arc<Enum>),
@@ -1003,73 +1070,19 @@ impl ___Type for QueryType {
             {
                 let table_base_type_name = &self.schema.graphql_table_base_type_name(&table);
 
+                let connection_type = ConnectionType {
+                    table: Arc::clone(table),
+                    fkey: None,
+                    reverse_reference: None,
+                    schema: Arc::clone(&self.schema),
+                };
+
+                let connection_args = connection_type.get_connection_input_args();
+
                 let collection_entrypoint = __Field {
-                    name_: format!(
-                        "{}Collection",
-                        lowercase_first_letter(table_base_type_name)
-                    ),
-                    type_: __Type::Connection(ConnectionType {
-                        table: Arc::clone(table),
-                        fkey: None,
-                        reverse_reference: None,
-                        schema: Arc::clone(&self.schema),
-                    }),
-                    args: vec![
-                        __InputValue {
-                            name_: "first".to_string(),
-                            type_: __Type::Scalar(Scalar::Int),
-                            description: Some("Query the first `n` records in the collection".to_string()),
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "last".to_string(),
-                            type_: __Type::Scalar(Scalar::Int),
-                            description: Some("Query the last `n` records in the collection".to_string()),
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "before".to_string(),
-                            type_: __Type::Scalar(Scalar::Cursor),
-                            description: Some("Query values in the collection before the provided cursor".to_string()),
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "after".to_string(),
-                            type_: __Type::Scalar(Scalar::Cursor),
-                            description: Some("Query values in the collection after the provided cursor".to_string()),
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "filter".to_string(),
-                            type_: __Type::FilterEntity(FilterEntityType {
-                                table: Arc::clone(table),
-                                schema: self.schema.clone(),
-                            }),
-                            description: Some("Filters to apply to the results set when querying from the collection".to_string()),
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "orderBy".to_string(),
-                            type_: __Type::List(ListType {
-                                type_: Box::new(__Type::NonNull(NonNullType {
-                                    type_: Box::new(__Type::OrderByEntity(
-                                        OrderByEntityType {
-                                            table: Arc::clone(table),
-                                            schema: self.schema.clone(),
-                                        },
-                                    )),
-                                })),
-                            }),
-                            description: Some("Sort order to apply to the collection".to_string()),
-                            default_value: None,
-                            sql_type: None,
-                        },
-                    ],
+                    name_: format!("{}Collection", lowercase_first_letter(table_base_type_name)),
+                    type_: __Type::Connection(connection_type),
+                    args: connection_args,
                     description: Some(format!(
                         "A pagable collection of type `{}`",
                         table_base_type_name
@@ -1706,18 +1719,26 @@ impl ___Type for NodeType {
                 .iter()
                 .filter(|x| x.permissions.is_executable)
                 .map(|func| {
-                    // unwrap because no sql types are filtered
                     let sql_types = self.schema.context.types();
                     let sql_ret_type = sql_types.get(&func.type_oid);
+                    let gql_ret_type = match sql_ret_type {
+                        None => __Type::Scalar(Scalar::Opaque),
+                        Some(sql_type) => {
+                            sql_type.to_graphql_type(None, func.is_set_of, &self.schema)
+                        }
+                    };
+
+                    let gql_args = match &gql_ret_type {
+                        __Type::Connection(connection_type) => {
+                            connection_type.get_connection_input_args()
+                        }
+                        _ => vec![],
+                    };
+
                     __Field {
                         name_: self.schema.graphql_function_field_name(&func),
-                        type_: match sql_ret_type {
-                            None => __Type::Scalar(Scalar::Opaque),
-                            Some(sql_type) => {
-                                sql_type.to_graphql_type(None, func.is_set_of, &self.schema)
-                            }
-                        },
-                        args: vec![],
+                        type_: gql_ret_type,
+                        args: gql_args,
                         description: func.directives.description.clone(),
                         deprecation_reason: None,
                         sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
@@ -1802,71 +1823,20 @@ impl ___Type for NodeType {
 
             let relation_field = match self.schema.context.fkey_is_locally_unique(fkey) {
                 false => {
+                    let connection_type = ConnectionType {
+                        table: Arc::clone(foreign_table),
+                        fkey: Some(Arc::clone(fkey)),
+                        reverse_reference: Some(reverse_reference),
+                        schema: Arc::clone(&self.schema),
+                    };
+                    let connection_args = connection_type.get_connection_input_args();
                     __Field {
-                        name_: self.schema.graphql_foreign_key_field_name(fkey, reverse_reference),
+                        name_: self
+                            .schema
+                            .graphql_foreign_key_field_name(fkey, reverse_reference),
                         // XXX: column nullability ignored for NonNull type to match pg_graphql
-                        type_: __Type::Connection(ConnectionType {
-                                table: Arc::clone(foreign_table),
-                                fkey: Some(Arc::clone(fkey)),
-                                reverse_reference: Some(reverse_reference),
-                                schema: Arc::clone(&self.schema),
-                            }),
-                        args: vec![
-                            __InputValue {
-                                name_: "first".to_string(),
-                                type_: __Type::Scalar(Scalar::Int),
-                                description: Some("Query the first `n` records in the collection".to_string()),
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "last".to_string(),
-                                type_: __Type::Scalar(Scalar::Int),
-                                description: Some("Query the last `n` records in the collection".to_string()),
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "before".to_string(),
-                                type_: __Type::Scalar(Scalar::Cursor),
-                                description: Some("Query values in the collection before the provided cursor".to_string()),
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "after".to_string(),
-                                type_: __Type::Scalar(Scalar::Cursor),
-                                description: Some("Query values in the collection after the provided cursor".to_string()),
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "filter".to_string(),
-                                type_: __Type::FilterEntity(FilterEntityType {
-                                    table: Arc::clone(foreign_table),
-                                    schema: Arc::clone(&self.schema),
-                                }),
-                                description: Some("Filters to apply to the results set when querying from the collection".to_string()),
-                                default_value: None,
-                                sql_type: None,
-                            },
-                            __InputValue {
-                                name_: "orderBy".to_string(),
-                                type_: __Type::List(ListType {
-                                    type_: Box::new(__Type::NonNull(NonNullType {
-                                        type_: Box::new(__Type::OrderByEntity(
-                                            OrderByEntityType {
-                                                table: Arc::clone(foreign_table),
-                                                schema: Arc::clone(&self.schema),
-                                            },
-                                        )),
-                                    })),
-                                }),
-                                description: Some("Sort order to apply to the collection".to_string()),
-                                default_value: None,
-                                sql_type: None,
-                            },
-                        ],
+                        type_: __Type::Connection(connection_type),
+                        args: connection_args,
                         description: None,
                         deprecation_reason: None,
                         sql_type: None,

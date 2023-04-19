@@ -114,7 +114,8 @@ pub trait QueryEntrypoint {
         match spi_result {
             Ok(Some(jsonb)) => Ok(jsonb.0),
             Ok(None) => Ok(serde_json::Value::Null),
-            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
+            Err(x) => Err(format!("Err {:?}", x)),
+            _ => Err("Internal Error: Failed to executeee transpiled query".to_string()),
         }
     }
 }
@@ -1302,11 +1303,19 @@ impl FunctionBuilder {
     pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
         let schema_name = &self.function.schema_name;
         let function_name = &self.function.name;
-        Ok(format!(
-            "{schema_name}.{function_name}({block_name}::{}.{})",
-            quote_ident(&self.table.schema),
-            quote_ident(&self.table.name)
-        ))
+
+        let sql_frag = match &self.selection {
+            FunctionSelection::ScalarSelf => format!(
+                "{schema_name}.{function_name}({block_name}::{}.{})",
+                quote_ident(&self.table.schema),
+                quote_ident(&self.table.name)
+            ),
+            FunctionSelection::Node(node_builder) => return Err("node builder".to_string()),
+            FunctionSelection::Connection(connection_builder) => {
+                return Err("connection builder".to_string());
+            }
+        };
+        Ok(sql_frag)
     }
 }
 

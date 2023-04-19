@@ -794,6 +794,14 @@ pub struct FunctionBuilder {
     pub alias: String,
     pub function: Arc<Function>,
     pub table: Arc<Table>,
+    pub selection: FunctionSelection,
+}
+
+#[derive(Clone, Debug)]
+pub enum FunctionSelection {
+    ScalarSelf,
+    Connection(ConnectionBuilder),
+    Node(NodeBuilder),
 }
 
 fn restrict_allowed_arguments<'a, T>(
@@ -1382,10 +1390,39 @@ where
                                     column: Arc::clone(col),
                                 }),
                                 NodeSQLType::Function(func) => {
+                                    let function_selection = match &f.type_() {
+                                        __Type::Scalar(_) => FunctionSelection::ScalarSelf,
+                                        __Type::Node(_) => {
+                                            let node_builder = to_node_builder(
+                                                f,
+                                                selection_field,
+                                                fragment_definitions,
+                                                variables,
+                                                // TODO need ref to fkey here
+                                            )?;
+                                            FunctionSelection::Node(node_builder)
+                                        }
+                                        __Type::Connection(_) => {
+                                            let connection_builder = to_connection_builder(
+                                                f,
+                                                selection_field,
+                                                fragment_definitions,
+                                                variables,
+                                                // TODO need ref to fkey here
+                                            )?;
+                                            FunctionSelection::Connection(connection_builder)
+                                        }
+                                        _ => {
+                                            return Err(format!(
+                                                "invalid return type from function"
+                                            ))
+                                        }
+                                    };
                                     NodeSelection::Function(FunctionBuilder {
                                         alias,
                                         function: Arc::clone(func),
                                         table: Arc::clone(&xtype.table),
+                                        selection: function_selection,
                                     })
                                 }
                                 NodeSQLType::NodeId(pkey_columns) => {
