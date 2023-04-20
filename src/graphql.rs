@@ -881,13 +881,15 @@ pub struct DeleteResponseType {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct ForeignKeyReversible {
+    pub fkey: Arc<ForeignKey>,
+    pub reverse_reference: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ConnectionType {
     pub table: Arc<Table>,
-
-    // If one is present, both should be present
-    // could be improved
-    pub fkey: Option<Arc<ForeignKey>>,
-    pub reverse_reference: Option<bool>,
+    pub fkey: Option<ForeignKeyReversible>,
 
     pub schema: Arc<__Schema>,
 }
@@ -1073,7 +1075,6 @@ impl ___Type for QueryType {
                 let connection_type = ConnectionType {
                     table: Arc::clone(table),
                     fkey: None,
-                    reverse_reference: None,
                     schema: Arc::clone(&self.schema),
                 };
 
@@ -1605,7 +1606,6 @@ impl Type {
                             true => __Type::Connection(ConnectionType {
                                 table: Arc::clone(table),
                                 fkey: None,
-                                reverse_reference: None,
                                 schema: Arc::clone(schema),
                             }),
                             false => __Type::Node(NodeType {
@@ -1825,8 +1825,9 @@ impl ___Type for NodeType {
                 false => {
                     let connection_type = ConnectionType {
                         table: Arc::clone(foreign_table),
-                        fkey: Some(Arc::clone(fkey)),
-                        reverse_reference: Some(reverse_reference),
+                        fkey: Some(
+                            ForeignKeyReversible { fkey: Arc::clone(fkey), reverse_reference: reverse_reference }
+                        ),
                         schema: Arc::clone(&self.schema),
                     };
                     let connection_args = connection_type.get_connection_input_args();
@@ -3535,7 +3536,6 @@ impl __Schema {
             types_.push(__Type::Connection(ConnectionType {
                 table: Arc::clone(table),
                 fkey: None,
-                reverse_reference: None,
                 schema: Arc::clone(&schema_rc),
             }));
 

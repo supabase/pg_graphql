@@ -546,6 +546,16 @@ where
     }
 }
 
+
+
+
+#[derive(Clone, Debug)]
+pub struct ConnectionBuilderSource {
+    pub table: Arc<Table>,
+    pub fkey: Option<ForeignKeyReversible>
+}
+
+
 #[derive(Clone, Debug)]
 pub struct ConnectionBuilder {
     pub alias: String,
@@ -559,9 +569,7 @@ pub struct ConnectionBuilder {
     pub order_by: OrderByBuilder,
 
     // metadata
-    pub table: Arc<Table>,
-    pub fkey: Option<Arc<ForeignKey>>,
-    pub reverse_reference: Option<bool>,
+    pub source: ConnectionBuilderSource,
 
     //fields
     pub selections: Vec<ConnectionSelection>,
@@ -1128,9 +1136,10 @@ where
             }
             Ok(ConnectionBuilder {
                 alias,
-                table: Arc::clone(&xtype.table),
-                fkey: xtype.fkey.clone(),
-                reverse_reference: xtype.reverse_reference,
+                source: ConnectionBuilderSource {
+                    table: Arc::clone(&xtype.table),
+                    fkey: xtype.fkey.clone()
+                },
                 first,
                 last,
                 before,

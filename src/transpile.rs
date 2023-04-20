@@ -1,6 +1,6 @@
 use crate::builder::*;
 use crate::graphql::*;
-use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table};
+use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table, Function};
 use pgx::pg_sys::submodules::panic::CaughtError;
 use pgx::pg_sys::PgBuiltInOids;
 use pgx::prelude::*;
@@ -726,6 +726,12 @@ impl FilterBuilder {
     }
 }
 
+pub struct FromFunction {
+    function: Arc<Function>,
+    // The block name for the functions argument
+    input_block_name: String
+}
+
 impl ConnectionBuilder {
     fn requested_total(&self) -> bool {
         self.selections
@@ -757,18 +763,84 @@ impl ConnectionBuilder {
             .any(|x| matches!(&x, PageInfoSelection::HasPreviousPage { alias: _ }))
     }
 
+    fn is_reverse_pagination(&self) -> bool {
+        self.last.is_some() || self.before.is_some()
+    }
+
+    fn to_join_clause(&self, quoted_block_name: &str,  quoted_parent_block_name: &Option<&str>) -> Result<String, String> {
+        match &self.source.fkey {
+            Some(fkey) => {
+                let quoted_parent_block_name = quoted_parent_block_name
+                    .ok_or("Internal Error: Parent block name is required when fkey_ix is set")?;
+                self.source.table.to_join_clause(
+                    &fkey.fkey,
+                    fkey.reverse_reference,
+                    &quoted_block_name,
+                    quoted_parent_block_name,
+                )
+            }
+            None => Ok("true".to_string()),
+        }
+    }
+
+
+    fn object_clause(&self, quoted_block_name: &str, param_context: &mut ParamContext) -> Result<String, String> {
+        let frags: Vec<String> = self
+            .selections
+            .iter()
+            .map(|x| {
+                x.to_sql(
+                    quoted_block_name,
+                    &self.order_by,
+                    &self.source.table,
+                    param_context,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(frags.join(", "))
+    }
+
+    fn limit_clause(&self) -> u64 {
+        cmp::min(
+            self.first
+                .unwrap_or_else(|| self.last.unwrap_or(self.max_rows)),
+            self.max_rows,
+        )
+    }
+
+    fn from_clause(&self, quoted_block_name: &str, function: &Option<FromFunction>) -> String{
+
+        let quoted_schema = quote_ident(&self.source.table.schema);
+        let quoted_table = quote_ident(&self.source.table.name);
+
+        match function {
+            Some(from_function) => {
+                let quoted_func_schema = quote_ident(&from_function.function.schema_name);
+                let quoted_func = quote_ident(&from_function.function.name);
+                let input_block_name = &from_function.input_block_name;
+                format!("{quoted_func_schema}.{quoted_func}({input_block_name}::{quoted_schema}.{quoted_table}) {quoted_block_name}")
+            }
+            None => {
+                format!("{quoted_schema}.{quoted_table} {quoted_block_name}")
+            }
+        }
+    }
+
+
     pub fn to_sql(
         &self,
         quoted_parent_block_name: Option<&str>,
         param_context: &mut ParamContext,
+        from_func: Option<FromFunction>
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(&self.table.schema);
-        let quoted_table = quote_ident(&self.table.name);
+
+        let from_clause = self.from_clause(&quoted_block_name, &from_func);
 
         let where_clause =
             self.filter
-                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
+                .to_where_clause(&quoted_block_name, &self.source.table, param_context)?;
 
         let order_by_clause = self.order_by.to_order_by_clause(&quoted_block_name);
         let order_by_clause_reversed = self
@@ -776,9 +848,7 @@ impl ConnectionBuilder {
             .reverse()
             .to_order_by_clause(&quoted_block_name);
 
-        let is_reverse_pagination = self.last.is_some() || self.before.is_some();
-
-        let order_by_clause_records = match is_reverse_pagination {
+        let order_by_clause_records = match self.is_reverse_pagination() {
             true => &order_by_clause_reversed,
             false => &order_by_clause,
         };
@@ -787,56 +857,25 @@ impl ConnectionBuilder {
         let requested_next_page = self.requested_next_page();
         let requested_previous_page = self.requested_previous_page();
 
-        let join_clause = match &self.fkey {
-            Some(fkey) => {
-                let quoted_parent_block_name = quoted_parent_block_name
-                    .ok_or("Internal Error: Parent block name is required when fkey_ix is set")?;
-                self.table.to_join_clause(
-                    fkey,
-                    self.reverse_reference.unwrap(),
-                    &quoted_block_name,
-                    quoted_parent_block_name,
-                )?
-            }
-            None => "true".to_string(),
-        };
-
-        let frags: Vec<String> = self
-            .selections
-            .iter()
-            .map(|x| {
-                x.to_sql(
-                    &quoted_block_name,
-                    &self.order_by,
-                    &self.table,
-                    param_context,
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let limit: u64 = cmp::min(
-            self.first
-                .unwrap_or_else(|| self.last.unwrap_or(self.max_rows)),
-            self.max_rows,
-        );
-
-        let object_clause = frags.join(", ");
+        let join_clause = self.to_join_clause(&quoted_block_name, &quoted_parent_block_name)?;
 
         let cursor = &self.before.clone().or_else(|| self.after.clone());
 
-        let selectable_columns_clause = self.table.to_selectable_columns_clause();
+        let object_clause = self.object_clause(&quoted_block_name, param_context)?;
+
+        let selectable_columns_clause = self.source.table.to_selectable_columns_clause();
 
         let pkey_tuple_clause_from_block =
-            self.table.to_primary_key_tuple_clause(&quoted_block_name);
-        let pkey_tuple_clause_from_records = self.table.to_primary_key_tuple_clause("__records");
+            self.source.table.to_primary_key_tuple_clause(&quoted_block_name);
+        let pkey_tuple_clause_from_records = self.source.table.to_primary_key_tuple_clause("__records");
 
         let pagination_clause = {
-            let order_by = match is_reverse_pagination {
+            let order_by = match self.is_reverse_pagination() {
                 true => self.order_by.reverse(),
                 false => self.order_by.clone(),
             };
             match cursor {
-                Some(cursor) => self.table.to_pagination_clause(
+                Some(cursor) => self.source.table.to_pagination_clause(
                     &quoted_block_name,
                     &order_by,
                     cursor,
@@ -847,6 +886,8 @@ impl ConnectionBuilder {
             }
         };
 
+        let limit = self.limit_clause();
+
         // initialized assuming forwards pagination
         let mut has_next_page_query = format!(
             "
@@ -854,7 +895,7 @@ impl ConnectionBuilder {
                 select
                     1
                 from
-                    {quoted_schema}.{quoted_table} {quoted_block_name}
+                    {from_clause}
                 where
                     {join_clause}
                     and {where_clause}
@@ -872,7 +913,7 @@ impl ConnectionBuilder {
                 select
                     not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
                 from
-                    {quoted_schema}.{quoted_table} {quoted_block_name}
+                    {from_clause}
                     left join (select array_agg({pkey_tuple_clause_from_records}) from __records ) __records(seen)
                         on true
                 where
@@ -885,7 +926,7 @@ impl ConnectionBuilder {
             select coalesce(bool_and(is_pkey_in_records), false) from page_minus_1
         ");
 
-        if is_reverse_pagination {
+        if self.is_reverse_pagination() {
             // Reverse has_next_page and has_previous_page
             std::mem::swap(&mut has_next_page_query, &mut has_prev_page_query);
         }
@@ -903,7 +944,7 @@ impl ConnectionBuilder {
                     select
                         {selectable_columns_clause}
                     from
-                        {quoted_schema}.{quoted_table} {quoted_block_name}
+                        {from_clause}
                     where
                         true
                         and {join_clause}
@@ -918,7 +959,7 @@ impl ConnectionBuilder {
                     select
                         count(*)
                     from
-                        {quoted_schema}.{quoted_table} {quoted_block_name}
+                        {from_clause}
                     where
                         {requested_total} -- skips total when not requested
                         and {join_clause}
@@ -942,179 +983,11 @@ impl ConnectionBuilder {
         ))
     }
 
-    pub fn to_sql_from_func(
-        &self,
-        input_block_name: &str,
-        function_schema: &str,
-        function_name: &str,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(function_schema);
-        let quoted_func = quote_ident(function_name);
-
-        let where_clause =
-            self.filter
-                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
-
-        let order_by_clause = self.order_by.to_order_by_clause(&quoted_block_name);
-        let order_by_clause_reversed = self
-            .order_by
-            .reverse()
-            .to_order_by_clause(&quoted_block_name);
-
-        let is_reverse_pagination = self.last.is_some() || self.before.is_some();
-
-        let order_by_clause_records = match is_reverse_pagination {
-            true => &order_by_clause_reversed,
-            false => &order_by_clause,
-        };
-
-        let requested_total = self.requested_total();
-        let requested_next_page = self.requested_next_page();
-        let requested_previous_page = self.requested_previous_page();
-
-        let frags: Vec<String> = self
-            .selections
-            .iter()
-            .map(|x| {
-                x.to_sql(
-                    &quoted_block_name,
-                    &self.order_by,
-                    &self.table,
-                    param_context,
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let limit: u64 = cmp::min(
-            self.first
-                .unwrap_or_else(|| self.last.unwrap_or(self.max_rows)),
-            self.max_rows,
-        );
-
-        let object_clause = frags.join(", ");
-
-        let cursor = &self.before.clone().or_else(|| self.after.clone());
-
-        let selectable_columns_clause = self.table.to_selectable_columns_clause();
-
-        let pkey_tuple_clause_from_block =
-            self.table.to_primary_key_tuple_clause(&quoted_block_name);
-        let pkey_tuple_clause_from_records = self.table.to_primary_key_tuple_clause("__records");
-
-        let pagination_clause = {
-            let order_by = match is_reverse_pagination {
-                true => self.order_by.reverse(),
-                false => self.order_by.clone(),
-            };
-            match cursor {
-                Some(cursor) => self.table.to_pagination_clause(
-                    &quoted_block_name,
-                    &order_by,
-                    cursor,
-                    param_context,
-                    false,
-                )?,
-                None => "true".to_string(),
-            }
-        };
-
-        // initialized assuming forwards pagination
-        let mut has_next_page_query = format!(
-            "
-            with page_plus_1 as (
-                select
-                    1
-                from
-                    {quoted_schema}.{quoted_func}({input_block_name}) {quoted_block_name}
-                where
-                    {where_clause}
-                    and {pagination_clause}
-                order by
-                    {order_by_clause}
-                limit ({limit} + 1)
-            )
-            select count(*) > {limit} from page_plus_1
-        "
-        );
-
-        let mut has_prev_page_query =  format!("
-            with page_minus_1 as (
-                select
-                    not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
-                from
-                    {quoted_schema}.{quoted_func}({input_block_name}) {quoted_block_name}
-                    left join (select array_agg({pkey_tuple_clause_from_records}) from __records ) __records(seen)
-                        on true
-                where
-                    {where_clause}
-                order by
-                    {order_by_clause_records}
-                limit 1
-            )
-            select coalesce(bool_and(is_pkey_in_records), false) from page_minus_1
-        ");
-
-        if is_reverse_pagination {
-            // Reverse has_next_page and has_previous_page
-            std::mem::swap(&mut has_next_page_query, &mut has_prev_page_query);
-        }
-        if !requested_next_page {
-            has_next_page_query = "select null".to_string()
-        }
-        if !requested_previous_page {
-            has_prev_page_query = "select null".to_string()
-        }
-
-        Ok(format!(
-            "
-            (
-                with __records as (
-                    select
-                        {selectable_columns_clause}
-                    from
-                        {quoted_schema}.{quoted_func}({input_block_name}) {quoted_block_name}
-                    where
-                        true
-                        and {where_clause}
-                        and {pagination_clause}
-                    order by
-                        {order_by_clause_records}
-                    limit
-                        {limit}
-                ),
-                __total_count(___total_count) as (
-                    select
-                        count(*)
-                    from
-                        {quoted_schema}.{quoted_func}({input_block_name}) {quoted_block_name}
-                    where
-                        {requested_total} -- skips total when not requested
-                        and {where_clause}
-                ),
-                __has_next_page(___has_next_page) as (
-                    {has_next_page_query}
-
-                ),
-                __has_previous_page(___has_previous_page) as (
-                    {has_prev_page_query}
-                )
-                select
-                    jsonb_build_object({object_clause}) -- sorted within edge
-                from
-                    __records {quoted_block_name},
-                    __total_count,
-                    __has_next_page,
-                    __has_previous_page
-            )"
-        ))
-    }
 }
 
 impl QueryEntrypoint for ConnectionBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(None, param_context)
+        self.to_sql(None, param_context, None)
     }
 }
 
@@ -1403,7 +1276,7 @@ impl NodeSelection {
             Self::Connection(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_sql(Some(block_name), param_context)?
+                builder.to_sql(Some(block_name), param_context, None)?
             ),
             Self::Node(builder) => format!(
                 "{}, {}",
@@ -1503,11 +1376,13 @@ impl FunctionBuilder {
                 )
             }
             FunctionSelection::Connection(connection_builder) => connection_builder
-                .to_sql_from_func(
-                    block_name,
-                    &self.function.schema_name,
-                    &self.function.name,
+                .to_sql(
+                    None,
                     param_context,
+                    Some(FromFunction {
+                        function: Arc::clone(&self.function),
+                        input_block_name: block_name.to_string()
+                    })
                 )?,
         };
         Ok(sql_frag)
