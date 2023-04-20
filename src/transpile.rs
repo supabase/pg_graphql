@@ -114,7 +114,8 @@ pub trait QueryEntrypoint {
         match spi_result {
             Ok(Some(jsonb)) => Ok(jsonb.0),
             Ok(None) => Ok(serde_json::Value::Null),
-            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
+            Err(e) => Err(format!("{sql}")),
+            //_ => Err("Internal Error: Failed to execute transpiled query".to_string()),
         }
     }
 }
@@ -728,8 +729,9 @@ impl FilterBuilder {
 
 pub struct FromFunction {
     function: Arc<Function>,
+    input_table: Arc<Table>,
     // The block name for the functions argument
-    input_block_name: String
+    input_block_name: String,
 }
 
 impl ConnectionBuilder {
@@ -819,7 +821,9 @@ impl ConnectionBuilder {
                 let quoted_func_schema = quote_ident(&from_function.function.schema_name);
                 let quoted_func = quote_ident(&from_function.function.name);
                 let input_block_name = &from_function.input_block_name;
-                format!("{quoted_func_schema}.{quoted_func}({input_block_name}::{quoted_schema}.{quoted_table}) {quoted_block_name}")
+                let quoted_input_schema = quote_ident(&from_function.input_table.schema);
+                let quoted_input_table = quote_ident(&from_function.input_table.name);
+                format!("{quoted_func_schema}.{quoted_func}({input_block_name}::{quoted_input_schema}.{quoted_input_table}) {quoted_block_name}")
             }
             None => {
                 format!("{quoted_schema}.{quoted_table} {quoted_block_name}")
@@ -1375,15 +1379,18 @@ impl FunctionBuilder {
                     "
                 )
             }
-            FunctionSelection::Connection(connection_builder) => connection_builder
+            FunctionSelection::Connection(connection_builder) => {
+                connection_builder
                 .to_sql(
                     None,
                     param_context,
                     Some(FromFunction {
                         function: Arc::clone(&self.function),
+                        input_table: Arc::clone(&self.table),
                         input_block_name: block_name.to_string()
                     })
-                )?,
+                )?
+            }
         };
         Ok(sql_frag)
     }
