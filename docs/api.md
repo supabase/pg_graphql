@@ -486,6 +486,10 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       startsWith: String
       like: String
       ilike: String
+      regex: String
+      iregex: String
+      nregex: String
+      niregex: String
     }
     ```
 
@@ -513,7 +517,11 @@ The following list shows the operators that may be available on `<Type>Filter` t
 | is          | Null or Not Null          |
 | startsWith  | `String` starts with prefix |
 | like        | Case Sensitive `String` Pattern Match. '%' as wildcard |
-| ilike       | Case Snsensitive `String` Pattern Match. '%' as wildcard |
+| ilike       | Case Insensitive `String` Pattern Match. '%' as wildcard |
+| regex       | Case Sensitive `String` Regular Expression Match |
+| iregex      | Case Insensitive `String` Regular Expression Match |
+| nregex      | Case Sensitive `String` Regular Expression Negative Match |
+| niregex     | Case Insensitive `String` Regular Expression Negative Match |
 
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
