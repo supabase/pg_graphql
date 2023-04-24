@@ -93,4 +93,69 @@ begin;
     );
     rollback to savepoint a;
 
+    -- Filter by regex
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              memoCollection(filter: {contents: {regex: "^F\\w+$"}}) {
+                edges {
+                  node {
+                    contents
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- Filter by not regex
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              memoCollection(filter: {contents: {nregex: "^F\\w+$"}}) {
+                edges {
+                  node {
+                    contents
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- iregex is not case sensitive
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              memoCollection(filter: {contents: {iregex: "^f\\w+$"}}) {
+                edges {
+                  node {
+                    contents
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- niregex is not case sensitive
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              memoCollection(filter: {contents: {niregex: "^f\\w+$"}}) {
+                edges {
+                  node {
+                    contents
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+
 rollback;
