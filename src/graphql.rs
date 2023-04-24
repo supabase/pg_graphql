@@ -3014,7 +3014,7 @@ pub enum FilterOp {
     RegEx,
     IRegEx,
     NotRegEx,
-    INotRegEx
+    NotIRegEx
 }
 
 impl ToString for FilterOp {
@@ -3035,7 +3035,7 @@ impl ToString for FilterOp {
             Self::RegEx => "regex",
             Self::IRegEx => "iregex",
             Self::NotRegEx => "nregex",
-            Self::INotRegEx => "niregex",
+            Self::NotIRegEx => "niregex",
         }
         .to_string()
     }
@@ -3061,7 +3061,7 @@ impl FromStr for FilterOp {
             "regex" => Ok(Self::RegEx),
             "iregex" => Ok(Self::IRegEx),
             "nregex" => Ok(Self::NotRegEx),
-            "niregex" => Ok(Self::INotRegEx),
+            "niregex" => Ok(Self::NotIRegEx),
             _ => Err("Invalid filter operation".to_string()),
         }
     }
@@ -3148,7 +3148,7 @@ impl ___Type for FilterTypeType {
                         FilterOp::RegEx,
                         FilterOp::IRegEx,
                         FilterOp::NotRegEx,
-                        FilterOp::INotRegEx
+                        FilterOp::NotIRegEx
                     ],
                     Scalar::BigInt => vec![
                         FilterOp::Equal,
@@ -3225,7 +3225,7 @@ impl ___Type for FilterTypeType {
                         | FilterOp::RegEx
                         | FilterOp::IRegEx
                         | FilterOp::NotRegEx
-                        | FilterOp::INotRegEx => __InputValue {
+                        | FilterOp::NotIRegEx => __InputValue {
                             name_: op.to_string(),
                             type_: __Type::Scalar(scalar.clone()),
                             description: None,
