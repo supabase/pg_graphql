@@ -486,6 +486,8 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       startsWith: String
       like: String
       ilike: String
+      regex: String
+      iregex: String
     }
     ```
 
@@ -501,19 +503,21 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
 The following list shows the operators that may be available on `<Type>Filter` types.
 
 
-| Operator    | Description               |
-| ----------- | ------------------------- |
-| eq          | Equal To                  |
-| neq         | Not Equal To              |
-| gt          | Greater Than              |
-| gte         | Greater Than Or Equal To  |
-| in          | Contained by Value List   |
-| lt          | Less Than                 |
-| lte         | Less Than Or Equal To     |
-| is          | Null or Not Null          |
-| startsWith  | `String` starts with prefix |
-| like        | Case Sensitive `String` Pattern Match. '%' as wildcard |
-| ilike       | Case Snsensitive `String` Pattern Match. '%' as wildcard |
+| Operator    | Description                                      |
+| ----------- | -------------------------------------------------|
+| eq          | Equal To                                         |
+| neq         | Not Equal To                                     |
+| gt          | Greater Than                                     |
+| gte         | Greater Than Or Equal To                         |
+| in          | Contained by Value List                          |
+| lt          | Less Than                                        |
+| lte         | Less Than Or Equal To                            |
+| is          | Null or Not Null                                 |
+| startsWith  | Starts with prefix                               |
+| like        | Pattern Match. '%' as wildcard                   |
+| ilike       | Pattern Match. '%' as wildcard. Case Insensitive |
+| regex       | POSIX Regular Expression Match                   |
+| iregex      | POSIX Regular Expression Match. Case Insensitive |
 
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
