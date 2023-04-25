@@ -508,6 +508,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 | gt          | Greater Than              |
 | gte         | Greater Than Or Equal To  |
 | in          | Contained by Value List   |
+| nin         | Not Contained by Value List |
 | lt          | Less Than                 |
 | lte         | Less Than Or Equal To     |
 | is          | Null or Not Null          |
