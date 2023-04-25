@@ -201,43 +201,6 @@ begin;
 (1 row)
 
     rollback to savepoint a;
-    -- Filter by not regex
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              memoCollection(filter: {contents: {nregex: "^F\\w+$"}}) {
-                edges {
-                  node {
-                    contents
-                  }
-                }
-              }
-            }
-        $$)
-    );
-               jsonb_pretty                
--------------------------------------------
- {                                        +
-     "data": {                            +
-         "memoCollection": {              +
-             "edges": [                   +
-                 {                        +
-                     "node": {            +
-                         "contents": "baR"+
-                     }                    +
-                 },                       +
-                 {                        +
-                     "node": {            +
-                         "contents": "baz"+
-                     }                    +
-                 }                        +
-             ]                            +
-         }                                +
-     }                                    +
- }
-(1 row)
-
-    rollback to savepoint a;
     -- iregex is not case sensitive
     select jsonb_pretty(
         graphql.resolve($$
@@ -261,43 +224,6 @@ begin;
                  {                        +
                      "node": {            +
                          "contents": "Foo"+
-                     }                    +
-                 }                        +
-             ]                            +
-         }                                +
-     }                                    +
- }
-(1 row)
-
-    rollback to savepoint a;
-    -- niregex is not case sensitive
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              memoCollection(filter: {contents: {niregex: "^f\\w+$"}}) {
-                edges {
-                  node {
-                    contents
-                  }
-                }
-              }
-            }
-        $$)
-    );
-               jsonb_pretty                
--------------------------------------------
- {                                        +
-     "data": {                            +
-         "memoCollection": {              +
-             "edges": [                   +
-                 {                        +
-                     "node": {            +
-                         "contents": "baR"+
-                     }                    +
-                 },                       +
-                 {                        +
-                     "node": {            +
-                         "contents": "baz"+
                      }                    +
                  }                        +
              ]                            +

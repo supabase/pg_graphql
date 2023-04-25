@@ -21,3 +21,6 @@
 - bugfix: Unknown types are represented in GraphQL schema as `Opaque` rather than `String`
 - bugfix: PostgreSQL type modifiers, e.g. char(n), no longer truncate excess text
 - bugfix: Creating a new enum variant between existing variants no longer errors
+
+## master
+- feature: `String` type filters support `regex`, `iregex`

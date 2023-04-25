@@ -696,8 +696,6 @@ impl FilterBuilderElem {
                                 FilterOp::ILike => "ilike",
                                 FilterOp::RegEx => "~",
                                 FilterOp::IRegEx => "~*",
-                                FilterOp::NotRegEx => "!~",
-                                FilterOp::NotIRegEx => "!~*",
                                 FilterOp::Is => {
                                     return Err("Error transpiling Is filter".to_string());
                                 }
