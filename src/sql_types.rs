@@ -2,7 +2,9 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::*;
 
@@ -83,6 +85,7 @@ pub enum TypeCategory {
     Composite,
     Table,
     Array,
+    Pseudo,
     Other,
 }
 
@@ -320,7 +323,7 @@ pub struct Context {
     pub schemas: HashMap<u32, Schema>,
     pub tables: HashMap<u32, Arc<Table>>,
     foreign_keys: Vec<Arc<ForeignKey>>,
-    types: HashMap<u32, Arc<Type>>,
+    pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
 }
@@ -485,185 +488,6 @@ impl Context {
                 .iter()
                 .all(|col| referenced_columns_selectable.contains(col))
     }
-
-    pub fn types(&self) -> HashMap<u32, Arc<Type>> {
-        let mut types = self.types.clone();
-
-        for (oid, name, category, array_elem_oid) in vec![
-            (16, "bool", TypeCategory::Other, None),
-            (17, "bytea", TypeCategory::Other, None),
-            (19, "name", TypeCategory::Other, Some(18)),
-            (20, "int8", TypeCategory::Other, None),
-            (21, "int2", TypeCategory::Other, None),
-            (22, "int2vector", TypeCategory::Array, Some(21)),
-            (23, "int4", TypeCategory::Other, None),
-            (24, "regproc", TypeCategory::Other, None),
-            (25, "text", TypeCategory::Other, None),
-            (26, "oid", TypeCategory::Other, None),
-            (27, "tid", TypeCategory::Other, None),
-            (28, "xid", TypeCategory::Other, None),
-            (29, "cid", TypeCategory::Other, None),
-            (30, "oidvector", TypeCategory::Array, Some(26)),
-            (114, "json", TypeCategory::Other, None),
-            (142, "xml", TypeCategory::Other, None),
-            (143, "_xml", TypeCategory::Array, Some(142)),
-            (199, "_json", TypeCategory::Array, Some(114)),
-            (210, "_pg_type", TypeCategory::Array, Some(71)),
-            (270, "_pg_attribute", TypeCategory::Array, Some(75)),
-            (271, "_xid8", TypeCategory::Array, Some(5069)),
-            (272, "_pg_proc", TypeCategory::Array, Some(81)),
-            (273, "_pg_class", TypeCategory::Array, Some(83)),
-            (600, "point", TypeCategory::Other, Some(701)),
-            (601, "lseg", TypeCategory::Other, Some(600)),
-            (602, "path", TypeCategory::Other, None),
-            (603, "box", TypeCategory::Other, Some(600)),
-            (604, "polygon", TypeCategory::Other, None),
-            (628, "line", TypeCategory::Other, Some(701)),
-            (629, "_line", TypeCategory::Array, Some(628)),
-            (650, "cidr", TypeCategory::Other, None),
-            (651, "_cidr", TypeCategory::Array, Some(650)),
-            (700, "float4", TypeCategory::Other, None),
-            (701, "float8", TypeCategory::Other, None),
-            (718, "circle", TypeCategory::Other, None),
-            (719, "_circle", TypeCategory::Array, Some(718)),
-            (774, "macaddr8", TypeCategory::Other, None),
-            (775, "_macaddr8", TypeCategory::Array, Some(774)),
-            (790, "money", TypeCategory::Other, None),
-            (791, "_money", TypeCategory::Array, Some(790)),
-            (829, "macaddr", TypeCategory::Other, None),
-            (869, "inet", TypeCategory::Other, None),
-            (1000, "_bool", TypeCategory::Array, Some(16)),
-            (1001, "_bytea", TypeCategory::Array, Some(17)),
-            (1002, "_char", TypeCategory::Array, Some(18)),
-            (1003, "_name", TypeCategory::Array, Some(19)),
-            (1005, "_int2", TypeCategory::Array, Some(21)),
-            (1006, "_int2vector", TypeCategory::Array, Some(22)),
-            (1007, "_int4", TypeCategory::Array, Some(23)),
-            (1008, "_regproc", TypeCategory::Array, Some(24)),
-            (1009, "_text", TypeCategory::Array, Some(25)),
-            (1010, "_tid", TypeCategory::Array, Some(27)),
-            (1011, "_xid", TypeCategory::Array, Some(28)),
-            (1012, "_cid", TypeCategory::Array, Some(29)),
-            (1013, "_oidvector", TypeCategory::Array, Some(30)),
-            (1014, "_bpchar", TypeCategory::Array, Some(1042)),
-            (1015, "_varchar", TypeCategory::Array, Some(1043)),
-            (1016, "_int8", TypeCategory::Array, Some(20)),
-            (1017, "_point", TypeCategory::Array, Some(600)),
-            (1018, "_lseg", TypeCategory::Array, Some(601)),
-            (1019, "_path", TypeCategory::Array, Some(602)),
-            (1020, "_box", TypeCategory::Array, Some(603)),
-            (1021, "_float4", TypeCategory::Array, Some(700)),
-            (1022, "_float8", TypeCategory::Array, Some(701)),
-            (1027, "_polygon", TypeCategory::Array, Some(604)),
-            (1028, "_oid", TypeCategory::Array, Some(26)),
-            (1033, "aclitem", TypeCategory::Other, None),
-            (1034, "_aclitem", TypeCategory::Array, Some(1033)),
-            (1040, "_macaddr", TypeCategory::Array, Some(829)),
-            (1041, "_inet", TypeCategory::Array, Some(869)),
-            (1042, "bpchar", TypeCategory::Other, None),
-            (1043, "varchar", TypeCategory::Other, None),
-            (1082, "date", TypeCategory::Other, None),
-            (1083, "time", TypeCategory::Other, None),
-            (1114, "timestamp", TypeCategory::Other, None),
-            (1115, "_timestamp", TypeCategory::Array, Some(1114)),
-            (1182, "_date", TypeCategory::Array, Some(1082)),
-            (1183, "_time", TypeCategory::Array, Some(1083)),
-            (1184, "timestamptz", TypeCategory::Other, None),
-            (1185, "_timestamptz", TypeCategory::Array, Some(1184)),
-            (1186, "interval", TypeCategory::Other, None),
-            (1187, "_interval", TypeCategory::Array, Some(1186)),
-            (1231, "_numeric", TypeCategory::Array, Some(1700)),
-            (1263, "_cstring", TypeCategory::Array, Some(2275)),
-            (1266, "timetz", TypeCategory::Other, None),
-            (1270, "_timetz", TypeCategory::Array, Some(1266)),
-            (1560, "bit", TypeCategory::Other, None),
-            (1561, "_bit", TypeCategory::Array, Some(1560)),
-            (1562, "varbit", TypeCategory::Other, None),
-            (1563, "_varbit", TypeCategory::Array, Some(1562)),
-            (1700, "numeric", TypeCategory::Other, None),
-            (1790, "refcursor", TypeCategory::Other, None),
-            (2201, "_refcursor", TypeCategory::Array, Some(1790)),
-            (2202, "regprocedure", TypeCategory::Other, None),
-            (2203, "regoper", TypeCategory::Other, None),
-            (2204, "regoperator", TypeCategory::Other, None),
-            (2205, "regclass", TypeCategory::Other, None),
-            (2206, "regtype", TypeCategory::Other, None),
-            (2207, "_regprocedure", TypeCategory::Array, Some(2202)),
-            (2208, "_regoper", TypeCategory::Array, Some(2203)),
-            (2209, "_regoperator", TypeCategory::Array, Some(2204)),
-            (2210, "_regclass", TypeCategory::Array, Some(2205)),
-            (2211, "_regtype", TypeCategory::Array, Some(2206)),
-            (2949, "_txid_snapshot", TypeCategory::Array, Some(2970)),
-            (2950, "uuid", TypeCategory::Other, None),
-            (2951, "_uuid", TypeCategory::Array, Some(2950)),
-            (2970, "txid_snapshot", TypeCategory::Other, None),
-            (3220, "pg_lsn", TypeCategory::Other, None),
-            (3221, "_pg_lsn", TypeCategory::Array, Some(3220)),
-            (3614, "tsvector", TypeCategory::Other, None),
-            (3615, "tsquery", TypeCategory::Other, None),
-            (3642, "gtsvector", TypeCategory::Other, None),
-            (3643, "_tsvector", TypeCategory::Array, Some(3614)),
-            (3644, "_gtsvector", TypeCategory::Array, Some(3642)),
-            (3645, "_tsquery", TypeCategory::Array, Some(3615)),
-            (3734, "regconfig", TypeCategory::Other, None),
-            (3735, "_regconfig", TypeCategory::Array, Some(3734)),
-            (3769, "regdictionary", TypeCategory::Other, None),
-            (3770, "_regdictionary", TypeCategory::Array, Some(3769)),
-            (3802, "jsonb", TypeCategory::Other, None),
-            (3807, "_jsonb", TypeCategory::Array, Some(3802)),
-            (3904, "int4range", TypeCategory::Other, None),
-            (3905, "_int4range", TypeCategory::Array, Some(3904)),
-            (3906, "numrange", TypeCategory::Other, None),
-            (3907, "_numrange", TypeCategory::Array, Some(3906)),
-            (3908, "tsrange", TypeCategory::Other, None),
-            (3909, "_tsrange", TypeCategory::Array, Some(3908)),
-            (3910, "tstzrange", TypeCategory::Other, None),
-            (3911, "_tstzrange", TypeCategory::Array, Some(3910)),
-            (3912, "daterange", TypeCategory::Other, None),
-            (3913, "_daterange", TypeCategory::Array, Some(3912)),
-            (3926, "int8range", TypeCategory::Other, None),
-            (3927, "_int8range", TypeCategory::Array, Some(3926)),
-            (4072, "jsonpath", TypeCategory::Other, None),
-            (4073, "_jsonpath", TypeCategory::Array, Some(4072)),
-            (4089, "regnamespace", TypeCategory::Other, None),
-            (4090, "_regnamespace", TypeCategory::Array, Some(4089)),
-            (4096, "regrole", TypeCategory::Other, None),
-            (4097, "_regrole", TypeCategory::Array, Some(4096)),
-            (4191, "regcollation", TypeCategory::Other, None),
-            (4192, "_regcollation", TypeCategory::Array, Some(4191)),
-            (4451, "int4multirange", TypeCategory::Other, None),
-            (4532, "nummultirange", TypeCategory::Other, None),
-            (4533, "tsmultirange", TypeCategory::Other, None),
-            (4534, "tstzmultirange", TypeCategory::Other, None),
-            (4535, "datemultirange", TypeCategory::Other, None),
-            (4536, "int8multirange", TypeCategory::Other, None),
-            (5038, "pg_snapshot", TypeCategory::Other, None),
-            (5039, "_pg_snapshot", TypeCategory::Array, Some(5038)),
-            (5069, "xid8", TypeCategory::Other, None),
-            (6150, "_int4multirange", TypeCategory::Array, Some(4451)),
-            (6151, "_nummultirange", TypeCategory::Array, Some(4532)),
-            (6152, "_tsmultirange", TypeCategory::Array, Some(4533)),
-            (6153, "_tstzmultirange", TypeCategory::Array, Some(4534)),
-            (6155, "_datemultirange", TypeCategory::Array, Some(4535)),
-            (6157, "_int8multirange", TypeCategory::Array, Some(4536)),
-        ] {
-            types.insert(
-                oid,
-                Arc::new(Type {
-                    oid,
-                    schema_oid: 11,
-                    name: name.to_string(),
-                    category,
-                    table_oid: None,
-                    comment: None,
-                    permissions: TypePermissions { is_usable: true },
-                    directives: EnumDirectives { name: None },
-                    array_element_type_oid: array_elem_oid,
-                }),
-            );
-        }
-        types
-    }
 }
 
 pub fn load_sql_config() -> Config {
@@ -672,9 +496,6 @@ pub fn load_sql_config() -> Config {
     let config: Config = serde_json::from_value(sql_result).unwrap();
     config
 }
-
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();

@@ -1543,10 +1543,19 @@ impl Type {
         max_characters: Option<i32>,
         is_set_of: bool,
         schema: &Arc<__Schema>,
-    ) -> __Type {
+    ) -> Option<__Type> {
+        if is_set_of && !(self.category == TypeCategory::Table) {
+            // If a function returns a pseudotype with a single column
+            // e.g. table( id int )
+            // postgres records that in pg_catalog as returning a setof int
+            // we don't support pseudo type returns, but this was sneaking through
+            // because it looks like a concrete type
+            return None;
+        }
+
         match self.category {
             TypeCategory::Other => {
-                match self.oid {
+                Some(match self.oid {
                     20 => __Type::Scalar(Scalar::BigInt),       // bigint
                     16 => __Type::Scalar(Scalar::Boolean),      // boolean
                     1082 => __Type::Scalar(Scalar::Date),       // date
@@ -1565,78 +1574,89 @@ impl Type {
                     // char, bpchar, varchar
                     18 | 1042 | 1043 => __Type::Scalar(Scalar::String(max_characters)),
                     _ => __Type::Scalar(Scalar::Opaque),
-                }
+                })
             }
             TypeCategory::Array => match self.array_element_type_oid {
                 Some(array_element_type_oid) => {
-                    let sql_types = schema.context.types();
+                    let sql_types = &schema.context.types;
                     let element_sql_type: Option<&Arc<Type>> =
                         sql_types.get(&array_element_type_oid);
 
                     let inner_graphql_type: __Type = match element_sql_type {
                         Some(sql_type) => match sql_type.permissions.is_usable {
-                            true => sql_type.to_graphql_type(None, false, schema),
-                            false => __Type::Scalar(Scalar::Opaque),
+                            true => match sql_type.to_graphql_type(None, false, schema) {
+                                None => {
+                                    return None;
+                                }
+                                Some(inner_type) => inner_type,
+                            },
+                            false => {
+                                return None;
+                            }
                         },
                         None => __Type::Scalar(Scalar::Opaque),
                     };
-                    __Type::List(ListType {
+                    Some(__Type::List(ListType {
                         type_: Box::new(inner_graphql_type),
-                    })
+                    }))
                 }
-                None => __Type::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Opaque)),
-                }),
+                // should not hpapen
+                None => None,
             },
             TypeCategory::Enum => match schema.context.enums.get(&self.oid) {
-                Some(enum_) => __Type::Enum(EnumType {
+                Some(enum_) => Some(__Type::Enum(EnumType {
                     enum_: EnumSource::Enum(Arc::clone(enum_)),
                     schema: schema.clone(),
-                }),
-                None => __Type::Scalar(Scalar::Opaque),
+                })),
+                None => Some(__Type::Scalar(Scalar::Opaque)),
             },
-            // TODO
             TypeCategory::Table => {
                 match self.table_oid {
-                    // no guarentees of whats going on here.
-                    None => __Type::Scalar(Scalar::Opaque),
+                    // Shouldn't happen
+                    None => None,
                     Some(table_oid) => match schema.context.tables.get(&table_oid) {
-                        None => __Type::Scalar(Scalar::Opaque),
+                        // Can happen if search path doesn't include referenced table
+                        None => None,
                         Some(table) => match is_set_of {
-                            true => __Type::Connection(ConnectionType {
+                            true => Some(__Type::Connection(ConnectionType {
                                 table: Arc::clone(table),
                                 fkey: None,
                                 schema: Arc::clone(schema),
-                            }),
-                            false => __Type::Node(NodeType {
+                            })),
+                            false => Some(__Type::Node(NodeType {
                                 table: Arc::clone(table),
                                 fkey: None,
                                 reverse_reference: None,
                                 schema: Arc::clone(schema),
-                            }),
+                            })),
                         },
                     },
                 }
             }
             // Composites not yet supported
-            TypeCategory::Composite => __Type::Scalar(Scalar::Opaque),
+            TypeCategory::Composite => None,
+            // Psudotypes like "record" are not supported
+            TypeCategory::Pseudo => None,
         }
     }
 }
 
-pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> __Type {
-    let sql_types = schema.context.types();
-    let sql_type = sql_types.get(&col.type_oid);
+pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> Option<__Type> {
+    let sql_type = schema.context.types.get(&col.type_oid);
     if sql_type.is_none() {
-        return __Type::Scalar(Scalar::Opaque);
+        // Should never happen
+        return None;
     }
     let sql_type = sql_type.unwrap();
-    let type_w_list_mod = sql_type.to_graphql_type(col.max_characters, false, schema);
-    match col.is_not_null {
-        true => __Type::NonNull(NonNullType {
-            type_: Box::new(type_w_list_mod),
-        }),
-        _ => type_w_list_mod,
+    let maybe_type_w_list_mod = sql_type.to_graphql_type(col.max_characters, false, schema);
+    match maybe_type_w_list_mod {
+        None => None,
+        Some(type_with_list_mod) => match col.is_not_null {
+            true => Some(__Type::NonNull(NonNullType {
+                type_: Box::new(type_with_list_mod),
+            })),
+            _ => Some(type_with_list_mod),
+        },
     }
 }
 
@@ -1675,13 +1695,19 @@ impl ___Type for NodeType {
             .iter()
             .filter(|x| x.permissions.is_selectable)
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
-            .map(|col| __Field {
-                name_: self.schema.graphql_column_field_name(&col),
-                type_: sql_column_to_graphql_type(col, &self.schema),
-                args: vec![],
-                description: col.directives.description.clone(),
-                deprecation_reason: None,
-                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+            .filter_map(|col| {
+                if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
+                    Some(__Field {
+                        name_: self.schema.graphql_column_field_name(&col),
+                        type_: utype,
+                        args: vec![],
+                        description: col.directives.description.clone(),
+                        deprecation_reason: None,
+                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                    })
+                } else {
+                    None
+                }
             })
             .filter(|x| is_valid_graphql_name(&x.name_))
             .collect();
@@ -1709,6 +1735,7 @@ impl ___Type for NodeType {
             node_id_field.push(node_id);
         };
 
+        let sql_types = &self.schema.context.types;
         // Functions require selecting an entire row. the whole table must be selectable
         // for functions to work
         let mut function_fields: Vec<__Field> = vec![];
@@ -1718,30 +1745,44 @@ impl ___Type for NodeType {
                 .functions
                 .iter()
                 .filter(|x| x.permissions.is_executable)
-                .map(|func| {
-                    let sql_types = self.schema.context.types();
-                    let sql_ret_type = sql_types.get(&func.type_oid);
-                    let gql_ret_type = match sql_ret_type {
-                        None => __Type::Scalar(Scalar::Opaque),
+                .filter(|func| {
+                    // TODO: remove in favor of making `to_sql_type` return an Option
+                    // so we can optionally remove inappropriate types
+                    match sql_types.get(&func.type_oid) {
+                        None => true,
                         Some(sql_type) => {
+                            // disallow pseudo types
+                            match &sql_type.category {
+                                TypeCategory::Pseudo => false,
+                                _ => true,
+                            }
+                        }
+                    }
+                })
+                .filter_map(|func| match sql_types.get(&func.type_oid) {
+                    None => None,
+                    Some(sql_type) => {
+                        if let Some(gql_ret_type) =
                             sql_type.to_graphql_type(None, func.is_set_of, &self.schema)
-                        }
-                    };
+                        {
+                            let gql_args = match &gql_ret_type {
+                                __Type::Connection(connection_type) => {
+                                    connection_type.get_connection_input_args()
+                                }
+                                _ => vec![],
+                            };
 
-                    let gql_args = match &gql_ret_type {
-                        __Type::Connection(connection_type) => {
-                            connection_type.get_connection_input_args()
+                            Some(__Field {
+                                name_: self.schema.graphql_function_field_name(&func),
+                                type_: gql_ret_type,
+                                args: gql_args,
+                                description: func.directives.description.clone(),
+                                deprecation_reason: None,
+                                sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
+                            })
+                        } else {
+                            None
                         }
-                        _ => vec![],
-                    };
-
-                    __Field {
-                        name_: self.schema.graphql_function_field_name(&func),
-                        type_: gql_ret_type,
-                        args: gql_args,
-                        description: func.directives.description.clone(),
-                        deprecation_reason: None,
-                        sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
                     }
                 })
                 .filter(|x| is_valid_graphql_name(&x.name_))
@@ -1825,9 +1866,10 @@ impl ___Type for NodeType {
                 false => {
                     let connection_type = ConnectionType {
                         table: Arc::clone(foreign_table),
-                        fkey: Some(
-                            ForeignKeyReversible { fkey: Arc::clone(fkey), reverse_reference: reverse_reference }
-                        ),
+                        fkey: Some(ForeignKeyReversible {
+                            fkey: Arc::clone(fkey),
+                            reverse_reference: reverse_reference,
+                        }),
                         schema: Arc::clone(&self.schema),
                     };
                     let connection_args = connection_type.get_connection_input_args();
@@ -2730,15 +2772,20 @@ impl ___Type for InsertInputType {
                 .filter(|x| !x.is_generated)
                 .filter(|x| !x.is_serial)
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
-                // TODO: not composite
-                .map(|col| __InputValue {
-                    name_: self.schema.graphql_column_field_name(&col),
-                    // If triggers are involved, we can't detect if a field is non-null. Default
-                    // all fields to non-null and let postgres errors handle it.
-                    type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
-                    description: None,
-                    default_value: None,
-                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                .filter_map(|col| {
+                    if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
+                        Some(__InputValue {
+                            name_: self.schema.graphql_column_field_name(&col),
+                            // If triggers are involved, we can't detect if a field is non-null. Default
+                            // all fields to non-null and let postgres errors handle it.
+                            type_: utype.nullable_type(),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                        })
+                    } else {
+                        None
+                    }
                 })
                 .collect(),
         )
@@ -2817,13 +2864,19 @@ impl ___Type for UpdateInputType {
                 .filter(|x| !x.is_generated)
                 .filter(|x| !x.is_serial)
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
-                .map(|col| __InputValue {
-                    name_: self.schema.graphql_column_field_name(&col),
-                    // TODO: handle possible array inputs
-                    type_: sql_column_to_graphql_type(col, &self.schema).nullable_type(),
-                    description: None,
-                    default_value: None,
-                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                .filter_map(|col| {
+                    if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
+                        Some(__InputValue {
+                            name_: self.schema.graphql_column_field_name(&col),
+                            // TODO: handle possible array inputs
+                            type_: utype.nullable_type(),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                        })
+                    } else {
+                        None
+                    }
                 })
                 .collect(),
         )
@@ -3242,33 +3295,35 @@ impl ___Type for FilterEntityType {
             .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
             .filter_map(|col| {
                 // Should be a scalar
-                let utype = sql_column_to_graphql_type(col, &self.schema).unmodified_type();
+                if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
+                    let column_graphql_name = self.schema.graphql_column_field_name(col);
 
-                let column_graphql_name = self.schema.graphql_column_field_name(col);
-
-                match utype {
-                    __Type::Scalar(s) => Some(__InputValue {
-                        name_: column_graphql_name,
-                        type_: __Type::FilterType(FilterTypeType {
-                            entity: FilterableType::Scalar(s),
-                            schema: Arc::clone(&self.schema),
+                    match utype.unmodified_type() {
+                        __Type::Scalar(s) => Some(__InputValue {
+                            name_: column_graphql_name,
+                            type_: __Type::FilterType(FilterTypeType {
+                                entity: FilterableType::Scalar(s),
+                                schema: Arc::clone(&self.schema),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                         }),
-                        description: None,
-                        default_value: None,
-                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                    }),
-                    // ERROR HERE
-                    __Type::Enum(s) => Some(__InputValue {
-                        name_: column_graphql_name,
-                        type_: __Type::FilterType(FilterTypeType {
-                            entity: FilterableType::Enum(s),
-                            schema: Arc::clone(&self.schema),
+                        // ERROR HERE
+                        __Type::Enum(s) => Some(__InputValue {
+                            name_: column_graphql_name,
+                            type_: __Type::FilterType(FilterTypeType {
+                                entity: FilterableType::Enum(s),
+                                schema: Arc::clone(&self.schema),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                         }),
-                        description: None,
-                        default_value: None,
-                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                    }),
-                    _ => None,
+                        _ => None,
+                    }
+                } else {
+                    None
                 }
             })
             .filter(|x| is_valid_graphql_name(&x.name_))

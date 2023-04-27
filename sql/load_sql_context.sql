@@ -53,8 +53,6 @@ select
                         pg_enum pe
                     join pg_type pt
                         on pt.oid = pe.enumtypid
-                    join schemas_ spo
-                        on pt.typnamespace = spo.oid
                     group by
                         pt.oid
                 )
@@ -78,8 +76,9 @@ select
                             'category', case
                                 when pt.typcategory = 'A' then 'Array'
                                 when pt.typcategory = 'E' then 'Enum'
-                                when pt.typcategory = 'C' and tabs.oid is not null  then 'Table'
-                                when pt.typcategory = 'C' then 'Composite'
+                                when pt.typcategory = 'C'
+                                    and tabs.relkind in ('r', 't', 'v', 'm', 'f', 'p') then 'Table'
+                                when pt.typcategory = 'C' and tabs.relkind = 'c' then 'Composite'
                                 else 'Other'
                             end,
                             -- if category is 'Array', points at the underlying element type
@@ -97,8 +96,6 @@ select
                     )
                 from
                     pg_type pt
-                    join schemas_ spo
-                        on pt.typnamespace = spo.oid
                     left join pg_class tabs
                         on pt.typrelid = tabs.oid
             ),
@@ -115,10 +112,12 @@ select
                     )
                 from
                     pg_type pt
-                    join schemas_ spo
-                        on pt.typnamespace = spo.oid
+                    join pg_class tabs
+                        on pt.typrelid = tabs.oid
                 where
-                    pt.typtype = 'c'
+                    pt.typcategory = 'C'
+                    and tabs.relkind = 'c'
+
             ),
             jsonb_build_array()
         ),

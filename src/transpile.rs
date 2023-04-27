@@ -1,6 +1,6 @@
 use crate::builder::*;
 use crate::graphql::*;
-use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Table, Function};
+use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table};
 use pgx::pg_sys::submodules::panic::CaughtError;
 use pgx::pg_sys::PgBuiltInOids;
 use pgx::prelude::*;
@@ -114,8 +114,7 @@ pub trait QueryEntrypoint {
         match spi_result {
             Ok(Some(jsonb)) => Ok(jsonb.0),
             Ok(None) => Ok(serde_json::Value::Null),
-            Err(e) => Err(format!("{sql}")),
-            //_ => Err("Internal Error: Failed to execute transpiled query".to_string()),
+            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
         }
     }
 }
@@ -769,7 +768,11 @@ impl ConnectionBuilder {
         self.last.is_some() || self.before.is_some()
     }
 
-    fn to_join_clause(&self, quoted_block_name: &str,  quoted_parent_block_name: &Option<&str>) -> Result<String, String> {
+    fn to_join_clause(
+        &self,
+        quoted_block_name: &str,
+        quoted_parent_block_name: &Option<&str>,
+    ) -> Result<String, String> {
         match &self.source.fkey {
             Some(fkey) => {
                 let quoted_parent_block_name = quoted_parent_block_name
@@ -785,8 +788,11 @@ impl ConnectionBuilder {
         }
     }
 
-
-    fn object_clause(&self, quoted_block_name: &str, param_context: &mut ParamContext) -> Result<String, String> {
+    fn object_clause(
+        &self,
+        quoted_block_name: &str,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
             .iter()
@@ -811,8 +817,7 @@ impl ConnectionBuilder {
         )
     }
 
-    fn from_clause(&self, quoted_block_name: &str, function: &Option<FromFunction>) -> String{
-
+    fn from_clause(&self, quoted_block_name: &str, function: &Option<FromFunction>) -> String {
         let quoted_schema = quote_ident(&self.source.table.schema);
         let quoted_table = quote_ident(&self.source.table.name);
 
@@ -831,12 +836,11 @@ impl ConnectionBuilder {
         }
     }
 
-
     pub fn to_sql(
         &self,
         quoted_parent_block_name: Option<&str>,
         param_context: &mut ParamContext,
-        from_func: Option<FromFunction>
+        from_func: Option<FromFunction>,
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
 
@@ -869,9 +873,12 @@ impl ConnectionBuilder {
 
         let selectable_columns_clause = self.source.table.to_selectable_columns_clause();
 
-        let pkey_tuple_clause_from_block =
-            self.source.table.to_primary_key_tuple_clause(&quoted_block_name);
-        let pkey_tuple_clause_from_records = self.source.table.to_primary_key_tuple_clause("__records");
+        let pkey_tuple_clause_from_block = self
+            .source
+            .table
+            .to_primary_key_tuple_clause(&quoted_block_name);
+        let pkey_tuple_clause_from_records =
+            self.source.table.to_primary_key_tuple_clause("__records");
 
         let pagination_clause = {
             let order_by = match self.is_reverse_pagination() {
@@ -986,7 +993,6 @@ impl ConnectionBuilder {
             )"
         ))
     }
-
 }
 
 impl QueryEntrypoint for ConnectionBuilder {
@@ -1350,8 +1356,8 @@ impl FunctionBuilder {
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
-        let schema_name = &self.function.schema_name;
-        let function_name = &self.function.name;
+        let schema_name = quote_ident(&self.function.schema_name);
+        let function_name = quote_ident(&self.function.name);
 
         let sql_frag = match &self.selection {
             FunctionSelection::ScalarSelf => format!(
@@ -1375,22 +1381,21 @@ impl FunctionBuilder {
                             {object_clause}
                         from
                             {from_clause} as {func_block_name}
+                        where
+                            {func_block_name} is not null
                     )
                     "
                 )
             }
-            FunctionSelection::Connection(connection_builder) => {
-                connection_builder
-                .to_sql(
-                    None,
-                    param_context,
-                    Some(FromFunction {
-                        function: Arc::clone(&self.function),
-                        input_table: Arc::clone(&self.table),
-                        input_block_name: block_name.to_string()
-                    })
-                )?
-            }
+            FunctionSelection::Connection(connection_builder) => connection_builder.to_sql(
+                None,
+                param_context,
+                Some(FromFunction {
+                    function: Arc::clone(&self.function),
+                    input_table: Arc::clone(&self.table),
+                    input_block_name: block_name.to_string(),
+                }),
+            )?,
         };
         Ok(sql_frag)
     }
