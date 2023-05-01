@@ -194,9 +194,146 @@ begin;
  }
 (1 row)
 
-    -- To One
+    -- To One (function returns single value)
+    savepoint a;
     create function public.one_account(public.blog)
         returns public.account
+        language sql
+        as
+    $$
+        select * from public.account where id = $1.id - 2;
+    $$;
+    select jsonb_pretty(
+        graphql.resolve($$
+
+        fragment TypeRef on __Type {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+
+        {
+          __type(name: "Blog") {
+            fields {
+              name
+              type {
+                ...TypeRef
+              }
+            }
+          }
+        }
+        $$)
+    );
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": {                                +
+         "__type": {                          +
+             "fields": [                      +
+                 {                            +
+                     "name": "nodeId",        +
+                     "type": {                +
+                         "kind": "NON_NULL",  +
+                         "name": null,        +
+                         "ofType": {          +
+                             "kind": "SCALAR",+
+                             "name": "ID"     +
+                         }                    +
+                     }                        +
+                 },                           +
+                 {                            +
+                     "name": "id",            +
+                     "type": {                +
+                         "kind": "NON_NULL",  +
+                         "name": null,        +
+                         "ofType": {          +
+                             "kind": "SCALAR",+
+                             "name": "Int"    +
+                         }                    +
+                     }                        +
+                 },                           +
+                 {                            +
+                     "name": "name",          +
+                     "type": {                +
+                         "kind": "NON_NULL",  +
+                         "name": null,        +
+                         "ofType": {          +
+                             "kind": "SCALAR",+
+                             "name": "String" +
+                         }                    +
+                     }                        +
+                 },                           +
+                 {                            +
+                     "name": "oneAccount",    +
+                     "type": {                +
+                         "kind": "OBJECT",    +
+                         "name": "Account",   +
+                         "ofType": null       +
+                     }                        +
+                 }                            +
+             ]                                +
+         }                                    +
+     }                                        +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              blogCollection(first: 3) {
+                edges {
+                  node {
+                    id
+                    oneAccount {
+                      id
+                      email
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "blogCollection": {               +
+             "edges": [                    +
+                 {                         +
+                     "node": {             +
+                         "id": 1,          +
+                         "oneAccount": null+
+                     }                     +
+                 },                        +
+                 {                         +
+                     "node": {             +
+                         "id": 2,          +
+                         "oneAccount": null+
+                     }                     +
+                 },                        +
+                 {                         +
+                     "node": {             +
+                         "id": 3,          +
+                         "oneAccount": {   +
+                             "id": 1,      +
+                             "email": "foo"+
+                         }                 +
+                     }                     +
+                 }                         +
+             ]                             +
+         }                                 +
+     }                                     +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- To One (function returns set of <> rows 1)
+    create or replace function public.one_account(public.blog)
+        returns setof public.account rows 1
         language sql
         as
     $$

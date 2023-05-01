@@ -78,10 +78,66 @@ begin;
         $$)
     );
 
-    -- To One
+    -- To One (function returns single value)
+    savepoint a;
 
     create function public.one_account(public.blog)
         returns public.account
+        language sql
+        as
+    $$
+        select * from public.account where id = $1.id - 2;
+    $$;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+
+        fragment TypeRef on __Type {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+
+        {
+          __type(name: "Blog") {
+            fields {
+              name
+              type {
+                ...TypeRef
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              blogCollection(first: 3) {
+                edges {
+                  node {
+                    id
+                    oneAccount {
+                      id
+                      email
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    rollback to savepoint a;
+
+    -- To One (function returns set of <> rows 1)
+    create or replace function public.one_account(public.blog)
+        returns setof public.account rows 1
         language sql
         as
     $$

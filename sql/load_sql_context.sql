@@ -249,7 +249,12 @@ select
                                                 'type_name', pp.prorettype::regtype::text,
                                                 'schema_oid', pronamespace::int,
                                                 'schema_name', pronamespace::regnamespace::text,
-                                                'is_set_of', pp.proretset::bool,
+                                                -- Functions may be defined as "returns sefof <entity> rows 1"
+                                                -- those should return a single record, not a connection
+                                                -- this is important because set returning functions are inlined
+                                                -- and returning a single record isn't.
+                                                'is_set_of', pp.proretset::bool and pp.prorows <> 1,
+                                                'n_rows', pp.prorows::int,
                                                 'comment', pg_catalog.obj_description(pp.oid, 'pg_proc'),
                                                 'directives', (
                                                     with directives(directive) as (
