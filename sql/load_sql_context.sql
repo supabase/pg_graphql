@@ -71,7 +71,6 @@ select
                         jsonb_build_object(
                             'oid', pt.oid::int,
                             'schema_oid', pt.typnamespace::int,
-                           -- 'name', pt.typname::regtype::text,
                             'name', pt.typname,
                             'category', case
                                 when pt.typcategory = 'A' then 'Array'
