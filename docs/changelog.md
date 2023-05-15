@@ -24,3 +24,4 @@
 
 ## master
 - feature: `String` type filters support `regex`, `iregex`
+- feature: computed relationships via functions returning setof

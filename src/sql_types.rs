@@ -2,7 +2,9 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::*;
 
@@ -58,6 +60,7 @@ pub struct Function {
     pub schema_name: String,
     pub type_oid: u32,
     pub type_name: String,
+    pub is_set_of: bool,
     pub comment: Option<String>,
     pub directives: FunctionDirectives,
     pub permissions: FunctionPermissions,
@@ -80,7 +83,9 @@ pub struct TypePermissions {
 pub enum TypeCategory {
     Enum,
     Composite,
+    Table,
     Array,
+    Pseudo,
     Other,
 }
 
@@ -91,6 +96,7 @@ pub struct Type {
     pub name: String,
     pub category: TypeCategory,
     pub array_element_type_oid: Option<u32>,
+    pub table_oid: Option<u32>,
     pub comment: Option<String>,
     pub permissions: TypePermissions,
     pub directives: EnumDirectives,
@@ -490,9 +496,6 @@ pub fn load_sql_config() -> Config {
     let config: Config = serde_json::from_value(sql_result).unwrap();
     config
 }
-
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();

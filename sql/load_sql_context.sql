@@ -53,8 +53,6 @@ select
                         pg_enum pe
                     join pg_type pt
                         on pt.oid = pe.enumtypid
-                    join schemas_ spo
-                        on pt.typnamespace = spo.oid
                     group by
                         pt.oid
                 )
@@ -74,14 +72,18 @@ select
                             'oid', pt.oid::int,
                             'schema_oid', pt.typnamespace::int,
                             'name', pt.typname,
-                            -- if type is an array, points at the underlying element type
                             'category', case
                                 when pt.typcategory = 'A' then 'Array'
                                 when pt.typcategory = 'E' then 'Enum'
-                                when pt.typcategory = 'C' then 'Composite'
+                                when pt.typcategory = 'C'
+                                    and tabs.relkind in ('r', 't', 'v', 'm', 'f', 'p') then 'Table'
+                                when pt.typcategory = 'C' and tabs.relkind = 'c' then 'Composite'
                                 else 'Other'
                             end,
+                            -- if category is 'Array', points at the underlying element type
                             'array_element_type_oid', nullif(pt.typelem::int, 0),
+                            -- if category is 'Table' points to the table oid
+                            'table_oid', tabs.oid::int,
                             'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
                             'directives', jsonb_build_object(
                                 'name', graphql.comment_directive(pg_catalog.obj_description(pt.oid, 'pg_type')) ->> 'name'
@@ -93,8 +95,8 @@ select
                     )
                 from
                     pg_type pt
-                    join schemas_ spo
-                        on pt.typnamespace = spo.oid
+                    left join pg_class tabs
+                        on pt.typrelid = tabs.oid
             ),
             jsonb_build_object()
         ),
@@ -109,10 +111,12 @@ select
                     )
                 from
                     pg_type pt
-                    join schemas_ spo
-                        on pt.typnamespace = spo.oid
+                    join pg_class tabs
+                        on pt.typrelid = tabs.oid
                 where
-                    pt.typtype = 'c'
+                    pt.typcategory = 'C'
+                    and tabs.relkind = 'c'
+
             ),
             jsonb_build_array()
         ),
@@ -244,6 +248,12 @@ select
                                                 'type_name', pp.prorettype::regtype::text,
                                                 'schema_oid', pronamespace::int,
                                                 'schema_name', pronamespace::regnamespace::text,
+                                                -- Functions may be defined as "returns sefof <entity> rows 1"
+                                                -- those should return a single record, not a connection
+                                                -- this is important because set returning functions are inlined
+                                                -- and returning a single record isn't.
+                                                'is_set_of', pp.proretset::bool and pp.prorows <> 1,
+                                                'n_rows', pp.prorows::int,
                                                 'comment', pg_catalog.obj_description(pp.oid, 'pg_proc'),
                                                 'directives', (
                                                     with directives(directive) as (
@@ -271,8 +281,6 @@ select
                                     where
                                         pp.pronargs = 1 -- one argument
                                         and pp.proargtypes[0] = pc.reltype -- first argument is table type
-                                        and pp.proname like '\_%' -- starts with underscore
-                                        and not pp.proretset -- disallow set returning functions (for now)
                                 ),
                                 jsonb_build_array()
                             ),
