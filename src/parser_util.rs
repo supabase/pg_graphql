@@ -17,7 +17,8 @@ where
 pub fn normalize_selection_set<'a, 'b, T>(
     selection_set: &'b SelectionSet<'a, T>,
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
-    type_name: &String, // for inline fragments
+    type_name: &String,            // for inline fragments
+    variables: &serde_json::Value, // for directives
 ) -> Result<Vec<&'b Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -26,7 +27,7 @@ where
 
     for selection in &selection_set.items {
         let sel = selection;
-        match normalize_selection(sel, fragment_definitions, type_name) {
+        match normalize_selection(sel, fragment_definitions, type_name, variables) {
             Ok(sels) => selections.extend(sels),
             Err(err) => return Err(err),
         }
@@ -34,16 +35,131 @@ where
     Ok(selections)
 }
 
+/// Combines @skip and @include
+pub fn selection_is_skipped<'a, 'b, T>(
+    query_selection: &'b Selection<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<bool, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let directives = match query_selection {
+        Selection::Field(x) => &x.directives,
+        Selection::FragmentSpread(x) => &x.directives,
+        Selection::InlineFragment(x) => &x.directives,
+    };
+
+    if directives.len() > 0 {
+        for directive in directives {
+            let directive_name = directive.name.as_ref();
+            match directive_name {
+                "skip" => {
+                    if directive.arguments.len() != 1 {
+                        return Err(format!("Incorrect arguments to directive @skip"));
+                    }
+                    let arg = &directive.arguments[0];
+                    if arg.0.as_ref() != "if" {
+                        return Err(format!("Unknown argument to @skip: {}", arg.0.as_ref()));
+                    }
+
+                    // the argument to @skip(if: <value>)
+                    match &arg.1 {
+                        Value::Boolean(x) => {
+                            if *x {
+                                return Ok(true);
+                            }
+                        }
+                        Value::Variable(var_name) => {
+                            let var = variables.get(var_name.as_ref());
+                            match var {
+                                None => {
+                                    return Err("Value for \"if\" in @skip directive is required"
+                                        .to_string())
+                                }
+                                Some(val) => match val {
+                                    serde_json::Value::Bool(bool_val) => {
+                                        if *bool_val {
+                                            // skip immediately
+                                            return Ok(true);
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(
+                                            "Value for \"if\" in @skip directive is required"
+                                                .to_string(),
+                                        );
+                                    }
+                                },
+                            }
+                        }
+                        _ => (),
+                    }
+                }
+                "include" => {
+                    if directive.arguments.len() != 1 {
+                        return Err(format!("Incorrect arguments to directive @include"));
+                    }
+                    let arg = &directive.arguments[0];
+                    if arg.0.as_ref() != "if" {
+                        return Err(format!("Unknown argument to @include: {}", arg.0.as_ref()));
+                    }
+
+                    // the argument to @include(if: <value>)
+                    match &arg.1 {
+                        Value::Boolean(x) => {
+                            if !*x {
+                                return Ok(true);
+                            }
+                        }
+                        Value::Variable(var_name) => {
+                            let var = variables.get(var_name.as_ref());
+                            match var {
+                                None => {
+                                    return Err(
+                                        "Value for \"if\" in @include directive is required"
+                                            .to_string(),
+                                    )
+                                }
+                                Some(val) => match val {
+                                    serde_json::Value::Bool(bool_val) => {
+                                        if !bool_val {
+                                            return Ok(true);
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(
+                                            "Value for \"if\" in @include directive is required"
+                                                .to_string(),
+                                        );
+                                    }
+                                },
+                            }
+                        }
+                        _ => (),
+                    }
+                }
+                _ => return Err(format!("Unknown directive {}", directive_name)),
+            }
+        }
+    }
+    Ok(false)
+}
+
 /// Normalizes literal selections, fragment spreads, and inline fragments
 pub fn normalize_selection<'a, 'b, T>(
     query_selection: &'b Selection<'a, T>,
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
-    type_name: &String, // for inline fragments
+    type_name: &String,            // for inline fragments
+    variables: &serde_json::Value, // for directives
 ) -> Result<Vec<&'b Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let mut selections: Vec<&Field<'a, T>> = vec![];
+
+    if selection_is_skipped(query_selection, variables)? {
+        return Ok(selections);
+    }
 
     match query_selection {
         Selection::Field(field) => {
@@ -73,8 +189,12 @@ where
             };
 
             // TODO handle directives?
-            let frag_selections =
-                normalize_selection_set(&frag_def.selection_set, fragment_definitions, type_name);
+            let frag_selections = normalize_selection_set(
+                &frag_def.selection_set,
+                fragment_definitions,
+                type_name,
+                variables,
+            );
             match frag_selections {
                 Ok(sels) => selections.extend(sels.iter()),
                 Err(err) => return Err(err),
@@ -93,6 +213,7 @@ where
                     &inline_fragment.selection_set,
                     fragment_definitions,
                     type_name,
+                    variables,
                 )?;
                 selections.extend(infrag_selections.iter());
             }

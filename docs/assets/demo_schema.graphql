@@ -609,6 +609,8 @@ input StringFilter {
   startsWith: String
   like: String
   ilike: String
+  regex: String
+  iregex: String
 }
 
 scalar Time

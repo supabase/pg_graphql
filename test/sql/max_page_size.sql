@@ -1,4 +1,5 @@
 begin;
+
     create table account(
         id int primary key
     );
@@ -20,3 +21,5 @@ begin;
         }
         $$)
     );
+
+rollback;

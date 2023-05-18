@@ -67,9 +67,6 @@ For example, to increase the max rows per page for each table in the `public` sc
 comment on schema public is e'@graphql({"max_rows": 100})';
 ```
 
-
-
-
 ### totalCount
 
 `totalCount` is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.
@@ -97,6 +94,7 @@ create table "BlogPost"(
 );
 comment on table "BlogPost" is e'@graphql({"totalCount": {"enabled": true}})';
 ```
+
 
 ### Renaming
 
@@ -221,5 +219,30 @@ type Account {
     last: Int,
     orderBy: [PostOrderBy!]
   ): PostConnection
+}
+```
+
+### Description
+
+Tables, Columns, and Functions accept a `description` directive to populate user defined descriptions in the GraphQL schema.
+
+```sql
+create table "Account"(
+    id serial primary key
+);
+
+comment on table public.account
+is e'@graphql({"description": "A User Account"})';
+
+comment on column public.account.id
+is e'@graphql({"description": "The primary key identifier"})';
+```
+
+```graphql
+"""A User Account"""
+type Account implements Node {
+
+  """The primary key identifier"""
+  id: Int!
 }
 ```

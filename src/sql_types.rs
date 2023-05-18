@@ -2,7 +2,9 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgx::*;
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::*;
 
@@ -18,6 +20,7 @@ pub struct ColumnPermissions {
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ColumnDirectives {
     pub name: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -40,6 +43,8 @@ pub struct Column {
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FunctionDirectives {
     pub name: Option<String>,
+    // @graphql({"description": "the address of ..." })
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -55,6 +60,7 @@ pub struct Function {
     pub schema_name: String,
     pub type_oid: u32,
     pub type_name: String,
+    pub is_set_of: bool,
     pub comment: Option<String>,
     pub directives: FunctionDirectives,
     pub permissions: FunctionPermissions,
@@ -77,7 +83,9 @@ pub struct TypePermissions {
 pub enum TypeCategory {
     Enum,
     Composite,
+    Table,
     Array,
+    Pseudo,
     Other,
 }
 
@@ -88,6 +96,7 @@ pub struct Type {
     pub name: String,
     pub category: TypeCategory,
     pub array_element_type_oid: Option<u32>,
+    pub table_oid: Option<u32>,
     pub comment: Option<String>,
     pub permissions: TypePermissions,
     pub directives: EnumDirectives,
@@ -175,6 +184,9 @@ pub struct TableDirectiveForeignKey {
 pub struct TableDirectives {
     // @graphql({"name": "Foo" })
     pub name: Option<String>,
+
+    // @graphql({"description": "the address of ..." })
+    pub description: Option<String>,
 
     // @graphql({"totalCount": { "enabled": true } })
     pub total_count: Option<TableDirectiveTotalCount>,
@@ -287,7 +299,7 @@ pub struct SchemaDirectives {
     // @graphql({"inflect_names": true})
     pub inflect_names: bool,
     // @graphql({"max_rows": 20})
-    pub max_rows: i64,
+    pub max_rows: u64,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -484,9 +496,6 @@ pub fn load_sql_config() -> Config {
     let config: Config = serde_json::from_value(sql_result).unwrap();
     config
 }
-
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();

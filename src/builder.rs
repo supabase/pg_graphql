@@ -253,6 +253,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -407,6 +408,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -502,6 +504,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -543,27 +546,35 @@ where
     }
 }
 
+
+
+
+#[derive(Clone, Debug)]
+pub struct ConnectionBuilderSource {
+    pub table: Arc<Table>,
+    pub fkey: Option<ForeignKeyReversible>
+}
+
+
 #[derive(Clone, Debug)]
 pub struct ConnectionBuilder {
     pub alias: String,
 
     // args
-    pub first: Option<i64>,
-    pub last: Option<i64>,
+    pub first: Option<u64>,
+    pub last: Option<u64>,
     pub before: Option<Cursor>,
     pub after: Option<Cursor>,
     pub filter: FilterBuilder,
     pub order_by: OrderByBuilder,
 
     // metadata
-    pub table: Arc<Table>,
-    pub fkey: Option<Arc<ForeignKey>>,
-    pub reverse_reference: Option<bool>,
+    pub source: ConnectionBuilderSource,
 
     //fields
     pub selections: Vec<ConnectionSelection>,
 
-    pub max_rows: i64,
+    pub max_rows: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -790,6 +801,15 @@ pub struct ColumnBuilder {
 pub struct FunctionBuilder {
     pub alias: String,
     pub function: Arc<Function>,
+    pub table: Arc<Table>,
+    pub selection: FunctionSelection,
+}
+
+#[derive(Clone, Debug)]
+pub enum FunctionSelection {
+    ScalarSelf,
+    Connection(ConnectionBuilder),
+    Node(NodeBuilder),
 }
 
 fn restrict_allowed_arguments<'a, T>(
@@ -1024,24 +1044,30 @@ where
 
             // TODO: only one of first/last, before/after provided
             let first: gson::Value = read_argument("first", field, query_field, variables)?;
-            let first: Option<i64> = match first {
+            let first: Option<u64> = match first {
                 gson::Value::Absent | gson::Value::Null => None,
-                gson::Value::Number(gson::Number::Integer(n)) => Some(n),
+                gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
+                    return Err("`first` must be an unsigned integer".to_string())
+                }
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n as u64),
                 _ => {
                     return Err("Internal Error: failed to parse validated first".to_string());
                 }
             };
 
             let last: gson::Value = read_argument("last", field, query_field, variables)?;
-            let last: Option<i64> = match last {
+            let last: Option<u64> = match last {
                 gson::Value::Absent | gson::Value::Null => None,
-                gson::Value::Number(gson::Number::Integer(n)) => Some(n),
+                gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
+                    return Err("`last` must be an unsigned integer".to_string())
+                }
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n as u64),
                 _ => {
                     return Err("Internal Error: failed to parse validated last".to_string());
                 }
             };
 
-            let max_rows: i64 = xtype
+            let max_rows: u64 = xtype
                 .schema
                 .context
                 .schemas
@@ -1075,42 +1101,45 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err("unknown field in connection".to_string()),
-                    Some(f) => {
-                        builder_fields.push(match &f.type_.unmodified_type() {
-                            __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
-                                f,
-                                selection_field,
-                                fragment_definitions,
-                                variables,
-                            )?),
-                            __Type::PageInfo(_) => ConnectionSelection::PageInfo(
-                                to_page_info_builder(f, selection_field, fragment_definitions)?,
-                            ),
+                    Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
+                        __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
+                            f,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                        )?),
+                        __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
+                            f,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                        )?),
 
-                            _ => match f.name().as_ref() {
-                                "totalCount" => ConnectionSelection::TotalCount {
-                                    alias: alias_or_name(selection_field),
-                                },
-                                "__typename" => ConnectionSelection::Typename {
-                                    alias: alias_or_name(selection_field),
-                                    typename: xtype.name().unwrap(),
-                                },
-                                _ => return Err("unexpected field type on connection".to_string()),
+                        _ => match f.name().as_ref() {
+                            "totalCount" => ConnectionSelection::TotalCount {
+                                alias: alias_or_name(selection_field),
                             },
-                        })
-                    }
+                            "__typename" => ConnectionSelection::Typename {
+                                alias: alias_or_name(selection_field),
+                                typename: xtype.name().unwrap(),
+                            },
+                            _ => return Err("unexpected field type on connection".to_string()),
+                        },
+                    }),
                 }
             }
             Ok(ConnectionBuilder {
                 alias,
-                table: Arc::clone(&xtype.table),
-                fkey: xtype.fkey.clone(),
-                reverse_reference: xtype.reverse_reference,
+                source: ConnectionBuilderSource {
+                    table: Arc::clone(&xtype.table),
+                    fkey: xtype.fkey.clone()
+                },
                 first,
                 last,
                 before,
@@ -1132,6 +1161,7 @@ fn to_page_info_builder<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
 ) -> Result<PageInfoBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1152,6 +1182,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -1212,6 +1243,7 @@ where
                 &query_field.selection_set,
                 fragment_definitions,
                 &type_name,
+                variables,
             )?;
 
             for selection_field in selection_fields {
@@ -1320,8 +1352,12 @@ where
         false => None,
     };
 
-    let selection_fields =
-        normalize_selection_set(&query_field.selection_set, fragment_definitions, &type_name)?;
+    let selection_fields = normalize_selection_set(
+        &query_field.selection_set,
+        fragment_definitions,
+        &type_name,
+        variables,
+    )?;
 
     for selection_field in selection_fields {
         match field_map.get(selection_field.name.as_ref()) {
@@ -1333,66 +1369,98 @@ where
                 ))
             }
             Some(f) => {
-                match f.type_().unmodified_type() {
-                    __Type::Connection(_) => {
-                        let con_builder = to_connection_builder(
-                            f,
-                            selection_field,
-                            fragment_definitions,
-                            variables,
-                            // TODO need ref to fkey here
-                        );
-                        builder_fields.push(NodeSelection::Connection(con_builder?));
-                    }
-                    __Type::Node(_) => {
-                        let node_builder = to_node_builder(
-                            f,
-                            selection_field,
-                            fragment_definitions,
-                            variables,
-                            // TODO need ref to fkey here
-                        );
-                        builder_fields.push(NodeSelection::Node(node_builder?));
-                    }
-                    _ => {
-                        let alias = alias_or_name(selection_field);
-                        let node_selection = match &f.sql_type {
-                            Some(node_sql_type) => match node_sql_type {
-                                NodeSQLType::Column(col) => NodeSelection::Column(ColumnBuilder {
-                                    alias,
-                                    column: Arc::clone(col),
-                                }),
-                                NodeSQLType::Function(func) => {
-                                    NodeSelection::Function(FunctionBuilder {
-                                        alias,
-                                        function: Arc::clone(func),
-                                    })
+                let alias = alias_or_name(selection_field);
+
+                let node_selection = match &f.sql_type {
+                    Some(node_sql_type) => match node_sql_type {
+                        NodeSQLType::Column(col) => NodeSelection::Column(ColumnBuilder {
+                            alias,
+                            column: Arc::clone(col),
+                        }),
+                        NodeSQLType::Function(func) => {
+                            let function_selection = match &f.type_() {
+                                __Type::Scalar(_) => FunctionSelection::ScalarSelf,
+                                __Type::Node(_) => {
+                                    let node_builder = to_node_builder(
+                                        f,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                        // TODO need ref to fkey here
+                                    )?;
+                                    FunctionSelection::Node(node_builder)
                                 }
-                                NodeSQLType::NodeId(pkey_columns) => {
-                                    NodeSelection::NodeId(NodeIdBuilder {
-                                        alias,
-                                        columns: pkey_columns.clone(), // interior is arc
-                                        table_name: xtype.table.name.clone(),
-                                        schema_name: xtype.table.schema.clone(),
-                                    })
+                                __Type::Connection(_) => {
+                                    let connection_builder = to_connection_builder(
+                                        f,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                        // TODO need ref to fkey here
+                                    )?;
+                                    FunctionSelection::Connection(connection_builder)
                                 }
-                            },
-                            _ => match f.name().as_ref() {
-                                "__typename" => NodeSelection::Typename {
-                                    alias: alias_or_name(selection_field),
-                                    typename: xtype.name().unwrap(),
-                                },
+                                _ => {
+                                    return Err(format!(
+                                        "invalid return type from function"
+                                    ))
+                                }
+                            };
+                            NodeSelection::Function(FunctionBuilder {
+                                alias,
+                                function: Arc::clone(func),
+                                table: Arc::clone(&xtype.table),
+                                selection: function_selection,
+                            })
+                        }
+                        NodeSQLType::NodeId(pkey_columns) => {
+                            NodeSelection::NodeId(NodeIdBuilder {
+                                alias,
+                                columns: pkey_columns.clone(), // interior is arc
+                                table_name: xtype.table.name.clone(),
+                                schema_name: xtype.table.schema.clone(),
+                            })
+                        }
+                    },
+                    _ => match f.name().as_ref() {
+                        "__typename" => NodeSelection::Typename {
+                            alias: alias_or_name(selection_field),
+                            typename: xtype.name().unwrap(),
+                        },
+                        _ => {
+                            match f.type_().unmodified_type() {
+                                __Type::Connection(_) => {
+                                    let con_builder = to_connection_builder(
+                                        f,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                    );
+                                    NodeSelection::Connection(con_builder?)
+                                }
+                                __Type::Node(_) => {
+                                    let node_builder = to_node_builder(
+                                        f,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                    );
+                                    NodeSelection::Node(node_builder?)
+                                }
                                 _ => {
                                     return Err(format!(
                                         "unexpected field type on node {}",
                                         f.name()
-                                    ))
+                                    ));
                                 }
-                            },
-                        };
-                        builder_fields.push(node_selection);
-                    }
-                }
+                            }
+
+                        }
+                    },
+                };
+                builder_fields.push(node_selection);
+
+
             }
         }
     }
@@ -1539,6 +1607,7 @@ impl __Schema {
         enum_value: &__EnumValue,
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+        variables: &serde_json::Value,
     ) -> Result<__EnumValueBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -1547,6 +1616,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__EnumValue".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1597,6 +1667,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__InputValue".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1659,6 +1730,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__Field".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1786,6 +1858,7 @@ impl __Schema {
             &query_field.selection_set,
             fragment_definitions,
             &"__Type".to_string(),
+            variables,
         )?;
 
         let mut builder_fields = vec![];
@@ -1878,6 +1951,7 @@ impl __Schema {
                                             enum_value,
                                             selection_field,
                                             fragment_definitions,
+                                            variables,
                                         )?;
                                         f_builders.push(f_builder)
                                     }
@@ -1973,6 +2047,7 @@ impl __Schema {
                     &query_field.selection_set,
                     fragment_definitions,
                     &type_name,
+                    variables,
                 )?;
 
                 for selection_field in selection_fields {
