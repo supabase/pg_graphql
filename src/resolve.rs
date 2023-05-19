@@ -343,103 +343,94 @@ where
     };
 
     use pgx::prelude::*;
-    use pgx_contrib_spiext::subtxn::*;
 
-    let spi_result: Result<serde_json::Value, String> = Spi::connect(|c| {
-        //Create subtransaction
-        let sub_txn_result: Result<serde_json::Value, String> = c.sub_transaction(|mut xact| {
-            let res_data: serde_json::Value = match selections[..] {
-                [] => Err("Selection set must not be empty".to_string())?,
-                _ => {
-                    let mut res_data = json!({});
-                    // Key name to prepared statement name
+    let spi_result: Result<serde_json::Value, String> = Spi::connect(|mut conn| {
+        let res_data: serde_json::Value = match selections[..] {
+            [] => Err("Selection set must not be empty".to_string())?,
+            _ => {
+                let mut res_data = json!({});
+                // Key name to prepared statement name
 
-                    for selection in selections.iter() {
-                        let maybe_field_def = map.get(selection.name.as_ref());
+                for selection in selections.iter() {
+                    let maybe_field_def = map.get(selection.name.as_ref());
 
-                        xact = match maybe_field_def {
-                            None => Err(format!(
-                                "Unknown field {:?} on type {}",
-                                selection.name,
-                                mutation_type.name().unwrap()
-                            ))?,
-                            Some(field_def) => match field_def.type_.unmodified_type() {
-                                __Type::InsertResponse(_) => {
-                                    let builder = match to_insert_builder(
-                                        field_def,
-                                        selection,
-                                        &fragment_definitions,
-                                        variables,
-                                    ) {
-                                        Ok(builder) => builder,
-                                        Err(err) => {
-                                            xact.rollback();
-                                            return Err(err);
-                                        }
-                                    };
-
-                                    let (d, next_xact) = builder.execute(xact)?;
-
-                                    res_data[alias_or_name(selection)] = d;
-                                    next_xact
-                                }
-                                __Type::UpdateResponse(_) => {
-                                    let builder = match to_update_builder(
-                                        field_def,
-                                        selection,
-                                        &fragment_definitions,
-                                        variables,
-                                    ) {
-                                        Ok(builder) => builder,
-                                        Err(err) => {
-                                            xact.rollback();
-                                            return Err(err);
-                                        }
-                                    };
-
-                                    let (d, next_xact) = builder.execute(xact)?;
-                                    res_data[alias_or_name(selection)] = d;
-                                    next_xact
-                                }
-                                __Type::DeleteResponse(_) => {
-                                    let builder = match to_delete_builder(
-                                        field_def,
-                                        selection,
-                                        &fragment_definitions,
-                                        variables,
-                                    ) {
-                                        Ok(builder) => builder,
-                                        Err(err) => {
-                                            xact.rollback();
-                                            return Err(err);
-                                        }
-                                    };
-
-                                    let (d, next_xact) = builder.execute(xact)?;
-                                    res_data[alias_or_name(selection)] = d;
-                                    next_xact
-                                }
-                                _ => match field_def.name().as_ref() {
-                                    "__typename" => {
-                                        res_data[alias_or_name(selection)] =
-                                            serde_json::json!(mutation_type.name());
-                                        xact
+                    conn = match maybe_field_def {
+                        None => Err(format!(
+                            "Unknown field {:?} on type {}",
+                            selection.name,
+                            mutation_type.name().unwrap()
+                        ))?,
+                        Some(field_def) => match field_def.type_.unmodified_type() {
+                            __Type::InsertResponse(_) => {
+                                let builder = match to_insert_builder(
+                                    field_def,
+                                    selection,
+                                    &fragment_definitions,
+                                    variables,
+                                ) {
+                                    Ok(builder) => builder,
+                                    Err(err) => {
+                                        return Err(err);
                                     }
-                                    _ => Err(format!(
-                                        "unexpected type found on mutation object: {}",
-                                        field_def.type_.name().unwrap_or_default()
-                                    ))?,
-                                },
-                            },
-                        }
-                    }
-                    res_data
-                }
-            };
-            Ok(res_data)
-        });
+                                };
 
-        sub_txn_result
+                                let (d, conn) = builder.execute(conn)?;
+
+                                res_data[alias_or_name(selection)] = d;
+                                conn
+                            }
+                            __Type::UpdateResponse(_) => {
+                                let builder = match to_update_builder(
+                                    field_def,
+                                    selection,
+                                    &fragment_definitions,
+                                    variables,
+                                ) {
+                                    Ok(builder) => builder,
+                                    Err(err) => {
+                                        return Err(err);
+                                    }
+                                };
+
+                                let (d, conn) = builder.execute(conn)?;
+                                res_data[alias_or_name(selection)] = d;
+                                conn
+                            }
+                            __Type::DeleteResponse(_) => {
+                                let builder = match to_delete_builder(
+                                    field_def,
+                                    selection,
+                                    &fragment_definitions,
+                                    variables,
+                                ) {
+                                    Ok(builder) => builder,
+                                    Err(err) => {
+                                        return Err(err);
+                                    }
+                                };
+
+                                let (d, conn) = builder.execute(conn)?;
+                                res_data[alias_or_name(selection)] = d;
+                                conn
+                            }
+                            _ => match field_def.name().as_ref() {
+                                "__typename" => {
+                                    res_data[alias_or_name(selection)] =
+                                        serde_json::json!(mutation_type.name());
+                                    conn
+                                }
+                                _ => Err(format!(
+                                    "unexpected type found on mutation object: {}",
+                                    field_def.type_.name().unwrap_or_default()
+                                ))?,
+                            },
+                        },
+                    }
+                }
+                res_data
+            }
+        };
+        Ok(res_data)
     });
 
     match spi_result {
@@ -447,9 +438,8 @@ where
             data: Omit::Present(data),
             errors: Omit::Omitted,
         },
-        Err(err) => GraphQLResponse {
-            data: Omit::Present(serde_json::Value::Null),
-            errors: Omit::Present(vec![ErrorMessage { message: err }]),
-        },
+        Err(err) => {
+            ereport!(ERROR, PgSqlErrorCode::ERRCODE_INTERNAL_ERROR, err);
+        }
     }
 }

@@ -19,9 +19,10 @@ pg_module_magic!();
 extension_sql_file!("../sql/schema_version.sql");
 extension_sql_file!("../sql/directives.sql");
 extension_sql_file!("../sql/raise_exception.sql");
+extension_sql_file!("../sql/resolve.sql", requires = [resolve]);
 
 #[allow(non_snake_case, unused_variables)]
-#[pg_extern]
+#[pg_extern(name = "_internal_resolve")]
 fn resolve(
     query: &str,
     variables: default!(Option<JsonB>, "'{}'"),

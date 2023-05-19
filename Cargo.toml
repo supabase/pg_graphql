@@ -24,7 +24,6 @@ uuid = "1"
 regex = "1"
 base64 = "0.13"
 lazy_static = "1"
-pgx-contrib-spiext = { git = "https://github.com/supabase/pgx-contrib-spiext", rev = "a346053" }
 
 [dev-dependencies]
 pgx-tests = "=0.7.1"
