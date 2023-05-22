@@ -1,6 +1,6 @@
 use cached::proc_macro::cached;
 use cached::SizedCache;
-use pgx::*;
+use pgrx::*;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};

@@ -1,10 +1,10 @@
 use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table};
-use pgx::pg_sys::PgBuiltInOids;
-use pgx::prelude::*;
-use pgx::spi::SpiClient;
-use pgx::*;
+use pgrx::pg_sys::PgBuiltInOids;
+use pgrx::prelude::*;
+use pgrx::spi::SpiClient;
+use pgrx::*;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
 use std::collections::HashSet;
@@ -12,13 +12,13 @@ use std::sync::Arc;
 
 pub fn quote_ident(ident: &str) -> String {
     unsafe {
-        direct_function_call::<String>(pg_sys::quote_ident, vec![ident.into_datum()]).unwrap()
+        direct_function_call::<String>(pg_sys::quote_ident, &vec![ident.into_datum()]).unwrap()
     }
 }
 
 pub fn quote_literal(ident: &str) -> String {
     unsafe {
-        direct_function_call::<String>(pg_sys::quote_literal, vec![ident.into_datum()]).unwrap()
+        direct_function_call::<String>(pg_sys::quote_literal, &vec![ident.into_datum()]).unwrap()
     }
 }
 
@@ -55,7 +55,7 @@ pub trait MutationEntrypoint<'conn> {
             .update(sql, None, Some(param_context.params))
             .map_err(|_| "Internal Error: Failed to execute transpiled query".to_string())?;
 
-        let res: pgx::JsonB = match res_q.first().get::<JsonB>(1) {
+        let res: pgrx::JsonB = match res_q.first().get::<JsonB>(1) {
             Ok(Some(dat)) => dat,
             Ok(None) => JsonB(serde_json::Value::Null),
             Err(_) => {
@@ -82,13 +82,13 @@ pub trait QueryEntrypoint {
             }
         };
 
-        let spi_result: Result<Option<pgx::JsonB>, spi::Error> = Spi::connect(|c| {
+        let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
             let val = c.select(sql, Some(1), Some(param_context.params))?;
             // Get a value from the query
             if val.len() == 0 {
                 Ok(None)
             } else {
-                val.first().get::<pgx::JsonB>(1)
+                val.first().get::<pgrx::JsonB>(1)
             }
         });
 
@@ -1568,7 +1568,7 @@ impl Serialize for __EnumValueBuilder {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
-#[pgx::pg_schema]
+#[pgrx::pg_schema]
 mod tests {
     use crate::transpile::*;
 
