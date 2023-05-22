@@ -39,8 +39,8 @@ jobs:
           - pg_graphql
         package_name:
           - pg-graphql
-        pgx_version:
-          - 0.7.1
+        pgrx_version:
+          - 0.8.3
         postgres: [14, 15]
         box:
           - { runner: ubuntu-20.04, arch: amd64 }
@@ -75,12 +75,12 @@ jobs:
           # Ensure cargo/rust on path
           source "$HOME/.cargo/env"
 
-          cargo install cargo-pgx --version ${{ matrix.pgx_version }} --locked
-          cargo pgx init --pg${{ matrix.postgres }}=/usr/lib/postgresql/${{ matrix.postgres }}/bin/pg_config
+          cargo install cargo-pgrx --version ${{ matrix.pgrx_version }} --locked
+          cargo pgrx init --pg${{ matrix.postgres }}=/usr/lib/postgresql/${{ matrix.postgres }}/bin/pg_config
 
           # selects the pgVer from pg_config on path
-          # https://github.com/tcdi/pgx/issues/288
-          cargo pgx package --no-default-features --features pg${{ matrix.postgres }}
+          # https://github.com/tcdi/pgrx/issues/288
+          cargo pgrx package --no-default-features --features pg${{ matrix.postgres }}
 
           # Create installable package
           mkdir archive

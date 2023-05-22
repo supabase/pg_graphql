@@ -255,8 +255,8 @@ where
                                     serde_json::json!(query_type.name())
                             }
                             "heartbeat" => {
-                                let now_jsonb: pgx::JsonB =
-                                    pgx::Spi::get_one("select to_jsonb(now())")
+                                let now_jsonb: pgrx::JsonB =
+                                    pgrx::Spi::get_one("select to_jsonb(now())")
                                         .expect("Internal error: queries should not fail")
                                         .expect("Internal Error: queries should not return null");
                                 let now_json = now_jsonb.0;
@@ -342,7 +342,7 @@ where
         }
     };
 
-    use pgx::prelude::*;
+    use pgrx::prelude::*;
 
     let spi_result: Result<serde_json::Value, String> = Spi::connect(|mut conn| {
         let res_data: serde_json::Value = match selections[..] {

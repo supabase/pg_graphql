@@ -1,7 +1,7 @@
 use crate::graphql::*;
 use crate::omit::Omit;
 use graphql_parser::query::parse_query;
-use pgx::*;
+use pgrx::*;
 use resolve::resolve_inner;
 use serde_json::json;
 
@@ -28,7 +28,7 @@ fn resolve(
     variables: default!(Option<JsonB>, "'{}'"),
     operationName: default!(Option<String>, "null"),
     extensions: default!(Option<JsonB>, "null"),
-) -> pgx::JsonB {
+) -> pgrx::JsonB {
     // Parse the GraphQL Query
     let query_ast_option = parse_query::<&str>(query);
 
@@ -64,7 +64,7 @@ fn resolve(
 
     let value: serde_json::Value = serde_json::to_value(&response).unwrap();
 
-    pgx::JsonB(value)
+    pgrx::JsonB(value)
 }
 
 #[cfg(any(test, feature = "pg_test"))]
