@@ -14,6 +14,7 @@ nav:
     - Computed Fields: 'computed_fields.md'
     - Security: 'security.md'
     - Configuration: 'configuration.md'
+    - Usage with Relay: 'usage_with_relay.md'
     - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
     - Contributing: 'contributing.md'
