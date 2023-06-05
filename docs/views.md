@@ -49,9 +49,9 @@ pg_graphql identifies relationships among entites by inspecting foreign keys. Vi
       "local_name": "foo", // optional
       "local_columns": ["account_id"],
       "foreign_name": "bar", // optional
-      "foriegn_schema": "public",
-      "foriegn_table": "account",
-      "foriegn_columns": ["id"]
+      "foreign_schema": "public",
+      "foreign_table": "account",
+      "foreign_columns": ["id"]
     }
   ]
 }

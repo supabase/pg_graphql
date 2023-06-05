@@ -1,11 +1,11 @@
-FROM postgres:14
+FROM postgres:15
 RUN apt-get update
 
 ENV build_deps ca-certificates \
   git \
   build-essential \
   libpq-dev \
-  postgresql-server-dev-14 \
+  postgresql-server-dev-15 \
   curl \
   libreadline6-dev \
   zlib1g-dev
@@ -27,13 +27,13 @@ RUN \
   cargo --version
 
 # PGX
-RUN cargo install cargo-pgx --version 0.7.1 --locked
+RUN cargo install cargo-pgrx --version 0.8.3 --locked
 
-RUN cargo pgx init --pg14 $(which pg_config)
+RUN cargo pgrx init --pg15 $(which pg_config)
 
 USER root
 
 COPY . .
-RUN cargo pgx install
+RUN cargo pgrx install
 
 USER postgres

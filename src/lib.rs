@@ -1,7 +1,7 @@
 use crate::graphql::*;
 use crate::omit::Omit;
 use graphql_parser::query::parse_query;
-use pgx::*;
+use pgrx::*;
 use resolve::resolve_inner;
 use serde_json::json;
 
@@ -19,15 +19,16 @@ pg_module_magic!();
 extension_sql_file!("../sql/schema_version.sql");
 extension_sql_file!("../sql/directives.sql");
 extension_sql_file!("../sql/raise_exception.sql");
+extension_sql_file!("../sql/resolve.sql", requires = [resolve]);
 
 #[allow(non_snake_case, unused_variables)]
-#[pg_extern]
+#[pg_extern(name = "_internal_resolve")]
 fn resolve(
     query: &str,
     variables: default!(Option<JsonB>, "'{}'"),
     operationName: default!(Option<String>, "null"),
     extensions: default!(Option<JsonB>, "null"),
-) -> pgx::JsonB {
+) -> pgrx::JsonB {
     // Parse the GraphQL Query
     let query_ast_option = parse_query::<&str>(query);
 
@@ -63,7 +64,7 @@ fn resolve(
 
     let value: serde_json::Value = serde_json::to_value(&response).unwrap();
 
-    pgx::JsonB(value)
+    pgrx::JsonB(value)
 }
 
 #[cfg(any(test, feature = "pg_test"))]

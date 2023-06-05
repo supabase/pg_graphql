@@ -169,4 +169,68 @@ begin;
 (1 row)
 
     rollback to savepoint a;
+    -- Filter by regex
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              memoCollection(filter: {contents: {regex: "^F\\w+$"}}) {
+                edges {
+                  node {
+                    contents
+                  }
+                }
+              }
+            }
+        $$)
+    );
+               jsonb_pretty                
+-------------------------------------------
+ {                                        +
+     "data": {                            +
+         "memoCollection": {              +
+             "edges": [                   +
+                 {                        +
+                     "node": {            +
+                         "contents": "Foo"+
+                     }                    +
+                 }                        +
+             ]                            +
+         }                                +
+     }                                    +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- iregex is not case sensitive
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              memoCollection(filter: {contents: {iregex: "^f\\w+$"}}) {
+                edges {
+                  node {
+                    contents
+                  }
+                }
+              }
+            }
+        $$)
+    );
+               jsonb_pretty                
+-------------------------------------------
+ {                                        +
+     "data": {                            +
+         "memoCollection": {              +
+             "edges": [                   +
+                 {                        +
+                     "node": {            +
+                         "contents": "Foo"+
+                     }                    +
+                 }                        +
+             ]                            +
+         }                                +
+     }                                    +
+ }
+(1 row)
+
+    rollback to savepoint a;
 rollback;

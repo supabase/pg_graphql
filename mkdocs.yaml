@@ -15,6 +15,8 @@ nav:
     - Computed Fields: 'computed_fields.md'
     - Security: 'security.md'
     - Configuration: 'configuration.md'
+    - Guides:
+      - Usage with Relay: 'usage_with_relay.md'
     - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
     - Contributing: 'contributing.md'
@@ -22,6 +24,8 @@ nav:
 
 theme:
     name: 'material'
+    features:
+      - navigation.expand
     favicon: 'assets/favicon.ico'
     logo: 'assets/favicon.ico'
     homepage: https://supabase.github.io/pg_graphql
