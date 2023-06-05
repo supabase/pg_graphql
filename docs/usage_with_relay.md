@@ -2,8 +2,11 @@ pg_graphql implements the [GraphQL Global Object Identification Specification](h
 
 ## Relay Setup
 
-1. Follow the [Installation Guide](https://relay.dev/docs/getting-started/installation-and-setup/)
-2. Modify your `relay.config.js` file to reflect the following:
+### Pre-requisites
+Follow the [Relay Installation Guide](https://relay.dev/docs/getting-started/installation-and-setup/).
+
+### Configuring the Relay Compiler
+Modify your `relay.config.js` file to reflect the following:
 
    ```javascript
    module.exports = {
@@ -28,11 +31,12 @@ pg_graphql implements the [GraphQL Global Object Identification Specification](h
    }
    ```
 
-   The `schemaConfig` will tell the Relay compiler where to find the `nodeId` field on the `node` interface, and the `customScalars` option will improve Relay's type emission.
+   - `schemaConfig` tells the Relay compiler where to find the `nodeId` field on the `node` interface
+   - `customScalars` will improve Relay's type emission
 
-3. Setup the Relay Environment
+### Configuring your Relay Environment
 
-   This example uses Supabase for the GraphQL server, but pg_graphql can be used independently.
+   This example uses [Supabase](https://supabase.com) for the GraphQL server, but pg_graphql can be used independently.
 
    ```typescript
    import {
