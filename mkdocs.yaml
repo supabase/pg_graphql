@@ -7,7 +7,6 @@ repo_url: https://github.com/supabase/pg_graphql
 
 nav:
     - Welcome: 'index.md'
-    - Supabase: 'supabase.md'
     - Quickstart: 'quickstart.md'
     - SQL Interface: 'sql_interface.md'
     - API: 'api.md'
@@ -16,6 +15,7 @@ nav:
     - Security: 'security.md'
     - Configuration: 'configuration.md'
     - Guides:
+      - Supabase: 'supabase.md'
       - Usage with Relay: 'usage_with_relay.md'
     - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
