@@ -15,6 +15,7 @@ nav:
     - Security: 'security.md'
     - Configuration: 'configuration.md'
     - Guides:
+      - Supabase: 'supabase.md'
       - Usage with Relay: 'usage_with_relay.md'
     - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
