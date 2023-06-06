@@ -18,7 +18,7 @@ Fore more experienced users, or when you're ready to productionize your applicat
 
 ### Supabase Studio
 
-The easiest way to make a GraphQL request with Supabase is to use [Supabase Studio's builtin GraphiQL IDE ](https://app.supabase.com/project/_/api/graphiql).
+The easiest way to make a GraphQL request with Supabase is to use [Supabase Studio's builtin GraphiQL IDE](https://app.supabase.com/project/_/api/graphiql).
 You can access GraphiQL [here](https://app.supabase.com/project/_/api/graphiql) by selecting the relevant project. Alternatively, navigate there within Studio at `API Docs > GraphQL > GraphiQL`.
 
 ![graphiql](./assets/supabase_graphiql.png)
@@ -149,6 +149,26 @@ When making a decision to upgrade, you can review features of the upgraded versi
 Always test a new version of pg_graphql extensively on a development or staging instance before updating your production instance. pg_graphql follows SemVer, which makes API backwards compatibility relatively safe for minor and patch updates. Even so, it's critical to verify that changes do not negatively impact the specifics of your project's API in other ways, e.g. requests/sec or CPU load.
 
 
+## Local Development
+
+When starting a local project through the [Supabase CLI](https://supabase.com/docs/guides/cli), the output of `supabase start` provides the information needed to call the GraphQL API directly. You can also use the Supabase Studio url to access [the builtin GraphiQL IDE](https://app.supabase.com/project/_/api/graphiql).
+
+```sh
+> supabase start
+...
+
+Started supabase local development setup.
+
+     GraphQL URL: http://localhost:54321/graphql/v1  <-- GraphQL endpoint
+          DB URL: ...
+      Studio URL: http://localhost:54323             <-- Supabase Studio
+    Inbucket URL: ...
+      JWT secret: ...
+        anon key: eyJhbGciOiJIUzI1...<truncated>     <-- API_KEY
+service_role key: ...
+```
+
+
 ## Term Reference
 
 ### Project Reference (PROJECT_REF)
@@ -165,22 +185,3 @@ in to Supabase Studio and navigating to `Settings > General > Project Settings >
 Your Supabase API Key is a public value that must be sent with every API request. The key is visible in Supabase Studio at `Settings > API > Project API keys`
 
 ![project_ref](./assets/supabase_api_key.png)
-
-
-or from the output of `supabase start` when running a local project with the [Supabase CLI](https://supabase.com/docs/guides/cli)
-
-```sh
-> supabase start
-...
-
-Started supabase local development setup.
-
-         API URL: ...
-     GraphQL URL: ...
-          DB URL: ...
-      Studio URL: ...
-    Inbucket URL: ...
-      JWT secret: ...
-        anon key: eyJhbGciOiJIUzI1...<truncated>   <-- API_KEY
-service_role key: ...
-```
