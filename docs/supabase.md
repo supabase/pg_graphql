@@ -1,53 +1,51 @@
-Supabase uses [pg_graphql](https://github.com/supabase/pg_graphql) to expose a GraphQL API for every project.
-
-The GraphQL API is automatically reflected from your database's schema and supports:
+The Supabase GraphQL API is automatically reflected from your database's schema using [pg_graphql](https://github.com/supabase/pg_graphql). It supports:
 
 - Basic CRUD operations (Create/Read/Update/Delete)
 - Support for Tables, Views, Materialized Views, and Foreign Tables
 - Arbitrarily deep relationships among tables/views
 - User defined computed fields
-- The Postgres security model - including Row Level Security, Roles, and Grants.
-
+- Postgres' security model - including Row Level Security, Roles, and Grants
 
 All requests resolve in a single round-trip leading to fast response times and high throughput.
 
-You can introspect and query the GraphQL API of an existing Supabase project within Supabase Studio [here](https://app.supabase.com/project/_/api/graphiql) and selecting the relevant project.
+If you haven't created a Supabase project, do that [here](https://database.new) so you can follow along with the guide.
 
+## API
 
-# API
+If you're new to GraphQL or Supabase, we strongly recommend starting with Supabase GraphQL by following the [Supabase Studio guide](#supabase-studio).
 
-## Requirements
-
-The minimum requirements to make a request to the GraphQL API are:
-
-- A local or hosted supabase project
-- The project's GraphQL API's URL
-- The project's API Key
-
-Once you've [created a Supabase Project](database.new) you're ready to make requests
-
-### Make a Request
-
-First, collect your [project reference](#project-reference-project_ref) and [API Key](#api-key-api_key).
+Fore more experienced users, or when you're ready to productionize your application, access the API using [supabase-js](#supabase-js), [GraphiQL](#connecting-graphiql), or any HTTP client, for example [cURL](#curl).
 
 ### Supabase Studio
 
-The easiest way to make an GraphQL request with Supabase is to use Supabase Studio's builtin GraphiQL IDE to inspect and interact with your GraphQL API.
-You can access GraphiQL for your project [here](https://app.supabase.com/project/_/api/graphiql) by selecting the relevant project. Alternatively, navigate there manually at `API Docs > GraphQL > GraphiQL`.
+The easiest way to make a GraphQL request with Supabase is to use [Supabase Studio's builtin GraphiQL IDE ](https://app.supabase.com/project/_/api/graphiql).
+You can access GraphiQL [here](https://app.supabase.com/project/_/api/graphiql) by selecting the relevant project. Alternatively, navigate there within Studio at `API Docs > GraphQL > GraphiQL`.
 
-![graphiql](./assets/supabase_graphiql.jpg).
+![graphiql](./assets/supabase_graphiql.png)
 
-Once there, type queries in the central query editor and use the green icon to submit requests to the sever. Results are shown in the output display to the right of the editor.
+Type queries in the central query editor and use the green icon to submit requests to the server. Results are shown in the output display to the right of the editor.
 
 To explore the API visually, select the docs icon shown below and navigate through each type to see how they connect to the Graph.
 
-![graphiql](./assets/supabase_graphiql_explore.jpg).
+![graphiql](./assets/supabase_graphiql_explore.png)
 
-Since pg_graphql reflects the GraphQL API from the structure of the project's SQL tables and views, if your project is empty, the GraphQL API will similarly be empty except for intropection types. For a more interesting result, go to the SQL or table editor, create a table, and head back to GraphiQL to view see that table reflected in your i
+pg_graphql mirrors the structure of the project's SQL schema in the GraphQL API. If your project is new and empty, the GraphQL API will be empty as well, with the exception of basic introspection types. For a more interesting result, go to the SQL or table editor and create a table.
+
+![graphiql](./assets/supabase_sql_editor.png)
+
+Head back to GraphiQL to see the new table reflected in your GraphQL API's Query and Mutation types.
+
+![graphiql](./assets/supabase_graphiql_query_table.png)
+
+If you'd like your type and field names to match the GraphQL convention of `PascalCase` for types and `camelCase` for fields, check out the [pg_graphql inflection guide](/pg_graphql/configuration/#inflection).
+
+### HTTP Request
+
+To access the GraphQL API over HTTP, first collect your [project reference](#project-reference-project_ref) and [API Key](#api-key-api_key).
 
 ### cURL
 
-To hit the Supabase GraphQL API using cURL, post to the URL shown below, substituting in your PROJECT_REF and passing the project's [API Key](#api-key-api_key) as the `apiKey` header:
+To hit the Supabase GraphQL API using cURL, submit a `POST` request to your GraphQL API's URL shown below, substituting in your [PROJECT_REF](#project-reference-project_ref) and passing the project's [API_KEY](#api-key-api_key) as the `apiKey` header:
 
 
 ```sh
@@ -57,16 +55,34 @@ curl -X POST https://<PROJECT_REF>.supabase.co/graphql/v1 \
     --data-raw '{"query": "{ accountCollection(first: 1) { edges { node { id } } } }", "variables": {}}'
 ```
 
+In that example, the GraphQL `query` is
+```graphql
+{
+  accountCollection(first: 1) {
+    edges {
+      node {
+        id
+      }
+    }
+  }
+}
+```
+
+and there are no `variables`
+```js
+{}
+```
+
 ### supabase-js
 
+The JS ecosystem supports multiple prominent GraphQL frameworks. [supabase-js](https://supabase.com/docs/reference/javascript/introduction) is unopinionated about your GraphQL tooling and can integrate with all of them.
 
-```
+For an example integration, check out the [Relay guide](/pg_graphql/usage_with_relay), complete with Supabase Auth support.
 
-```
+### GraphiQL
 
+If you'd prefer to connect to Supabase GraphQL using an external IDE like GraphiQL, save the HTML snippet below as `supabase_graphiql.html` and open it in your browser. Be sure to substitute in your [PROJECT_REF](#project-reference-project_ref) and [API_KEY](#api-key-api_key) beneath the `EDIT BELOW` comment:
 
-
-## Connecting GraphiQL
 
 ```html
 <html>
@@ -91,7 +107,7 @@ curl -X POST https://<PROJECT_REF>.supabase.co/graphql/v1 \
       const fetcher = GraphiQL.createFetcher({
         url: 'https://<PROJECT_REF>.supabase.co/graphql/v1',
         headers: {
-          "apiKey": "<YOUR_API_KEY>",
+          "apiKey": "<API_KEY>",
         }
       });
       ReactDOM.render(
@@ -103,45 +119,52 @@ curl -X POST https://<PROJECT_REF>.supabase.co/graphql/v1 \
 </html>
 ```
 
-## Version Upgrades
+## Version Management
 
-See which version is installed, and which is available
-
-```sql
-select * from pg_available_extensions;
-```
+To maximize stability, you are in control of when to upgrade your GraphQL API.
+To see which version of pg_graphql you have, and the highest upgrade version available, execute:
 
 ```sql
-drop extension pg_graphql;
-create extension pg_graphql;
+select * from pg_available_extensions where name = 'pg_graphql'
 ```
 
-## FAQ
+Which returns a table, for example:
 
-1. Beta test unreleased feature
+| name       | default_version | installed_version | comment         |
+|------------|-----------------|-------------------|-----------------|
+| pg_graphql | 1.2.0           | 1.1.0             | GraphQL support |
 
-2. Support for subscriptions
+The `default_version` is the highest version available on your database. The `installed_version` is the version currently enabled in your database.
+If the two differ, as in the example, you can upgrade your installed version by running:
 
-3. ...
+```sql
+drop extension pg_graphql;   -- drop version 1.1.0
+create extension pg_graphql; -- install default version 1.2.0
+```
+
+To upgrade your GraphQL API with 0 downtime.
+
+When making a decision to upgrade, you can review features of the upgraded version in the [changelog](/pg_graphql/changelog/).
+
+Always test a new version of pg_graphql extensively on a development or staging instance before updating your production instance. pg_graphql follows SemVer, which makes API backwards compatibility relatively safe for minor and patch updates. Even so, it's critical to verify that changes do not negatively impact the specifics of your project's API in other ways, e.g. requests/sec or CPU load.
 
 
-## Terminology Reference
+## Term Reference
 
 ### Project Reference (PROJECT_REF)
 
-Your Supabase project reference or PROJECT_REF is a 20 digit unique identifer for your project, for example `bvykdyhlwawojivopztl`.
+Your Supabase project reference or PROJECT_REF is a 20 digit unique identifier for your project, for example `bvykdyhlwawojivopztl`.
 The project reference is used throughout your supabase application including the project's API URL. You can find the project reference in by logging
-in to Supabase Studio
+in to Supabase Studio and navigating to `Settings > General > Project Settings > Reference ID`
 
-![project_ref](./assets/supabase_project_ref.jpg)
-
+![project_ref](./assets/supabase_project_ref.png)
 
 
 ### API Key (API_KEY)
 
 Your Supabase API Key is a public value that must be sent with every API request. The key is visible in Supabase Studio at `Settings > API > Project API keys`
 
-![project_ref](./assets/supabase_api_key.jpg)
+![project_ref](./assets/supabase_api_key.png)
 
 
 or from the output of `supabase start` when running a local project with the [Supabase CLI](https://supabase.com/docs/guides/cli)
