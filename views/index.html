@@ -12,8 +12,14 @@
       
         <link rel="canonical" href="https://supabase.github.io/pg_graphql/views/">
       
+      
+        <link rel="prev" href="../api/">
+      
+      
+        <link rel="next" href="../computed_fields/">
+      
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
     
     
       
@@ -21,15 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ded33207.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
-        
-          
-          
-          <meta name="theme-color" content="#000000">
-        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -60,7 +61,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="black" data-md-color-accent="light-green">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="light-green">
   
     
     
@@ -82,7 +83,9 @@
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="pg_graphql" class="md-header__button md-logo" aria-label="pg_graphql" data-md-component="logo">
       
@@ -108,6 +111,8 @@
         </div>
       </div>
     </div>
+    
+      
     
     
     
@@ -137,7 +142,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -149,7 +154,7 @@
         <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -193,7 +198,7 @@
       <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -274,7 +279,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
       
@@ -363,6 +368,71 @@
       <a href="../configuration/" class="md-nav__link">
         Configuration
       </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9">
+          <span class="md-nav__icon md-icon"></span>
+          Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supabase/" class="md-nav__link">
+        Supabase
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage_with_relay/" class="md-nav__link">
+        Usage with Relay
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -479,10 +549,8 @@
                 
                   
 
-  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/views.md" title="Edit this page" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
 
 
   <h1>Views</h1>
@@ -490,7 +558,7 @@
 <p>Views, materialized views, and foreign tables can be exposed with pg_graphql.</p>
 <h2 id="primary-keys-required">Primary Keys (Required)</h2>
 <p>A primary key is required for an entity to be reflected in the GraphQL schema. Tables can define primary keys with SQL DDL, but primary keys are not available for views, materialized views, or foreign tables. For those entities, you can set a "fake" primary key with a <a href="/pg_graphql/configuration/#comment-directives">comment directive</a>.
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="nt">&quot;primary_key_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&lt;colum</span><span class="kc">n</span><span class="err">_</span><span class="kc">na</span><span class="err">me_</span><span class="mi">1</span><span class="err">&gt;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">,</span><span class="w"> </span><span class="err">&lt;colum</span><span class="kc">n</span><span class="err">_</span><span class="kc">na</span><span class="err">me_</span><span class="kc">n</span><span class="err">&gt;</span><span class="p">]}</span><span class="w"></span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="nt">&quot;primary_key_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&lt;colum</span><span class="kc">n</span><span class="err">_</span><span class="kc">na</span><span class="err">me_</span><span class="mi">1</span><span class="err">&gt;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">,</span><span class="w"> </span><span class="err">&lt;colum</span><span class="kc">n</span><span class="err">_</span><span class="kc">na</span><span class="err">me_</span><span class="kc">n</span><span class="err">&gt;</span><span class="p">]}</span>
 </code></pre></div></td></tr></table></div></p>
 <p>For example:</p>
 <p><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -500,14 +568,14 @@
 <span class="normal">5</span>
 <span class="normal">6</span>
 <span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">view</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="w"> </span><span class="k">as</span><span class="w"></span>
-<span class="w">  </span><span class="k">select</span><span class="w"></span>
-<span class="w">    </span><span class="n">id</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">name</span><span class="w"></span>
-<span class="w">  </span><span class="k">from</span><span class="w"></span>
-<span class="w">    </span><span class="ss">&quot;Account&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">view</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="w"> </span><span class="k">as</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span>
+<span class="w">  </span><span class="k">from</span>
+<span class="w">    </span><span class="ss">&quot;Account&quot;</span><span class="p">;</span>
 
-<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">view</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;primary_key_columns&quot;: [&quot;id&quot;]})&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">view</span><span class="w"> </span><span class="ss">&quot;Person&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;@graphql({&quot;primary_key_columns&quot;: [&quot;id&quot;]})&#39;</span><span class="p">;</span>
 </code></pre></div></td></tr></table></div>
 tells pg_graphql to treat <code>"Person".id</code> as the primary key for the <code>Person</code> entity resulting in the following GraphQL type:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -538,18 +606,18 @@ tells pg_graphql to treat <code>"Person".id</code> as the primary key for the <c
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;foreign_keys&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;local_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// optional</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;local_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;account_id&quot;</span><span class="p">],</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;foreign_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bar&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// optional</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;foreign_schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;public&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;foreign_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;account&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;foreign_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">  </span><span class="p">]</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;foreign_keys&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;local_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// optional</span>
+<span class="w">      </span><span class="nt">&quot;local_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;account_id&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;foreign_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bar&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// optional</span>
+<span class="w">      </span><span class="nt">&quot;foreign_schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;public&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;foreign_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;account&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;foreign_columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <p>For example:</p>
 <p><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -576,17 +644,17 @@ tells pg_graphql to treat <code>"Person".id</code> as the primary key for the <c
 <span class="normal">22</span>
 <span class="normal">23</span>
 <span class="normal">24</span>
-<span class="normal">25</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
+<span class="normal">25</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="p">);</span>
 
-<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="p">(</span><span class="w"></span>
-<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="p">(</span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span>
 <span class="w">  </span><span class="ss">&quot;accountId&quot;</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="c1">-- note: no foreign key</span>
-<span class="w">  </span><span class="ss">&quot;isPrimary&quot;</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="n">address</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
-<span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="ss">&quot;isPrimary&quot;</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">  </span><span class="n">address</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="p">);</span>
 
 <span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">e</span><span class="s1">&#39;</span>
 <span class="s1">    @graphql({</span>
@@ -600,7 +668,7 @@ tells pg_graphql to treat <code>"Person".id</code> as the primary key for the <c
 <span class="s1">            &quot;foreign_columns&quot;: [&quot;id&quot;]</span>
 <span class="s1">          }</span>
 <span class="s1">        ]</span>
-<span class="s1">    })&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="s1">    })&#39;</span><span class="p">;</span>
 </code></pre></div></td></tr></table></div>
 defines a relationship equivalent to the following foreign key
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -610,14 +678,14 @@ defines a relationship equivalent to the following foreign key
 <span class="normal">5</span>
 <span class="normal">6</span>
 <span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">alter</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="k">add</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">fkey_email_address_to_account</span><span class="w"></span>
-<span class="w">  </span><span class="k">foreign</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="ss">&quot;accountId&quot;</span><span class="p">)</span><span class="w"></span>
-<span class="w">  </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="w"> </span><span class="p">(</span><span class="ss">&quot;id&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">alter</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span>
+<span class="w">  </span><span class="k">add</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">fkey_email_address_to_account</span>
+<span class="w">  </span><span class="k">foreign</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="ss">&quot;accountId&quot;</span><span class="p">)</span>
+<span class="w">  </span><span class="k">references</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="w"> </span><span class="p">(</span><span class="ss">&quot;id&quot;</span><span class="p">);</span>
 
-<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">fkey_email_address_to_account</span><span class="w"></span>
-<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="k">is</span><span class="w"> </span><span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;account&quot;, &quot;local_name&quot;: &quot;addresses&quot;})&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">constraint</span><span class="w"> </span><span class="n">fkey_email_address_to_account</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="ss">&quot;EmailAddress&quot;</span>
+<span class="w">  </span><span class="k">is</span><span class="w"> </span><span class="n">E</span><span class="s1">&#39;@graphql({&quot;foreign_name&quot;: &quot;account&quot;, &quot;local_name&quot;: &quot;addresses&quot;})&#39;</span><span class="p">;</span>
 </code></pre></div></td></tr></table></div></p>
 <p>yielding the GraphQL types:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -680,42 +748,6 @@ defines a relationship equivalent to the following foreign key
       
         <footer class="md-footer">
   
-    
-    <nav class="md-footer__inner md-grid" aria-label="Footer" >
-      
-        
-        <a href="../api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              API
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../computed_fields/" class="md-footer__link md-footer__link--next" aria-label="Next: Computed Fields" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Computed Fields
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
-  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
@@ -737,10 +769,10 @@ defines a relationship equivalent to the following foreign key
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../assets/javascripts/bundle.51198bba.min.js"></script>
       
     
   </body>
