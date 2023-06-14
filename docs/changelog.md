@@ -22,6 +22,9 @@
 - bugfix: PostgreSQL type modifiers, e.g. char(n), no longer truncate excess text
 - bugfix: Creating a new enum variant between existing variants no longer errors
 
-## master
+## 1.2.1
 - feature: `String` type filters support `regex`, `iregex`
 - feature: computed relationships via functions returning setof
+- bugfix: function based computed columns with same name no longer error
+
+## master
