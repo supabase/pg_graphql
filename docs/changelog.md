@@ -27,4 +27,7 @@
 - feature: computed relationships via functions returning setof
 - bugfix: function based computed columns with same name no longer error
 
+## 1.2.1
+- feature: reproducible builds
+
 ## master
