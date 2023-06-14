@@ -18,5 +18,4 @@ docs/graphql_lexer/
 perf.txt
 query.txt
 schema.graphql
-Cargo.lock
 target/
