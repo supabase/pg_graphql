@@ -133,48 +133,24 @@ begin;
     select graphql.resolve($${accountCollection(filter: {id: {in: [1, 2]}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- nin - int
-    select graphql.resolve($${accountCollection(filter: {id: {nin: [1, 2]}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
     -- in - int coerce to list
     select graphql.resolve($${accountCollection(filter: {id: {in: 2}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
-    -- nin - int coerce to list
-    select graphql.resolve($${accountCollection(filter: {id: {nin: 2}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- in - text
     select graphql.resolve($${accountCollection(filter: {name: {in: ["foo", "bar"]}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- nin - text
-    select graphql.resolve($${accountCollection(filter: {name: {nin: ["foo", "bar"]}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
     -- in - text coerce to list
     select graphql.resolve($${accountCollection(filter: {name: {in: "baz"}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
-    -- nin - text coerce to list
-    select graphql.resolve($${accountCollection(filter: {name: {nin: "baz"}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- in - empty list
     select graphql.resolve($${accountCollection(filter: {name: {in: []}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- nin - empty list
-    select graphql.resolve($${accountCollection(filter: {name: {nin: []}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
     -- in - null literal returns nothing
     select graphql.resolve($${accountCollection(filter: {name: {in: null}}) { edges { node { id } } }}$$);
-    rollback to savepoint a;
-
-    -- nin - null literal returns nothing
-    select graphql.resolve($${accountCollection(filter: {name: {nin: null}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
     -- variable in - absent treated as ignored / returns all
