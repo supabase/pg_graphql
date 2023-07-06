@@ -1,3 +1,4 @@
+use bimap::BiBTreeMap;
 use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgrx::*;
@@ -21,6 +22,7 @@ pub struct ColumnPermissions {
 pub struct ColumnDirectives {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub mappings: Option<BiBTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -124,6 +126,7 @@ pub struct Enum {
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EnumDirectives {
     pub name: Option<String>,
+    pub mappings: Option<BiBTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]

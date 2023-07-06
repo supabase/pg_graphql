@@ -24,6 +24,7 @@ uuid = "1"
 regex = "1"
 base64 = "0.13"
 lazy_static = "1"
+bimap = { version = "0.6.3", features = ["serde"] }
 
 [dev-dependencies]
 pgrx-tests = "=0.9.7"
