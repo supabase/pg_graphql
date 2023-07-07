@@ -67,4 +67,21 @@ $$);
  {"data": {"enumsCollection": {"edges": [{"node": {"value": "another_value"}}]}}}
 (1 row)
 
+--- Query with `in` filter
+select graphql.resolve($$
+    {
+      enumsCollection(filter: {value: {in: ["another_value"]}}) {
+        edges {
+            node {
+             value
+            }
+        }
+      }
+    }
+$$);
+                                     resolve                                      
+----------------------------------------------------------------------------------
+ {"data": {"enumsCollection": {"edges": [{"node": {"value": "another_value"}}]}}}
+(1 row)
+
 rollback;

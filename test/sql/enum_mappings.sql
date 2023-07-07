@@ -53,5 +53,17 @@ select graphql.resolve($$
     }
 $$);
 
+--- Query with `in` filter
+select graphql.resolve($$
+    {
+      enumsCollection(filter: {value: {in: ["another_value"]}}) {
+        edges {
+            node {
+             value
+            }
+        }
+      }
+    }
+$$);
 
 rollback;
