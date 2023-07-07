@@ -1,4 +1,4 @@
-use crate::graphql::{__InputValue, __Type, ___Type};
+use crate::graphql::{EnumSource, __InputValue, __Type, ___Type};
 use crate::gson;
 use graphql_parser::query::*;
 use std::collections::HashMap;
@@ -402,7 +402,19 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                     .flatten()
                     .find(|x| x.name().as_str() == user_input_string);
                 match matches_enum_value {
-                    Some(_) => value.clone(),
+                    Some(_) => {
+                        match &enum_.enum_ {
+                            EnumSource::Enum(e) => e
+                                .directives
+                                .mappings
+                                .as_ref()
+                                // Use mappings if available and mapped
+                                .and_then(|mappings| mappings.get_by_right(user_input_string))
+                                .map(|val| GsonValue::String(val.clone()))
+                                .unwrap_or_else(|| value.clone()),
+                            EnumSource::FilterIs => value.clone(),
+                        }
+                    }
                     None => {
                         return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
                     }

@@ -1,11 +1,33 @@
 begin;
-create type my_enum as enum ('test', 'valid value');
-comment on type my_enum is E'@graphql({"mappings": {"valid value": "valid_value"}})';
+create type my_enum as enum ('test', 'valid value', 'another value');
+comment on type my_enum is E'@graphql({"mappings": {"valid value": "valid_value", "another value": "another_value"}})';
 create table enums (
    id serial primary key,
    value my_enum
 );
-insert into enums (value) values ('test'), ('valid value');
+
+-- Seed with value that's valid in both Postgres and GraphQL
+insert into enums (value) values ('test');
+
+-- Mutation to insert
+select graphql.resolve($$
+mutation {
+  insertIntoEnumsCollection(objects: [ { value: "valid_value" } ]) {
+      affectedCount
+  }
+}
+$$);
+
+-- Mutation to update
+select graphql.resolve($$
+mutation {
+  updateEnumsCollection(set: { value: "another_value" }, filter: { value: {eq: "test"} } ) {
+    records { value }
+  }
+}
+$$);
+
+--- Query
 select graphql.resolve($$
     {
       enumsCollection {
@@ -17,4 +39,5 @@ select graphql.resolve($$
       }
     }
 $$);
+
 rollback;
