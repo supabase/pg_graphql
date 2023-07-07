@@ -40,4 +40,18 @@ select graphql.resolve($$
     }
 $$);
 
+--- Query with filter
+select graphql.resolve($$
+    {
+      enumsCollection(filter: {value: {eq: "another_value"}}) {
+        edges {
+            node {
+             value
+            }
+        }
+      }
+    }
+$$);
+
+
 rollback;
