@@ -33,3 +33,4 @@
 ## master
 - bugfix: enums not on the roles `search_path` are excluded from introspection
 - bugfix: remove duplicate Enum registration
+- bugfix: foreign keys on non-null columns produce non-null GraphQL relationships
