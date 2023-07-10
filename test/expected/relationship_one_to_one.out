@@ -62,6 +62,7 @@ begin;
               name
               type {
                 name
+                kind
                 ofType { name }
               }
             }
@@ -79,6 +80,7 @@ begin;
                  {                            +
                      "name": "nodeId",        +
                      "type": {                +
+                         "kind": "NON_NULL",  +
                          "name": null,        +
                          "ofType": {          +
                              "name": "ID"     +
@@ -88,6 +90,7 @@ begin;
                  {                            +
                      "name": "id",            +
                      "type": {                +
+                         "kind": "NON_NULL",  +
                          "name": null,        +
                          "ofType": {          +
                              "name": "Int"    +
@@ -97,6 +100,7 @@ begin;
                  {                            +
                      "name": "accountId",     +
                      "type": {                +
+                         "kind": "NON_NULL",  +
                          "name": null,        +
                          "ofType": {          +
                              "name": "Int"    +
@@ -106,6 +110,7 @@ begin;
                  {                            +
                      "name": "account",       +
                      "type": {                +
+                         "kind": "NON_NULL",  +
                          "name": null,        +
                          "ofType": {          +
                              "name": "Account"+
