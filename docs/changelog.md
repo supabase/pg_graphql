@@ -27,8 +27,9 @@
 - feature: computed relationships via functions returning setof
 - bugfix: function based computed columns with same name no longer error
 
-## 1.2.1
+## 1.2.2
 - feature: reproducible builds
 
 ## master
 - bugfix: enums not on the roles `search_path` are excluded from introspection
+- bugfix: remove duplicate Enum registration

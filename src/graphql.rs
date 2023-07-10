@@ -3647,8 +3647,6 @@ impl __Schema {
                 schema: Arc::clone(&schema_rc),
             };
 
-            types_.push(__Type::Enum(enum_type.clone()));
-
             let enum_filter = __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Enum(enum_type.clone()),
                 schema: Arc::clone(&schema_rc),
