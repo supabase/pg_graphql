@@ -27,7 +27,8 @@
 - feature: computed relationships via functions returning setof
 - bugfix: function based computed columns with same name no longer error
 
-## 1.2.1
+## 1.2.2
 - feature: reproducible builds
 
 ## master
+- bugfix: remove duplicate Enum registration
