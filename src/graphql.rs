@@ -1660,6 +1660,23 @@ pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> Optio
     }
 }
 
+impl NodeType {
+    fn foreign_key_type(&self, fkey: &ForeignKey, type_: __Type) -> __Type {
+        if fkey.local_table_meta.column_names.iter().any(|colname| {
+            self.table
+                .columns
+                .iter()
+                .any(|c| &c.name == colname && c.is_not_null)
+        }) {
+            __Type::NonNull(NonNullType {
+                type_: Box::new(type_),
+            })
+        } else {
+            type_
+        }
+    }
+}
+
 impl ___Type for NodeType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::OBJECT
@@ -1817,17 +1834,21 @@ impl ___Type for NodeType {
                 continue;
             }
 
-            let relation_field = __Field {
-                name_: self
-                    .schema
-                    .graphql_foreign_key_field_name(fkey, reverse_reference),
-                // XXX: column nullability ignored for NonNull type to match pg_graphql
-                type_: __Type::Node(NodeType {
+            let type_ = self.foreign_key_type(
+                fkey,
+                __Type::Node(NodeType {
                     table: Arc::clone(foreign_table),
                     fkey: Some(Arc::clone(fkey)),
                     reverse_reference: Some(reverse_reference),
                     schema: Arc::clone(&self.schema),
                 }),
+            );
+
+            let relation_field = __Field {
+                name_: self
+                    .schema
+                    .graphql_foreign_key_field_name(fkey, reverse_reference),
+                type_,
                 args: vec![],
                 description: None,
                 deprecation_reason: None,
@@ -1873,12 +1894,14 @@ impl ___Type for NodeType {
                         schema: Arc::clone(&self.schema),
                     };
                     let connection_args = connection_type.get_connection_input_args();
+
+                    let type_ = self.foreign_key_type(fkey, __Type::Connection(connection_type));
+
                     __Field {
                         name_: self
                             .schema
                             .graphql_foreign_key_field_name(fkey, reverse_reference),
-                        // XXX: column nullability ignored for NonNull type to match pg_graphql
-                        type_: __Type::Connection(connection_type),
+                        type_,
                         args: connection_args,
                         description: None,
                         deprecation_reason: None,
@@ -1886,17 +1909,21 @@ impl ___Type for NodeType {
                     }
                 }
                 true => {
-                    __Field {
-                        name_: self
-                            .schema
-                            .graphql_foreign_key_field_name(fkey, reverse_reference),
-                        // XXX: column nullability ignored for NonNull type to match pg_graphql
-                        type_: __Type::Node(NodeType {
+                    let type_ = self.foreign_key_type(
+                        fkey,
+                        __Type::Node(NodeType {
                             table: Arc::clone(foreign_table),
                             fkey: Some(Arc::clone(fkey)),
                             reverse_reference: Some(reverse_reference),
                             schema: Arc::clone(&self.schema),
                         }),
+                    );
+
+                    __Field {
+                        name_: self
+                            .schema
+                            .graphql_foreign_key_field_name(fkey, reverse_reference),
+                        type_,
                         args: vec![],
                         description: None,
                         deprecation_reason: None,

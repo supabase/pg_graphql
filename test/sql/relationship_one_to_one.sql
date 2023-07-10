@@ -35,6 +35,7 @@ begin;
               name
               type {
                 name
+                ofType { name }
               }
             }
           }
