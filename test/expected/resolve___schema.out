@@ -178,10 +178,6 @@ begin;
                      "name": "BlogPostStatus"        +
                  },                                  +
                  {                                   +
-                     "kind": "ENUM",                 +
-                     "name": "BlogPostStatus"        +
-                 },                                  +
-                 {                                   +
                      "kind": "INPUT_OBJECT",         +
                      "name": "BlogPostStatusFilter"  +
                  },                                  +
