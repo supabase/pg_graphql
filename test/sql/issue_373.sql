@@ -7,26 +7,12 @@ begin;
 
     create table "EmailAddress"(
       id serial primary key,
-      "accountId" int not null, -- note: no foreign key
+      "accountId" int not null references "Account"(id),
       "isPrimary" bool not null,
       address text not null
     );
 
-    comment on table "EmailAddress" is e'
-        @graphql({
-            "foreign_keys": [
-              {
-                "local_name": "addresses",
-                "local_columns": ["accountId"],
-                "foreign_name": "account",
-                "foreign_schema": "public",
-                "foreign_table": "Account",
-                "foreign_columns": ["id"]
-              }
-            ]
-        })';
-
-     select jsonb_pretty(
+    select jsonb_pretty(
         graphql.resolve($$
         {
           __type(name: "EmailAddress") {
