@@ -30,7 +30,9 @@
 ## 1.2.2
 - feature: reproducible builds
 
-## master
+## 1.2.3
 - bugfix: enums not on the roles `search_path` are excluded from introspection
 - bugfix: remove duplicate Enum registration
 - bugfix: foreign keys on non-null columns produce non-null GraphQL relationships
+
+## master
