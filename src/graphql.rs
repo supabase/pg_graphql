@@ -1604,10 +1604,13 @@ impl Type {
                 None => None,
             },
             TypeCategory::Enum => match schema.context.enums.get(&self.oid) {
-                Some(enum_) => Some(__Type::Enum(EnumType {
-                    enum_: EnumSource::Enum(Arc::clone(enum_)),
-                    schema: schema.clone(),
-                })),
+                Some(enum_) => match schema.context.schemas.contains_key(&enum_.schema_oid) {
+                    true => Some(__Type::Enum(EnumType {
+                        enum_: EnumSource::Enum(Arc::clone(enum_)),
+                        schema: schema.clone(),
+                    })),
+                    false => Some(__Type::Scalar(Scalar::Opaque)),
+                },
                 None => Some(__Type::Scalar(Scalar::Opaque)),
             },
             TypeCategory::Table => {
@@ -3637,6 +3640,7 @@ impl __Schema {
             .enums
             .iter()
             .filter(|(_, x)| x.permissions.is_usable)
+            .filter(|(_, x)| self.context.schemas.contains_key(&x.schema_oid))
         {
             let enum_type = EnumType {
                 enum_: EnumSource::Enum(Arc::clone(&enum_)),

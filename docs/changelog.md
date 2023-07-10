@@ -31,4 +31,5 @@
 - feature: reproducible builds
 
 ## master
+- bugfix: enums not on the roles `search_path` are excluded from introspection
 - bugfix: remove duplicate Enum registration
