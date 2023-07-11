@@ -361,6 +361,7 @@ select
                                                     jsonb_build_object(
                                                         'name', d.directive ->> 'name',
                                                         'description', d.directive -> 'description',
+                                                        -- TODO: this duplication is to be refactored as per https://github.com/supabase/pg_graphql/pull/376#discussion_r1259865044
                                                         'mappings', (graphql.comment_directive(pg_catalog.obj_description(pa.atttypid, 'pg_type'))) -> 'mappings'
                                                     )
                                                 from
