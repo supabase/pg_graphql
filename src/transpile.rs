@@ -1,6 +1,7 @@
 use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table};
+use itertools::Itertools;
 use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
 use pgrx::spi::SpiClient;
@@ -1308,11 +1309,22 @@ impl NodeSelection {
 
 impl ColumnBuilder {
     pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
-        Ok(format!(
-            "{}.{}",
-            &block_name,
-            quote_ident(&self.column.name)
-        ))
+        let col = format!("{}.{}", &block_name, quote_ident(&self.column.name));
+        if let Some(ref mappings) = self.column.directives.mappings {
+            let cases = mappings
+                .iter()
+                .map(|(k, v)| {
+                    format!(
+                        "when {col} = {} then {}",
+                        quote_literal(k),
+                        quote_literal(v)
+                    )
+                })
+                .join(" ");
+            Ok(format!("case {cases} else {col}::text end"))
+        } else {
+            Ok(col)
+        }
     }
 }
 

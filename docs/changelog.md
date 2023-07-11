@@ -36,3 +36,4 @@
 - bugfix: foreign keys on non-null columns produce non-null GraphQL relationships
 
 ## master
+- rename enum variants with comment directive `@graphql({"mappings": "sql-value": "graphql_value""})`

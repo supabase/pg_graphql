@@ -1363,7 +1363,13 @@ impl ___Type for EnumType {
                 .values
                 .iter()
                 .map(|x| __EnumValue {
-                    name: x.name.clone(),
+                    name: enum_
+                        .directives
+                        .mappings
+                        .as_ref()
+                        // Use mappings if available and mapped
+                        .and_then(|mappings| mappings.get_by_left(&x.name).cloned())
+                        .unwrap_or_else(|| x.name.clone()),
                     description: None,
                     deprecation_reason: None,
                 })

@@ -246,3 +246,43 @@ type Account implements Node {
   id: Int!
 }
 ```
+
+#### Enum Variant
+
+If a variant of a Postgres enum does not conform to GraphQL naming conventions, introspection returns an error:
+
+For example:
+```sql
+create type "Algorithm" as enum ('aead-ietf');
+```
+
+causes the error:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Names must only contain [_a-zA-Z0-9] but \"aead-ietf\" does not.",
+    }
+  ]
+}
+```
+
+To resolve this problem, rename the invalid SQL enum variant to a GraphQL compatible name:
+
+```sql
+alter type "Algorithm" rename value 'aead-ietf' to 'AEAD_IETF';
+```
+
+or, add a comment directive to remap the enum variant in the GraphQL API
+
+```sql
+comment on type "Algorithm" is '@graphql({"mappings": {"aead-ietf": "AEAD_IETF"}})';
+```
+
+Which both result in the GraphQL enum:
+```graphql
+enum Algorithm {
+  AEAD_IETF
+}
+```
