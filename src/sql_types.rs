@@ -22,14 +22,13 @@ pub struct ColumnPermissions {
 pub struct ColumnDirectives {
     pub name: Option<String>,
     pub description: Option<String>,
-    // TODO: this duplication is to be refactored as per https://github.com/supabase/pg_graphql/pull/376#discussion_r1259865044
-    pub mappings: Option<BiBTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Column {
     pub name: String,
     pub type_oid: u32,
+    pub type_: Option<Arc<Type>>,
     pub type_name: String,
     pub max_characters: Option<i32>,
     pub schema_oid: u32,
@@ -103,6 +102,17 @@ pub struct Type {
     pub comment: Option<String>,
     pub permissions: TypePermissions,
     pub directives: EnumDirectives,
+    pub details: Option<TypeDetails>,
+}
+
+// `TypeDetails` derives `Deserialized` but is not expected to come
+// from the SQL context. Instead, it is populated in a separate pass.
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum TypeDetails {
+    Enum(Arc<Enum>),
+    Composite(Arc<Composite>),
+    Table(Arc<Table>),
+    Element(Arc<Type>),
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -518,10 +528,93 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
-    context.map(Arc::new).map_err(|e| {
-        format!(
-            "Error while loading schema, check comment directives. {}",
-            e.to_string()
-        )
-    })
+
+    /// This pass cross-reference types with its details
+    fn type_details(mut context: Context) -> Context {
+        let mut array_types = HashMap::new();
+        // We process types to cross-reference their details
+        for (oid, type_) in context.types.iter_mut() {
+            if let Some(mtype) = Arc::get_mut(type_) {
+                // It should be possible to get a mutable reference to type at this point
+                // as there are no other references to this Arc at this point.
+
+                // Depending on type's category, locate the appropriate piece of information about it
+                mtype.details = match mtype.category {
+                    TypeCategory::Enum => context.enums.get(oid).cloned().map(TypeDetails::Enum),
+                    TypeCategory::Composite => context
+                        .composites
+                        .iter()
+                        .find(|c| c.oid == *oid)
+                        .cloned()
+                        .map(TypeDetails::Composite),
+                    TypeCategory::Table => context.tables.get(oid).cloned().map(TypeDetails::Table),
+                    TypeCategory::Array => {
+                        // We can't cross-reference with `context.types` here as it is already mutably borrowed,
+                        // so we instead memorize the reference to process later
+                        if let Some(element_oid) = mtype.array_element_type_oid {
+                            array_types.insert(*oid, element_oid);
+                        }
+                        None
+                    }
+                    _ => None,
+                };
+            }
+        }
+
+        // Now we're ready to process array types
+        for (array_oid, element_oid) in array_types {
+            // SAFETY: unwrap() should be fine here as we just constructed this OID mapping
+            let element_t = context.types.remove(&element_oid).unwrap();
+            // We remove it from the map to ensure there is no mutability conflict
+            // SAFETY: this should work as this type is not referenced anywhere just yet
+            let array_t = context.types.get_mut(&array_oid).unwrap();
+            if let Some(array) = Arc::get_mut(array_t) {
+                // It should be possible to get a mutable reference to type at this point
+                // as there are no other references to this Arc at this point.
+                array.details = Some(TypeDetails::Element(element_t.clone()));
+            } else {
+                // FIXME: there are a few cases where this actually fails:
+                // oidvector, int2vector
+                // Not sure why.
+                // For now, we're just ignoring this
+            }
+            // Put the element type back
+            context.types.insert(element_oid, element_t);
+        }
+        context
+    }
+
+    /// This pass cross-reference column types
+    fn column_types(mut context: Context) -> Context {
+        // We process tables to cross-reference their columns' types
+        for (_oid, table) in context.tables.iter_mut() {
+            if let Some(mtable) = Arc::get_mut(table) {
+                // It should be possible to get a mutable reference to table at this point
+                // as there are no other references to this Arc at this point.
+
+                // We will now iterate over columns
+                for column in mtable.columns.iter_mut() {
+                    if let Some(mcolumn) = Arc::get_mut(column) {
+                        // It should be possible to get a mutable reference to column at this point
+                        // as there are no other references to this Arc at this point.
+
+                        // Find a matching type
+                        mcolumn.type_ = context.types.get(&mcolumn.type_oid).cloned();
+                    }
+                }
+            }
+        }
+        context
+    }
+
+    context
+        .map(type_details)
+        .map(column_types)
+        .map(Arc::new)
+        .map_err(|e| {
+            format!(
+                "Error while loading schema, check comment directives. {}",
+                e.to_string()
+            )
+        })
 }

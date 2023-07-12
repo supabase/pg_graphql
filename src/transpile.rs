@@ -1,6 +1,6 @@
 use crate::builder::*;
 use crate::graphql::*;
-use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table};
+use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
 use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
@@ -1310,7 +1310,17 @@ impl NodeSelection {
 impl ColumnBuilder {
     pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
         let col = format!("{}.{}", &block_name, quote_ident(&self.column.name));
-        if let Some(ref mappings) = self.column.directives.mappings {
+        if let Some(ref mappings) = self
+            .column
+            .type_
+            .as_ref()
+            .and_then(|t| match t.details {
+                Some(TypeDetails::Enum(ref enum_)) => Some(enum_.clone()),
+                _ => None,
+            })
+            // FIXME: this cloning is inefficient
+            .and_then(|e| e.directives.mappings.clone())
+        {
             let cases = mappings
                 .iter()
                 .map(|(k, v)| {
