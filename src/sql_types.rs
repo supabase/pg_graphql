@@ -3,6 +3,7 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgrx::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -560,8 +561,27 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
             }
         }
 
+        // Ensure the types are ordered so that we don't run into a situation where we can't
+        // update the type anymore as it has been referenced but the type details weren't completed yet
+        let referenced_types = array_types.values().map(|k| *k).collect::<Vec<_>>();
+        let mut ordered_types = array_types
+            .iter()
+            .map(|(k, v)| (*k, *v))
+            .collect::<Vec<_>>();
+        // We sort them by their presence in referencing. If the type has been referenced,
+        // it should be at the top.
+        ordered_types.sort_by(|(k1, _), (k2, _)| {
+            if referenced_types.contains(k1) && referenced_types.contains(k2) {
+                Ordering::Equal
+            } else if referenced_types.contains(k1) {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
+
         // Now we're ready to process array types
-        for (array_oid, element_oid) in array_types {
+        for (array_oid, element_oid) in ordered_types {
             // SAFETY: unwrap() should be fine here as we just constructed this OID mapping
             let element_t = context.types.remove(&element_oid).unwrap();
             // We remove it from the map to ensure there is no mutability conflict
@@ -571,11 +591,6 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
                 // It should be possible to get a mutable reference to type at this point
                 // as there are no other references to this Arc at this point.
                 array.details = Some(TypeDetails::Element(element_t.clone()));
-            } else {
-                // FIXME: there are a few cases where this actually fails:
-                // oidvector, int2vector
-                // Not sure why.
-                // For now, we're just ignoring this
             }
             // Put the element type back
             context.types.insert(element_oid, element_t);
