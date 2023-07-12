@@ -582,18 +582,53 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
 
         // Now we're ready to process array types
         for (array_oid, element_oid) in ordered_types {
-            // SAFETY: unwrap() should be fine here as we just constructed this OID mapping
-            let element_t = context.types.remove(&element_oid).unwrap();
-            // We remove it from the map to ensure there is no mutability conflict
-            // SAFETY: this should work as this type is not referenced anywhere just yet
-            let array_t = context.types.get_mut(&array_oid).unwrap();
-            if let Some(array) = Arc::get_mut(array_t) {
-                // It should be possible to get a mutable reference to type at this point
-                // as there are no other references to this Arc at this point.
-                array.details = Some(TypeDetails::Element(element_t.clone()));
+            // We remove the element type from the map to ensure there is no mutability conflict for when
+            // we get a mutable reference to the array type. We will put it back after we're done with it,
+            // a few lines below.
+            if let Some(element_t) = context.types.remove(&element_oid) {
+                if let Some(array_t) = context.types.get_mut(&array_oid) {
+                    if let Some(array) = Arc::get_mut(array_t) {
+                        // It should be possible to get a mutable reference to type at this point
+                        // as there are no other references to this Arc at this point.
+                        array.details = Some(TypeDetails::Element(element_t.clone()));
+                    } else {
+                        // For some reason, we weren't able to get it. It means something have changed
+                        // in our logic and we're presenting an assertion violation. Let's report it.
+                        // It's a bug.
+                        pgrx::ereport!(
+                            PgLogLevel::ERROR,
+                            PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
+                            format!(
+                                "Assertion violation: array type with OID {} is already referenced",
+                                array_oid
+                            )
+                        )
+                    }
+                    // Put the element type back. NB: Very important to keep this line! It'll be used
+                    // further down the loop.
+                    context.types.insert(element_oid, element_t);
+                } else {
+                    // We weren't able to find the OID of the array, which is odd because we just got
+                    // it from the context. This means we messed something up and it is a bug. Report it.
+                    pgrx::ereport!(
+                        PgLogLevel::ERROR,
+                        PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
+                        format!(
+                            "Assertion violation: array type with OID {} is not found",
+                            array_oid
+                        )
+                    )
+                }
+            } else {
+                // We werne't able to find the OID of the element type, which is also odd because we just got
+                // it from the context. This means it's a bug as well. Report it.
+                pgrx::ereport!(
+                        PgLogLevel::ERROR,
+                        PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
+                        format!("Assertion violation: referenced element type with OID {} of array type with OID {} is not found",
+                        element_oid, array_oid)
+                    )
             }
-            // Put the element type back
-            context.types.insert(element_oid, element_t);
         }
         context
     }
