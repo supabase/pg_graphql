@@ -605,7 +605,8 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
                         )
                     }
                     // Put the element type back. NB: Very important to keep this line! It'll be used
-                    // further down the loop.
+                    // further down the loop. There is a check at the end of each loop's iteration that
+                    // we actually did this. Being defensive.
                     context.types.insert(element_oid, element_t);
                 } else {
                     // We weren't able to find the OID of the array, which is odd because we just got
@@ -620,7 +621,7 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
                     )
                 }
             } else {
-                // We werne't able to find the OID of the element type, which is also odd because we just got
+                // We weren't able to find the OID of the element type, which is also odd because we just got
                 // it from the context. This means it's a bug as well. Report it.
                 pgrx::ereport!(
                         PgLogLevel::ERROR,
@@ -629,7 +630,18 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
                         element_oid, array_oid)
                     )
             }
+
+            // Here we are asserting that we did in fact return the element type back to the list. Part of being
+            // defensive here.
+            if !context.types.contains_key(&element_oid) {
+                pgrx::ereport!(
+                        PgLogLevel::ERROR,
+                        PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
+                        format!("Assertion violation: referenced element type with OID {} was not returned to the list of types", element_oid)
+                    )
+            }
         }
+
         context
     }
 
