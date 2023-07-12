@@ -1310,28 +1310,27 @@ impl NodeSelection {
 impl ColumnBuilder {
     pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
         let col = format!("{}.{}", &block_name, quote_ident(&self.column.name));
-        if let Some(ref mappings) = self
-            .column
-            .type_
-            .as_ref()
-            .and_then(|t| match t.details {
-                Some(TypeDetails::Enum(ref enum_)) => Some(enum_.clone()),
-                _ => None,
-            })
-            // FIXME: this cloning is inefficient
-            .and_then(|e| e.directives.mappings.clone())
-        {
-            let cases = mappings
-                .iter()
-                .map(|(k, v)| {
-                    format!(
-                        "when {col} = {} then {}",
-                        quote_literal(k),
-                        quote_literal(v)
-                    )
-                })
-                .join(" ");
-            Ok(format!("case {cases} else {col}::text end"))
+        let maybe_enum = self.column.type_.as_ref().and_then(|t| match t.details {
+            Some(TypeDetails::Enum(ref enum_)) => Some(enum_),
+            _ => None,
+        });
+        if let Some(ref enum_) = maybe_enum {
+            match enum_.directives.mappings {
+                Some(ref mappings) => {
+                    let cases = mappings
+                        .iter()
+                        .map(|(k, v)| {
+                            format!(
+                                "when {col} = {} then {}",
+                                quote_literal(k),
+                                quote_literal(v)
+                            )
+                        })
+                        .join(" ");
+                    Ok(format!("case {cases} else {col}::text end"))
+                }
+                _ => Ok(col),
+            }
         } else {
             Ok(col)
         }
