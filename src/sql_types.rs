@@ -101,7 +101,6 @@ pub struct Type {
     pub table_oid: Option<u32>,
     pub comment: Option<String>,
     pub permissions: TypePermissions,
-    pub directives: EnumDirectives,
     pub details: Option<TypeDetails>,
 }
 
