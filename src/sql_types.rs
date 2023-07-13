@@ -595,14 +595,11 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
                         // For some reason, we weren't able to get it. It means something have changed
                         // in our logic and we're presenting an assertion violation. Let's report it.
                         // It's a bug.
-                        pgrx::ereport!(
-                            PgLogLevel::ERROR,
-                            PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
-                            format!(
-                                "Assertion violation: array type with OID {} is already referenced",
-                                array_oid
-                            )
-                        )
+                        pgrx::warning!(
+                            "Assertion violation: array type with OID {} is already referenced",
+                            array_oid
+                        );
+                        continue;
                     }
                     // Put the element type back. NB: Very important to keep this line! It'll be used
                     // further down the loop. There is a check at the end of each loop's iteration that
@@ -611,34 +608,26 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
                 } else {
                     // We weren't able to find the OID of the array, which is odd because we just got
                     // it from the context. This means we messed something up and it is a bug. Report it.
-                    pgrx::ereport!(
-                        PgLogLevel::ERROR,
-                        PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
-                        format!(
-                            "Assertion violation: array type with OID {} is not found",
-                            array_oid
-                        )
-                    )
+                    pgrx::warning!(
+                        "Assertion violation: array type with OID {} is not found",
+                        array_oid
+                    );
+                    continue;
                 }
             } else {
                 // We weren't able to find the OID of the element type, which is also odd because we just got
                 // it from the context. This means it's a bug as well. Report it.
-                pgrx::ereport!(
-                        PgLogLevel::ERROR,
-                        PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
-                        format!("Assertion violation: referenced element type with OID {} of array type with OID {} is not found",
-                        element_oid, array_oid)
-                    )
+                pgrx::warning!(
+                        "Assertion violation: referenced element type with OID {} of array type with OID {} is not found",
+                        element_oid, array_oid);
+                continue;
             }
 
             // Here we are asserting that we did in fact return the element type back to the list. Part of being
             // defensive here.
             if !context.types.contains_key(&element_oid) {
-                pgrx::ereport!(
-                        PgLogLevel::ERROR,
-                        PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
-                        format!("Assertion violation: referenced element type with OID {} was not returned to the list of types", element_oid)
-                    )
+                pgrx::warning!("Assertion violation: referenced element type with OID {} was not returned to the list of types", element_oid );
+                continue;
             }
         }
 
