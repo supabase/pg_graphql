@@ -3,6 +3,7 @@ use cached::proc_macro::cached;
 use cached::SizedCache;
 use pgrx::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -22,14 +23,13 @@ pub struct ColumnPermissions {
 pub struct ColumnDirectives {
     pub name: Option<String>,
     pub description: Option<String>,
-    // TODO: this duplication is to be refactored as per https://github.com/supabase/pg_graphql/pull/376#discussion_r1259865044
-    pub mappings: Option<BiBTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Column {
     pub name: String,
     pub type_oid: u32,
+    pub type_: Option<Arc<Type>>,
     pub type_name: String,
     pub max_characters: Option<i32>,
     pub schema_oid: u32,
@@ -102,7 +102,17 @@ pub struct Type {
     pub table_oid: Option<u32>,
     pub comment: Option<String>,
     pub permissions: TypePermissions,
-    pub directives: EnumDirectives,
+    pub details: Option<TypeDetails>,
+}
+
+// `TypeDetails` derives `Deserialized` but is not expected to come
+// from the SQL context. Instead, it is populated in a separate pass.
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum TypeDetails {
+    Enum(Arc<Enum>),
+    Composite(Arc<Composite>),
+    Table(Arc<Table>),
+    Element(Arc<Type>),
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -518,10 +528,143 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
-    context.map(Arc::new).map_err(|e| {
-        format!(
-            "Error while loading schema, check comment directives. {}",
-            e.to_string()
-        )
-    })
+
+    /// This pass cross-reference types with its details
+    fn type_details(mut context: Context) -> Context {
+        let mut array_types = HashMap::new();
+        // We process types to cross-reference their details
+        for (oid, type_) in context.types.iter_mut() {
+            if let Some(mtype) = Arc::get_mut(type_) {
+                // It should be possible to get a mutable reference to type at this point
+                // as there are no other references to this Arc at this point.
+
+                // Depending on type's category, locate the appropriate piece of information about it
+                mtype.details = match mtype.category {
+                    TypeCategory::Enum => context.enums.get(oid).cloned().map(TypeDetails::Enum),
+                    TypeCategory::Composite => context
+                        .composites
+                        .iter()
+                        .find(|c| c.oid == *oid)
+                        .cloned()
+                        .map(TypeDetails::Composite),
+                    TypeCategory::Table => context.tables.get(oid).cloned().map(TypeDetails::Table),
+                    TypeCategory::Array => {
+                        // We can't cross-reference with `context.types` here as it is already mutably borrowed,
+                        // so we instead memorize the reference to process later
+                        if let Some(element_oid) = mtype.array_element_type_oid {
+                            array_types.insert(*oid, element_oid);
+                        }
+                        None
+                    }
+                    _ => None,
+                };
+            }
+        }
+
+        // Ensure the types are ordered so that we don't run into a situation where we can't
+        // update the type anymore as it has been referenced but the type details weren't completed yet
+        let referenced_types = array_types.values().map(|k| *k).collect::<Vec<_>>();
+        let mut ordered_types = array_types
+            .iter()
+            .map(|(k, v)| (*k, *v))
+            .collect::<Vec<_>>();
+        // We sort them by their presence in referencing. If the type has been referenced,
+        // it should be at the top.
+        ordered_types.sort_by(|(k1, _), (k2, _)| {
+            if referenced_types.contains(k1) && referenced_types.contains(k2) {
+                Ordering::Equal
+            } else if referenced_types.contains(k1) {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
+
+        // Now we're ready to process array types
+        for (array_oid, element_oid) in ordered_types {
+            // We remove the element type from the map to ensure there is no mutability conflict for when
+            // we get a mutable reference to the array type. We will put it back after we're done with it,
+            // a few lines below.
+            if let Some(element_t) = context.types.remove(&element_oid) {
+                if let Some(array_t) = context.types.get_mut(&array_oid) {
+                    if let Some(array) = Arc::get_mut(array_t) {
+                        // It should be possible to get a mutable reference to type at this point
+                        // as there are no other references to this Arc at this point.
+                        array.details = Some(TypeDetails::Element(element_t.clone()));
+                    } else {
+                        // For some reason, we weren't able to get it. It means something have changed
+                        // in our logic and we're presenting an assertion violation. Let's report it.
+                        // It's a bug.
+                        pgrx::warning!(
+                            "Assertion violation: array type with OID {} is already referenced",
+                            array_oid
+                        );
+                        continue;
+                    }
+                    // Put the element type back. NB: Very important to keep this line! It'll be used
+                    // further down the loop. There is a check at the end of each loop's iteration that
+                    // we actually did this. Being defensive.
+                    context.types.insert(element_oid, element_t);
+                } else {
+                    // We weren't able to find the OID of the array, which is odd because we just got
+                    // it from the context. This means we messed something up and it is a bug. Report it.
+                    pgrx::warning!(
+                        "Assertion violation: array type with OID {} is not found",
+                        array_oid
+                    );
+                    continue;
+                }
+            } else {
+                // We weren't able to find the OID of the element type, which is also odd because we just got
+                // it from the context. This means it's a bug as well. Report it.
+                pgrx::warning!(
+                        "Assertion violation: referenced element type with OID {} of array type with OID {} is not found",
+                        element_oid, array_oid);
+                continue;
+            }
+
+            // Here we are asserting that we did in fact return the element type back to the list. Part of being
+            // defensive here.
+            if !context.types.contains_key(&element_oid) {
+                pgrx::warning!("Assertion violation: referenced element type with OID {} was not returned to the list of types", element_oid );
+                continue;
+            }
+        }
+
+        context
+    }
+
+    /// This pass cross-reference column types
+    fn column_types(mut context: Context) -> Context {
+        // We process tables to cross-reference their columns' types
+        for (_oid, table) in context.tables.iter_mut() {
+            if let Some(mtable) = Arc::get_mut(table) {
+                // It should be possible to get a mutable reference to table at this point
+                // as there are no other references to this Arc at this point.
+
+                // We will now iterate over columns
+                for column in mtable.columns.iter_mut() {
+                    if let Some(mcolumn) = Arc::get_mut(column) {
+                        // It should be possible to get a mutable reference to column at this point
+                        // as there are no other references to this Arc at this point.
+
+                        // Find a matching type
+                        mcolumn.type_ = context.types.get(&mcolumn.type_oid).cloned();
+                    }
+                }
+            }
+        }
+        context
+    }
+
+    context
+        .map(type_details)
+        .map(column_types)
+        .map(Arc::new)
+        .map_err(|e| {
+            format!(
+                "Error while loading schema, check comment directives. {}",
+                e.to_string()
+            )
+        })
 }

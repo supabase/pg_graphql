@@ -86,9 +86,6 @@ select
                             -- if category is 'Table' points to the table oid
                             'table_oid', tabs.oid::int,
                             'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
-                            'directives', jsonb_build_object(
-                                'name', graphql.comment_directive(pg_catalog.obj_description(pt.oid, 'pg_type')) ->> 'name'
-                            ),
                             'permissions', jsonb_build_object(
                                 'is_usable', pg_catalog.has_type_privilege(current_user, pt.oid, 'USAGE')
                             )
@@ -360,9 +357,7 @@ select
                                                 select
                                                     jsonb_build_object(
                                                         'name', d.directive ->> 'name',
-                                                        'description', d.directive -> 'description',
-                                                        -- TODO: this duplication is to be refactored as per https://github.com/supabase/pg_graphql/pull/376#discussion_r1259865044
-                                                        'mappings', (graphql.comment_directive(pg_catalog.obj_description(pa.atttypid, 'pg_type'))) -> 'mappings'
+                                                        'description', d.directive -> 'description'
                                                     )
                                                 from
                                                     directives d
