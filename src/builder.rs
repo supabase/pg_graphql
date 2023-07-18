@@ -1303,8 +1303,8 @@ where
             let possible_types: Vec<__Type> = node_interface.possible_types().unwrap_or(vec![]);
             let xtype = possible_types.iter().find_map(|x| match x {
                 __Type::Node(node_type)
-                    if &node_type.table.schema == &node_id.schema_name
-                        && &node_type.table.name == &node_id.table_name =>
+                    if node_type.table.schema == node_id.schema_name
+                        && node_type.table.name == node_id.table_name =>
                 {
                     Some(node_type)
                 }
