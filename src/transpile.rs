@@ -12,15 +12,11 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 pub fn quote_ident(ident: &str) -> String {
-    unsafe {
-        direct_function_call::<String>(pg_sys::quote_ident, &vec![ident.into_datum()]).unwrap()
-    }
+    unsafe { direct_function_call::<String>(pg_sys::quote_ident, &[ident.into_datum()]).unwrap() }
 }
 
 pub fn quote_literal(ident: &str) -> String {
-    unsafe {
-        direct_function_call::<String>(pg_sys::quote_literal, &vec![ident.into_datum()]).unwrap()
-    }
+    unsafe { direct_function_call::<String>(pg_sys::quote_literal, &[ident.into_datum()]).unwrap() }
 }
 
 pub fn rand_block_name() -> String {
@@ -86,7 +82,7 @@ pub trait QueryEntrypoint {
         let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
             let val = c.select(sql, Some(1), Some(param_context.params))?;
             // Get a value from the query
-            if val.len() == 0 {
+            if val.is_empty() {
                 Ok(None)
             } else {
                 val.first().get::<pgrx::JsonB>(1)
@@ -139,6 +135,7 @@ impl Table {
         format!("translate(encode(convert_to(jsonb_build_array({clause})::text, 'utf-8'), 'base64'), E'\n', '')")
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn to_pagination_clause(
         &self,
         block_name: &str,
@@ -763,7 +760,7 @@ impl ConnectionBuilder {
                 self.source.table.to_join_clause(
                     &fkey.fkey,
                     fkey.reverse_reference,
-                    &quoted_block_name,
+                    quoted_block_name,
                     quoted_parent_block_name,
                 )
             }
@@ -800,6 +797,8 @@ impl ConnectionBuilder {
         )
     }
 
+    //TODO:Revisit if from_clause is the best name
+    #[allow(clippy::wrong_self_convention)]
     fn from_clause(&self, quoted_block_name: &str, function: &Option<FromFunction>) -> String {
         let quoted_schema = quote_ident(&self.source.table.schema);
         let quoted_table = quote_ident(&self.source.table.name);
@@ -1314,7 +1313,7 @@ impl ColumnBuilder {
             Some(TypeDetails::Enum(ref enum_)) => Some(enum_),
             _ => None,
         });
-        if let Some(ref enum_) = maybe_enum {
+        if let Some(enum_) = maybe_enum {
             match enum_.directives.mappings {
                 Some(ref mappings) => {
                     let cases = mappings

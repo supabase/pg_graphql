@@ -355,7 +355,7 @@ impl Context {
         let mut fkeys: Vec<Arc<ForeignKey>> = self.foreign_keys.clone();
 
         // Add foreign keys defined in comment directives
-        for (_, table) in &self.tables {
+        for table in self.tables.values() {
             let directive_fkeys: Vec<TableDirectiveForeignKey> =
                 match &table.directives.foreign_keys {
                     Some(keys) => keys.clone(),
@@ -563,7 +563,7 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
 
         // Ensure the types are ordered so that we don't run into a situation where we can't
         // update the type anymore as it has been referenced but the type details weren't completed yet
-        let referenced_types = array_types.values().map(|k| *k).collect::<Vec<_>>();
+        let referenced_types = array_types.values().copied().collect::<Vec<_>>();
         let mut ordered_types = array_types
             .iter()
             .map(|(k, v)| (*k, *v))
@@ -664,7 +664,7 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
         .map_err(|e| {
             format!(
                 "Error while loading schema, check comment directives. {}",
-                e.to_string()
+                e
             )
         })
 }
