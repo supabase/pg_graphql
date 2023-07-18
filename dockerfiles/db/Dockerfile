@@ -26,7 +26,7 @@ RUN \
   rustc --version && \
   cargo --version
 
-# PGX
+# PGRX
 RUN cargo install cargo-pgrx --version 0.9.7 --locked
 
 RUN cargo pgrx init --pg15 $(which pg_config)
