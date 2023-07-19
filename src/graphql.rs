@@ -249,6 +249,7 @@ pub struct __Directive {
 }
 
 impl __Directive {
+    pub const TYPE: &'static str = "__Directive";
     // name: String!
     pub fn name(&self) -> &str {
         &self.name_

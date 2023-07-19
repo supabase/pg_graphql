@@ -2043,7 +2043,7 @@ impl __Schema {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
             fragment_definitions,
-            &"__Field".to_string(),
+            &__Directive::TYPE.to_string(),
             variables,
         )?;
 
@@ -2074,9 +2074,15 @@ impl __Schema {
                 "isRepeatable" => __DirectiveField::IsRepeatable,
                 "__typename" => __DirectiveField::Typename {
                     alias: alias_or_name(selection_field),
-                    typename: directive.name().to_string(),
+                    typename: __Directive::TYPE.to_string(),
                 },
-                _ => return Err(format!("unknown field in __Field {}", field_name)),
+                _ => {
+                    return Err(format!(
+                        "unknown field {} in {}",
+                        field_name,
+                        __Directive::TYPE,
+                    ))
+                }
             };
 
             builder_fields.push(__DirectiveSelection {
