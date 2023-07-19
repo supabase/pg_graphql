@@ -300,9 +300,9 @@ pub enum __DirectiveLocation {
     InputFieldDefinition,
 }
 
-impl Display for __DirectiveLocation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
+impl __DirectiveLocation {
+    pub fn as_str(&self) -> &'static str {
+        match self {
             __DirectiveLocation::Query => "QUERY",
             __DirectiveLocation::Mutation => "MUTATION",
             __DirectiveLocation::Subscription => "SUBSCRIPTION",
@@ -322,8 +322,7 @@ impl Display for __DirectiveLocation {
             __DirectiveLocation::EnumValue => "ENUM_VALUE",
             __DirectiveLocation::InputObject => "INPUT_OBJECT",
             __DirectiveLocation::InputFieldDefinition => "INPUT_FIELD_DEFINITION",
-        })?;
-        Ok(())
+        }
     }
 }
 
