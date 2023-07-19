@@ -6,7 +6,7 @@ Requirements:
 
 - rust
 - cargo
-- [pgx](https://github.com/tcdi/pgx)
+- [pgrx](https://github.com/tcdi/pgrx)
 
 ### Testing
 
@@ -15,7 +15,7 @@ Tests are located in `./test/sql` with expected output in `./test/expected`
 To run tests locally, execute:
 
 ```bash
-$ cargo pgx install; ./bin/installcheck
+$ cargo pgrx install; ./bin/installcheck
 ```
 
 
@@ -24,7 +24,7 @@ $ cargo pgx install; ./bin/installcheck
 To reduce the iteration cycle, you may want to launch a psql prompt with `pg_graphql` installed to experiment
 
 ```bash
-cargo pgx run pg14
+cargo pgrx run pg14
 ```
 
 Try out the commands below to spin up a database with the extension installed & query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.
