@@ -1487,15 +1487,6 @@ impl Serialize for __TypeBuilder {
     }
 }
 
-impl Serialize for __DirectiveLocation {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
 impl Serialize for __DirectiveBuilder {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

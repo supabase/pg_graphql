@@ -276,8 +276,9 @@ impl __Directive {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 #[allow(dead_code)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum __DirectiveLocation {
     Query,
     Mutation,
@@ -298,32 +299,6 @@ pub enum __DirectiveLocation {
     EnumValue,
     InputObject,
     InputFieldDefinition,
-}
-
-impl __DirectiveLocation {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            __DirectiveLocation::Query => "QUERY",
-            __DirectiveLocation::Mutation => "MUTATION",
-            __DirectiveLocation::Subscription => "SUBSCRIPTION",
-            __DirectiveLocation::Field => "FIELD",
-            __DirectiveLocation::FragmentDefinition => "FRAGMENT_DEFINITION",
-            __DirectiveLocation::FragmentSpread => "FRAGMENT_SPREAD",
-            __DirectiveLocation::InlineFragment => "INLINE_FRAGMENT",
-            __DirectiveLocation::VariableDefinition => "VARIABLE_DEFINITION",
-            __DirectiveLocation::Schema => "SCHEMA",
-            __DirectiveLocation::Scalar => "SCALAR",
-            __DirectiveLocation::Object => "OBJECT",
-            __DirectiveLocation::FieldDefinition => "FIELD_DEFINITION",
-            __DirectiveLocation::ArgumentDefinition => "ARGUMENT_DEFINITION",
-            __DirectiveLocation::Interface => "INTERFACE",
-            __DirectiveLocation::Union => "UNION",
-            __DirectiveLocation::Enum => "ENUM",
-            __DirectiveLocation::EnumValue => "ENUM_VALUE",
-            __DirectiveLocation::InputObject => "INPUT_OBJECT",
-            __DirectiveLocation::InputFieldDefinition => "INPUT_FIELD_DEFINITION",
-        }
-    }
 }
 
 pub trait ___Field {
