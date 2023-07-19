@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::sync::Arc;
 
 lazy_static! {
@@ -239,9 +240,92 @@ pub trait ___Type {
     }
 }
 
-pub struct __Directive {}
+#[derive(Clone, Debug)]
+pub struct __Directive {
+    pub name_: String,
+    pub description: Option<String>,
+    pub locations: Vec<__DirectiveLocation>,
+    pub args: Vec<__InputValue>,
+    pub is_repeatable: bool,
+}
 
-pub struct __DirectiveLocation {}
+impl __Directive {
+    // name: String!
+    pub fn name(&self) -> &str {
+        &self.name_
+    }
+
+    // description: String
+    pub fn description(&self) -> Option<&String> {
+        self.description.as_ref()
+    }
+
+    // locations: [__DirectiveLocation!]!
+    pub fn locations(&self) -> &[__DirectiveLocation] {
+        &self.locations
+    }
+
+    // args: [__InputValue!]!
+    pub fn args(&self) -> &[__InputValue] {
+        &self.args
+    }
+
+    // isRepeatable: Boolean!
+    pub fn is_repeatable(&self) -> bool {
+        self.is_repeatable
+    }
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub enum __DirectiveLocation {
+    Query,
+    Mutation,
+    Subscription,
+    Field,
+    FragmentDefinition,
+    FragmentSpread,
+    InlineFragment,
+    VariableDefinition,
+    Schema,
+    Scalar,
+    Object,
+    FieldDefinition,
+    ArgumentDefinition,
+    Interface,
+    Union,
+    Enum,
+    EnumValue,
+    InputObject,
+    InputFieldDefinition,
+}
+
+impl Display for __DirectiveLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            __DirectiveLocation::Query => "QUERY",
+            __DirectiveLocation::Mutation => "MUTATION",
+            __DirectiveLocation::Subscription => "SUBSCRIPTION",
+            __DirectiveLocation::Field => "FIELD",
+            __DirectiveLocation::FragmentDefinition => "FRAGMENT_DEFINITION",
+            __DirectiveLocation::FragmentSpread => "FRAGMENT_SPREAD",
+            __DirectiveLocation::InlineFragment => "INLINE_FRAGMENT",
+            __DirectiveLocation::VariableDefinition => "VARIABLE_DEFINITION",
+            __DirectiveLocation::Schema => "SCHEMA",
+            __DirectiveLocation::Scalar => "SCALAR",
+            __DirectiveLocation::Object => "OBJECT",
+            __DirectiveLocation::FieldDefinition => "FIELD_DEFINITION",
+            __DirectiveLocation::ArgumentDefinition => "ARGUMENT_DEFINITION",
+            __DirectiveLocation::Interface => "INTERFACE",
+            __DirectiveLocation::Union => "UNION",
+            __DirectiveLocation::Enum => "ENUM",
+            __DirectiveLocation::EnumValue => "ENUM_VALUE",
+            __DirectiveLocation::InputObject => "INPUT_OBJECT",
+            __DirectiveLocation::InputFieldDefinition => "INPUT_FIELD_DEFINITION",
+        })?;
+        Ok(())
+    }
+}
 
 pub trait ___Field {
     // name: String!
@@ -3736,6 +3820,32 @@ impl __Schema {
     // directives: [__Directive!]!
     #[allow(dead_code)]
     pub fn directives(&self) -> Vec<__Directive> {
-        vec![]
+        vec![__Directive {
+            name_: "include".to_string(),
+            description: Some("Directs the executor to include this field or fragment only when the `if` argument is true.".to_string()),
+            locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
+            args: vec![__InputValue {
+                name_: "if".to_string(),
+                type_: __Type::Scalar(Scalar::Boolean),
+                description: Some("Included when true".to_string()),
+                default_value: None,
+                sql_type: None
+            }],
+            is_repeatable: false,
+        },
+        __Directive {
+            name_: "skip".to_string(),
+            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true.".to_string()),
+            locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
+            args: vec![__InputValue {
+                name_: "if".to_string(),
+                type_: __Type::Scalar(Scalar::Boolean),
+                description: Some("Skipped when true".to_string()),
+                default_value: None,
+                sql_type: None
+            }],
+            is_repeatable: false,
+        }
+        ]
     }
 }
