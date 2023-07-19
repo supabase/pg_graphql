@@ -6,7 +6,6 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::fmt::Display;
 use std::sync::Arc;
 
 lazy_static! {
