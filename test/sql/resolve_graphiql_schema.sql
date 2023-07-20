@@ -76,10 +76,12 @@ begin;
         directives {
           name
           description
+          isRepeatable
           locations
           args {
             ...InputValue
           }
+          __typename
         }
       }
     }
