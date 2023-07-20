@@ -241,7 +241,7 @@ pub trait ___Type {
 
 #[derive(Clone, Debug)]
 pub struct __Directive {
-    pub name_: String,
+    pub name: String,
     pub description: Option<String>,
     pub locations: Vec<__DirectiveLocation>,
     pub args: Vec<__InputValue>,
@@ -250,9 +250,10 @@ pub struct __Directive {
 
 impl __Directive {
     pub const TYPE: &'static str = "__Directive";
+
     // name: String!
     pub fn name(&self) -> &str {
-        &self.name_
+        &self.name
     }
 
     // description: String
@@ -3795,7 +3796,7 @@ impl __Schema {
     #[allow(dead_code)]
     pub fn directives(&self) -> Vec<__Directive> {
         vec![__Directive {
-            name_: "include".to_string(),
+            name: "include".to_string(),
             description: Some("Directs the executor to include this field or fragment only when the `if` argument is true.".to_string()),
             locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
             args: vec![__InputValue {
@@ -3810,7 +3811,7 @@ impl __Schema {
             is_repeatable: false,
         },
         __Directive {
-            name_: "skip".to_string(),
+            name: "skip".to_string(),
             description: Some("Directs the executor to skip this field or fragment when the `if` argument is true.".to_string()),
             locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
             args: vec![__InputValue {
