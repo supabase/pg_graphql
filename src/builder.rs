@@ -2178,9 +2178,9 @@ impl __Schema {
                                     let builders = self
                                         .directives()
                                         .iter()
-                                        .map(|t| {
+                                        .map(|directive| {
                                             self.to_directive_builder(
-                                                t,
+                                                directive,
                                                 selection_field,
                                                 fragment_definitions,
                                                 variables,
