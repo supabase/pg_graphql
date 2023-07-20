@@ -37,3 +37,4 @@
 
 ## master
 - rename enum variants with comment directive `@graphql({"mappings": "sql-value": "graphql_value""})`
+- bugfix: @skip and @include directives missing from introspection schema
