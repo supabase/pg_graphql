@@ -3795,36 +3795,51 @@ impl __Schema {
     // directives: [__Directive!]!
     #[allow(dead_code)]
     pub fn directives(&self) -> Vec<__Directive> {
-        vec![__Directive {
-            name: "include".to_string(),
-            description: Some("Directs the executor to include this field or fragment only when the `if` argument is true.".to_string()),
-            locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
-            args: vec![__InputValue {
-                name_: "if".to_string(),
-                type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
-                }),
-                description: Some("Included when true".to_string()),
-                default_value: None,
-                sql_type: None
-            }],
-            is_repeatable: false,
-        },
-        __Directive {
-            name: "skip".to_string(),
-            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true.".to_string()),
-            locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
-            args: vec![__InputValue {
-                name_: "if".to_string(),
-                type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
-                }),
-                description: Some("Skipped when true".to_string()),
-                default_value: None,
-                sql_type: None
-            }],
-            is_repeatable: false,
-        }
+        vec![
+            __Directive {
+                name: "include".to_string(),
+                description: Some(
+                    "This field or fragment will be included only when the `if` argument is true."
+                        .to_string(),
+                ),
+                locations: vec![
+                    __DirectiveLocation::Field,
+                    __DirectiveLocation::FragmentSpread,
+                    __DirectiveLocation::InlineFragment,
+                ],
+                args: vec![__InputValue {
+                    name_: "if".to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::Scalar(Scalar::Boolean)),
+                    }),
+                    description: Some("Included when true".to_string()),
+                    default_value: None,
+                    sql_type: None,
+                }],
+                is_repeatable: false,
+            },
+            __Directive {
+                name: "skip".to_string(),
+                description: Some(
+                    "This field or fragment will be skipped when the `if` argument is true."
+                        .to_string(),
+                ),
+                locations: vec![
+                    __DirectiveLocation::Field,
+                    __DirectiveLocation::FragmentSpread,
+                    __DirectiveLocation::InlineFragment,
+                ],
+                args: vec![__InputValue {
+                    name_: "if".to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::Scalar(Scalar::Boolean)),
+                    }),
+                    description: Some("Skipped when true".to_string()),
+                    default_value: None,
+                    sql_type: None,
+                }],
+                is_repeatable: false,
+            },
         ]
     }
 }
