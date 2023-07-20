@@ -3800,7 +3800,9 @@ impl __Schema {
             locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
             args: vec![__InputValue {
                 name_: "if".to_string(),
-                type_: __Type::Scalar(Scalar::Boolean),
+                type_: __Type::NonNull(NonNullType {
+                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
+                }),
                 description: Some("Included when true".to_string()),
                 default_value: None,
                 sql_type: None
@@ -3813,7 +3815,9 @@ impl __Schema {
             locations: vec![__DirectiveLocation::Field, __DirectiveLocation::FragmentSpread, __DirectiveLocation::InlineFragment],
             args: vec![__InputValue {
                 name_: "if".to_string(),
-                type_: __Type::Scalar(Scalar::Boolean),
+                type_: __Type::NonNull(NonNullType {
+                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
+                }),
                 description: Some("Skipped when true".to_string()),
                 default_value: None,
                 sql_type: None
