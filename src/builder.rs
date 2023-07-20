@@ -1562,7 +1562,6 @@ pub struct __TypeBuilder {
 }
 
 #[derive(Clone, Debug)]
-#[allow(dead_code)]
 pub enum __DirectiveField {
     Name,
     Description,
@@ -2052,24 +2051,24 @@ impl __Schema {
         for selection_field in selection_fields {
             let field_name = selection_field.name.as_ref();
 
-            let __directive_field = match field_name {
+            let directive_field = match field_name {
                 "name" => __DirectiveField::Name,
                 "description" => __DirectiveField::Description,
                 "locations" => __DirectiveField::Locations,
                 "args" => {
-                    let mut f_builders: Vec<__InputValueBuilder> = vec![];
+                    let mut builders: Vec<__InputValueBuilder> = vec![];
                     let args = directive.args();
 
                     for arg in args {
-                        let f_builder = self.to_input_value_builder(
+                        let builder = self.to_input_value_builder(
                             &arg,
                             selection_field,
                             fragment_definitions,
                             variables,
                         )?;
-                        f_builders.push(f_builder)
+                        builders.push(builder)
                     }
-                    __DirectiveField::Args(f_builders)
+                    __DirectiveField::Args(builders)
                 }
                 "isRepeatable" => __DirectiveField::IsRepeatable,
                 "__typename" => __DirectiveField::Typename {
@@ -2087,7 +2086,7 @@ impl __Schema {
 
             builder_fields.push(__DirectiveSelection {
                 alias: alias_or_name(selection_field),
-                selection: __directive_field,
+                selection: directive_field,
             });
         }
 
