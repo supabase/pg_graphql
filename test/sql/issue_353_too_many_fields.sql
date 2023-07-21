@@ -117,7 +117,7 @@ begin;
                     field2
                     field3
                     field4
-                    field5 
+                    field5
                     field6
                     field7
                     field8
@@ -161,7 +161,7 @@ begin;
                     field46
                     field47
                     field48
-                    field49 
+                    field49
                     field50
                     field51
                     field52
