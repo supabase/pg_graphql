@@ -1497,6 +1497,38 @@ impl Serialize for __TypeBuilder {
     }
 }
 
+impl Serialize for __DirectiveBuilder {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.selections.len()))?;
+        for selection in &self.selections {
+            match &selection.selection {
+                __DirectiveField::Name => {
+                    map.serialize_entry(&selection.alias, &self.directive.name())?;
+                }
+                __DirectiveField::Description => {
+                    map.serialize_entry(&selection.alias, &self.directive.description())?;
+                }
+                __DirectiveField::Locations => {
+                    map.serialize_entry(&selection.alias, &self.directive.locations())?;
+                }
+                __DirectiveField::Args(args) => {
+                    map.serialize_entry(&selection.alias, args)?;
+                }
+                __DirectiveField::IsRepeatable => {
+                    map.serialize_entry(&selection.alias, &self.directive.is_repeatable())?;
+                }
+                __DirectiveField::Typename { alias, typename } => {
+                    map.serialize_entry(&alias, typename)?;
+                }
+            }
+        }
+        map.end()
+    }
+}
+
 impl Serialize for __SchemaBuilder {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1518,9 +1550,8 @@ impl Serialize for __SchemaBuilder {
                 __SchemaField::SubscriptionType(type_builder) => {
                     map.serialize_entry(&selection.alias, &type_builder)?;
                 }
-                __SchemaField::Directives => {
-                    let x: Vec<bool> = vec![];
-                    map.serialize_entry(&selection.alias, &x)?;
+                __SchemaField::Directives(directives) => {
+                    map.serialize_entry(&selection.alias, directives)?;
                 }
                 __SchemaField::Typename { alias, typename } => {
                     map.serialize_entry(&alias, typename)?;
