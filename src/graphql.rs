@@ -48,7 +48,25 @@ fn to_base_type_name(
 }
 
 fn lowercase_first_letter(token: &str) -> String {
-    token[0..1].to_lowercase() + &token[1..]
+    let first_char = token.chars().nth(0);
+    match first_char {
+        Some(c) => format!("{}{}", c.to_lowercase(), &token[c.len_utf8()..]),
+        None => token.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_lowercase_first_letter() {
+        fn run_test(token: &str, expected: &str) {
+            let actual = super::lowercase_first_letter(token);
+            assert_eq!(expected, actual);
+        }
+
+        run_test("Hello", "hello");
+        run_test("用户", "用户");
+    }
 }
 
 impl __Schema {
