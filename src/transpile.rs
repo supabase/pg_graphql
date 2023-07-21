@@ -1148,7 +1148,17 @@ impl NodeBuilder {
             .iter()
             .map(|x| x.to_sql(block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(format!("jsonb_build_object({})", frags.join(", ")))
+
+        const MAX_ARGS_IN_JSONB_BUILD_OBJECT: usize = 100; //jsonb_build_object has a limit of 100 arguments
+        const ARGS_PER_FRAG: usize = 2; // each x.to_sql(...) function above return a pair of args
+        const CHUNK_SIZE: usize = MAX_ARGS_IN_JSONB_BUILD_OBJECT / ARGS_PER_FRAG;
+
+        let frags: Vec<String> = frags
+            .chunks(CHUNK_SIZE)
+            .map(|chunks| format!("jsonb_build_object({})", chunks.join(", ")))
+            .collect();
+
+        Ok(format!("{}", frags.join(" || ")))
     }
 
     pub fn to_relation_sql(
