@@ -546,15 +546,11 @@ where
     }
 }
 
-
-
-
 #[derive(Clone, Debug)]
 pub struct ConnectionBuilderSource {
     pub table: Arc<Table>,
-    pub fkey: Option<ForeignKeyReversible>
+    pub fkey: Option<ForeignKeyReversible>,
 }
-
 
 #[derive(Clone, Debug)]
 pub struct ConnectionBuilder {
@@ -578,6 +574,13 @@ pub struct ConnectionBuilder {
 }
 
 #[derive(Clone, Debug)]
+pub enum FilterBuilderComposition {
+    And(Vec<FilterBuilderElem>),
+    Or(Vec<FilterBuilderElem>),
+    Not(FilterBuilderElem),
+}
+
+#[derive(Clone, Debug)]
 pub enum FilterBuilderElem {
     Column {
         column: Arc<Column>,
@@ -585,6 +588,7 @@ pub enum FilterBuilderElem {
         value: serde_json::Value, //String, // string repr castable by postgres
     },
     NodeId(NodeIdInstance),
+    Composition(Box<FilterBuilderComposition>),
 }
 
 #[derive(Clone, Debug)]
@@ -1138,7 +1142,7 @@ where
                 alias,
                 source: ConnectionBuilderSource {
                     table: Arc::clone(&xtype.table),
-                    fkey: xtype.fkey.clone()
+                    fkey: xtype.fkey.clone(),
                 },
                 first,
                 last,
@@ -1400,11 +1404,7 @@ where
                                     )?;
                                     FunctionSelection::Connection(connection_builder)
                                 }
-                                _ => {
-                                    return Err(format!(
-                                        "invalid return type from function"
-                                    ))
-                                }
+                                _ => return Err(format!("invalid return type from function")),
                             };
                             NodeSelection::Function(FunctionBuilder {
                                 alias,
@@ -1427,40 +1427,32 @@ where
                             alias: alias_or_name(selection_field),
                             typename: xtype.name().unwrap(),
                         },
-                        _ => {
-                            match f.type_().unmodified_type() {
-                                __Type::Connection(_) => {
-                                    let con_builder = to_connection_builder(
-                                        f,
-                                        selection_field,
-                                        fragment_definitions,
-                                        variables,
-                                    );
-                                    NodeSelection::Connection(con_builder?)
-                                }
-                                __Type::Node(_) => {
-                                    let node_builder = to_node_builder(
-                                        f,
-                                        selection_field,
-                                        fragment_definitions,
-                                        variables,
-                                    );
-                                    NodeSelection::Node(node_builder?)
-                                }
-                                _ => {
-                                    return Err(format!(
-                                        "unexpected field type on node {}",
-                                        f.name()
-                                    ));
-                                }
+                        _ => match f.type_().unmodified_type() {
+                            __Type::Connection(_) => {
+                                let con_builder = to_connection_builder(
+                                    f,
+                                    selection_field,
+                                    fragment_definitions,
+                                    variables,
+                                );
+                                NodeSelection::Connection(con_builder?)
                             }
-
-                        }
+                            __Type::Node(_) => {
+                                let node_builder = to_node_builder(
+                                    f,
+                                    selection_field,
+                                    fragment_definitions,
+                                    variables,
+                                );
+                                NodeSelection::Node(node_builder?)
+                            }
+                            _ => {
+                                return Err(format!("unexpected field type on node {}", f.name()));
+                            }
+                        },
                     },
                 };
                 builder_fields.push(node_selection);
-
-
             }
         }
     }
