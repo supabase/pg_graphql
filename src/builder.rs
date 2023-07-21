@@ -853,59 +853,92 @@ where
             _ => return Err("Could not locate Filter Entity type".to_string()),
         };
 
+    let filter_field_map = input_field_map(&__Type::FilterEntity(filter_type));
+
     let mut filters = vec![];
 
+    create_filters(&validated, &filter_field_map, &mut filters)?;
+
+    Ok(FilterBuilder { elems: filters })
+}
+
+fn create_filters(
+    validated: &gson::Value,
+    filter_field_map: &HashMap<String, __InputValue>,
+    filters: &mut Vec<FilterBuilderElem>,
+) -> Result<(), String> {
     // validated user input kv map
     let kv_map = match validated {
-        gson::Value::Absent | gson::Value::Null => return Ok(FilterBuilder { elems: filters }),
+        gson::Value::Absent | gson::Value::Null => return Ok(()),
         gson::Value::Object(kv) => kv,
         _ => return Err("Filter re-validation errror".to_string()),
     };
 
-    let filter_field_map = input_field_map(&__Type::FilterEntity(filter_type));
-    for (k, op_to_v) in kv_map.iter() {
+    for (k, op_to_v) in kv_map {
         // k = str, v = {"eq": 1}
         let filter_iv: &__InputValue = match filter_field_map.get(k) {
             Some(filter_iv) => filter_iv,
             None => return Err("Filter re-validation error in filter_iv".to_string()),
         };
 
-        let filter_op_to_value_map: &HashMap<String, gson::Value> = match op_to_v {
+        match op_to_v {
             gson::Value::Absent | gson::Value::Null => continue,
-            gson::Value::Object(op_to_v_map) => op_to_v_map,
+            gson::Value::Object(filter_op_to_value_map) => {
+                for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
+                    let filter_op = FilterOp::from_str(filter_op_str)?;
+
+                    // Skip absent
+                    // Technically nulls should be treated as literals. It will always filter out all rows
+                    // val <op> null is never true
+                    match filter_val {
+                        gson::Value::Absent => continue,
+                        _ => (),
+                    }
+
+                    match &filter_iv.sql_type {
+                        Some(NodeSQLType::Column(col)) => {
+                            let filter_builder = FilterBuilderElem::Column {
+                                column: Arc::clone(col),
+                                op: filter_op,
+                                value: gson::gson_to_json(filter_val)?,
+                            };
+                            filters.push(filter_builder);
+                        }
+                        Some(NodeSQLType::NodeId(_)) => {
+                            let filter_builder =
+                                FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?);
+                            filters.push(filter_builder);
+                        }
+                        _ => {
+                            return Err(
+                                "Filter type error, attempted filter on non-column".to_string()
+                            )
+                        }
+                    }
+                }
+            }
+            gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
+                let mut compound_filters = Vec::with_capacity(values.len());
+                for value in values {
+                    create_filters(value, filter_field_map, &mut compound_filters)?;
+                }
+                let filter_builder = if k == AND_FILTER_NAME {
+                    FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::And(
+                        compound_filters,
+                    )))
+                } else if k == OR_FILTER_NAME {
+                    FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::Or(
+                        compound_filters,
+                    )))
+                } else {
+                    return Err("Error in creating compound filter".to_string());
+                };
+                filters.push(filter_builder);
+            }
             _ => return Err("Filter re-validation errror op_to_value map".to_string()),
-        };
-
-        for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
-            let filter_op = FilterOp::from_str(filter_op_str)?;
-
-            // Skip absent
-            // Technically nulls should be treated as literals. It will always filter out all rows
-            // val <op> null is never true
-            match filter_val {
-                gson::Value::Absent => continue,
-                _ => (),
-            }
-
-            match &filter_iv.sql_type {
-                Some(NodeSQLType::Column(col)) => {
-                    let filter_builder = FilterBuilderElem::Column {
-                        column: Arc::clone(col),
-                        op: filter_op,
-                        value: gson::gson_to_json(filter_val)?,
-                    };
-                    filters.push(filter_builder);
-                }
-                Some(NodeSQLType::NodeId(_)) => {
-                    let filter_builder =
-                        FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?);
-                    filters.push(filter_builder);
-                }
-                _ => return Err("Filter type error, attempted filter on non-column".to_string()),
-            }
         }
     }
-    Ok(FilterBuilder { elems: filters })
+    Ok(())
 }
 
 /// Reads the "orderBy" argument. Auto-appends the primary key

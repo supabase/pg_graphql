@@ -3317,6 +3317,10 @@ impl ___Type for FilterTypeType {
     }
 }
 
+pub(crate) const AND_FILTER_NAME: &'static str = "AND";
+pub(crate) const OR_FILTER_NAME: &'static str = "OR";
+pub(crate) const NOT_FILTER_NAME: &'static str = "NOT";
+
 impl ___Type for FilterEntityType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::INPUT_OBJECT
@@ -3402,7 +3406,7 @@ impl ___Type for FilterEntityType {
         }
 
         f.push(__InputValue {
-            name_: "AND".to_string(),
+            name_: AND_FILTER_NAME.to_string(),
             type_: __Type::List(ListType {
                 type_: Box::new(__Type::FilterEntity(FilterEntityType {
                     table: Arc::clone(&self.table),
@@ -3417,7 +3421,7 @@ impl ___Type for FilterEntityType {
             sql_type: None,
         });
         f.push(__InputValue {
-            name_: "OR".to_string(),
+            name_: OR_FILTER_NAME.to_string(),
             type_: __Type::List(ListType {
                 type_: Box::new(__Type::FilterEntity(FilterEntityType {
                     table: Arc::clone(&self.table),
@@ -3431,7 +3435,7 @@ impl ___Type for FilterEntityType {
             sql_type: None,
         });
         f.push(__InputValue {
-            name_: "NOT".to_string(),
+            name_: NOT_FILTER_NAME.to_string(),
             type_: __Type::FilterEntity(FilterEntityType {
                 table: Arc::clone(&self.table),
                 schema: self.schema.clone(),
