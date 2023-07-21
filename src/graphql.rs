@@ -3401,6 +3401,46 @@ impl ___Type for FilterEntityType {
             });
         }
 
+        f.push(__InputValue {
+            name_: "AND".to_string(),
+            type_: __Type::List(ListType {
+                type_: Box::new(__Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                })),
+            }),
+            description: Some(
+                "Returns true only if all its inner filters are true, otherwise returns false"
+                    .to_string(),
+            ),
+            default_value: None,
+            sql_type: None,
+        });
+        f.push(__InputValue {
+            name_: "OR".to_string(),
+            type_: __Type::List(ListType {
+                type_: Box::new(__Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                })),
+            }),
+            description: Some(
+                "Returns true if at least one of its inner filters is true, otherwise returns false".to_string(),
+            ),
+            default_value: None,
+            sql_type: None,
+        });
+        f.push(__InputValue {
+            name_: "NOT".to_string(),
+            type_: __Type::FilterEntity(FilterEntityType {
+                table: Arc::clone(&self.table),
+                schema: self.schema.clone(),
+            }),
+            description: Some("Negates a filter".to_string()),
+            default_value: None,
+            sql_type: None,
+        });
+
         Some(f)
     }
 }
