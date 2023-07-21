@@ -566,136 +566,166 @@ begin;
         }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": {                                    +
-         "__type": {                              +
-             "kind": "INPUT_OBJECT",              +
-             "inputFields": [                     +
-                 {                                +
-                     "name": "id",                +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "IntFilter",     +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeBigint",        +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "BigIntFilter",  +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeText",          +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "StringFilter",  +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeVarchar",       +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "StringFilter",  +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeVarchar_n",     +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "StringFilter",  +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeChar",          +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "StringFilter",  +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeUuid",          +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "UUIDFilter",    +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeDate",          +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "DateFilter",    +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeTime",          +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "TimeFilter",    +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeDatetime",      +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "DatetimeFilter",+
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeEnum",          +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "ColorFilter",   +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeNumeric",       +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "BigFloatFilter",+
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeFloat",         +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "FloatFilter",   +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "typeDouble",        +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "FloatFilter",   +
-                         "ofType": null           +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "name": "nodeId",            +
-                     "type": {                    +
-                         "kind": "INPUT_OBJECT",  +
-                         "name": "IDFilter",      +
-                         "ofType": null           +
-                     }                            +
-                 }                                +
-             ]                                    +
-         }                                        +
-     }                                            +
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": {                                 +
+             "kind": "INPUT_OBJECT",                 +
+             "inputFields": [                        +
+                 {                                   +
+                     "name": "id",                   +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "IntFilter",        +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeBigint",           +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "BigIntFilter",     +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeText",             +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "StringFilter",     +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeVarchar",          +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "StringFilter",     +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeVarchar_n",        +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "StringFilter",     +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeChar",             +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "StringFilter",     +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeUuid",             +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "UUIDFilter",       +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeDate",             +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "DateFilter",       +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeTime",             +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "TimeFilter",       +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeDatetime",         +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "DatetimeFilter",   +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeEnum",             +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "ColorFilter",      +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeNumeric",          +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "BigFloatFilter",   +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeFloat",            +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "FloatFilter",      +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "typeDouble",           +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "FloatFilter",      +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "nodeId",               +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "IDFilter",         +
+                         "ofType": null              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "AND",                  +
+                     "type": {                       +
+                         "kind": "LIST",             +
+                         "name": null,               +
+                         "ofType": {                 +
+                             "kind": "INPUT_OBJECT", +
+                             "name": "MainTypeFilter"+
+                         }                           +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "OR",                   +
+                     "type": {                       +
+                         "kind": "LIST",             +
+                         "name": null,               +
+                         "ofType": {                 +
+                             "kind": "INPUT_OBJECT", +
+                             "name": "MainTypeFilter"+
+                         }                           +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "NOT",                  +
+                     "type": {                       +
+                         "kind": "INPUT_OBJECT",     +
+                         "name": "MainTypeFilter",   +
+                         "ofType": null              +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
  }
 (1 row)
 
