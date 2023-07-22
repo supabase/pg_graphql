@@ -3376,9 +3376,9 @@ impl ___Type for FilterTypeType {
     }
 }
 
-pub(crate) const AND_FILTER_NAME: &'static str = "AND";
-pub(crate) const OR_FILTER_NAME: &'static str = "OR";
-pub(crate) const NOT_FILTER_NAME: &'static str = "NOT";
+pub(crate) const AND_FILTER_NAME: &str = "AND";
+pub(crate) const OR_FILTER_NAME: &str = "OR";
+pub(crate) const NOT_FILTER_NAME: &str = "NOT";
 
 impl ___Type for FilterEntityType {
     fn kind(&self) -> __TypeKind {
