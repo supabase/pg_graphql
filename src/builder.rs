@@ -900,21 +900,21 @@ fn create_filters(
                     } else {
                         return Err("Invalid NOT filter".to_string());
                     }
-                    continue;
-                }
-                for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
-                    let filter_op = FilterOp::from_str(filter_op_str)?;
+                } else {
+                    for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
+                        let filter_op = FilterOp::from_str(filter_op_str)?;
 
-                    // Skip absent
-                    // Technically nulls should be treated as literals. It will always filter out all rows
-                    // val <op> null is never true
-                    if filter_val == &gson::Value::Absent {
-                        continue;
+                        // Skip absent
+                        // Technically nulls should be treated as literals. It will always filter out all rows
+                        // val <op> null is never true
+                        if filter_val == &gson::Value::Absent {
+                            continue;
+                        }
+
+                        let filter_builder =
+                            create_filter_builder_elem(filter_iv, filter_op, filter_val)?;
+                        filters.push(filter_builder);
                     }
-
-                    let filter_builder =
-                        create_filter_builder_elem(filter_iv, filter_op, filter_val)?;
-                    filters.push(filter_builder);
                 }
             }
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
