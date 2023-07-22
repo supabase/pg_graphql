@@ -50,7 +50,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {OR: [{id: {eq: 3}}, {id: {eq: 5}}]}}) {
+            accountCollection(filter: {NOT: {id: {eq: 3}}}) {
                 edges {
                     node {
                         id
