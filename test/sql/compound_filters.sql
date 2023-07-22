@@ -32,7 +32,7 @@ begin;
         $$)
     );
 
-    -- AND filter one expressions
+    -- AND filter one expression
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -80,11 +80,11 @@ begin;
         $$)
     );
 
-    -- OR filter
+    -- OR filter zero expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {OR: [{id: {eq: 3}}, {id: {eq: 5}}]}) {
+            accountCollection(filter: {OR: []}) {
                 edges {
                     node {
                         id
@@ -96,11 +96,43 @@ begin;
         $$)
     );
 
-    -- empty OR filter
+    -- OR filter one expression
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {OR: []}) {
+            accountCollection(filter: {OR: [{id: {eq: 1}}]}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- OR filter two expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {OR: [{id: {eq: 3}}, {email: {eq: "elephant@x.com"}}]}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- OR filter three expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {OR: [{id: {eq: 1}}, {email: {eq: "bat@x.com"}}, {plan: {eq: "enterprise"}}]}) {
                 edges {
                     node {
                         id
