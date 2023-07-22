@@ -144,7 +144,23 @@ begin;
         $$)
     );
 
-    -- NOT filter
+    -- NOT filter zero expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- NOT filter one expression
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -160,11 +176,27 @@ begin;
         $$)
     );
 
-    -- empty NOT filter
+    -- NOT filter two expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {}}) {
+            accountCollection(filter: {NOT: {id: {eq: 1}, email: {eq: "aardvark@x.com"}}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- NOT filter three expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {id: {eq: 1}, email: {eq: "aardvark@x.com"}, plan: {eq: "free"}}}) {
                 edges {
                     node {
                         id

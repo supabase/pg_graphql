@@ -342,7 +342,64 @@ begin;
  }
 (1 row)
 
-    -- NOT filter
+    -- NOT filter zero expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 2,                 +
+                         "email": "bat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 3,                 +
+                         "email": "cat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 4,                 +
+                         "email": "dog@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 5,                 +
+                         "email": "elephant@x.com"+
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    -- NOT filter one expression
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -393,11 +450,11 @@ begin;
  }
 (1 row)
 
-    -- empty NOT filter
+    -- NOT filter two expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {}}) {
+            accountCollection(filter: {NOT: {id: {eq: 1}, email: {eq: "aardvark@x.com"}}}) {
                 edges {
                     node {
                         id
@@ -416,10 +473,55 @@ begin;
              "edges": [                           +
                  {                                +
                      "node": {                    +
-                         "id": 1,                 +
-                         "email": "aardvark@x.com"+
+                         "id": 2,                 +
+                         "email": "bat@x.com"     +
                      }                            +
                  },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 3,                 +
+                         "email": "cat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 4,                 +
+                         "email": "dog@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 5,                 +
+                         "email": "elephant@x.com"+
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    -- NOT filter three expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {id: {eq: 1}, email: {eq: "aardvark@x.com"}, plan: {eq: "free"}}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
                  {                                +
                      "node": {                    +
                          "id": 2,                 +
