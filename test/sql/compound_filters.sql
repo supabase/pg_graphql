@@ -1,20 +1,54 @@
 begin;
 
+    CREATE TYPE plan AS ENUM ('free', 'pro', 'enterprise');
+
     create table account(
         id serial primary key,
         email varchar(255) not null,
-        created_at timestamp not null
+        plan plan not null
     );
 
-    insert into public.account(email, created_at)
+    insert into public.account(email, plan)
     values
-        ('aardvark@x.com', now()),
-        ('bat@x.com', now()),
-        ('cat@x.com', now()),
-        ('dog@x.com', now()),
-        ('elephant@x.com', now());
+        ('aardvark@x.com', 'free'),
+        ('bat@x.com', 'pro'),
+        ('cat@x.com', 'enterprise'),
+        ('dog@x.com', 'free'),
+        ('elephant@x.com', 'pro');
 
-    -- AND filter
+    -- AND filter zero expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {AND: []}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- AND filter one expressions
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {AND: [{id: {eq: 1}}]}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- AND filter two expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -30,11 +64,11 @@ begin;
         $$)
     );
 
-    -- empty AND filter
+    -- AND filter three expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {AND: []}) {
+            accountCollection(filter: {AND: [{id: {eq: 1}}, {email: {eq: "aardvark@x.com"}}, {plan: {eq: "free"}}]}) {
                 edges {
                     node {
                         id
