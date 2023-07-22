@@ -918,23 +918,25 @@ fn create_filters(
                 }
             }
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
-                let mut compound_filters = Vec::with_capacity(values.len());
-                for value in values {
-                    let inner_filters = create_filters(value, filter_field_map)?;
-                    compound_filters.extend(inner_filters);
+                if !values.is_empty() {
+                    let mut compound_filters = Vec::with_capacity(values.len());
+                    for value in values {
+                        let inner_filters = create_filters(value, filter_field_map)?;
+                        compound_filters.extend(inner_filters);
+                    }
+                    let filter_builder = if k == AND_FILTER_NAME {
+                        FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::And(
+                            compound_filters,
+                        )))
+                    } else if k == OR_FILTER_NAME {
+                        FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::Or(
+                            compound_filters,
+                        )))
+                    } else {
+                        return Err("Error in creating compound filter".to_string());
+                    };
+                    filters.push(filter_builder);
                 }
-                let filter_builder = if k == AND_FILTER_NAME {
-                    FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::And(
-                        compound_filters,
-                    )))
-                } else if k == OR_FILTER_NAME {
-                    FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::Or(
-                        compound_filters,
-                    )))
-                } else {
-                    return Err("Error in creating compound filter".to_string());
-                };
-                filters.push(filter_builder);
             }
             _ => return Err("Filter re-validation errror op_to_value map".to_string()),
         }
