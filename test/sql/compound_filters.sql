@@ -176,6 +176,7 @@ begin;
         $$)
     );
 
+    -- multiple expressions inside a NOT filter are implicitly ANDed together
     -- NOT filter two expressions
     select jsonb_pretty(
         graphql.resolve($$
@@ -192,6 +193,7 @@ begin;
         $$)
     );
 
+    -- multiple expressions inside a NOT filter are implicitly ANDed together
     -- NOT filter three expressions
     select jsonb_pretty(
         graphql.resolve($$
