@@ -208,7 +208,7 @@ begin;
         $$)
     );
 
-    -- Nested filters
+    -- AND filter nested inside OR
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -232,7 +232,7 @@ begin;
         $$)
     );
 
-    -- Nested filters
+    -- OR filter nested inside AND
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -256,7 +256,7 @@ begin;
         $$)
     );
 
-    -- Nested filters
+    -- NOT filter nested inside OR which is nested inside AND
     select jsonb_pretty(
         graphql.resolve($$
         {
