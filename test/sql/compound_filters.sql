@@ -16,6 +16,8 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
+    savepoint a;
+
     -- AND filter zero expressions
     select jsonb_pretty(
         graphql.resolve($$
@@ -216,11 +218,11 @@ begin;
         {
             accountCollection(
                 filter: {
-                OR: [
-                    { id: { eq: 3 } }
-                    { id: { eq: 5 } }
-                    { AND: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] } # explicit AND
-                ]
+                    OR: [
+                        { id: { eq: 3 } }
+                        { id: { eq: 5 } }
+                        { AND: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] } # explicit AND
+                    ]
                 }
             ) {
                 edges {
@@ -240,11 +242,11 @@ begin;
         {
             accountCollection(
                 filter: {
-                OR: [
-                    { id: { eq: 3 } }
-                    { id: { eq: 5 } }
-                    { id: { eq: 1 }, email: { eq: "aardvark@x.com" } } # implicit AND
-                ]
+                    OR: [
+                        { id: { eq: 3 } }
+                        { id: { eq: 5 } }
+                        { id: { eq: 1 }, email: { eq: "aardvark@x.com" } } # implicit AND
+                    ]
                 }
             ) {
                 edges {
@@ -264,11 +266,11 @@ begin;
         {
             accountCollection(
                 filter: {
-                AND: [
-                    { id: { gt: 0 } }
-                    { id: { lt: 4 } }
-                    { OR: [{email: { eq: "bat@x.com" }}, {email: { eq: "cat@x.com" }}] }
-                ]
+                    AND: [
+                        { id: { gt: 0 } }
+                        { id: { lt: 4 } }
+                        { OR: [{email: { eq: "bat@x.com" }}, {email: { eq: "cat@x.com" }}] }
+                    ]
                 }
             ) {
                 edges {
@@ -288,11 +290,11 @@ begin;
         {
             accountCollection(
                 filter: {
-                AND: [
-                    { id: { gt: 0 } }
-                    { id: { lt: 4 } }
-                    { OR: [{NOT: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
-                ]
+                    AND: [
+                        { id: { gt: 0 } }
+                        { id: { lt: 4 } }
+                        { OR: [{NOT: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
+                    ]
                 }
             ) {
                 edges {
@@ -306,4 +308,46 @@ begin;
         $$)
     );
 
+    -- update by compound filters
+    select graphql.resolve($$
+        mutation {
+            updateAccountCollection(
+                set: {
+                    email: "new@email.com"
+                }
+                filter: {
+                    OR: [
+                        { id: { eq: 3 } }
+                        { id: { eq: 5 } }
+                        { AND: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] }
+                    ]
+                }
+                atMost: 5
+            ) {
+                records { id }
+            }
+        }
+        $$
+    );
+    rollback to savepoint a;
+
+    -- delete by compound filters
+    select graphql.resolve($$
+        mutation {
+            deleteFromAccountCollection(
+                filter: {
+                    OR: [
+                        { id: { eq: 3 } }
+                        { id: { eq: 5 } }
+                        { id: { eq: 1 }, email: { eq: "aardvark@x.com" } }
+                    ]
+                }
+                atMost: 5
+            ) {
+                records { id }
+            }
+        }
+        $$
+    );
+    rollback to savepoint a;
 rollback;
