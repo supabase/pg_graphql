@@ -83,6 +83,51 @@ begin;
  }
 (1 row)
 
+    -- NOT filter
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {OR: [{id: {eq: 3}}, {id: {eq: 5}}]}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 2,                 +
+                         "email": "bat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 4,                 +
+                         "email": "dog@x.com"     +
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
     -- Nested filters
     select jsonb_pretty(
         graphql.resolve($$

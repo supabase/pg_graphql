@@ -46,6 +46,22 @@ begin;
         $$)
     );
 
+    -- NOT filter
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {OR: [{id: {eq: 3}}, {id: {eq: 5}}]}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
     -- Nested filters
     select jsonb_pretty(
         graphql.resolve($$
@@ -80,6 +96,30 @@ begin;
                     { id: { gt: 0 } }
                     { id: { lt: 4 } }
                     { OR: [{email: { eq: "bat@x.com" }}, {email: { eq: "cat@x.com" }}] }
+                ]
+                }
+            ) {
+                edges {
+                node {
+                    id
+                    email
+                }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- Nested filters
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(
+                filter: {
+                AND: [
+                    { id: { gt: 0 } }
+                    { id: { lt: 4 } }
+                    { OR: [{NOT: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
                 ]
                 }
             ) {

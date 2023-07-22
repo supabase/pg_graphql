@@ -857,7 +857,8 @@ where
 
     let mut filters = vec![];
 
-    create_filters(&validated, &filter_field_map, &mut filters)?;
+    let inner_filters = create_filters(&validated, &filter_field_map)?;
+    filters.extend(inner_filters);
 
     Ok(FilterBuilder { elems: filters })
 }
@@ -865,11 +866,11 @@ where
 fn create_filters(
     validated: &gson::Value,
     filter_field_map: &HashMap<String, __InputValue>,
-    filters: &mut Vec<FilterBuilderElem>,
-) -> Result<(), String> {
+) -> Result<Vec<FilterBuilderElem>, String> {
+    let mut filters = vec![];
     // validated user input kv map
     let kv_map = match validated {
-        gson::Value::Absent | gson::Value::Null => return Ok(()),
+        gson::Value::Absent | gson::Value::Null => return Ok(filters),
         gson::Value::Object(kv) => kv,
         _ => return Err("Filter re-validation errror".to_string()),
     };
@@ -880,6 +881,22 @@ fn create_filters(
             Some(filter_iv) => filter_iv,
             None => return Err("Filter re-validation error in filter_iv".to_string()),
         };
+
+        if k == NOT_FILTER_NAME {
+            if let gson::Value::Object(_) = op_to_v {
+                let inner_filters = create_filters(op_to_v, filter_field_map)?;
+                let inner_filter = FilterBuilderElem::Composition(Box::new(
+                    FilterBuilderComposition::And(inner_filters),
+                ));
+                let filter = FilterBuilderElem::Composition(Box::new(
+                    FilterBuilderComposition::Not(inner_filter),
+                ));
+                filters.push(filter);
+            } else {
+                return Err("Invalid NOT filter".to_string());
+            }
+            continue;
+        }
 
         match op_to_v {
             gson::Value::Absent | gson::Value::Null => continue,
@@ -903,7 +920,8 @@ fn create_filters(
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
                 let mut compound_filters = Vec::with_capacity(values.len());
                 for value in values {
-                    create_filters(value, filter_field_map, &mut compound_filters)?;
+                    let inner_filters = create_filters(value, filter_field_map)?;
+                    compound_filters.extend(inner_filters);
                 }
                 let filter_builder = if k == AND_FILTER_NAME {
                     FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::And(
@@ -921,7 +939,7 @@ fn create_filters(
             _ => return Err("Filter re-validation errror op_to_value map".to_string()),
         }
     }
-    Ok(())
+    Ok(filters)
 }
 
 fn create_filter_builder_elem(
