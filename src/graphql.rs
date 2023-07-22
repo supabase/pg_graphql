@@ -3093,7 +3093,7 @@ impl ___Type for DeleteResponseType {
 use std::str::FromStr;
 use std::string::ToString;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum FilterOp {
     Equal,
     NotEqual,

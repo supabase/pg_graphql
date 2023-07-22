@@ -895,26 +895,9 @@ fn create_filters(
                         _ => (),
                     }
 
-                    match &filter_iv.sql_type {
-                        Some(NodeSQLType::Column(col)) => {
-                            let filter_builder = FilterBuilderElem::Column {
-                                column: Arc::clone(col),
-                                op: filter_op,
-                                value: gson::gson_to_json(filter_val)?,
-                            };
-                            filters.push(filter_builder);
-                        }
-                        Some(NodeSQLType::NodeId(_)) => {
-                            let filter_builder =
-                                FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?);
-                            filters.push(filter_builder);
-                        }
-                        _ => {
-                            return Err(
-                                "Filter type error, attempted filter on non-column".to_string()
-                            )
-                        }
-                    }
+                    let filter_builder =
+                        create_filter_builder_elem(filter_iv, filter_op, filter_val)?;
+                    filters.push(filter_builder);
                 }
             }
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
@@ -939,6 +922,24 @@ fn create_filters(
         }
     }
     Ok(())
+}
+
+fn create_filter_builder_elem(
+    filter_iv: &__InputValue,
+    filter_op: FilterOp,
+    filter_val: &gson::Value,
+) -> Result<FilterBuilderElem, String> {
+    Ok(match &filter_iv.sql_type {
+        Some(NodeSQLType::Column(col)) => FilterBuilderElem::Column {
+            column: Arc::clone(col),
+            op: filter_op,
+            value: gson::gson_to_json(filter_val)?,
+        },
+        Some(NodeSQLType::NodeId(_)) => {
+            FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?)
+        }
+        _ => return Err("Filter type error, attempted filter on non-column".to_string()),
+    })
 }
 
 /// Reads the "orderBy" argument. Auto-appends the primary key
