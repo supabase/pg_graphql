@@ -888,13 +888,15 @@ fn create_filters(
                 if k == NOT_FILTER_NAME {
                     if let gson::Value::Object(_) = op_to_v {
                         let inner_filters = create_filters(op_to_v, filter_field_map)?;
-                        let inner_filter = FilterBuilderElem::Composition(Box::new(
-                            FilterBuilderComposition::And(inner_filters),
-                        ));
-                        let filter = FilterBuilderElem::Composition(Box::new(
-                            FilterBuilderComposition::Not(inner_filter),
-                        ));
-                        filters.push(filter);
+                        if !inner_filters.is_empty() {
+                            let inner_filter = FilterBuilderElem::Composition(Box::new(
+                                FilterBuilderComposition::And(inner_filters),
+                            ));
+                            let filter = FilterBuilderElem::Composition(Box::new(
+                                FilterBuilderComposition::Not(inner_filter),
+                            ));
+                            filters.push(filter);
+                        }
                     } else {
                         return Err("Invalid NOT filter".to_string());
                     }

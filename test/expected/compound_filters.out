@@ -248,6 +248,63 @@ begin;
  }
 (1 row)
 
+    -- empty NOT filter
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 2,                 +
+                         "email": "bat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 3,                 +
+                         "email": "cat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 4,                 +
+                         "email": "dog@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 5,                 +
+                         "email": "elephant@x.com"+
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
     -- Nested filters
     select jsonb_pretty(
         graphql.resolve($$

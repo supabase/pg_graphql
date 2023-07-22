@@ -94,6 +94,22 @@ begin;
         $$)
     );
 
+    -- empty NOT filter
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {NOT: {}}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
     -- Nested filters
     select jsonb_pretty(
         graphql.resolve($$
