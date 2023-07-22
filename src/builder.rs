@@ -855,10 +855,7 @@ where
 
     let filter_field_map = input_field_map(&__Type::FilterEntity(filter_type));
 
-    let mut filters = vec![];
-
-    let inner_filters = create_filters(&validated, &filter_field_map)?;
-    filters.extend(inner_filters);
+    let filters = create_filters(&validated, &filter_field_map)?;
 
     Ok(FilterBuilder { elems: filters })
 }
