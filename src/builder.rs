@@ -908,9 +908,8 @@ fn create_filters(
                     // Skip absent
                     // Technically nulls should be treated as literals. It will always filter out all rows
                     // val <op> null is never true
-                    match filter_val {
-                        gson::Value::Absent => continue,
-                        _ => (),
+                    if filter_val == &gson::Value::Absent {
+                        continue;
                     }
 
                     let filter_builder =
