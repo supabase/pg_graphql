@@ -1157,7 +1157,7 @@ impl NodeBuilder {
             .map(|chunks| format!("jsonb_build_object({})", chunks.join(", ")))
             .collect();
 
-        Ok(format!("{}", frags.join(" || ")))
+        Ok(frags.join(" || ").to_string())
     }
 
     pub fn to_relation_sql(

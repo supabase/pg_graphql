@@ -2055,7 +2055,7 @@ impl __Schema {
 
                     for arg in args {
                         let builder = self.to_input_value_builder(
-                            &arg,
+                            arg,
                             selection_field,
                             fragment_definitions,
                             variables,

@@ -48,7 +48,7 @@ fn to_base_type_name(
 }
 
 fn lowercase_first_letter(token: &str) -> String {
-    let first_char = token.chars().nth(0);
+    let first_char = token.chars().next();
     match first_char {
         Some(c) => format!("{}{}", c.to_lowercase(), &token[c.len_utf8()..]),
         None => token.to_string(),
