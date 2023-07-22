@@ -1147,7 +1147,17 @@ impl NodeBuilder {
             .iter()
             .map(|x| x.to_sql(block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(format!("jsonb_build_object({})", frags.join(", ")))
+
+        const MAX_ARGS_IN_JSONB_BUILD_OBJECT: usize = 100; //jsonb_build_object has a limit of 100 arguments
+        const ARGS_PER_FRAG: usize = 2; // each x.to_sql(...) function above return a pair of args
+        const CHUNK_SIZE: usize = MAX_ARGS_IN_JSONB_BUILD_OBJECT / ARGS_PER_FRAG;
+
+        let frags: Vec<String> = frags
+            .chunks(CHUNK_SIZE)
+            .map(|chunks| format!("jsonb_build_object({})", chunks.join(", ")))
+            .collect();
+
+        Ok(format!("{}", frags.join(" || ")))
     }
 
     pub fn to_relation_sql(
@@ -1486,6 +1496,38 @@ impl Serialize for __TypeBuilder {
     }
 }
 
+impl Serialize for __DirectiveBuilder {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.selections.len()))?;
+        for selection in &self.selections {
+            match &selection.selection {
+                __DirectiveField::Name => {
+                    map.serialize_entry(&selection.alias, &self.directive.name())?;
+                }
+                __DirectiveField::Description => {
+                    map.serialize_entry(&selection.alias, &self.directive.description())?;
+                }
+                __DirectiveField::Locations => {
+                    map.serialize_entry(&selection.alias, &self.directive.locations())?;
+                }
+                __DirectiveField::Args(args) => {
+                    map.serialize_entry(&selection.alias, args)?;
+                }
+                __DirectiveField::IsRepeatable => {
+                    map.serialize_entry(&selection.alias, &self.directive.is_repeatable())?;
+                }
+                __DirectiveField::Typename { alias, typename } => {
+                    map.serialize_entry(&alias, typename)?;
+                }
+            }
+        }
+        map.end()
+    }
+}
+
 impl Serialize for __SchemaBuilder {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1507,9 +1549,8 @@ impl Serialize for __SchemaBuilder {
                 __SchemaField::SubscriptionType(type_builder) => {
                     map.serialize_entry(&selection.alias, &type_builder)?;
                 }
-                __SchemaField::Directives => {
-                    let x: Vec<bool> = vec![];
-                    map.serialize_entry(&selection.alias, &x)?;
+                __SchemaField::Directives(directives) => {
+                    map.serialize_entry(&selection.alias, directives)?;
                 }
                 __SchemaField::Typename { alias, typename } => {
                     map.serialize_entry(&alias, typename)?;

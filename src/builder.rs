@@ -1555,6 +1555,28 @@ pub struct __TypeBuilder {
     pub selections: Vec<__TypeSelection>,
 }
 
+#[derive(Clone, Debug)]
+pub enum __DirectiveField {
+    Name,
+    Description,
+    Locations,
+    Args(Vec<__InputValueBuilder>),
+    IsRepeatable,
+    Typename { alias: String, typename: String },
+}
+
+#[derive(Clone, Debug)]
+pub struct __DirectiveSelection {
+    pub alias: String,
+    pub selection: __DirectiveField,
+}
+
+#[derive(Clone, Debug)]
+pub struct __DirectiveBuilder {
+    pub directive: __Directive,
+    pub selections: Vec<__DirectiveSelection>,
+}
+
 #[derive(Serialize, Clone, Debug)]
 #[allow(dead_code)]
 #[serde(untagged)]
@@ -1563,7 +1585,7 @@ pub enum __SchemaField {
     QueryType(__TypeBuilder),
     MutationType(Option<__TypeBuilder>),
     SubscriptionType(Option<__TypeBuilder>),
-    Directives,
+    Directives(Vec<__DirectiveBuilder>),
     Typename { alias: String, typename: String },
 }
 
@@ -2001,6 +2023,73 @@ impl __Schema {
         })
     }
 
+    pub fn to_directive_builder<'a, T>(
+        &self,
+        directive: &__Directive,
+        query_field: &graphql_parser::query::Field<'a, T>,
+        fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+        variables: &serde_json::Value,
+    ) -> Result<__DirectiveBuilder, String>
+    where
+        T: Text<'a> + Eq + AsRef<str>,
+    {
+        let selection_fields = normalize_selection_set(
+            &query_field.selection_set,
+            fragment_definitions,
+            &__Directive::TYPE.to_string(),
+            variables,
+        )?;
+
+        let mut builder_fields = vec![];
+
+        for selection_field in selection_fields {
+            let field_name = selection_field.name.as_ref();
+
+            let directive_field = match field_name {
+                "name" => __DirectiveField::Name,
+                "description" => __DirectiveField::Description,
+                "locations" => __DirectiveField::Locations,
+                "args" => {
+                    let mut builders: Vec<__InputValueBuilder> = vec![];
+                    let args = directive.args();
+
+                    for arg in args {
+                        let builder = self.to_input_value_builder(
+                            &arg,
+                            selection_field,
+                            fragment_definitions,
+                            variables,
+                        )?;
+                        builders.push(builder)
+                    }
+                    __DirectiveField::Args(builders)
+                }
+                "isRepeatable" => __DirectiveField::IsRepeatable,
+                "__typename" => __DirectiveField::Typename {
+                    alias: alias_or_name(selection_field),
+                    typename: __Directive::TYPE.to_string(),
+                },
+                _ => {
+                    return Err(format!(
+                        "unknown field {} in {}",
+                        field_name,
+                        __Directive::TYPE,
+                    ))
+                }
+            };
+
+            builder_fields.push(__DirectiveSelection {
+                alias: alias_or_name(selection_field),
+                selection: directive_field,
+            });
+        }
+
+        Ok(__DirectiveBuilder {
+            directive: directive.clone(),
+            selections: builder_fields,
+        })
+    }
+
     pub fn to_schema_builder<'a, T>(
         &self,
         field: &__Field,
@@ -2079,7 +2168,21 @@ impl __Schema {
                                     __SchemaField::MutationType(builder)
                                 }
                                 "subscriptionType" => __SchemaField::SubscriptionType(None),
-                                "directives" => __SchemaField::Directives,
+                                "directives" => {
+                                    let builders = self
+                                        .directives()
+                                        .iter()
+                                        .map(|directive| {
+                                            self.to_directive_builder(
+                                                directive,
+                                                selection_field,
+                                                fragment_definitions,
+                                                variables,
+                                            )
+                                        })
+                                        .collect::<Result<Vec<_>, _>>()?;
+                                    __SchemaField::Directives(builders)
+                                }
                                 "__typename" => __SchemaField::Typename {
                                     alias: alias_or_name(selection_field),
                                     typename: field.name(),

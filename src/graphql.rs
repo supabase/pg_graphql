@@ -48,7 +48,25 @@ fn to_base_type_name(
 }
 
 fn lowercase_first_letter(token: &str) -> String {
-    token[0..1].to_lowercase() + &token[1..]
+    let first_char = token.chars().nth(0);
+    match first_char {
+        Some(c) => format!("{}{}", c.to_lowercase(), &token[c.len_utf8()..]),
+        None => token.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_lowercase_first_letter() {
+        fn run_test(token: &str, expected: &str) {
+            let actual = super::lowercase_first_letter(token);
+            assert_eq!(expected, actual);
+        }
+
+        run_test("Hello", "hello");
+        run_test("用户", "用户");
+    }
 }
 
 impl __Schema {
@@ -239,9 +257,68 @@ pub trait ___Type {
     }
 }
 
-pub struct __Directive {}
+#[derive(Clone, Debug)]
+pub struct __Directive {
+    pub name: String,
+    pub description: Option<String>,
+    pub locations: Vec<__DirectiveLocation>,
+    pub args: Vec<__InputValue>,
+    pub is_repeatable: bool,
+}
 
-pub struct __DirectiveLocation {}
+impl __Directive {
+    pub const TYPE: &'static str = "__Directive";
+
+    // name: String!
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    // description: String
+    pub fn description(&self) -> Option<&String> {
+        self.description.as_ref()
+    }
+
+    // locations: [__DirectiveLocation!]!
+    pub fn locations(&self) -> &[__DirectiveLocation] {
+        &self.locations
+    }
+
+    // args: [__InputValue!]!
+    pub fn args(&self) -> &[__InputValue] {
+        &self.args
+    }
+
+    // isRepeatable: Boolean!
+    pub fn is_repeatable(&self) -> bool {
+        self.is_repeatable
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[allow(dead_code)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum __DirectiveLocation {
+    Query,
+    Mutation,
+    Subscription,
+    Field,
+    FragmentDefinition,
+    FragmentSpread,
+    InlineFragment,
+    VariableDefinition,
+    Schema,
+    Scalar,
+    Object,
+    FieldDefinition,
+    ArgumentDefinition,
+    Interface,
+    Union,
+    Enum,
+    EnumValue,
+    InputObject,
+    InputFieldDefinition,
+}
 
 pub trait ___Field {
     // name: String!
@@ -3716,6 +3793,51 @@ impl __Schema {
     // directives: [__Directive!]!
     #[allow(dead_code)]
     pub fn directives(&self) -> Vec<__Directive> {
-        vec![]
+        vec![
+            __Directive {
+                name: "include".to_string(),
+                description: Some(
+                    "This field or fragment will be included only when the `if` argument is true."
+                        .to_string(),
+                ),
+                locations: vec![
+                    __DirectiveLocation::Field,
+                    __DirectiveLocation::FragmentSpread,
+                    __DirectiveLocation::InlineFragment,
+                ],
+                args: vec![__InputValue {
+                    name_: "if".to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::Scalar(Scalar::Boolean)),
+                    }),
+                    description: Some("Included when true".to_string()),
+                    default_value: None,
+                    sql_type: None,
+                }],
+                is_repeatable: false,
+            },
+            __Directive {
+                name: "skip".to_string(),
+                description: Some(
+                    "This field or fragment will be skipped when the `if` argument is true."
+                        .to_string(),
+                ),
+                locations: vec![
+                    __DirectiveLocation::Field,
+                    __DirectiveLocation::FragmentSpread,
+                    __DirectiveLocation::InlineFragment,
+                ],
+                args: vec![__InputValue {
+                    name_: "if".to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::Scalar(Scalar::Boolean)),
+                    }),
+                    description: Some("Skipped when true".to_string()),
+                    default_value: None,
+                    sql_type: None,
+                }],
+                is_repeatable: false,
+            },
+        ]
     }
 }
