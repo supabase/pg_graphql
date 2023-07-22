@@ -882,25 +882,24 @@ fn create_filters(
             None => return Err("Filter re-validation error in filter_iv".to_string()),
         };
 
-        if k == NOT_FILTER_NAME {
-            if let gson::Value::Object(_) = op_to_v {
-                let inner_filters = create_filters(op_to_v, filter_field_map)?;
-                let inner_filter = FilterBuilderElem::Composition(Box::new(
-                    FilterBuilderComposition::And(inner_filters),
-                ));
-                let filter = FilterBuilderElem::Composition(Box::new(
-                    FilterBuilderComposition::Not(inner_filter),
-                ));
-                filters.push(filter);
-            } else {
-                return Err("Invalid NOT filter".to_string());
-            }
-            continue;
-        }
-
         match op_to_v {
             gson::Value::Absent | gson::Value::Null => continue,
             gson::Value::Object(filter_op_to_value_map) => {
+                if k == NOT_FILTER_NAME {
+                    if let gson::Value::Object(_) = op_to_v {
+                        let inner_filters = create_filters(op_to_v, filter_field_map)?;
+                        let inner_filter = FilterBuilderElem::Composition(Box::new(
+                            FilterBuilderComposition::And(inner_filters),
+                        ));
+                        let filter = FilterBuilderElem::Composition(Box::new(
+                            FilterBuilderComposition::Not(inner_filter),
+                        ));
+                        filters.push(filter);
+                    } else {
+                        return Err("Invalid NOT filter".to_string());
+                    }
+                    continue;
+                }
                 for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
                     let filter_op = FilterOp::from_str(filter_op_str)?;
 
