@@ -30,11 +30,43 @@ begin;
         $$)
     );
 
+    -- empty AND filter
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {AND: []}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
     -- OR filter
     select jsonb_pretty(
         graphql.resolve($$
         {
             accountCollection(filter: {OR: [{id: {eq: 3}}, {id: {eq: 5}}]}) {
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- empty OR filter
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {OR: []}) {
                 edges {
                     node {
                         id
