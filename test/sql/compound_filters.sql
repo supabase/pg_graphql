@@ -210,7 +210,7 @@ begin;
         $$)
     );
 
-    -- AND filter nested inside OR
+    -- AND filter (explicit) nested inside OR
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -219,7 +219,31 @@ begin;
                 OR: [
                     { id: { eq: 3 } }
                     { id: { eq: 5 } }
-                    { AND: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] }
+                    { AND: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] } # explicit AND
+                ]
+                }
+            ) {
+                edges {
+                node {
+                    id
+                    email
+                }
+                }
+            }
+        }
+        $$)
+    );
+
+    -- AND filter (implicit) nested inside OR
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(
+                filter: {
+                OR: [
+                    { id: { eq: 3 } }
+                    { id: { eq: 5 } }
+                    { id: { eq: 1 }, email: { eq: "aardvark@x.com" } } # implicit AND
                 ]
                 }
             ) {
