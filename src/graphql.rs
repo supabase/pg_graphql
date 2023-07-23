@@ -3500,9 +3500,11 @@ impl ___Type for FilterEntityType {
             f.push(__InputValue {
                 name_: AND_FILTER_NAME.to_string(),
                 type_: __Type::List(ListType {
-                    type_: Box::new(__Type::FilterEntity(FilterEntityType {
-                        table: Arc::clone(&self.table),
-                        schema: self.schema.clone(),
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::FilterEntity(FilterEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        })),
                     })),
                 }),
                 description: Some(
@@ -3517,9 +3519,11 @@ impl ___Type for FilterEntityType {
             f.push(__InputValue {
                 name_: OR_FILTER_NAME.to_string(),
                 type_: __Type::List(ListType {
-                    type_: Box::new(__Type::FilterEntity(FilterEntityType {
-                        table: Arc::clone(&self.table),
-                        schema: self.schema.clone(),
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new( __Type::FilterEntity(FilterEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        }))
                     })),
                 }),
                 description: Some(
