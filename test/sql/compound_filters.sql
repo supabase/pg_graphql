@@ -399,7 +399,7 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- columns named AND
+    -- column named AND
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -440,13 +440,13 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- columns named OR
+    -- column named OR
     select jsonb_pretty(
         graphql.resolve($$
         {
             clashesCollection(
                 filter: {
-                    AND: [{id: { eq: 1 }}, { OR: { eq: "aardvark@x.com" }}]
+                    AND: [ {NOT: {id: { eq: 2 }}}, { OR: { neq: "aardvark@x.com" }}]
                 }
             ) {
                 edges {
@@ -477,7 +477,7 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- columns named NOT
+    -- column named NOT
     select jsonb_pretty(
         graphql.resolve($$
         {
