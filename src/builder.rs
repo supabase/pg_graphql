@@ -881,15 +881,17 @@ fn create_filters(
         match op_to_v {
             gson::Value::Absent | gson::Value::Null => continue,
             gson::Value::Object(filter_op_to_value_map) => {
-                // key `NOT` can either be a filter or a column. We can find out which it is by
+                // key `NOT` can either be a compound filter or a column. We can find out which it is by
                 // checking its type. If it is a NOT filter then its type will be __Type::FilterEntity(_)
                 // else its type will be __Type::FilterType(_). Refer to the the method
-                // crate::graphql::FilterEntityType::input_fields() method to see these types.
+                // crate::graphql::FilterEntityType::input_fields() method for details.
                 let is_a_not_filter_type = matches!(filter_iv.type_(), __Type::FilterEntity(_));
                 if k == NOT_FILTER_NAME && is_a_not_filter_type {
                     if let gson::Value::Object(_) = op_to_v {
                         let inner_filters = create_filters(op_to_v, filter_field_map)?;
+                        // If there are no inner filters we avoid creating an argumentless NOT expression. i.e. avoid `NOT()`
                         if !inner_filters.is_empty() {
+                            // Multiple inner filters are implicitly ANDed together
                             let inner_filter = FilterBuilderElem::Compound(Box::new(
                                 CompoundFilterBuilder::And(inner_filters),
                             ));
@@ -919,17 +921,22 @@ fn create_filters(
                 }
             }
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
+                // If there are no inner filters we avoid creating an argumentless AND/OR expression
+                // which would have been anyways compiled away during transpilation
                 if !values.is_empty() {
                     let mut compound_filters = Vec::with_capacity(values.len());
                     for value in values {
                         let inner_filters = create_filters(value, filter_field_map)?;
+                        // Avoid argumentless AND
                         if !inner_filters.is_empty() {
+                            // Multiple inner filters are implicitly ANDed together
                             let inner_filter = FilterBuilderElem::Compound(Box::new(
                                 CompoundFilterBuilder::And(inner_filters),
                             ));
                             compound_filters.push(inner_filter);
                         }
                     }
+
                     let filter_builder = if k == AND_FILTER_NAME {
                         FilterBuilderElem::Compound(Box::new(CompoundFilterBuilder::And(
                             compound_filters,
@@ -939,8 +946,12 @@ fn create_filters(
                             compound_filters,
                         )))
                     } else {
-                        return Err("Error in creating compound filter".to_string());
+                        return Err(
+                            "Only `AND` and `OR` filters are allowed to take an array as input."
+                                .to_string(),
+                        );
                     };
+
                     filters.push(filter_builder);
                 }
             }
