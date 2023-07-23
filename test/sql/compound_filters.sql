@@ -462,4 +462,44 @@ begin;
     );
     rollback to savepoint a;
 
+    comment on schema public is e'@graphql({"inflect_names": false})';
+    create table clashes(
+        id serial primary key,
+        email varchar(255) not null,
+        "NOT" plan not null
+    );
+
+    insert into public.clashes(email, "NOT")
+    values
+        ('aardvark@x.com', 'free'),
+        ('bat@x.com', 'pro'),
+        ('cat@x.com', 'enterprise'),
+        ('dog@x.com', 'free'),
+        ('elephant@x.com', 'pro');
+
+    -- columns named NOT
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            clashesCollection(
+                filter: {
+                    OR: [
+                        {id: {eq: 1}}
+                        {NOT: {eq: "pro"}, AND: [{email: {eq: "bat@x.com"}}]}
+                    ]
+                }
+            ) {
+                edges {
+                    node {
+                        id
+                        email
+                        NOT
+                    }
+                }
+            }
+        }
+        $$)
+    );
+    rollback to savepoint a;
+
 rollback;
