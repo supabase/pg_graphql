@@ -688,8 +688,8 @@ impl FilterBuilderElem {
                 Ok(frag)
             }
             Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),
-            FilterBuilderElem::Compound(composition) => {
-                composition.to_sql(block_name, table, param_context)
+            FilterBuilderElem::Compound(compound_builder) => {
+                compound_builder.to_sql(block_name, table, param_context)
             }
         }
     }
