@@ -847,13 +847,12 @@ where
 {
     let validated: gson::Value = read_argument("filter", field, query_field, variables)?;
 
-    let filter_type: FilterEntityType =
-        match field.get_arg("filter").unwrap().type_().unmodified_type() {
-            __Type::FilterEntity(filter_entity) => filter_entity,
-            _ => return Err("Could not locate Filter Entity type".to_string()),
-        };
+    let filter_type = field.get_arg("filter").unwrap().type_().unmodified_type();
+    if !matches!(filter_type, __Type::FilterEntity(_)) {
+        return Err("Could not locate Filter Entity type".to_string());
+    }
 
-    let filter_field_map = input_field_map(&__Type::FilterEntity(filter_type));
+    let filter_field_map = input_field_map(&filter_type);
 
     let filters = create_filters(&validated, &filter_field_map)?;
 
