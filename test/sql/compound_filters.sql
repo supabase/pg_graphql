@@ -382,4 +382,46 @@ begin;
         }
         $$)
     );
+    rollback to savepoint a;
+
+    comment on schema public is e'@graphql({"inflect_names": false})';
+    create table clashes(
+        "AND" serial primary key,
+        email varchar(255) not null,
+        plan plan not null
+    );
+
+    insert into public.clashes(email, plan)
+    values
+        ('aardvark@x.com', 'free'),
+        ('bat@x.com', 'pro'),
+        ('cat@x.com', 'enterprise'),
+        ('dog@x.com', 'free'),
+        ('elephant@x.com', 'pro');
+
+    -- columns named AND, OR and NOT
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            clashesCollection(
+                filter: {
+                    OR: [
+                        { AND: { eq: 3 } }
+                        { AND: { eq: 5 } }
+                        { AND: { eq: 2 }, NOT: { email: { eq: "aardvark@x.com" }} }
+                    ]
+                }
+            ) {
+                edges {
+                    node {
+                        AND
+                        email
+                        plan
+                    }
+                }
+            }
+        }
+        $$)
+    );
+
 rollback;

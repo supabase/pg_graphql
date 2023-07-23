@@ -928,7 +928,12 @@ fn create_filters(
                     let mut compound_filters = Vec::with_capacity(values.len());
                     for value in values {
                         let inner_filters = create_filters(value, filter_field_map)?;
-                        compound_filters.extend(inner_filters);
+                        if !inner_filters.is_empty() {
+                            let inner_filter = FilterBuilderElem::Composition(Box::new(
+                                FilterBuilderComposition::And(inner_filters),
+                            ));
+                            compound_filters.push(inner_filter);
+                        }
                     }
                     let filter_builder = if k == AND_FILTER_NAME {
                         FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::And(
