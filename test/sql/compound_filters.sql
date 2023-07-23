@@ -399,7 +399,7 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- columns named AND, OR and NOT
+    -- columns named AND
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -423,5 +423,6 @@ begin;
         }
         $$)
     );
+    rollback to savepoint a;
 
 rollback;

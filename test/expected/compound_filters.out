@@ -854,4 +854,76 @@ begin;
  }
 (1 row)
 
+    rollback to savepoint a;
+    comment on schema public is e'@graphql({"inflect_names": false})';
+    create table clashes(
+        "AND" serial primary key,
+        email varchar(255) not null,
+        plan plan not null
+    );
+    insert into public.clashes(email, plan)
+    values
+        ('aardvark@x.com', 'free'),
+        ('bat@x.com', 'pro'),
+        ('cat@x.com', 'enterprise'),
+        ('dog@x.com', 'free'),
+        ('elephant@x.com', 'pro');
+    -- columns named AND
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            clashesCollection(
+                filter: {
+                    OR: [
+                        { AND: { eq: 3 } }
+                        { AND: { eq: 5 } }
+                        { AND: { eq: 2 }, NOT: { email: { eq: "aardvark@x.com" }} }
+                    ]
+                }
+            ) {
+                edges {
+                    node {
+                        AND
+                        email
+                        plan
+                    }
+                }
+            }
+        }
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "clashesCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "AND": 2,                +
+                         "plan": "pro",           +
+                         "email": "bat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "AND": 3,                +
+                         "plan": "enterprise",    +
+                         "email": "cat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "AND": 5,                +
+                         "plan": "pro",           +
+                         "email": "elephant@x.com"+
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    rollback to savepoint a;
 rollback;
