@@ -425,4 +425,41 @@ begin;
     );
     rollback to savepoint a;
 
+    comment on schema public is e'@graphql({"inflect_names": false})';
+    create table clashes(
+        id serial primary key,
+        "OR" varchar(255) not null,
+        plan plan not null
+    );
+
+    insert into public.clashes("OR", plan)
+    values
+        ('aardvark@x.com', 'free'),
+        ('bat@x.com', 'pro'),
+        ('cat@x.com', 'enterprise'),
+        ('dog@x.com', 'free'),
+        ('elephant@x.com', 'pro');
+
+    -- columns named OR
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            clashesCollection(
+                filter: {
+                    AND: [{id: { eq: 1 }}, { OR: { eq: "aardvark@x.com" }}]
+                }
+            ) {
+                edges {
+                    node {
+                        id
+                        OR
+                        plan
+                    }
+                }
+            }
+        }
+        $$)
+    );
+    rollback to savepoint a;
+
 rollback;
