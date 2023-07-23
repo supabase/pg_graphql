@@ -688,14 +688,14 @@ impl FilterBuilderElem {
                 Ok(frag)
             }
             Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),
-            FilterBuilderElem::Composition(composition) => {
+            FilterBuilderElem::Compound(composition) => {
                 composition.to_sql(block_name, table, param_context)
             }
         }
     }
 }
 
-impl FilterBuilderComposition {
+impl CompoundFilterBuilder {
     fn to_sql(
         &self,
         block_name: &str,
@@ -703,21 +703,21 @@ impl FilterBuilderComposition {
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         Ok(match self {
-            FilterBuilderComposition::And(elements) => {
+            CompoundFilterBuilder::And(elements) => {
                 let bool_expressions = elements
                     .iter()
                     .map(|e| e.to_sql(block_name, table, param_context))
                     .collect::<Result<Vec<_>, _>>()?;
                 format!("({})", bool_expressions.join(" and "))
             }
-            FilterBuilderComposition::Or(elements) => {
+            CompoundFilterBuilder::Or(elements) => {
                 let bool_expressions = elements
                     .iter()
                     .map(|e| e.to_sql(block_name, table, param_context))
                     .collect::<Result<Vec<_>, _>>()?;
                 format!("({})", bool_expressions.join(" or "))
             }
-            FilterBuilderComposition::Not(elem) => {
+            CompoundFilterBuilder::Not(elem) => {
                 format!("not({})", elem.to_sql(block_name, table, param_context)?)
             }
         })

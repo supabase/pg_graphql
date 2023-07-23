@@ -574,7 +574,7 @@ pub struct ConnectionBuilder {
 }
 
 #[derive(Clone, Debug)]
-pub enum FilterBuilderComposition {
+pub enum CompoundFilterBuilder {
     And(Vec<FilterBuilderElem>),
     Or(Vec<FilterBuilderElem>),
     Not(FilterBuilderElem),
@@ -588,7 +588,7 @@ pub enum FilterBuilderElem {
         value: serde_json::Value, //String, // string repr castable by postgres
     },
     NodeId(NodeIdInstance),
-    Composition(Box<FilterBuilderComposition>),
+    Compound(Box<CompoundFilterBuilder>),
 }
 
 #[derive(Clone, Debug)]
@@ -891,11 +891,11 @@ fn create_filters(
                     if let gson::Value::Object(_) = op_to_v {
                         let inner_filters = create_filters(op_to_v, filter_field_map)?;
                         if !inner_filters.is_empty() {
-                            let inner_filter = FilterBuilderElem::Composition(Box::new(
-                                FilterBuilderComposition::And(inner_filters),
+                            let inner_filter = FilterBuilderElem::Compound(Box::new(
+                                CompoundFilterBuilder::And(inner_filters),
                             ));
-                            let filter = FilterBuilderElem::Composition(Box::new(
-                                FilterBuilderComposition::Not(inner_filter),
+                            let filter = FilterBuilderElem::Compound(Box::new(
+                                CompoundFilterBuilder::Not(inner_filter),
                             ));
                             filters.push(filter);
                         }
@@ -925,18 +925,18 @@ fn create_filters(
                     for value in values {
                         let inner_filters = create_filters(value, filter_field_map)?;
                         if !inner_filters.is_empty() {
-                            let inner_filter = FilterBuilderElem::Composition(Box::new(
-                                FilterBuilderComposition::And(inner_filters),
+                            let inner_filter = FilterBuilderElem::Compound(Box::new(
+                                CompoundFilterBuilder::And(inner_filters),
                             ));
                             compound_filters.push(inner_filter);
                         }
                     }
                     let filter_builder = if k == AND_FILTER_NAME {
-                        FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::And(
+                        FilterBuilderElem::Compound(Box::new(CompoundFilterBuilder::And(
                             compound_filters,
                         )))
                     } else if k == OR_FILTER_NAME {
-                        FilterBuilderElem::Composition(Box::new(FilterBuilderComposition::Or(
+                        FilterBuilderElem::Compound(Box::new(CompoundFilterBuilder::Or(
                             compound_filters,
                         )))
                     } else {
