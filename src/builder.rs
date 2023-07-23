@@ -904,7 +904,7 @@ fn create_filters(
                         return Err("Invalid NOT filter".to_string());
                     }
                 } else {
-                    for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
+                    for (filter_op_str, filter_val) in filter_op_to_value_map {
                         let filter_op = FilterOp::from_str(filter_op_str)?;
 
                         // Skip absent
