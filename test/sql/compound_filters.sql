@@ -139,6 +139,7 @@ begin;
                     node {
                         id
                         email
+                        plan
                     }
                 }
             }
@@ -205,6 +206,7 @@ begin;
                     node {
                         id
                         email
+                        plan
                     }
                 }
             }
@@ -324,7 +326,7 @@ begin;
                 }
                 atMost: 5
             ) {
-                records { id }
+                records { id, email }
             }
         }
         $$
@@ -351,6 +353,7 @@ begin;
     );
     rollback to savepoint a;
 
+    -- columns named AND, OR and NOT, all compound filters will be disabled
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         "AND" serial primary key,
@@ -366,7 +369,6 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- columns named AND, OR and NOT
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -384,6 +386,7 @@ begin;
     );
     rollback to savepoint a;
 
+    -- column named `AND`. AND compound filter will be disabled, others should work
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         "AND" serial primary key,
@@ -399,7 +402,6 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- column named AND
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -425,6 +427,7 @@ begin;
     );
     rollback to savepoint a;
 
+    -- column named `OR`. OR compound filter will be disabled, others should work
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         id serial primary key,
@@ -440,7 +443,6 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- column named OR
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -462,6 +464,7 @@ begin;
     );
     rollback to savepoint a;
 
+    -- column named `NOT`. NOT compound filter will be disabled, others should work
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         id serial primary key,
@@ -477,7 +480,6 @@ begin;
         ('dog@x.com', 'free'),
         ('elephant@x.com', 'pro');
 
-    -- column named NOT
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -485,7 +487,7 @@ begin;
                 filter: {
                     OR: [
                         {id: {eq: 1}}
-                        {NOT: {eq: "pro"}, AND: [{email: {eq: "bat@x.com"}}]}
+                        {NOT: {eq: "pro"}, AND: [{id: {eq: 2}}, {email: {eq: "bat@x.com"}}]}
                     ]
                 }
             ) {
