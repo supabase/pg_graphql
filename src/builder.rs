@@ -886,11 +886,7 @@ fn create_filters(
                 // checking its type. If it is a NOT filter then its type will be __Type::FilterEntity(_)
                 // else its type will be __Type::FilterType(_). Refer to the the method
                 // crate::graphql::FilterEntityType::input_fields() method to see these types.
-                let is_a_not_filter_type = if let __Type::FilterEntity(_) = filter_iv.type_() {
-                    true
-                } else {
-                    false
-                };
+                let is_a_not_filter_type = matches!(filter_iv.type_(), __Type::FilterEntity(_));
                 if k == NOT_FILTER_NAME && is_a_not_filter_type {
                     if let gson::Value::Object(_) = op_to_v {
                         let inner_filters = create_filters(op_to_v, filter_field_map)?;
