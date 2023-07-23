@@ -350,4 +350,36 @@ begin;
         $$
     );
     rollback to savepoint a;
+
+    comment on schema public is e'@graphql({"inflect_names": false})';
+    create table clashes(
+        "AND" serial primary key,
+        "OR" varchar(255) not null,
+        "NOT" plan not null
+    );
+
+    insert into public.clashes("OR", "NOT")
+    values
+        ('aardvark@x.com', 'free'),
+        ('bat@x.com', 'pro'),
+        ('cat@x.com', 'enterprise'),
+        ('dog@x.com', 'free'),
+        ('elephant@x.com', 'pro');
+
+    -- columns named AND, OR and NOT
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            clashesCollection(filter: {AND: {eq: 1}, OR: {eq: "aardvark@x.com"}, NOT: {eq: "free"}}) {
+                edges {
+                    node {
+                        AND
+                        OR
+                        NOT
+                    }
+                }
+            }
+        }
+        $$)
+    );
 rollback;

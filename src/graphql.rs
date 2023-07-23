@@ -3464,22 +3464,43 @@ impl ___Type for FilterEntityType {
             });
         }
 
-        f.push(__InputValue {
-            name_: AND_FILTER_NAME.to_string(),
-            type_: __Type::List(ListType {
-                type_: Box::new(__Type::FilterEntity(FilterEntityType {
-                    table: Arc::clone(&self.table),
-                    schema: self.schema.clone(),
-                })),
-            }),
-            description: Some(
-                "Returns true only if all its inner filters are true, otherwise returns false"
-                    .to_string(),
-            ),
-            default_value: None,
-            sql_type: None,
-        });
-        f.push(__InputValue {
+        // If there is a column named `AND` (and inflection is disabled) and
+        // we were to add the AND filter entry in this list there would be two
+        // entries named `AND` in the list returned by this method. Then
+        // during filter argument validation both of these will be checked
+        // against any key in the input named `AND` and one of them will fail
+        // the validation. This means the user can neither use a simple filter
+        // on the `AND` column nor use AND in compound expressions.
+        //
+        // To prevent this we do not add the AND filter entry which essentially
+        // disables the AND compound filter. But at least the user is able to
+        // use simple column filters.
+        //
+        // Similiar logic applies for OR and NOT filters.
+        //
+        // Arguably this smartness is unnecessary because users should not
+        // name their columns `AND`, `OR` or `NOT` but the counter argument is
+        // that in the case they do make such a mistake we degrade gracefully
+        // instead of punishing them too harshly.
+        if !f.iter().any(|iv| iv.name() == AND_FILTER_NAME) {
+            f.push(__InputValue {
+                name_: AND_FILTER_NAME.to_string(),
+                type_: __Type::List(ListType {
+                    type_: Box::new(__Type::FilterEntity(FilterEntityType {
+                        table: Arc::clone(&self.table),
+                        schema: self.schema.clone(),
+                    })),
+                }),
+                description: Some(
+                    "Returns true only if all its inner filters are true, otherwise returns false"
+                        .to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            });
+        }
+        if !f.iter().any(|iv| iv.name() == OR_FILTER_NAME) {
+            f.push(__InputValue {
             name_: OR_FILTER_NAME.to_string(),
             type_: __Type::List(ListType {
                 type_: Box::new(__Type::FilterEntity(FilterEntityType {
@@ -3493,16 +3514,19 @@ impl ___Type for FilterEntityType {
             default_value: None,
             sql_type: None,
         });
-        f.push(__InputValue {
-            name_: NOT_FILTER_NAME.to_string(),
-            type_: __Type::FilterEntity(FilterEntityType {
-                table: Arc::clone(&self.table),
-                schema: self.schema.clone(),
-            }),
-            description: Some("Negates a filter".to_string()),
-            default_value: None,
-            sql_type: None,
-        });
+        }
+        if !f.iter().any(|iv| iv.name() == NOT_FILTER_NAME) {
+            f.push(__InputValue {
+                name_: NOT_FILTER_NAME.to_string(),
+                type_: __Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                }),
+                description: Some("Negates a filter".to_string()),
+                default_value: None,
+                sql_type: None,
+            });
+        }
 
         Some(f)
     }
