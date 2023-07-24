@@ -62,7 +62,7 @@ fn resolve(
         }
     };
 
-    let value: serde_json::Value = serde_json::to_value(&response).unwrap();
+    let value: serde_json::Value = serde_json::to_value(response).unwrap();
 
     pgrx::JsonB(value)
 }
