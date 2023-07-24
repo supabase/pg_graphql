@@ -1107,7 +1107,7 @@ This is because according to the rules of GraphQL list input coercion, if a valu
 
 !!! note
 
-    Avoid naming your column fields `AND`, `OR` or `NOT`. If you do, the corresponding filter operator will not be available for use.
+    Avoid naming your columns `AND`, `OR` or `NOT`. If you do, the corresponding filter operator will not be available for use.
 
 The `AND`, `OR` and `NOT` operators also work with update and delete mutations.
 
