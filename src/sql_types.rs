@@ -340,6 +340,7 @@ pub struct Context {
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
+    pub functions: Vec<Function>,
 }
 
 impl Hash for Context {

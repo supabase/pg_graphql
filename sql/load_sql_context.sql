@@ -411,6 +411,52 @@ select
                 )
             ),
             jsonb_build_object()
+        ),
+        'functions', coalesce(
+            (
+                select
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'oid', pp.oid::int,
+                            'name', pp.proname::text,
+                            'type_oid', pp.prorettype::oid::int,
+                            'type_name', pp.prorettype::regtype::text,
+                            'schema_oid', pronamespace::int,
+                            'schema_name', pronamespace::regnamespace::text,
+                            -- Functions may be defined as "returns sefof <entity> rows 1"
+                            -- those should return a single record, not a connection
+                            -- this is important because set returning functions are inlined
+                            -- and returning a single record isn't.
+                            'is_set_of', pp.proretset::bool and pp.prorows <> 1,
+                            'n_rows', pp.prorows::int,
+                            'comment', pg_catalog.obj_description(pp.oid, 'pg_proc'),
+                            'directives', (
+                                with directives(directive) as (
+                                    select graphql.comment_directive(pg_catalog.obj_description(pp.oid, 'pg_proc'))
+                                )
+                                select
+                                    jsonb_build_object(
+                                        'name', d.directive ->> 'name',
+                                        'description', d.directive ->> 'description'
+                                    )
+                                from
+                                    directives d
+                            ),
+                            'permissions', jsonb_build_object(
+                                'is_executable', pg_catalog.has_function_privilege(
+                                    current_user,
+                                    pp.oid,
+                                    'EXECUTE'
+                                )
+                            )
+                        )
+                    )
+                from
+                    pg_catalog.pg_proc pp
+                    join search_path_oids spo
+                        on pp.pronamespace = spo.schema_oid
+            ),
+            jsonb_build_array()
         )
 
     )
