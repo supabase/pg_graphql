@@ -420,6 +420,19 @@
     Description
   </a>
   
+    <nav class="md-nav" aria-label="Description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enum-variant" class="md-nav__link">
+    Enum Variant
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -655,6 +668,19 @@
   <a href="#description" class="md-nav__link">
     Description
   </a>
+  
+    <nav class="md-nav" aria-label="Description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enum-variant" class="md-nav__link">
+    Enum Variant
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -977,6 +1003,39 @@ for example
   id: <span class="k">Int</span><span class="p">!</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
+<h4 id="enum-variant">Enum Variant</h4>
+<p>If a variant of a Postgres enum does not conform to GraphQL naming conventions, introspection returns an error:</p>
+<p>For example:
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="ss">&quot;Algorithm&quot;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enum</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;aead-ietf&#39;</span><span class="p">);</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p>causes the error:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Names must only contain [_a-zA-Z0-9] but \&quot;aead-ietf\&quot; does not.&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>To resolve this problem, rename the invalid SQL enum variant to a GraphQL compatible name:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">alter</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="ss">&quot;Algorithm&quot;</span><span class="w"> </span><span class="k">rename</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="s1">&#39;aead-ietf&#39;</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="s1">&#39;AEAD_IETF&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>or, add a comment directive to remap the enum variant in the GraphQL API</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">comment</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="ss">&quot;Algorithm&quot;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="s1">&#39;@graphql({&quot;mappings&quot;: {&quot;aead-ietf&quot;: &quot;AEAD_IETF&quot;}})&#39;</span><span class="p">;</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>Which both result in the GraphQL enum:
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">enum</span> <span class="k">Algorithm</span> <span class="p">{</span>
+  <span class="k">AEAD_IETF</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div></p>
 
 
 

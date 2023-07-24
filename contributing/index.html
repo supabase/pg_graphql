@@ -635,16 +635,16 @@
 <ul>
 <li>rust</li>
 <li>cargo</li>
-<li><a href="https://github.com/tcdi/pgx">pgx</a></li>
+<li><a href="https://github.com/tcdi/pgrx">pgrx</a></li>
 </ul>
 <h3 id="testing">Testing</h3>
 <p>Tests are located in <code>./test/sql</code> with expected output in <code>./test/expected</code></p>
 <p>To run tests locally, execute:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$ cargo pgx install<span class="p">;</span> ./bin/installcheck
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$ cargo pgrx install<span class="p">;</span> ./bin/installcheck
 </code></pre></div></td></tr></table></div>
 <h3 id="interactive-psql-development">Interactive PSQL Development</h3>
 <p>To reduce the iteration cycle, you may want to launch a psql prompt with <code>pg_graphql</code> installed to experiment</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo pgx run pg14
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo pgrx run pg14
 </code></pre></div></td></tr></table></div>
 <p>Try out the commands below to spin up a database with the extension installed &amp; query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>

@@ -486,13 +486,13 @@
 
   <h1>Installation</h1>
 
-<p>First, install <a href="https://github.com/tcdi/pgx">pgx</a> by running <code>cargo install --locked cargo-pgx@version</code>, where version should be compatible with the <a href="https://github.com/supabase/pg_graphql/blob/master/Cargo.toml#L16">pgx version used by pg_graphl</a></p>
+<p>First, install <a href="https://github.com/tcdi/pgrx">pgrx</a> by running <code>cargo install --locked cargo-pgrx@version</code>, where version should be compatible with the <a href="https://github.com/supabase/pg_graphql/blob/master/Cargo.toml#L16">pgrx version used by pg_graphl</a></p>
 <p>Then clone the repo and install using</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>git clone https://github.com/supabase/pg_graphql.git
 <span class="nb">cd</span> pg_graphql
-cargo pgx install --release
+cargo pgrx install --release
 </code></pre></div></td></tr></table></div>
 <p>To enable the extension in PostgreSQL we must execute a <code>create extension</code> statement. The extension creates its own schema/namespace named <code>graphql</code> to avoid naming conflicts.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">extension</span><span class="w"> </span><span class="n">pg_graphql</span><span class="p">;</span><span class="w"></span>
