@@ -246,6 +246,8 @@ select
                                                 'type_name', pp.prorettype::regtype::text,
                                                 'schema_oid', pronamespace::int,
                                                 'schema_name', pronamespace::regnamespace::text,
+                                                'arg_types', pp.proargtypes::int[],
+                                                'arg_names', pp.proargnames::text[],
                                                 -- Functions may be defined as "returns sefof <entity> rows 1"
                                                 -- those should return a single record, not a connection
                                                 -- this is important because set returning functions are inlined
@@ -423,6 +425,8 @@ select
                             'type_name', pp.prorettype::regtype::text,
                             'schema_oid', pronamespace::int,
                             'schema_name', pronamespace::regnamespace::text,
+                            'arg_types', proargtypes::int[],
+                            'arg_names', proargnames::text[],
                             -- Functions may be defined as "returns sefof <entity> rows 1"
                             -- those should return a single record, not a connection
                             -- this is important because set returning functions are inlined

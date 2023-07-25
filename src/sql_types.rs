@@ -61,12 +61,55 @@ pub struct Function {
     pub name: String,
     pub schema_oid: u32,
     pub schema_name: String,
+    pub arg_types: Vec<u32>,
+    pub arg_names: Option<Vec<String>>,
     pub type_oid: u32,
     pub type_name: String,
     pub is_set_of: bool,
     pub comment: Option<String>,
     pub directives: FunctionDirectives,
     pub permissions: FunctionPermissions,
+}
+
+impl Function {
+    pub fn args(&self) -> impl Iterator<Item = (u32, Option<&str>)> {
+        ArgsIterator {
+            index: 0,
+            arg_types: &self.arg_types,
+            arg_names: &self.arg_names,
+        }
+    }
+}
+
+struct ArgsIterator<'a> {
+    index: usize,
+    arg_types: &'a [u32],
+    arg_names: &'a Option<Vec<String>>,
+}
+
+impl<'a> Iterator for ArgsIterator<'a> {
+    type Item = (u32, Option<&'a str>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.arg_types.len() {
+            let arg_name = if let Some(arg_names) = self.arg_names {
+                debug_assert!(arg_names.len() >= self.arg_types.len());
+                let arg_name = arg_names[self.index].as_str();
+                if arg_name != "" {
+                    Some(arg_name)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let arg_type = self.arg_types[self.index];
+            self.index += 1;
+            Some((arg_type, arg_name))
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -340,7 +383,7 @@ pub struct Context {
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
-    pub functions: Vec<Function>,
+    pub functions: Vec<Arc<Function>>,
 }
 
 impl Hash for Context {

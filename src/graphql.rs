@@ -1220,7 +1220,73 @@ impl ___Type for MutationType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut f = vec![];
+        let sql_types = &self.schema.context.types;
+        let mut f: Vec<__Field> = self
+            .schema
+            .context
+            .functions
+            .iter()
+            .filter(|func| {
+                match sql_types.get(&func.type_oid) {
+                    None => true,
+                    Some(sql_type) => {
+                        // disallow pseudo types
+                        match &sql_type.category {
+                            TypeCategory::Pseudo => false,
+                            _ => true,
+                        }
+                    }
+                }
+            })
+            .filter_map(|func| match sql_types.get(&func.type_oid) {
+                None => None,
+                Some(sql_type) => {
+                    if let Some(gql_ret_type) =
+                        sql_type.to_graphql_type(None, func.is_set_of, &self.schema)
+                    {
+                        let gql_args: Vec<__InputValue> = func
+                            .args()
+                            .filter(|(_, arg_name)| !arg_name.is_none())
+                            .filter_map(|(arg_type, arg_name)| match sql_types.get(&arg_type) {
+                                Some(t) => {
+                                    if matches!(t.category, TypeCategory::Pseudo) {
+                                        None
+                                    } else {
+                                        Some((t, arg_name.unwrap()))
+                                    }
+                                }
+                                None => None,
+                            })
+                            .filter_map(|(arg_type, arg_name)| {
+                                match arg_type.to_graphql_type(None, false, &self.schema) {
+                                    Some(t) => Some((t, arg_name)),
+                                    None => None,
+                                }
+                            })
+                            .map(|(arg_type, arg_name)| __InputValue {
+                                name_: arg_name.to_string(),
+                                type_: arg_type,
+                                description: None,
+                                default_value: None,
+                                sql_type: None,
+                            })
+                            .collect();
+
+                        Some(__Field {
+                            name_: self.schema.graphql_function_field_name(&func),
+                            type_: gql_ret_type,
+                            args: gql_args,
+                            description: func.directives.description.clone(),
+                            deprecation_reason: None,
+                            sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
+                        })
+                    } else {
+                        None
+                    }
+                }
+            })
+            .filter(|x| is_valid_graphql_name(&x.name_))
+            .collect();
 
         // TODO, filter to types in type map in case any were filtered out
         for table in self.schema.context.tables.values() {
