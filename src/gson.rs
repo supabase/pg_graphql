@@ -4,7 +4,6 @@ with added support for the concept of "Absent" so we
 can differentiate between Null literals and values that
 were not provided by the user.
 */
-use serde_json;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]

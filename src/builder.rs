@@ -81,7 +81,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let at_most: gson::Value = read_argument("atMost", field, query_field, variables)
-        .unwrap_or_else(|_| gson::Value::Number(gson::Number::Integer(1)));
+        .unwrap_or(gson::Value::Number(gson::Number::Integer(1)));
     match at_most {
         gson::Value::Number(gson::Number::Integer(x)) => Ok(x),
         _ => Err("Internal Error: failed to parse validated atFirst".to_string()),
@@ -1222,7 +1222,7 @@ where
                 filter,
                 order_by,
                 selections: builder_fields,
-                max_rows: max_rows,
+                max_rows,
             })
         }
         _ => Err(format!(
@@ -1381,20 +1381,15 @@ where
             let node_id: NodeIdInstance = read_argument_node_id(field, query_field, variables)?;
 
             let possible_types: Vec<__Type> = node_interface.possible_types().unwrap_or(vec![]);
-            let xtype = possible_types
-                .iter()
-                .filter_map(|x| match x {
-                    __Type::Node(node_type) => Some(node_type),
-                    _ => None,
-                })
-                .find_map(|node_type| {
-                    match (&node_type.table.schema, &node_type.table.name)
-                        == (&node_id.schema_name, &node_id.table_name)
-                    {
-                        true => Some(node_type),
-                        false => None,
-                    }
-                });
+            let xtype = possible_types.iter().find_map(|x| match x {
+                __Type::Node(node_type)
+                    if node_type.table.schema == node_id.schema_name
+                        && node_type.table.name == node_id.table_name =>
+                {
+                    Some(node_type)
+                }
+                _ => None,
+            });
 
             match xtype {
                 Some(x) => x.clone(),
@@ -1475,7 +1470,7 @@ where
                                     )?;
                                     FunctionSelection::Connection(connection_builder)
                                 }
-                                _ => return Err(format!("invalid return type from function")),
+                                _ => return Err("invalid return type from function".to_string()),
                             };
                             NodeSelection::Function(FunctionBuilder {
                                 alias,
@@ -1909,7 +1904,7 @@ impl __Schema {
         }
         let type_name = type_name.unwrap();
 
-        let type_map = type_map(&self);
+        let type_map = type_map(self);
         let requested_type: Option<&__Type> = type_map.get(&type_name);
 
         match requested_type {
@@ -2012,7 +2007,7 @@ impl __Schema {
                                     let mut interface_builders = vec![];
                                     for interface in &interfaces {
                                         let interface_builder = self.to_type_builder_from_type(
-                                            &interface,
+                                            interface,
                                             selection_field,
                                             fragment_definitions,
                                             variables,
@@ -2051,7 +2046,7 @@ impl __Schema {
                                 let mut type_builders = vec![];
                                 for ty in &types {
                                     let type_builder = self.to_type_builder_from_type(
-                                        &ty,
+                                        ty,
                                         selection_field,
                                         fragment_definitions,
                                         variables,
@@ -2140,7 +2135,7 @@ impl __Schema {
 
                     for arg in args {
                         let builder = self.to_input_value_builder(
-                            &arg,
+                            arg,
                             selection_field,
                             fragment_definitions,
                             variables,
