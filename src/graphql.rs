@@ -1226,6 +1226,7 @@ impl ___Type for MutationType {
             .context
             .functions
             .iter()
+            .filter(|func| func.volatility == FunctionVolatility::Volatile)
             .filter(|func| {
                 match sql_types.get(&func.type_oid) {
                     None => true,

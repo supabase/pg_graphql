@@ -56,6 +56,16 @@ pub struct FunctionPermissions {
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum FunctionVolatility {
+    #[serde(rename(deserialize = "v"))]
+    Volatile,
+    #[serde(rename(deserialize = "s"))]
+    Stable,
+    #[serde(rename(deserialize = "i"))]
+    Immutable,
+}
+
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Function {
     pub oid: u32,
     pub name: String,
@@ -63,6 +73,7 @@ pub struct Function {
     pub schema_name: String,
     pub arg_types: Vec<u32>,
     pub arg_names: Option<Vec<String>>,
+    pub volatility: FunctionVolatility,
     pub type_oid: u32,
     pub type_name: String,
     pub is_set_of: bool,

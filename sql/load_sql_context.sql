@@ -248,6 +248,7 @@ select
                                                 'schema_name', pronamespace::regnamespace::text,
                                                 'arg_types', pp.proargtypes::int[],
                                                 'arg_names', pp.proargnames::text[],
+                                                'volatility', pp.provolatile,
                                                 -- Functions may be defined as "returns sefof <entity> rows 1"
                                                 -- those should return a single record, not a connection
                                                 -- this is important because set returning functions are inlined
@@ -427,6 +428,7 @@ select
                             'schema_name', pronamespace::regnamespace::text,
                             'arg_types', proargtypes::int[],
                             'arg_names', proargnames::text[],
+                            'volatility', pp.provolatile,
                             -- Functions may be defined as "returns sefof <entity> rows 1"
                             -- those should return a single record, not a connection
                             -- this is important because set returning functions are inlined
