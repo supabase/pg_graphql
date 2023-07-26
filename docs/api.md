@@ -954,7 +954,7 @@ This means that an `and` filter can be often be simplified. In the following exa
 
 ** Example **
 
-=== "Origianl `and` Query"
+=== "Original `and` Query"
     ```graphql
     {
       blogCollection(
