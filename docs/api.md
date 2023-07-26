@@ -307,7 +307,7 @@ Metadata relating to the current page of a result set is available on the `pageI
     }
     ```
 
-To paginate forward in the collection, use the `first` and `after` aguments. To retrive the first page, the `after` argument should be null or absent.
+To paginate forward in the collection, use the `first` and `after` arguments. To retrieve the first page, the `after` argument should be null or absent.
 
 **Example**
 
