@@ -921,7 +921,7 @@ fn create_filters(
                 }
             }
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
-                // If there are no inner filters we avoid creating an argumentless `and`/OR expression
+                // If there are no inner filters we avoid creating an argumentless `and`/`or` expression
                 // which would have been anyways compiled away during transpilation
                 if !values.is_empty() {
                     let mut compound_filters = Vec::with_capacity(values.len());
@@ -947,7 +947,7 @@ fn create_filters(
                         )))
                     } else {
                         return Err(
-                            "Only `and` and `OR` filters are allowed to take an array as input."
+                            "Only `and` and `or` filters are allowed to take an array as input."
                                 .to_string(),
                         );
                     };

@@ -49,7 +49,7 @@ input AccountFilter {
   email: StringFilter
   createdAt: DatetimeFilter
   and: [AccountFilter!]
-  OR: [AccountFilter!]
+  or: [AccountFilter!]
   NOT: AccountFilter
 }
 
@@ -141,7 +141,7 @@ input BlogFilter {
   description: StringFilter
   createdAt: DatetimeFilter
   and: [BlogFilter!]
-  OR: [BlogFilter!]
+  or: [BlogFilter!]
   NOT: BlogFilter
 }
 
@@ -207,7 +207,7 @@ input BlogPostFilter {
   status: BlogPostStatusFilter
   createdAt: DatetimeFilter
   and: [BlogPostFilter!]
-  OR: [BlogPostFilter!]
+  or: [BlogPostFilter!]
   NOT: BlogPostFilter
 }
 

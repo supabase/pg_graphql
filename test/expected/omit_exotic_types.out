@@ -114,7 +114,7 @@ begin;
              "name": "and"             +
          },                            +
          {                             +
-             "name": "OR"              +
+             "name": "or"              +
          },                            +
          {                             +
              "name": "NOT"             +

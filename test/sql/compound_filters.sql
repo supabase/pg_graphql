@@ -82,11 +82,11 @@ begin;
         $$)
     );
 
-    -- OR filter zero expressions
+    -- `or` filter zero expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {OR: []}) {
+            accountCollection(filter: {or: []}) {
                 edges {
                     node {
                         id
@@ -98,11 +98,11 @@ begin;
         $$)
     );
 
-    -- OR filter one expression
+    -- `or` filter one expression
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {OR: [{id: {eq: 1}}]}) {
+            accountCollection(filter: {or: [{id: {eq: 1}}]}) {
                 edges {
                     node {
                         id
@@ -114,11 +114,11 @@ begin;
         $$)
     );
 
-    -- OR filter two expressions
+    -- `or` filter two expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {OR: [{id: {eq: 3}}, {email: {eq: "elephant@x.com"}}]}) {
+            accountCollection(filter: {or: [{id: {eq: 3}}, {email: {eq: "elephant@x.com"}}]}) {
                 edges {
                     node {
                         id
@@ -130,11 +130,11 @@ begin;
         $$)
     );
 
-    -- OR filter three expressions
+    -- `or` filter three expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {OR: [{id: {eq: 1}}, {email: {eq: "bat@x.com"}}, {plan: {eq: "enterprise"}}]}) {
+            accountCollection(filter: {or: [{id: {eq: 1}}, {email: {eq: "bat@x.com"}}, {plan: {eq: "enterprise"}}]}) {
                 edges {
                     node {
                         id
@@ -214,13 +214,13 @@ begin;
         $$)
     );
 
-    -- `and` filter (explicit) nested inside OR
+    -- `and` filter (explicit) nested inside `or`
     select jsonb_pretty(
         graphql.resolve($$
         {
             accountCollection(
                 filter: {
-                    OR: [
+                    or: [
                         { id: { eq: 3 } }
                         { id: { eq: 5 } }
                         { and: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] } # explicit and
@@ -238,13 +238,13 @@ begin;
         $$)
     );
 
-    -- `and` filter (implicit) nested inside OR
+    -- `and` filter (implicit) nested inside `or`
     select jsonb_pretty(
         graphql.resolve($$
         {
             accountCollection(
                 filter: {
-                    OR: [
+                    or: [
                         { id: { eq: 3 } }
                         { id: { eq: 5 } }
                         { id: { eq: 1 }, email: { eq: "aardvark@x.com" } } # implicit and
@@ -262,7 +262,7 @@ begin;
         $$)
     );
 
-    -- OR filter nested inside and
+    -- `or` filter nested inside and
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -271,7 +271,7 @@ begin;
                     and: [
                         { id: { gt: 0 } }
                         { id: { lt: 4 } }
-                        { OR: [{email: { eq: "bat@x.com" }}, {email: { eq: "cat@x.com" }}] }
+                        { or: [{email: { eq: "bat@x.com" }}, {email: { eq: "cat@x.com" }}] }
                     ]
                 }
             ) {
@@ -286,7 +286,7 @@ begin;
         $$)
     );
 
-    -- NOT filter nested inside OR which is nested inside `and`
+    -- NOT filter nested inside `or` which is nested inside `and`
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -295,7 +295,7 @@ begin;
                     and: [
                         { id: { gt: 0 } }
                         { id: { lt: 4 } }
-                        { OR: [{NOT: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
+                        { or: [{NOT: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
                     ]
                 }
             ) {
@@ -318,7 +318,7 @@ begin;
                     email: "new@email.com"
                 }
                 filter: {
-                    OR: [
+                    or: [
                         { id: { eq: 3 } }
                         { id: { eq: 5 } }
                         { and: [{ id: { eq: 1 } }, { email: { eq: "aardvark@x.com" } }] }
@@ -338,7 +338,7 @@ begin;
         mutation {
             deleteFromAccountCollection(
                 filter: {
-                    OR: [
+                    or: [
                         { id: { eq: 3 } }
                         { id: { eq: 5 } }
                         { id: { eq: 1 }, email: { eq: "aardvark@x.com" } }
@@ -353,15 +353,15 @@ begin;
     );
     rollback to savepoint a;
 
-    -- columns named `and`, OR and NOT, all compound filters will be disabled
+    -- columns named `and`, `or` and NOT, all compound filters will be disabled
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         "and" serial primary key,
-        "OR" varchar(255) not null,
+        "or" varchar(255) not null,
         "NOT" plan not null
     );
 
-    insert into public.clashes("OR", "NOT")
+    insert into public.clashes("or", "NOT")
     values
         ('aardvark@x.com', 'free'),
         ('bat@x.com', 'pro'),
@@ -372,11 +372,11 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-            clashesCollection(filter: {and: {eq: 1}, OR: {eq: "aardvark@x.com"}, NOT: {eq: "free"}}) {
+            clashesCollection(filter: {and: {eq: 1}, or: {eq: "aardvark@x.com"}, NOT: {eq: "free"}}) {
                 edges {
                     node {
                         and
-                        OR
+                        or
                         NOT
                     }
                 }
@@ -407,7 +407,7 @@ begin;
         {
             clashesCollection(
                 filter: {
-                    OR: [
+                    or: [
                         { and: { eq: 3 } }
                         { and: { eq: 5 } }
                         { and: { eq: 2 }, NOT: { email: { eq: "aardvark@x.com" }} }
@@ -427,15 +427,15 @@ begin;
     );
     rollback to savepoint a;
 
-    -- column named `OR`. OR compound filter will be disabled, others should work
+    -- column named `or`. `or` compound filter will be disabled, others should work
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         id serial primary key,
-        "OR" varchar(255) not null,
+        "or" varchar(255) not null,
         plan plan not null
     );
 
-    insert into public.clashes("OR", plan)
+    insert into public.clashes("or", plan)
     values
         ('aardvark@x.com', 'free'),
         ('bat@x.com', 'pro'),
@@ -448,13 +448,13 @@ begin;
         {
             clashesCollection(
                 filter: {
-                    and: [ {NOT: {id: { eq: 2 }}}, { OR: { neq: "aardvark@x.com" }}]
+                    and: [ {NOT: {id: { eq: 2 }}}, { or: { neq: "aardvark@x.com" }}]
                 }
             ) {
                 edges {
                     node {
                         id
-                        OR
+                        or
                         plan
                     }
                 }
@@ -485,7 +485,7 @@ begin;
         {
             clashesCollection(
                 filter: {
-                    OR: [
+                    or: [
                         {id: {eq: 1}}
                         {NOT: {eq: "pro"}, and: [{id: {eq: 2}}, {email: {eq: "bat@x.com"}}]}
                     ]

@@ -3357,7 +3357,7 @@ impl ___Type for FilterTypeType {
 }
 
 pub(crate) const AND_FILTER_NAME: &str = "and";
-pub(crate) const OR_FILTER_NAME: &str = "OR";
+pub(crate) const OR_FILTER_NAME: &str = "or";
 pub(crate) const NOT_FILTER_NAME: &str = "NOT";
 
 impl ___Type for FilterEntityType {
@@ -3470,10 +3470,10 @@ impl ___Type for FilterEntityType {
         // disables the `and` compound filter. But at least the user is able to
         // use simple column filters.
         //
-        // Similiar logic applies for OR and NOT filters.
+        // Similiar logic applies for `or` and NOT filters.
         //
         // Arguably this smartness is unnecessary because users should not
-        // name their columns `and`, `OR` or `NOT` but the counter argument is
+        // name their columns `and`, `or` or `NOT` but the counter argument is
         // that in the case they do make such a mistake we degrade gracefully
         // instead of punishing them too harshly.
         if !and_column_exists {

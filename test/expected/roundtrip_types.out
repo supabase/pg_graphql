@@ -705,7 +705,7 @@ begin;
                      }                            +
                  },                               +
                  {                                +
-                     "name": "OR",                +
+                     "name": "or",                +
                      "type": {                    +
                          "kind": "LIST",          +
                          "name": null,            +
