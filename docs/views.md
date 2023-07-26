@@ -38,7 +38,7 @@ type Person {
 
 ## Relationships
 
-pg_graphql identifies relationships among entites by inspecting foreign keys. Views, materialized views, and foreign tables do not support foreign keys. For this reason, relationships can also be defined in [comment directive](/pg_graphql/configuration/#comment-directives) using the structure:
+pg_graphql identifies relationships among entities by inspecting foreign keys. Views, materialized views, and foreign tables do not support foreign keys. For this reason, relationships can also be defined in [comment directive](/pg_graphql/configuration/#comment-directives) using the structure:
 
 
 
