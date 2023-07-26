@@ -881,15 +881,15 @@ fn create_filters(
         match op_to_v {
             gson::Value::Absent | gson::Value::Null => continue,
             gson::Value::Object(filter_op_to_value_map) => {
-                // key `NOT` can either be a compound filter or a column. We can find out which it is by
-                // checking its type. If it is a NOT filter then its type will be __Type::FilterEntity(_)
+                // key `not` can either be a compound filter or a column. We can find out which it is by
+                // checking its type. If it is a `not` filter then its type will be __Type::FilterEntity(_)
                 // else its type will be __Type::FilterType(_). Refer to the the method
                 // crate::graphql::FilterEntityType::input_fields() method for details.
                 let is_a_not_filter_type = matches!(filter_iv.type_(), __Type::FilterEntity(_));
                 if k == NOT_FILTER_NAME && is_a_not_filter_type {
                     if let gson::Value::Object(_) = op_to_v {
                         let inner_filters = create_filters(op_to_v, filter_field_map)?;
-                        // If there are no inner filters we avoid creating an argumentless NOT expression. i.e. avoid `NOT()`
+                        // If there are no inner filters we avoid creating an argumentless `not` expression. i.e. avoid `not()`
                         if !inner_filters.is_empty() {
                             // Multiple inner filters are implicitly `and`ed together
                             let inner_filter = FilterBuilderElem::Compound(Box::new(
@@ -901,7 +901,7 @@ fn create_filters(
                             filters.push(filter);
                         }
                     } else {
-                        return Err("Invalid NOT filter".to_string());
+                        return Err("Invalid `not` filter".to_string());
                     }
                 } else {
                     for (filter_op_str, filter_val) in filter_op_to_value_map {

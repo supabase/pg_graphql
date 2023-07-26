@@ -50,7 +50,7 @@ input AccountFilter {
   createdAt: DatetimeFilter
   and: [AccountFilter!]
   or: [AccountFilter!]
-  NOT: AccountFilter
+  not: AccountFilter
 }
 
 input AccountInsertInput {
@@ -142,7 +142,7 @@ input BlogFilter {
   createdAt: DatetimeFilter
   and: [BlogFilter!]
   or: [BlogFilter!]
-  NOT: BlogFilter
+  not: BlogFilter
 }
 
 input BlogInsertInput {
@@ -208,7 +208,7 @@ input BlogPostFilter {
   createdAt: DatetimeFilter
   and: [BlogPostFilter!]
   or: [BlogPostFilter!]
-  NOT: BlogPostFilter
+  not: BlogPostFilter
 }
 
 input BlogPostInsertInput {

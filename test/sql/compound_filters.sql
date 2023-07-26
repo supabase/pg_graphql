@@ -147,11 +147,11 @@ begin;
         $$)
     );
 
-    -- NOT filter zero expressions
+    -- `not` filter zero expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {}}) {
+            accountCollection(filter: {not: {}}) {
                 edges {
                     node {
                         id
@@ -163,11 +163,11 @@ begin;
         $$)
     );
 
-    -- NOT filter one expression
+    -- `not` filter one expression
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {id: {eq: 3}}}) {
+            accountCollection(filter: {not: {id: {eq: 3}}}) {
                 edges {
                     node {
                         id
@@ -179,12 +179,12 @@ begin;
         $$)
     );
 
-    -- multiple expressions inside a NOT filter are implicitly `and`ed together
-    -- NOT filter two expressions
+    -- multiple expressions inside a `not` filter are implicitly `and`ed together
+    -- `not` filter two expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {id: {eq: 1}, email: {eq: "aardvark@x.com"}}}) {
+            accountCollection(filter: {not: {id: {eq: 1}, email: {eq: "aardvark@x.com"}}}) {
                 edges {
                     node {
                         id
@@ -196,12 +196,12 @@ begin;
         $$)
     );
 
-    -- multiple expressions inside a NOT filter are implicitly `and`ed together
-    -- NOT filter three expressions
+    -- multiple expressions inside a `not` filter are implicitly `and`ed together
+    -- `not` filter three expressions
     select jsonb_pretty(
         graphql.resolve($$
         {
-            accountCollection(filter: {NOT: {id: {eq: 1}, email: {eq: "aardvark@x.com"}, plan: {eq: "free"}}}) {
+            accountCollection(filter: {not: {id: {eq: 1}, email: {eq: "aardvark@x.com"}, plan: {eq: "free"}}}) {
                 edges {
                     node {
                         id
@@ -286,7 +286,7 @@ begin;
         $$)
     );
 
-    -- NOT filter nested inside `or` which is nested inside `and`
+    -- `not` filter nested inside `or` which is nested inside `and`
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -295,7 +295,7 @@ begin;
                     and: [
                         { id: { gt: 0 } }
                         { id: { lt: 4 } }
-                        { or: [{NOT: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
+                        { or: [{not: {email: { eq: "bat@x.com" }}}, {email: { eq: "cat@x.com" }}] }
                     ]
                 }
             ) {
@@ -353,15 +353,15 @@ begin;
     );
     rollback to savepoint a;
 
-    -- columns named `and`, `or` and NOT, all compound filters will be disabled
+    -- columns named `and`, `or` and `not`, all compound filters will be disabled
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         "and" serial primary key,
         "or" varchar(255) not null,
-        "NOT" plan not null
+        "not" plan not null
     );
 
-    insert into public.clashes("or", "NOT")
+    insert into public.clashes("or", "not")
     values
         ('aardvark@x.com', 'free'),
         ('bat@x.com', 'pro'),
@@ -372,12 +372,12 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
         {
-            clashesCollection(filter: {and: {eq: 1}, or: {eq: "aardvark@x.com"}, NOT: {eq: "free"}}) {
+            clashesCollection(filter: {and: {eq: 1}, or: {eq: "aardvark@x.com"}, not: {eq: "free"}}) {
                 edges {
                     node {
                         and
                         or
-                        NOT
+                        not
                     }
                 }
             }
@@ -410,7 +410,7 @@ begin;
                     or: [
                         { and: { eq: 3 } }
                         { and: { eq: 5 } }
-                        { and: { eq: 2 }, NOT: { email: { eq: "aardvark@x.com" }} }
+                        { and: { eq: 2 }, not: { email: { eq: "aardvark@x.com" }} }
                     ]
                 }
             ) {
@@ -448,7 +448,7 @@ begin;
         {
             clashesCollection(
                 filter: {
-                    and: [ {NOT: {id: { eq: 2 }}}, { or: { neq: "aardvark@x.com" }}]
+                    and: [ {not: {id: { eq: 2 }}}, { or: { neq: "aardvark@x.com" }}]
                 }
             ) {
                 edges {
@@ -464,15 +464,15 @@ begin;
     );
     rollback to savepoint a;
 
-    -- column named `NOT`. NOT compound filter will be disabled, others should work
+    -- column named `not`. `not` compound filter will be disabled, others should work
     comment on schema public is e'@graphql({"inflect_names": false})';
     create table clashes(
         id serial primary key,
         email varchar(255) not null,
-        "NOT" plan not null
+        "not" plan not null
     );
 
-    insert into public.clashes(email, "NOT")
+    insert into public.clashes(email, "not")
     values
         ('aardvark@x.com', 'free'),
         ('bat@x.com', 'pro'),
@@ -487,7 +487,7 @@ begin;
                 filter: {
                     or: [
                         {id: {eq: 1}}
-                        {NOT: {eq: "pro"}, and: [{id: {eq: 2}}, {email: {eq: "bat@x.com"}}]}
+                        {not: {eq: "pro"}, and: [{id: {eq: 2}}, {email: {eq: "bat@x.com"}}]}
                     ]
                 }
             ) {
@@ -495,7 +495,7 @@ begin;
                     node {
                         id
                         email
-                        NOT
+                        not
                     }
                 }
             }

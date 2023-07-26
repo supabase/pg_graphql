@@ -716,7 +716,7 @@ begin;
                      }                            +
                  },                               +
                  {                                +
-                     "name": "NOT",               +
+                     "name": "not",               +
                      "type": {                    +
                          "kind": "INPUT_OBJECT",  +
                          "name": "MainTypeFilter",+

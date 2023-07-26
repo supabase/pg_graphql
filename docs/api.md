@@ -231,7 +231,7 @@ Connections wrap a result set with some additional metadata.
       updatedAt: DatetimeFilter
       and: [BlogFilter!]
       or: [BlogFilter!]
-      NOT: BlogFilter
+      not: BlogFilter
     }
     ```
 
@@ -452,7 +452,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       updatedAt: DatetimeFilter
       and: [BlogFilter!]
       or: [BlogFilter!]
-      NOT: BlogFilter
+      not: BlogFilter
     }
     ```
 
@@ -571,7 +571,7 @@ Not all operators are available on every `<Type>Filter` type. For example, `UUID
     }
     ```
 
-Multiple filters can be combined with `and`, `or` and `NOT` operators. The `and` and `or` operators accept a list of `<Type>Filter`.
+Multiple filters can be combined with `and`, `or` and `not` operators. The `and` and `or` operators accept a list of `<Type>Filter`.
 
 ** Example **
 
@@ -674,16 +674,16 @@ Multiple filters can be combined with `and`, `or` and `NOT` operators. The `and`
     }
     ```
 
-`NOT` accepts a single `<Type>Filter`.
+`not` accepts a single `<Type>Filter`.
 
 ** Example **
 
-=== "NOT Filter Query"
+=== "`not` Filter Query"
     ```graphql
     {
       blogCollection(
         filter: {
-          NOT: {id: {eq: 1}}
+          not: {id: {eq: 1}}
         }
       ) {
         edges {
@@ -699,7 +699,7 @@ Multiple filters can be combined with `and`, `or` and `NOT` operators. The `and`
     }
     ```
 
-=== "NOT Filter Result"
+=== "`not` Filter Result"
     ```json
     {
       "data": {
@@ -738,7 +738,7 @@ Multiple filters can be combined with `and`, `or` and `NOT` operators. The `and`
     }
     ```
 
-The `and`, `or` and `NOT` operators can be arbitrarily nested inside each other.
+The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
 
 ** Example **
 
@@ -750,7 +750,7 @@ The `and`, `or` and `NOT` operators can be arbitrarily nested inside each other.
           or: [
             { id: { eq: 1 } }
             { id: { eq: 2 } }
-            { and: [{ id: { eq: 3 }, NOT: { name: { eq: "A: Blog 2" } } }] }
+            { and: [{ id: { eq: 3 }, not: { name: { eq: "A: Blog 2" } } }] }
           ]
         }
       ) {
@@ -816,7 +816,7 @@ Empty filters are ignored, i.e. they behave as if the operator was not specified
     {
       blogCollection(
         filter: {
-          and:[], or: [], NOT: {}
+          and:[], or: [], not: {}
         }
       ) {
         edges {
@@ -890,8 +890,8 @@ Multiple column filters at the same level will be implicitly combined with boole
     {
       blogCollection(
         filter: {
-          # Equivalent to NOT: { and: [{id: {eq: 1}}, {name: {eq: "A: Blog 1"}}]}
-          NOT: {
+          # Equivalent to not: { and: [{id: {eq: 1}}, {name: {eq: "A: Blog 1"}}]}
+          not: {
             id: {eq: 1}
             name: {eq: "A: Blog 1"}
           }
@@ -1107,9 +1107,9 @@ This is because according to the rules of GraphQL list input coercion, if a valu
 
 !!! note
 
-    Avoid naming your columns `and`, `or` or `NOT`. If you do, the corresponding filter operator will not be available for use.
+    Avoid naming your columns `and`, `or` or `not`. If you do, the corresponding filter operator will not be available for use.
 
-The `and`, `or` and `NOT` operators also work with update and delete mutations.
+The `and`, `or` and `not` operators also work with update and delete mutations.
 
 #### Ordering
 
@@ -1539,7 +1539,7 @@ create table "Blog"(
       updatedAt: DatetimeFilter
       and: [BlogFilter!]
       or: [BlogFilter!]
-      NOT: BlogFilter
+      not: BlogFilter
     }
     ```
 
