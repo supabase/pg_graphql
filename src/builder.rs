@@ -891,7 +891,7 @@ fn create_filters(
                         let inner_filters = create_filters(op_to_v, filter_field_map)?;
                         // If there are no inner filters we avoid creating an argumentless NOT expression. i.e. avoid `NOT()`
                         if !inner_filters.is_empty() {
-                            // Multiple inner filters are implicitly ANDed together
+                            // Multiple inner filters are implicitly `and`ed together
                             let inner_filter = FilterBuilderElem::Compound(Box::new(
                                 CompoundFilterBuilder::And(inner_filters),
                             ));
@@ -921,15 +921,15 @@ fn create_filters(
                 }
             }
             gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
-                // If there are no inner filters we avoid creating an argumentless AND/OR expression
+                // If there are no inner filters we avoid creating an argumentless `and`/OR expression
                 // which would have been anyways compiled away during transpilation
                 if !values.is_empty() {
                     let mut compound_filters = Vec::with_capacity(values.len());
                     for value in values {
                         let inner_filters = create_filters(value, filter_field_map)?;
-                        // Avoid argumentless AND
+                        // Avoid argumentless `and`
                         if !inner_filters.is_empty() {
-                            // Multiple inner filters are implicitly ANDed together
+                            // Multiple inner filters are implicitly `and`ed together
                             let inner_filter = FilterBuilderElem::Compound(Box::new(
                                 CompoundFilterBuilder::And(inner_filters),
                             ));
@@ -947,7 +947,7 @@ fn create_filters(
                         )))
                     } else {
                         return Err(
-                            "Only `AND` and `OR` filters are allowed to take an array as input."
+                            "Only `and` and `OR` filters are allowed to take an array as input."
                                 .to_string(),
                         );
                     };

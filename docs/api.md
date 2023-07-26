@@ -229,7 +229,7 @@ Connections wrap a result set with some additional metadata.
       description: StringFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
-      AND: [BlogFilter!]
+      and: [BlogFilter!]
       OR: [BlogFilter!]
       NOT: BlogFilter
     }
@@ -450,7 +450,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       description: StringFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
-      AND: [BlogFilter!]
+      and: [BlogFilter!]
       OR: [BlogFilter!]
       NOT: BlogFilter
     }
@@ -571,16 +571,16 @@ Not all operators are available on every `<Type>Filter` type. For example, `UUID
     }
     ```
 
-Multiple filters can be combined with `AND`, `OR` and `NOT` operators. The `AND` and `OR` operators accept a list of `<Type>Filter`.
+Multiple filters can be combined with `and`, `OR` and `NOT` operators. The `and` and `OR` operators accept a list of `<Type>Filter`.
 
 ** Example **
 
-=== "AND Filter Query"
+=== "`and` Filter Query"
     ```graphql
     {
       blogCollection(
         filter: {
-          AND: [
+          and: [
             {id: {eq: 1}}
             {name: {eq: "A: Blog 1"}}
           ]
@@ -599,7 +599,7 @@ Multiple filters can be combined with `AND`, `OR` and `NOT` operators. The `AND`
     }
     ```
 
-=== "AND Filter Result"
+=== "`and` Filter Result"
     ```json
     {
       "data": {
@@ -738,7 +738,7 @@ Multiple filters can be combined with `AND`, `OR` and `NOT` operators. The `AND`
     }
     ```
 
-The `AND`, `OR` and `NOT` operators can be arbitrarily nested inside each other.
+The `and`, `OR` and `NOT` operators can be arbitrarily nested inside each other.
 
 ** Example **
 
@@ -750,7 +750,7 @@ The `AND`, `OR` and `NOT` operators can be arbitrarily nested inside each other.
           OR: [
             { id: { eq: 1 } }
             { id: { eq: 2 } }
-            { AND: [{ id: { eq: 3 }, NOT: { name: { eq: "A: Blog 2" } } }] }
+            { and: [{ id: { eq: 3 }, NOT: { name: { eq: "A: Blog 2" } } }] }
           ]
         }
       ) {
@@ -816,7 +816,7 @@ Empty filters are ignored, i.e. they behave as if the operator was not specified
     {
       blogCollection(
         filter: {
-          AND:[], OR: [], NOT: {}
+          and:[], OR: [], NOT: {}
         }
       ) {
         edges {
@@ -881,7 +881,7 @@ Empty filters are ignored, i.e. they behave as if the operator was not specified
     }
     ```
 
-Multiple column filters at the same level will be implicitly combined with boolean `AND`. In the following example the `id: {eq: 1}` and `name: {eq: "A: Blog 1"}` will be `AND`ed.
+Multiple column filters at the same level will be implicitly combined with boolean `and`. In the following example the `id: {eq: 1}` and `name: {eq: "A: Blog 1"}` will be `and`ed.
 
 ** Example **
 
@@ -890,7 +890,7 @@ Multiple column filters at the same level will be implicitly combined with boole
     {
       blogCollection(
         filter: {
-          # Equivalent to NOT: { AND: [{id: {eq: 1}}, {name: {eq: "A: Blog 1"}}]}
+          # Equivalent to NOT: { and: [{id: {eq: 1}}, {name: {eq: "A: Blog 1"}}]}
           NOT: {
             id: {eq: 1}
             name: {eq: "A: Blog 1"}
@@ -950,16 +950,16 @@ Multiple column filters at the same level will be implicitly combined with boole
     }
     ```
 
-This means that an `AND` filter can be often be simplified. In the following example all queries are equivalent and produce the same result.
+This means that an `and` filter can be often be simplified. In the following example all queries are equivalent and produce the same result.
 
 ** Example **
 
-=== "Origianl AND Query"
+=== "Origianl `and` Query"
     ```graphql
     {
       blogCollection(
         filter: {
-          AND: [
+          and: [
             {id: {gt: 0}}
             {id: {lt: 2}}
             {name: {eq: "A: Blog 1"}}
@@ -979,7 +979,7 @@ This means that an `AND` filter can be often be simplified. In the following exa
     }
     ```
 
-=== "Simplified AND Query"
+=== "Simplified `and` Query"
     ```graphql
     {
       blogCollection(
@@ -1064,7 +1064,7 @@ This means that an `AND` filter can be often be simplified. In the following exa
     }
     ```
 
-Be aware that the above simplification only works for the `AND` operator. If you try it with an `OR` operator it will behave like an `AND`.
+Be aware that the above simplification only works for the `and` operator. If you try it with an `OR` operator it will behave like an `and`.
 
 ** Example **
 
@@ -1073,7 +1073,7 @@ Be aware that the above simplification only works for the `AND` operator. If you
     {
       blogCollection(
         filter: {
-          # This is really an AND in OR's clothing
+          # This is really an `and` in OR's clothing
           OR: {
             id: {eq: 1}
             name: {eq: "A: Blog 2"}
@@ -1103,13 +1103,13 @@ Be aware that the above simplification only works for the `AND` operator. If you
       }
     }
     ```
-This is because according to the rules of GraphQL list input coercion, if a value passed to an input of list type is not a list, then it is coerced to a list of a single item. So in the above example `OR: {id: {eq: 1}, name: {eq: "A: Blog 2}}` will be corced into `OR: [{id: {eq: 1}, name: {eq: "A: Blog 2}}]` which is equivalent to `OR: [AND: [{id: {eq: 1}}, {name: {eq: "A: Blog 2}}}]` due to implicit `AND`ing.
+This is because according to the rules of GraphQL list input coercion, if a value passed to an input of list type is not a list, then it is coerced to a list of a single item. So in the above example `OR: {id: {eq: 1}, name: {eq: "A: Blog 2}}` will be corced into `OR: [{id: {eq: 1}, name: {eq: "A: Blog 2}}]` which is equivalent to `OR: [and: [{id: {eq: 1}}, {name: {eq: "A: Blog 2}}}]` due to implicit `and`ing.
 
 !!! note
 
-    Avoid naming your columns `AND`, `OR` or `NOT`. If you do, the corresponding filter operator will not be available for use.
+    Avoid naming your columns `and`, `OR` or `NOT`. If you do, the corresponding filter operator will not be available for use.
 
-The `AND`, `OR` and `NOT` operators also work with update and delete mutations.
+The `and`, `OR` and `NOT` operators also work with update and delete mutations.
 
 #### Ordering
 
@@ -1537,7 +1537,7 @@ create table "Blog"(
       description: StringFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
-      AND: [BlogFilter!]
+      and: [BlogFilter!]
       OR: [BlogFilter!]
       NOT: BlogFilter
     }

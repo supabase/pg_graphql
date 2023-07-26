@@ -3356,7 +3356,7 @@ impl ___Type for FilterTypeType {
     }
 }
 
-pub(crate) const AND_FILTER_NAME: &str = "AND";
+pub(crate) const AND_FILTER_NAME: &str = "and";
 pub(crate) const OR_FILTER_NAME: &str = "OR";
 pub(crate) const NOT_FILTER_NAME: &str = "NOT";
 
@@ -3458,22 +3458,22 @@ impl ___Type for FilterEntityType {
             });
         }
 
-        // If there is a column named `AND` (and inflection is disabled) and
-        // we were to add the AND filter entry in this list there would be two
-        // entries named `AND` in the list returned by this method. Then
+        // If there is a column named `and` (and inflection is disabled) and
+        // we were to add the `and` filter entry in this list there would be two
+        // entries named `and` in the list returned by this method. Then
         // during filter argument validation both of these will be checked
-        // against any key in the input named `AND` and one of them will fail
+        // against any key in the input named `and` and one of them will fail
         // the validation. This means the user can neither use a simple filter
-        // on the `AND` column nor use AND in compound expressions.
+        // on the `and` column nor use `and` in compound expressions.
         //
-        // To prevent this we do not add the AND filter entry which essentially
-        // disables the AND compound filter. But at least the user is able to
+        // To prevent this we do not add the `and` filter entry which essentially
+        // disables the `and` compound filter. But at least the user is able to
         // use simple column filters.
         //
         // Similiar logic applies for OR and NOT filters.
         //
         // Arguably this smartness is unnecessary because users should not
-        // name their columns `AND`, `OR` or `NOT` but the counter argument is
+        // name their columns `and`, `OR` or `NOT` but the counter argument is
         // that in the case they do make such a mistake we degrade gracefully
         // instead of punishing them too harshly.
         if !and_column_exists {

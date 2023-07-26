@@ -111,7 +111,7 @@ begin;
              "name": "nodeId"          +
          },                            +
          {                             +
-             "name": "AND"             +
+             "name": "and"             +
          },                            +
          {                             +
              "name": "OR"              +

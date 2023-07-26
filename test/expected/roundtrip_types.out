@@ -694,7 +694,7 @@ begin;
                      }                            +
                  },                               +
                  {                                +
-                     "name": "AND",               +
+                     "name": "and",               +
                      "type": {                    +
                          "kind": "LIST",          +
                          "name": null,            +
