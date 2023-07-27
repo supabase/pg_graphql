@@ -565,29 +565,6 @@ impl MutationEntrypoint<'_> for FunctionCallBuilder {
             .filter(|(_, _, arg_name)| referenced_arg_names.contains(arg_name))
             .collect();
 
-        // let mut values_rows_clause: Vec<String> = vec![];
-
-        // for row_map in &self.objects {
-        //     let mut working_row = vec![];
-        //     for column in referenced_columns.iter() {
-        //         let elem_clause = match row_map.row.get(&column.name) {
-        //             None => "default".to_string(),
-        //             Some(elem) => match elem {
-        //                 InsertElemValue::Default => "default".to_string(),
-        //                 InsertElemValue::Value(val) => {
-        //                     param_context.clause_for(val, &column.type_name)?
-        //                 }
-        //             },
-        //         };
-        //         working_row.push(elem_clause);
-        //     }
-        //     // (1, 'hello', 5)
-        //     let insert_row_clause = format!("({})", working_row.join(", "));
-        //     values_rows_clause.push(insert_row_clause);
-        // }
-
-        // let values_clause = values_rows_clause.join(", ");
-
         let mut arg_clauses = vec![];
         for (_, arg_type_name, arg_name) in referenced_args {
             let arg_clause = match self.args_builder.args.get(arg_name) {
