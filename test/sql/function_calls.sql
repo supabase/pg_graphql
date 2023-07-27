@@ -52,6 +52,16 @@ begin;
         }
     $$));
 
+    create function add_numerics(a numeric, b numeric)
+        returns numeric language sql volatile
+    as $$ select a + b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            addNumerics(a: "11.12", b: "13.14")
+        }
+    $$));
+
     create function and_bools(a bool, b bool)
         returns bool language sql volatile
     as $$ select a and b; $$;
