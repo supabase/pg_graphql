@@ -42,6 +42,15 @@ begin;
         }
     $$));
 
+    create function add_doubles(a double precision, b double precision)
+        returns double precision language sql volatile
+    as $$ select a + b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            addDoubles(a: 7.8, b: 9.1)
+        }
+    $$));
 
     create function and_bools(a bool, b bool)
         returns bool language sql volatile
