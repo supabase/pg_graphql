@@ -18,7 +18,17 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         mutation {
-            addInts(a: 40, b: 2)
+            addInts(a: 2, b: 3)
+        }
+    $$));
+
+    create function add_bigints(a bigint, b bigint)
+        returns bigint language sql volatile
+    as $$ select a + b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            addBigints(a: 3, b: 4)
         }
     $$));
 
