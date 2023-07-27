@@ -32,6 +32,17 @@ begin;
         }
     $$));
 
+    create function add_reals(a real, b real)
+        returns real language sql volatile
+    as $$ select a + b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            addReals(a: 4.5, b: 5.6)
+        }
+    $$));
+
+
     create function and_bools(a bool, b bool)
         returns bool language sql volatile
     as $$ select a and b; $$;
