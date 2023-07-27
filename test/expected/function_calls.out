@@ -136,4 +136,21 @@ begin;
  }
 (1 row)
 
+    create function concat_text(a text, b text)
+        returns text language sql volatile
+    as $$ select a || b; $$;
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            concatText(a: "Hello ", b: "World")
+        }
+    $$));
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "concatText": "Hello World"+
+     }                              +
+ }
+(1 row)
+
 rollback;
