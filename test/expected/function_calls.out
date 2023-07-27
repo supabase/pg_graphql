@@ -119,4 +119,21 @@ begin;
  }
 (1 row)
 
+    create function uuid_identity(input uuid)
+        returns uuid language sql volatile
+    as $$ select input; $$;
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            uuidIdentity(input: "d3ef3a8c-2c72-11ee-b094-776acede7221")
+        }
+    $$));
+                          jsonb_pretty                          
+----------------------------------------------------------------
+ {                                                             +
+     "data": {                                                 +
+         "uuidIdentity": "d3ef3a8c-2c72-11ee-b094-776acede7221"+
+     }                                                         +
+ }
+(1 row)
+
 rollback;
