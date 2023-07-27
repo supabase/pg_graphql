@@ -517,6 +517,7 @@ pub enum __Type {
     UpdateInput(UpdateInputType),
     UpdateResponse(UpdateResponseType),
     DeleteResponse(DeleteResponseType),
+    FuncCallResponse(FuncCallResponseType),
     OrderBy(OrderByType),
     OrderByEntity(OrderByEntityType),
     FilterType(FilterTypeType),
@@ -596,6 +597,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.kind(),
             Self::UpdateResponse(x) => x.kind(),
             Self::DeleteResponse(x) => x.kind(),
+            Self::FuncCallResponse(x) => x.kind(),
             Self::FilterType(x) => x.kind(),
             Self::FilterEntity(x) => x.kind(),
             Self::OrderBy(x) => x.kind(),
@@ -630,6 +632,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.name(),
             Self::UpdateResponse(x) => x.name(),
             Self::DeleteResponse(x) => x.name(),
+            Self::FuncCallResponse(x) => x.name(),
             Self::FilterType(x) => x.name(),
             Self::FilterEntity(x) => x.name(),
             Self::OrderBy(x) => x.name(),
@@ -664,6 +667,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.description(),
             Self::UpdateResponse(x) => x.description(),
             Self::DeleteResponse(x) => x.description(),
+            Self::FuncCallResponse(x) => x.description(),
             Self::FilterType(x) => x.description(),
             Self::FilterEntity(x) => x.description(),
             Self::OrderBy(x) => x.description(),
@@ -699,6 +703,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.fields(_include_deprecated),
             Self::UpdateResponse(x) => x.fields(_include_deprecated),
             Self::DeleteResponse(x) => x.fields(_include_deprecated),
+            Self::FuncCallResponse(x) => x.fields(_include_deprecated),
             Self::FilterType(x) => x.fields(_include_deprecated),
             Self::FilterEntity(x) => x.fields(_include_deprecated),
             Self::OrderBy(x) => x.fields(_include_deprecated),
@@ -734,6 +739,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.interfaces(),
             Self::UpdateResponse(x) => x.interfaces(),
             Self::DeleteResponse(x) => x.interfaces(),
+            Self::FuncCallResponse(x) => x.interfaces(),
             Self::FilterType(x) => x.interfaces(),
             Self::FilterEntity(x) => x.interfaces(),
             Self::OrderBy(x) => x.interfaces(),
@@ -778,6 +784,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.enum_values(_include_deprecated),
             Self::UpdateResponse(x) => x.enum_values(_include_deprecated),
             Self::DeleteResponse(x) => x.enum_values(_include_deprecated),
+            Self::FuncCallResponse(x) => x.enum_values(_include_deprecated),
             Self::FilterType(x) => x.enum_values(_include_deprecated),
             Self::FilterEntity(x) => x.enum_values(_include_deprecated),
             Self::OrderBy(x) => x.enum_values(_include_deprecated),
@@ -813,6 +820,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.input_fields(),
             Self::UpdateResponse(x) => x.input_fields(),
             Self::DeleteResponse(x) => x.input_fields(),
+            Self::FuncCallResponse(x) => x.input_fields(),
             Self::FilterType(x) => x.input_fields(),
             Self::FilterEntity(x) => x.input_fields(),
             Self::OrderBy(x) => x.input_fields(),
@@ -955,6 +963,13 @@ pub struct UpdateResponseType {
 pub struct DeleteResponseType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct FuncCallResponseType {
+    pub function: Arc<Function>,
+    pub schema: Arc<__Schema>,
+    pub return_type: Box<__Type>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -1242,13 +1257,13 @@ impl ___Type for MutationType {
             .filter_map(|func| match sql_types.get(&func.type_oid) {
                 None => None,
                 Some(sql_type) => {
-                    if let Some(gql_ret_type) =
+                    if let Some(return_type) =
                         sql_type.to_graphql_type(None, func.is_set_of, &self.schema)
                     {
                         let gql_args: Vec<__InputValue> = func
                             .args()
-                            .filter(|(_, arg_name)| !arg_name.is_none())
-                            .filter_map(|(arg_type, arg_name)| match sql_types.get(&arg_type) {
+                            .filter(|(_, _, arg_name)| !arg_name.is_none())
+                            .filter_map(|(arg_type, _, arg_name)| match sql_types.get(&arg_type) {
                                 Some(t) => {
                                     if matches!(t.category, TypeCategory::Pseudo) {
                                         None
@@ -1275,7 +1290,11 @@ impl ___Type for MutationType {
 
                         Some(__Field {
                             name_: self.schema.graphql_function_field_name(&func),
-                            type_: gql_ret_type,
+                            type_: __Type::FuncCallResponse(FuncCallResponseType {
+                                function: Arc::clone(func),
+                                schema: Arc::clone(&self.schema),
+                                return_type: Box::new(return_type),
+                            }),
                             args: gql_args,
                             description: func.directives.description.clone(),
                             deprecation_reason: None,
@@ -3154,6 +3173,44 @@ impl ___Type for DeleteResponseType {
                 sql_type: None,
             },
         ])
+    }
+}
+
+impl ___Type for FuncCallResponseType {
+    fn kind(&self) -> __TypeKind {
+        self.return_type.kind()
+    }
+
+    fn name(&self) -> Option<String> {
+        self.return_type.name()
+    }
+
+    fn description(&self) -> Option<String> {
+        self.return_type.description()
+    }
+
+    fn enum_values(&self, include_deprecated: bool) -> Option<Vec<__EnumValue>> {
+        self.return_type.enum_values(include_deprecated)
+    }
+
+    fn fields(&self, include_deprecated: bool) -> Option<Vec<__Field>> {
+        self.return_type.fields(include_deprecated)
+    }
+
+    fn input_fields(&self) -> Option<Vec<__InputValue>> {
+        self.return_type.input_fields()
+    }
+
+    fn interfaces(&self) -> Option<Vec<__Type>> {
+        self.return_type.interfaces()
+    }
+
+    fn of_type(&self) -> Option<__Type> {
+        self.return_type.of_type()
+    }
+
+    fn possible_types(&self) -> Option<Vec<__Type>> {
+        self.return_type.possible_types()
     }
 }
 

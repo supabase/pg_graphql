@@ -419,10 +419,20 @@ where
                                         serde_json::json!(mutation_type.name());
                                     conn
                                 }
-                                _ => Err(format!(
-                                    "unexpected type found on mutation object: {}",
-                                    field_def.type_.name().unwrap_or_default()
-                                ))?,
+                                _ => {
+                                    let builder = match to_function_call_builder(
+                                        field_def, selection, variables,
+                                    ) {
+                                        Ok(builder) => builder,
+                                        Err(err) => {
+                                            return Err(err);
+                                        }
+                                    };
+
+                                    let (d, conn) = builder.execute(conn)?;
+                                    res_data[alias_or_name(selection)] = d;
+                                    conn
+                                }
                             },
                         },
                     }

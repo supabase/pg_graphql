@@ -73,6 +73,7 @@ pub struct Function {
     pub schema_name: String,
     pub arg_types: Vec<u32>,
     pub arg_names: Option<Vec<String>>,
+    pub arg_type_names: Vec<String>,
     pub volatility: FunctionVolatility,
     pub type_oid: u32,
     pub type_name: String,
@@ -83,10 +84,11 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn args(&self) -> impl Iterator<Item = (u32, Option<&str>)> {
+    pub fn args(&self) -> impl Iterator<Item = (u32, &str, Option<&str>)> {
         ArgsIterator {
             index: 0,
             arg_types: &self.arg_types,
+            arg_type_names: &self.arg_type_names,
             arg_names: &self.arg_names,
         }
     }
@@ -95,14 +97,16 @@ impl Function {
 struct ArgsIterator<'a> {
     index: usize,
     arg_types: &'a [u32],
+    arg_type_names: &'a Vec<String>,
     arg_names: &'a Option<Vec<String>>,
 }
 
 impl<'a> Iterator for ArgsIterator<'a> {
-    type Item = (u32, Option<&'a str>);
+    type Item = (u32, &'a str, Option<&'a str>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.arg_types.len() {
+            debug_assert!(self.arg_types.len() == self.arg_type_names.len());
             let arg_name = if let Some(arg_names) = self.arg_names {
                 debug_assert!(arg_names.len() >= self.arg_types.len());
                 let arg_name = arg_names[self.index].as_str();
@@ -115,8 +119,9 @@ impl<'a> Iterator for ArgsIterator<'a> {
                 None
             };
             let arg_type = self.arg_types[self.index];
+            let arg_type_name = &self.arg_type_names[self.index];
             self.index += 1;
-            Some((arg_type, arg_name))
+            Some((arg_type, arg_type_name, arg_name))
         } else {
             None
         }

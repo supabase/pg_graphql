@@ -59,10 +59,10 @@ pub trait MutationEntrypoint<'conn> {
         let res: pgrx::JsonB = match res_q.first().get::<JsonB>(1) {
             Ok(Some(dat)) => dat,
             Ok(None) => JsonB(serde_json::Value::Null),
-            Err(_) => {
-                return Err(
-                    "Internal Error: Failed to load result from transpiled query".to_string(),
-                );
+            Err(e) => {
+                return Err(format!(
+                    "Internal Error: Failed to load result from transpiled query: {e}"
+                ));
             }
         };
 
@@ -545,6 +545,69 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
     }
 }
 
+impl MutationEntrypoint<'_> for FunctionCallBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        let func_name = &self.function.name;
+
+        let referenced_arg_names: HashSet<&str> =
+            self.args_builder.args.keys().map(|k| k.as_str()).collect();
+
+        let referenced_args: Vec<(u32, &str, &str)> = self
+            .function
+            .args()
+            .filter_map(|(arg_type, arg_type_name, arg_name)| {
+                if let Some(arg_name) = arg_name {
+                    Some((arg_type, arg_type_name, arg_name))
+                } else {
+                    None
+                }
+            })
+            .filter(|(_, _, arg_name)| referenced_arg_names.contains(arg_name))
+            .collect();
+
+        // let mut values_rows_clause: Vec<String> = vec![];
+
+        // for row_map in &self.objects {
+        //     let mut working_row = vec![];
+        //     for column in referenced_columns.iter() {
+        //         let elem_clause = match row_map.row.get(&column.name) {
+        //             None => "default".to_string(),
+        //             Some(elem) => match elem {
+        //                 InsertElemValue::Default => "default".to_string(),
+        //                 InsertElemValue::Value(val) => {
+        //                     param_context.clause_for(val, &column.type_name)?
+        //                 }
+        //             },
+        //         };
+        //         working_row.push(elem_clause);
+        //     }
+        //     // (1, 'hello', 5)
+        //     let insert_row_clause = format!("({})", working_row.join(", "));
+        //     values_rows_clause.push(insert_row_clause);
+        // }
+
+        // let values_clause = values_rows_clause.join(", ");
+
+        let mut arg_clauses = vec![];
+        for (_, arg_type_name, arg_name) in referenced_args {
+            let arg_clause = match self.args_builder.args.get(arg_name) {
+                Some(arg) => match arg {
+                    FuncCallArgValue::Value(val) => param_context.clause_for(val, arg_type_name)?,
+                },
+                None => {
+                    return Err(format!("No value set for argument {}", arg_name));
+                }
+            };
+            arg_clauses.push(arg_clause);
+        }
+
+        let args_clause = format!("({})", arg_clauses.join(", "));
+
+        let query = format!("select to_jsonb({func_name}{args_clause});");
+        Ok(query)
+    }
+}
+
 impl OrderByBuilder {
     fn to_order_by_clause(&self, block_name: &str) -> String {
         let mut frags = vec![];
@@ -603,11 +666,7 @@ pub struct ParamContext {
 impl ParamContext {
     // Pushes a parameter into the context and returns a SQL clause to reference it
     //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
-    fn clause_for(
-        &mut self,
-        value: &serde_json::Value,
-        type_name: &String,
-    ) -> Result<String, String> {
+    fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String> {
         let type_oid = match type_name.ends_with("[]") {
             true => PgOid::BuiltIn(PgBuiltInOids::TEXTARRAYOID),
             false => PgOid::BuiltIn(PgBuiltInOids::TEXTOID),

@@ -546,6 +546,77 @@ where
     }
 }
 
+pub struct FunctionCallBuilder {
+    pub alias: String,
+
+    // metadata
+    pub function: Arc<Function>,
+
+    // args
+    pub args_builder: FuncCallArgsBuilder,
+}
+
+#[derive(Clone, Debug)]
+pub struct FuncCallArgsBuilder {
+    // String is arg name
+    pub args: HashMap<String, FuncCallArgValue>,
+}
+
+#[derive(Clone, Debug)]
+pub enum FuncCallArgValue {
+    Value(serde_json::Value),
+}
+
+pub fn to_function_call_builder<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<FunctionCallBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let type_ = field.type_().unmodified_type();
+    let alias = alias_or_name(query_field);
+
+    match &type_ {
+        __Type::FuncCallResponse(func_call_resp_type) => {
+            let args = field.args();
+            let allowed_args: Vec<&str> = args.iter().map(|a| a.name_.as_str()).collect();
+            restrict_allowed_arguments(allowed_args, query_field)?;
+            let args = read_func_call_args(field, query_field, variables)?;
+
+            Ok(FunctionCallBuilder {
+                alias,
+                function: Arc::clone(&func_call_resp_type.function),
+                args_builder: args,
+            })
+        }
+        _ => Err(format!(
+            "can not build query for non-function type {:?}",
+            type_.name()
+        )),
+    }
+}
+
+fn read_func_call_args<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<FuncCallArgsBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let mut args = HashMap::new();
+    for arg in field.args() {
+        let arg_value = read_argument(&arg.name(), field, query_field, variables)?;
+        args.insert(
+            arg.name(),
+            FuncCallArgValue::Value(gson::gson_to_json(&arg_value)?),
+        );
+    }
+    Ok(FuncCallArgsBuilder { args })
+}
+
 #[derive(Clone, Debug)]
 pub struct ConnectionBuilderSource {
     pub table: Arc<Table>,
