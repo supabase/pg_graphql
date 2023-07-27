@@ -32,4 +32,14 @@ begin;
         }
     $$));
 
+    create function and_bools(a bool, b bool)
+        returns bool language sql volatile
+    as $$ select a and b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            andBools(a: true, b: false)
+        }
+    $$));
+
 rollback;
