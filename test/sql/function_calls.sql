@@ -122,4 +122,14 @@ begin;
         }
     $$));
 
+    create function next_minute(t timestamp)
+        returns timestamp language sql volatile
+    as $$ select t + interval '1 minute'; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            nextMinute(t: "2023-07-28 12:39:05")
+        }
+    $$));
+
 rollback;
