@@ -1,6 +1,7 @@
 use bimap::BiBTreeMap;
 use cached::proc_macro::cached;
 use cached::SizedCache;
+use lazy_static::lazy_static;
 use pgrx::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -101,6 +102,10 @@ struct ArgsIterator<'a> {
     arg_names: &'a Option<Vec<String>>,
 }
 
+lazy_static! {
+    static ref TEXT_TYPE: String = "text".to_string();
+}
+
 impl<'a> Iterator for ArgsIterator<'a> {
     type Item = (u32, &'a str, Option<&'a str>);
 
@@ -119,7 +124,10 @@ impl<'a> Iterator for ArgsIterator<'a> {
                 None
             };
             let arg_type = self.arg_types[self.index];
-            let arg_type_name = &self.arg_type_names[self.index];
+            let mut arg_type_name = &self.arg_type_names[self.index];
+            if arg_type_name == "character" {
+                arg_type_name = &TEXT_TYPE;
+            }
             self.index += 1;
             Some((arg_type, arg_type_name, arg_name))
         } else {
