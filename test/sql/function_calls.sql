@@ -112,13 +112,15 @@ begin;
         }
     $$));
 
+    set time zone 'Asia/Kolkata'; -- same as IST
+
     create function next_hour_with_timezone(t time with time zone)
         returns time with time zone language sql volatile
     as $$ select t + interval '1 hour'; $$;
 
     select jsonb_pretty(graphql.resolve($$
         mutation {
-            nextHourWithTimezone(t: "10:20 IST")
+            nextHourWithTimezone(t: "10:20+05:30")
         }
     $$));
 
@@ -129,6 +131,16 @@ begin;
     select jsonb_pretty(graphql.resolve($$
         mutation {
             nextMinute(t: "2023-07-28 12:39:05")
+        }
+    $$));
+
+    create function next_minute_with_timezone(t timestamptz)
+        returns timestamptz language sql volatile
+    as $$ select t + interval '1 minute'; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            nextMinuteWithTimezone(t: "2023-07-28 12:39:05+05:30")
         }
     $$));
 
