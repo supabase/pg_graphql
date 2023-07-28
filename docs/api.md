@@ -528,7 +528,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
 
-**Example**
+**Example: simple**
 
 === "Query"
     ```graphql
@@ -571,9 +571,10 @@ Not all operators are available on every `<Type>Filter` type. For example, `UUID
     }
     ```
 
-Multiple filters can be combined with `and`, `or` and `not` operators. The `and` and `or` operators accept a list of `<Type>Filter`.
 
-** Example **
+** Example: and/or **
+
+Multiple filters can be combined with `and`, `or` and `not` operators. The `and` and `or` operators accept a list of `<Type>Filter`.
 
 === "`and` Filter Query"
     ```graphql
@@ -674,9 +675,10 @@ Multiple filters can be combined with `and`, `or` and `not` operators. The `and`
     }
     ```
 
-`not` accepts a single `<Type>Filter`.
 
-** Example **
+** Example: not **
+
+`not` accepts a single `<Type>Filter`.
 
 === "`not` Filter Query"
     ```graphql
@@ -738,9 +740,10 @@ Multiple filters can be combined with `and`, `or` and `not` operators. The `and`
     }
     ```
 
-The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
 
-** Example **
+** Example: nested composition **
+
+The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
 
 === "Query"
     ```graphql
@@ -807,16 +810,16 @@ The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
     }
     ```
 
-Empty filters are ignored, i.e. they behave as if the operator was not specified at all.
+** Example: empty **
 
-** Example **
+Empty filters are ignored, i.e. they behave as if the operator was not specified at all.
 
 === "Query"
     ```graphql
     {
       blogCollection(
         filter: {
-          and:[], or: [], not: {}
+          and: [], or: [], not: {}
         }
       ) {
         edges {
@@ -881,9 +884,10 @@ Empty filters are ignored, i.e. they behave as if the operator was not specified
     }
     ```
 
-Multiple column filters at the same level will be implicitly combined with boolean `and`. In the following example the `id: {eq: 1}` and `name: {eq: "A: Blog 1"}` will be `and`ed.
 
-** Example **
+** Example: implicit and **
+
+Multiple column filters at the same level will be implicitly combined with boolean `and`. In the following example the `id: {eq: 1}` and `name: {eq: "A: Blog 1"}` will be `and`ed.
 
 === "Query"
     ```graphql
@@ -951,8 +955,6 @@ Multiple column filters at the same level will be implicitly combined with boole
     ```
 
 This means that an `and` filter can be often be simplified. In the following example all queries are equivalent and produce the same result.
-
-** Example **
 
 === "Original `and` Query"
     ```graphql
@@ -1065,8 +1067,6 @@ This means that an `and` filter can be often be simplified. In the following exa
     ```
 
 Be aware that the above simplification only works for the `and` operator. If you try it with an `or` operator it will behave like an `and`.
-
-** Example **
 
 === "Query"
     ```graphql
