@@ -174,4 +174,14 @@ begin;
         }
     $$));
 
+    create function concat_varchars(a varchar(2), b varchar(3))
+        returns varchar(5) language sql volatile
+    as $$ select (a::varchar(2) || b::varchar(3))::varchar(5); $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            concatVarchars(a: "He", b: "llo")
+        }
+    $$));
+
 rollback;
