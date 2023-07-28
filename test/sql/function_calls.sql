@@ -102,4 +102,14 @@ begin;
         }
     $$));
 
+    create function next_hour(t time)
+        returns time language sql volatile
+    as $$ select t + interval '1 hour'; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            nextHour(t: "10:20")
+        }
+    $$));
+
 rollback;
