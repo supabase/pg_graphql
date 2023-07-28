@@ -692,6 +692,36 @@ begin;
                          "name": "IDFilter",      +
                          "ofType": null           +
                      }                            +
+                 },                               +
+                 {                                +
+                     "name": "and",               +
+                     "type": {                    +
+                         "kind": "LIST",          +
+                         "name": null,            +
+                         "ofType": {              +
+                             "kind": "NON_NULL",  +
+                             "name": null         +
+                         }                        +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "name": "or",                +
+                     "type": {                    +
+                         "kind": "LIST",          +
+                         "name": null,            +
+                         "ofType": {              +
+                             "kind": "NON_NULL",  +
+                             "name": null         +
+                         }                        +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "name": "not",               +
+                     "type": {                    +
+                         "kind": "INPUT_OBJECT",  +
+                         "name": "MainTypeFilter",+
+                         "ofType": null           +
+                     }                            +
                  }                                +
              ]                                    +
          }                                        +

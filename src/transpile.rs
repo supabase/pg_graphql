@@ -685,7 +685,39 @@ impl FilterBuilderElem {
                 Ok(frag)
             }
             Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),
+            FilterBuilderElem::Compound(compound_builder) => {
+                compound_builder.to_sql(block_name, table, param_context)
+            }
         }
+    }
+}
+
+impl CompoundFilterBuilder {
+    fn to_sql(
+        &self,
+        block_name: &str,
+        table: &Table,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        Ok(match self {
+            CompoundFilterBuilder::And(elements) => {
+                let bool_expressions = elements
+                    .iter()
+                    .map(|e| e.to_sql(block_name, table, param_context))
+                    .collect::<Result<Vec<_>, _>>()?;
+                format!("({})", bool_expressions.join(" and "))
+            }
+            CompoundFilterBuilder::Or(elements) => {
+                let bool_expressions = elements
+                    .iter()
+                    .map(|e| e.to_sql(block_name, table, param_context))
+                    .collect::<Result<Vec<_>, _>>()?;
+                format!("({})", bool_expressions.join(" or "))
+            }
+            CompoundFilterBuilder::Not(elem) => {
+                format!("not({})", elem.to_sql(block_name, table, param_context)?)
+            }
+        })
     }
 }
 

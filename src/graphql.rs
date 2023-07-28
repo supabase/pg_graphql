@@ -3073,7 +3073,7 @@ impl ___Type for DeleteResponseType {
 use std::str::FromStr;
 use std::string::ToString;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum FilterOp {
     Equal,
     NotEqual,
@@ -3356,6 +3356,10 @@ impl ___Type for FilterTypeType {
     }
 }
 
+pub(crate) const AND_FILTER_NAME: &str = "and";
+pub(crate) const OR_FILTER_NAME: &str = "or";
+pub(crate) const NOT_FILTER_NAME: &str = "not";
+
 impl ___Type for FilterEntityType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::INPUT_OBJECT
@@ -3373,6 +3377,10 @@ impl ___Type for FilterEntityType {
     }
 
     fn input_fields(&self) -> Option<Vec<__InputValue>> {
+        let mut and_column_exists = false;
+        let mut or_column_exists = false;
+        let mut not_column_exists = false;
+
         let mut f: Vec<__InputValue> = self
             .table
             .columns
@@ -3388,6 +3396,16 @@ impl ___Type for FilterEntityType {
                 // Should be a scalar
                 if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
                     let column_graphql_name = self.schema.graphql_column_field_name(col);
+
+                    if column_graphql_name == AND_FILTER_NAME {
+                        and_column_exists = true;
+                    }
+                    if column_graphql_name == OR_FILTER_NAME {
+                        or_column_exists = true;
+                    }
+                    if column_graphql_name == NOT_FILTER_NAME {
+                        not_column_exists = true;
+                    }
 
                     match utype.unmodified_type() {
                         __Type::Scalar(s) => Some(__InputValue {
@@ -3437,6 +3455,74 @@ impl ___Type for FilterEntityType {
                 description: None,
                 default_value: None,
                 sql_type: Some(NodeSQLType::NodeId(pkey_cols)),
+            });
+        }
+
+        // If there is a column named `and` (and inflection is disabled) and
+        // we were to add the `and` filter entry in this list there would be two
+        // entries named `and` in the list returned by this method. Then
+        // during filter argument validation both of these will be checked
+        // against any key in the input named `and` and one of them will fail
+        // the validation. This means the user can neither use a simple filter
+        // on the `and` column nor use `and` in compound expressions.
+        //
+        // To prevent this we do not add the `and` filter entry which essentially
+        // disables the `and` compound filter. But at least the user is able to
+        // use simple column filters.
+        //
+        // Similiar logic applies for `or` and `not` filters.
+        //
+        // Arguably this smartness is unnecessary because users should not
+        // name their columns `and`, `or` or `not` but the counter argument is
+        // that in the case they do make such a mistake we degrade gracefully
+        // instead of punishing them too harshly.
+        if !and_column_exists {
+            f.push(__InputValue {
+                name_: AND_FILTER_NAME.to_string(),
+                type_: __Type::List(ListType {
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::FilterEntity(FilterEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        })),
+                    })),
+                }),
+                description: Some(
+                    "Returns true only if all its inner filters are true, otherwise returns false"
+                        .to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            });
+        }
+        if !or_column_exists {
+            f.push(__InputValue {
+                name_: OR_FILTER_NAME.to_string(),
+                type_: __Type::List(ListType {
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new( __Type::FilterEntity(FilterEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        }))
+                    })),
+                }),
+                description: Some(
+                    "Returns true if at least one of its inner filters is true, otherwise returns false".to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            });
+        }
+        if !not_column_exists {
+            f.push(__InputValue {
+                name_: NOT_FILTER_NAME.to_string(),
+                type_: __Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                }),
+                description: Some("Negates a filter".to_string()),
+                default_value: None,
+                sql_type: None,
             });
         }
 

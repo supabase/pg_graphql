@@ -229,6 +229,9 @@ Connections wrap a result set with some additional metadata.
       description: StringFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
+      and: [BlogFilter!]
+      or: [BlogFilter!]
+      not: BlogFilter
     }
     ```
 
@@ -304,7 +307,7 @@ Metadata relating to the current page of a result set is available on the `pageI
     }
     ```
 
-To paginate forward in the collection, use the `first` and `after` aguments. To retrive the first page, the `after` argument should be null or absent.
+To paginate forward in the collection, use the `first` and `after` arguments. To retrieve the first page, the `after` argument should be null or absent.
 
 **Example**
 
@@ -447,6 +450,9 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       description: StringFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
+      and: [BlogFilter!]
+      or: [BlogFilter!]
+      not: BlogFilter
     }
     ```
 
@@ -522,7 +528,7 @@ The following list shows the operators that may be available on `<Type>Filter` t
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
 
-**Example**
+**Example: simple**
 
 === "Query"
     ```graphql
@@ -565,10 +571,545 @@ Not all operators are available on every `<Type>Filter` type. For example, `UUID
     }
     ```
 
-When multiple filters are provided to the `filter` argument, all conditions must be met for a record to be returned. In other words, multiple filters are composed with `AND` boolean logic.
 
-We expect to expand support to user defined `AND` and `OR` composition in a future release.
+** Example: and/or **
 
+Multiple filters can be combined with `and`, `or` and `not` operators. The `and` and `or` operators accept a list of `<Type>Filter`.
+
+=== "`and` Filter Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          and: [
+            {id: {eq: 1}}
+            {name: {eq: "A: Blog 1"}}
+          ]
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`and` Filter Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc1"
+              },
+              "cursor": "WzFd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+=== "`or` Filter Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          or: [
+            {id: {eq: 1}}
+            {name: {eq: "A: Blog 2"}}
+          ]
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`or` Filter Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc1"
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc2"
+              },
+              "cursor": "WzJd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+
+** Example: not **
+
+`not` accepts a single `<Type>Filter`.
+
+=== "`not` Filter Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          not: {id: {eq: 1}}
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`not` Filter Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc2"
+              },
+              "cursor": "WzJd"
+            },
+            {
+              "node": {
+                "id": 3,
+                "name": "A: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc3"
+              },
+              "cursor": "WzNd"
+            },
+            {
+              "node": {
+                "id": 4,
+                "name": "B: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "b desc1"
+              },
+              "cursor": "WzRd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+
+** Example: nested composition **
+
+The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
+
+=== "Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          or: [
+            { id: { eq: 1 } }
+            { id: { eq: 2 } }
+            { and: [{ id: { eq: 3 }, not: { name: { eq: "A: Blog 2" } } }] }
+          ]
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc1"
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc2"
+              },
+              "cursor": "WzJd"
+            },
+            {
+              "node": {
+                "id": 3,
+                "name": "A: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc3"
+              },
+              "cursor": "WzNd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+** Example: empty **
+
+Empty filters are ignored, i.e. they behave as if the operator was not specified at all.
+
+=== "Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          and: [], or: [], not: {}
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc1"
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc2"
+              },
+              "cursor": "WzJd"
+            },
+            {
+              "node": {
+                "id": 3,
+                "name": "A: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc3"
+              },
+              "cursor": "WzNd"
+            },
+            {
+              "node": {
+                "id": 4,
+                "name": "B: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "b desc1"
+              },
+              "cursor": "WzRd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+
+** Example: implicit and **
+
+Multiple column filters at the same level will be implicitly combined with boolean `and`. In the following example the `id: {eq: 1}` and `name: {eq: "A: Blog 1"}` will be `and`ed.
+
+=== "Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          # Equivalent to not: { and: [{id: {eq: 1}}, {name: {eq: "A: Blog 1"}}]}
+          not: {
+            id: {eq: 1}
+            name: {eq: "A: Blog 1"}
+          }
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc2"
+              },
+              "cursor": "WzJd"
+            },
+            {
+              "node": {
+                "id": 3,
+                "name": "A: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc3"
+              },
+              "cursor": "WzNd"
+            },
+            {
+              "node": {
+                "id": 4,
+                "name": "B: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "b desc1"
+              },
+              "cursor": "WzRd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+This means that an `and` filter can be often be simplified. In the following example all queries are equivalent and produce the same result.
+
+=== "Original `and` Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          and: [
+            {id: {gt: 0}}
+            {id: {lt: 2}}
+            {name: {eq: "A: Blog 1"}}
+          ]
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Simplified `and` Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+            id: {gt: 0}
+            id: {lt: 2}
+            name: {eq: "A: Blog 1"}
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Even More Simplified Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+            id: {gt: 0, lt: 2}
+            name: {eq: "A: Blog 1"}
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc2"
+              },
+              "cursor": "WzJd"
+            },
+            {
+              "node": {
+                "id": 3,
+                "name": "A: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "a desc3"
+              },
+              "cursor": "WzNd"
+            },
+            {
+              "node": {
+                "id": 4,
+                "name": "B: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "description": "b desc1"
+              },
+              "cursor": "WzRd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+Be aware that the above simplification only works for the `and` operator. If you try it with an `or` operator it will behave like an `and`.
+
+=== "Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {
+          # This is really an `and` in `or`'s clothing
+          or: {
+            id: {eq: 1}
+            name: {eq: "A: Blog 2"}
+          }
+        }
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            description
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": []
+        }
+      }
+    }
+    ```
+This is because according to the rules of GraphQL list input coercion, if a value passed to an input of list type is not a list, then it is coerced to a list of a single item. So in the above example `or: {id: {eq: 1}, name: {eq: "A: Blog 2}}` will be coerced into `or: [{id: {eq: 1}, name: {eq: "A: Blog 2}}]` which is equivalent to `or: [and: [{id: {eq: 1}}, {name: {eq: "A: Blog 2}}}]` due to implicit `and`ing.
+
+!!! note
+
+    Avoid naming your columns `and`, `or` or `not`. If you do, the corresponding filter operator will not be available for use.
+
+The `and`, `or` and `not` operators also work with update and delete mutations.
 
 #### Ordering
 
@@ -996,6 +1537,9 @@ create table "Blog"(
       description: StringFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
+      and: [BlogFilter!]
+      or: [BlogFilter!]
+      not: BlogFilter
     }
     ```
 

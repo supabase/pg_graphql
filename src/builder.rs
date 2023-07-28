@@ -574,6 +574,13 @@ pub struct ConnectionBuilder {
 }
 
 #[derive(Clone, Debug)]
+pub enum CompoundFilterBuilder {
+    And(Vec<FilterBuilderElem>),
+    Or(Vec<FilterBuilderElem>),
+    Not(FilterBuilderElem),
+}
+
+#[derive(Clone, Debug)]
 pub enum FilterBuilderElem {
     Column {
         column: Arc<Column>,
@@ -581,6 +588,7 @@ pub enum FilterBuilderElem {
         value: serde_json::Value, //String, // string repr castable by postgres
     },
     NodeId(NodeIdInstance),
+    Compound(Box<CompoundFilterBuilder>),
 }
 
 #[derive(Clone, Debug)]
@@ -839,64 +847,136 @@ where
 {
     let validated: gson::Value = read_argument("filter", field, query_field, variables)?;
 
-    let filter_type: FilterEntityType =
-        match field.get_arg("filter").unwrap().type_().unmodified_type() {
-            __Type::FilterEntity(filter_entity) => filter_entity,
-            _ => return Err("Could not locate Filter Entity type".to_string()),
-        };
+    let filter_type = field.get_arg("filter").unwrap().type_().unmodified_type();
+    if !matches!(filter_type, __Type::FilterEntity(_)) {
+        return Err("Could not locate Filter Entity type".to_string());
+    }
 
+    let filter_field_map = input_field_map(&filter_type);
+
+    let filters = create_filters(&validated, &filter_field_map)?;
+
+    Ok(FilterBuilder { elems: filters })
+}
+
+fn create_filters(
+    validated: &gson::Value,
+    filter_field_map: &HashMap<String, __InputValue>,
+) -> Result<Vec<FilterBuilderElem>, String> {
     let mut filters = vec![];
-
     // validated user input kv map
     let kv_map = match validated {
-        gson::Value::Absent | gson::Value::Null => return Ok(FilterBuilder { elems: filters }),
+        gson::Value::Absent | gson::Value::Null => return Ok(filters),
         gson::Value::Object(kv) => kv,
         _ => return Err("Filter re-validation errror".to_string()),
     };
 
-    let filter_field_map = input_field_map(&__Type::FilterEntity(filter_type));
-    for (k, op_to_v) in kv_map.iter() {
+    for (k, op_to_v) in kv_map {
         // k = str, v = {"eq": 1}
         let filter_iv: &__InputValue = match filter_field_map.get(k) {
             Some(filter_iv) => filter_iv,
             None => return Err("Filter re-validation error in filter_iv".to_string()),
         };
 
-        let filter_op_to_value_map: &HashMap<String, gson::Value> = match op_to_v {
+        match op_to_v {
             gson::Value::Absent | gson::Value::Null => continue,
-            gson::Value::Object(op_to_v_map) => op_to_v_map,
-            _ => return Err("Filter re-validation errror op_to_value map".to_string()),
-        };
+            gson::Value::Object(filter_op_to_value_map) => {
+                // key `not` can either be a compound filter or a column. We can find out which it is by
+                // checking its type. If it is a `not` filter then its type will be __Type::FilterEntity(_)
+                // else its type will be __Type::FilterType(_). Refer to the the method
+                // crate::graphql::FilterEntityType::input_fields() method for details.
+                let is_a_not_filter_type = matches!(filter_iv.type_(), __Type::FilterEntity(_));
+                if k == NOT_FILTER_NAME && is_a_not_filter_type {
+                    if let gson::Value::Object(_) = op_to_v {
+                        let inner_filters = create_filters(op_to_v, filter_field_map)?;
+                        // If there are no inner filters we avoid creating an argumentless `not` expression. i.e. avoid `not()`
+                        if !inner_filters.is_empty() {
+                            // Multiple inner filters are implicitly `and`ed together
+                            let inner_filter = FilterBuilderElem::Compound(Box::new(
+                                CompoundFilterBuilder::And(inner_filters),
+                            ));
+                            let filter = FilterBuilderElem::Compound(Box::new(
+                                CompoundFilterBuilder::Not(inner_filter),
+                            ));
+                            filters.push(filter);
+                        }
+                    } else {
+                        return Err("Invalid `not` filter".to_string());
+                    }
+                } else {
+                    for (filter_op_str, filter_val) in filter_op_to_value_map {
+                        let filter_op = FilterOp::from_str(filter_op_str)?;
 
-        for (filter_op_str, filter_val) in filter_op_to_value_map.iter() {
-            let filter_op = FilterOp::from_str(filter_op_str)?;
+                        // Skip absent
+                        // Technically nulls should be treated as literals. It will always filter out all rows
+                        // val <op> null is never true
+                        if filter_val == &gson::Value::Absent {
+                            continue;
+                        }
 
-            // Skip absent
-            // Technically nulls should be treated as literals. It will always filter out all rows
-            // val <op> null is never true
-            if filter_val == &gson::Value::Absent {
-                continue;
+                        let filter_builder =
+                            create_filter_builder_elem(filter_iv, filter_op, filter_val)?;
+                        filters.push(filter_builder);
+                    }
+                }
             }
+            gson::Value::Array(values) if k == AND_FILTER_NAME || k == OR_FILTER_NAME => {
+                // If there are no inner filters we avoid creating an argumentless `and`/`or` expression
+                // which would have been anyways compiled away during transpilation
+                if !values.is_empty() {
+                    let mut compound_filters = Vec::with_capacity(values.len());
+                    for value in values {
+                        let inner_filters = create_filters(value, filter_field_map)?;
+                        // Avoid argumentless `and`
+                        if !inner_filters.is_empty() {
+                            // Multiple inner filters are implicitly `and`ed together
+                            let inner_filter = FilterBuilderElem::Compound(Box::new(
+                                CompoundFilterBuilder::And(inner_filters),
+                            ));
+                            compound_filters.push(inner_filter);
+                        }
+                    }
 
-            match &filter_iv.sql_type {
-                Some(NodeSQLType::Column(col)) => {
-                    let filter_builder = FilterBuilderElem::Column {
-                        column: Arc::clone(col),
-                        op: filter_op,
-                        value: gson::gson_to_json(filter_val)?,
+                    let filter_builder = if k == AND_FILTER_NAME {
+                        FilterBuilderElem::Compound(Box::new(CompoundFilterBuilder::And(
+                            compound_filters,
+                        )))
+                    } else if k == OR_FILTER_NAME {
+                        FilterBuilderElem::Compound(Box::new(CompoundFilterBuilder::Or(
+                            compound_filters,
+                        )))
+                    } else {
+                        return Err(
+                            "Only `and` and `or` filters are allowed to take an array as input."
+                                .to_string(),
+                        );
                     };
+
                     filters.push(filter_builder);
                 }
-                Some(NodeSQLType::NodeId(_)) => {
-                    let filter_builder =
-                        FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?);
-                    filters.push(filter_builder);
-                }
-                _ => return Err("Filter type error, attempted filter on non-column".to_string()),
             }
+            _ => return Err("Filter re-validation errror op_to_value map".to_string()),
         }
     }
-    Ok(FilterBuilder { elems: filters })
+    Ok(filters)
+}
+
+fn create_filter_builder_elem(
+    filter_iv: &__InputValue,
+    filter_op: FilterOp,
+    filter_val: &gson::Value,
+) -> Result<FilterBuilderElem, String> {
+    Ok(match &filter_iv.sql_type {
+        Some(NodeSQLType::Column(col)) => FilterBuilderElem::Column {
+            column: Arc::clone(col),
+            op: filter_op,
+            value: gson::gson_to_json(filter_val)?,
+        },
+        Some(NodeSQLType::NodeId(_)) => {
+            FilterBuilderElem::NodeId(parse_node_id(filter_val.clone())?)
+        }
+        _ => return Err("Filter type error, attempted filter on non-column".to_string()),
+    })
 }
 
 /// Reads the "orderBy" argument. Auto-appends the primary key
