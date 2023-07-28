@@ -1132,7 +1132,10 @@ impl ___Type for QueryType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut f = vec![];
+        let mut f = function_fields(
+            &self.schema,
+            &[FunctionVolatility::Immutable, FunctionVolatility::Stable],
+        );
 
         let single_entrypoint = __Field {
             name_: "node".to_string(),
@@ -1221,11 +1224,8 @@ impl ___Type for QueryType {
     }
 }
 
-fn function_fields(
-    schema: &Arc<__Schema>,
-    sql_types: &HashMap<u32, Arc<Type>>,
-    volatilities: &[FunctionVolatility],
-) -> Vec<__Field> {
+fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) -> Vec<__Field> {
+    let sql_types = &schema.context.types;
     schema
         .context
         .functions
@@ -1310,8 +1310,7 @@ impl ___Type for MutationType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let sql_types = &self.schema.context.types;
-        let mut f = function_fields(&self.schema, sql_types, &[FunctionVolatility::Volatile]);
+        let mut f = function_fields(&self.schema, &[FunctionVolatility::Volatile]);
 
         // TODO, filter to types in type map in case any were filtered out
         for table in self.schema.context.tables.values() {

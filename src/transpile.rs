@@ -545,8 +545,8 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
     }
 }
 
-impl MutationEntrypoint<'_> for FunctionCallBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+impl FunctionCallBuilder {
+    fn create_query(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let func_name = &self.function.name;
 
         let referenced_arg_names: HashSet<&str> =
@@ -582,6 +582,18 @@ impl MutationEntrypoint<'_> for FunctionCallBuilder {
 
         let query = format!("select to_jsonb({func_name}{args_clause});");
         Ok(query)
+    }
+}
+
+impl MutationEntrypoint<'_> for FunctionCallBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        self.create_query(param_context)
+    }
+}
+
+impl QueryEntrypoint for FunctionCallBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        self.create_query(param_context)
     }
 }
 

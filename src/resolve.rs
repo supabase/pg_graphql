@@ -262,9 +262,26 @@ where
                                 let now_json = now_jsonb.0;
                                 res_data[alias_or_name(selection)] = now_json;
                             }
-                            _ => res_errors.push(ErrorMessage {
-                                message: "unexpected type found on query object".to_string(),
-                            }),
+                            _ => {
+                                let function_call_builder =
+                                    to_function_call_builder(field_def, selection, variables);
+
+                                match function_call_builder {
+                                    Ok(builder) => {
+                                        match <FunctionCallBuilder as QueryEntrypoint>::execute(
+                                            &builder,
+                                        ) {
+                                            Ok(d) => {
+                                                res_data[alias_or_name(selection)] = d;
+                                            }
+                                            Err(msg) => {
+                                                res_errors.push(ErrorMessage { message: msg })
+                                            }
+                                        }
+                                    }
+                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                }
+                            }
                         },
                     },
                 }
@@ -429,7 +446,10 @@ where
                                         }
                                     };
 
-                                    let (d, conn) = builder.execute(conn)?;
+                                    let (d, conn) =
+                                        <FunctionCallBuilder as MutationEntrypoint>::execute(
+                                            &builder, conn,
+                                        )?;
                                     res_data[alias_or_name(selection)] = d;
                                     conn
                                 }
