@@ -112,4 +112,14 @@ begin;
         }
     $$));
 
+    create function next_hour_with_timezone(t time with time zone)
+        returns time with time zone language sql volatile
+    as $$ select t + interval '1 hour'; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            nextHourWithTimezone(t: "10:20 IST")
+        }
+    $$));
+
 rollback;
