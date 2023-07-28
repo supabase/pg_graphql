@@ -504,4 +504,48 @@ begin;
     );
     rollback to savepoint a;
 
+    -- column named `and` updates the entity's <Entity>Filter introspection schema's type
+    comment on schema public is e'@graphql({"inflect_names": false})';
+
+    create table clashes(
+        id serial primary key,
+        email varchar(255) not null
+    );
+
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "clashesFilter") {
+            kind
+            inputFields {
+              name
+              type {
+                kind
+                name
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+    alter table clashes add column "and" int;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "clashesFilter") {
+            kind
+            inputFields {
+              name
+              type {
+                kind
+                name
+              }
+            }
+          }
+        }
+        $$)
+    );
+
 rollback;

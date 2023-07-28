@@ -1065,4 +1065,153 @@ begin;
 (1 row)
 
     rollback to savepoint a;
+    -- column named `and` updates the entity's <Entity>Filter introspection schema's type
+    comment on schema public is e'@graphql({"inflect_names": false})';
+    create table clashes(
+        id serial primary key,
+        email varchar(255) not null
+    );
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "clashesFilter") {
+            kind
+            inputFields {
+              name
+              type {
+                kind
+                name
+              }
+            }
+          }
+        }
+        $$)
+    );
+                  jsonb_pretty                   
+-------------------------------------------------
+ {                                              +
+     "data": {                                  +
+         "__type": {                            +
+             "kind": "INPUT_OBJECT",            +
+             "inputFields": [                   +
+                 {                              +
+                     "name": "id",              +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "IntFilter"    +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "email",           +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "StringFilter" +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "nodeId",          +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "IDFilter"     +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "and",             +
+                     "type": {                  +
+                         "kind": "LIST",        +
+                         "name": null           +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "or",              +
+                     "type": {                  +
+                         "kind": "LIST",        +
+                         "name": null           +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "not",             +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "clashesFilter"+
+                     }                          +
+                 }                              +
+             ]                                  +
+         }                                      +
+     }                                          +
+ }
+(1 row)
+
+    alter table clashes add column "and" int;
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "clashesFilter") {
+            kind
+            inputFields {
+              name
+              type {
+                kind
+                name
+              }
+            }
+          }
+        }
+        $$)
+    );
+                  jsonb_pretty                   
+-------------------------------------------------
+ {                                              +
+     "data": {                                  +
+         "__type": {                            +
+             "kind": "INPUT_OBJECT",            +
+             "inputFields": [                   +
+                 {                              +
+                     "name": "id",              +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "IntFilter"    +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "email",           +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "StringFilter" +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "and",             +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "IntFilter"    +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "nodeId",          +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "IDFilter"     +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "or",              +
+                     "type": {                  +
+                         "kind": "LIST",        +
+                         "name": null           +
+                     }                          +
+                 },                             +
+                 {                              +
+                     "name": "not",             +
+                     "type": {                  +
+                         "kind": "INPUT_OBJECT",+
+                         "name": "clashesFilter"+
+                     }                          +
+                 }                              +
+             ]                                  +
+         }                                      +
+     }                                          +
+ }
+(1 row)
+
 rollback;
