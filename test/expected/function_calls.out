@@ -153,4 +153,21 @@ begin;
  }
 (1 row)
 
+    create function next_day(d date)
+        returns date language sql volatile
+    as $$ select d + interval '1 day'; $$;
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            nextDay(d: "2023-07-28")
+        }
+    $$));
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "nextDay": "2023-07-29"+
+     }                          +
+ }
+(1 row)
+
 rollback;
