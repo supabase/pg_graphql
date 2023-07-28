@@ -144,4 +144,14 @@ begin;
         }
     $$));
 
+    create function get_json_obj(input json, key text)
+        returns json language sql volatile
+    as $$ select input -> key; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            getJsonObj(input: "{\"a\": {\"b\": \"foo\"}}", key: "a")
+        }
+    $$));
+
 rollback;
