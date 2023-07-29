@@ -6,14 +6,16 @@ on:
 jobs:
   test:
     name: Run tests
+    strategy:
+      matrix:
+        postgres: [14, 15]
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Build docker images
-      run: docker-compose -f .ci/docker-compose.yml build
+      - name: Build docker images
+        run: PG_VERSION=${{ matrix.postgres }} docker-compose -f .ci/docker-compose.yml build
 
-    - name: Run tests
-      run: docker-compose -f .ci/docker-compose.yml run test
+      - name: Run tests
+        run: PG_VERSION=${{ matrix.postgres }} docker-compose -f .ci/docker-compose.yml run test

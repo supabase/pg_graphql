@@ -6,5 +6,7 @@ services:
     build:
         context: ..
         dockerfile: ./dockerfiles/db/Dockerfile
+        args:
+          PG_VERSION: ${PG_VERSION:-15}
     command:
       - ./bin/installcheck
