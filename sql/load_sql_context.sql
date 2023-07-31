@@ -1,4 +1,4 @@
-with search_path_oids(schema_oid) as (
+with recursive search_path_oids(schema_oid) as (
     select y::regnamespace::oid from unnest(current_schemas(false)) x(y)
 ),
 schemas_(oid, name) as (
@@ -15,6 +15,17 @@ schemas_(oid, name) as (
             pn.oid,
             'USAGE'
         )
+),
+type_hierarchy(base_oid, current_oid) AS (
+    SELECT oid, oid
+    FROM pg_type
+    WHERE typbasetype = 0
+
+    UNION ALL
+
+    SELECT th.base_oid, pt.oid
+    FROM pg_type pt
+    JOIN type_hierarchy th ON pt.typbasetype = th.current_oid
 )
 select
     jsonb_build_object(
@@ -22,6 +33,24 @@ select
             'search_path', (select array_agg(schema_oid) from search_path_oids),
             'role', current_role,
             'schema_version', graphql.get_schema_version()
+        ),
+        'base_type_map', coalesce(
+            (
+			   select 
+                    jsonb_object_agg(
+						current_oid,
+                        base_oid
+                    )
+                from (
+					select current_oid::int, min(base_oid::int) as base_oid
+                    from 
+                        type_hierarchy
+                    where 
+                        current_oid <> base_oid
+                    group by current_oid
+				) as gt			 
+            ),
+            jsonb_build_object()
         ),
         'enums', coalesce(
             (
@@ -97,7 +126,7 @@ select
                         on pt.typrelid = tabs.oid
             ),
             jsonb_build_object()
-        ),
+        ),        
         'composites', coalesce(
             (
                 select
@@ -192,6 +221,10 @@ select
                                 'max_rows', coalesce(
                                     (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) ->> 'max_rows')::int,
                                     30
+                                ),
+                                'resolve_base_type', coalesce(
+                                    (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) -> 'resolve_domain_types') = to_jsonb(true),
+                                    true
                                 )
                             )
                         )

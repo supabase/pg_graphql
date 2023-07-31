@@ -4,8 +4,7 @@ use crate::omit::*;
 use crate::parser_util::*;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_parser::query::{
-    Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, SelectionSet,
-    Text,
+    Definition, Document, FragmentDefinition, Mutation, OperationDefinition, SelectionSet, Text,
 };
 use itertools::Itertools;
 use serde_json::{json, Value};
@@ -89,7 +88,7 @@ where
         },
         Some(op) => match op {
             OperationDefinition::Query(query) => {
-                resolve_query(query, schema, variables, fragment_defs)
+                resolve_selection_set(query.selection_set, schema, variables, fragment_defs)
             }
             OperationDefinition::SelectionSet(selection_set) => {
                 resolve_selection_set(selection_set, schema, variables, fragment_defs)
@@ -105,23 +104,6 @@ where
             },
         },
     }
-}
-
-fn resolve_query<'a, 'b, T>(
-    query: Query<'a, T>,
-    schema_type: &__Schema,
-    variables: &Value,
-    fragment_definitions: Vec<FragmentDefinition<'a, T>>,
-) -> GraphQLResponse
-where
-    T: Text<'a> + Eq + AsRef<str>,
-{
-    resolve_selection_set(
-        query.selection_set,
-        schema_type,
-        variables,
-        fragment_definitions,
-    )
 }
 
 fn resolve_selection_set<'a, 'b, T>(

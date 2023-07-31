@@ -314,6 +314,8 @@ pub struct SchemaDirectives {
     pub inflect_names: bool,
     // @graphql({"max_rows": 20})
     pub max_rows: u64,
+    // @graphql({"resolve_base_type": true})"})
+    pub resolve_base_type: bool,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -340,6 +342,7 @@ pub struct Context {
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
+    pub base_type_map: HashMap<u32, u32>,
 }
 
 impl Hash for Context {
@@ -501,6 +504,24 @@ impl Context {
             && fkey_referenced_columns
                 .iter()
                 .all(|col| referenced_columns_selectable.contains(col))
+    }
+
+    pub fn resolve_base_sql_type(&self, type_oid: u32) -> Option<&Arc<Type>> {
+        let original_type = self.types.get(&type_oid)?;
+
+        match self.schemas.get(&original_type.schema_oid) {
+            None => return Some(original_type),
+            Some(schema) => {
+                if !schema.directives.resolve_base_type {
+                    return Some(original_type);
+                }
+            }
+        }
+
+        self.base_type_map
+            .get(&type_oid)
+            .and_then(|v| self.types.get(v))
+            .or(Some(original_type))
     }
 }
 
