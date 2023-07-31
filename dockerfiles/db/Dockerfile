@@ -1,11 +1,12 @@
-FROM postgres:15
+ARG PG_VERSION=15
+FROM postgres:${PG_VERSION}
 RUN apt-get update
 
 ENV build_deps ca-certificates \
   git \
   build-essential \
   libpq-dev \
-  postgresql-server-dev-15 \
+  postgresql-server-dev-${PG_MAJOR} \
   curl \
   libreadline6-dev \
   zlib1g-dev
@@ -29,7 +30,7 @@ RUN \
 # PGRX
 RUN cargo install cargo-pgrx --version 0.9.7 --locked
 
-RUN cargo pgrx init --pg15 $(which pg_config)
+RUN cargo pgrx init --pg${PG_MAJOR} $(which pg_config)
 
 USER root
 
