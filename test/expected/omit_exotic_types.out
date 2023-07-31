@@ -109,6 +109,15 @@ begin;
          },                            +
          {                             +
              "name": "nodeId"          +
+         },                            +
+         {                             +
+             "name": "and"             +
+         },                            +
+         {                             +
+             "name": "or"              +
+         },                            +
+         {                             +
+             "name": "not"             +
          }                             +
      ]                                 +
  }

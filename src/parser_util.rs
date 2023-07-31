@@ -49,13 +49,13 @@ where
         Selection::InlineFragment(x) => &x.directives,
     };
 
-    if directives.len() > 0 {
+    if !directives.is_empty() {
         for directive in directives {
             let directive_name = directive.name.as_ref();
             match directive_name {
                 "skip" => {
                     if directive.arguments.len() != 1 {
-                        return Err(format!("Incorrect arguments to directive @skip"));
+                        return Err("Incorrect arguments to directive @skip".to_string());
                     }
                     let arg = &directive.arguments[0];
                     if arg.0.as_ref() != "if" {
@@ -72,24 +72,16 @@ where
                         Value::Variable(var_name) => {
                             let var = variables.get(var_name.as_ref());
                             match var {
-                                None => {
-                                    return Err("Value for \"if\" in @skip directive is required"
-                                        .to_string())
+                                Some(serde_json::Value::Bool(bool_val)) => {
+                                    if *bool_val {
+                                        // skip immediately
+                                        return Ok(true);
+                                    }
                                 }
-                                Some(val) => match val {
-                                    serde_json::Value::Bool(bool_val) => {
-                                        if *bool_val {
-                                            // skip immediately
-                                            return Ok(true);
-                                        }
-                                    }
-                                    _ => {
-                                        return Err(
-                                            "Value for \"if\" in @skip directive is required"
-                                                .to_string(),
-                                        );
-                                    }
-                                },
+                                _ => {
+                                    return Err("Value for \"if\" in @skip directive is required"
+                                        .to_string());
+                                }
                             }
                         }
                         _ => (),
@@ -97,7 +89,7 @@ where
                 }
                 "include" => {
                     if directive.arguments.len() != 1 {
-                        return Err(format!("Incorrect arguments to directive @include"));
+                        return Err("Incorrect arguments to directive @include".to_string());
                     }
                     let arg = &directive.arguments[0];
                     if arg.0.as_ref() != "if" {
@@ -114,25 +106,17 @@ where
                         Value::Variable(var_name) => {
                             let var = variables.get(var_name.as_ref());
                             match var {
-                                None => {
+                                Some(serde_json::Value::Bool(bool_val)) => {
+                                    if !bool_val {
+                                        return Ok(true);
+                                    }
+                                }
+                                _ => {
                                     return Err(
                                         "Value for \"if\" in @include directive is required"
                                             .to_string(),
-                                    )
+                                    );
                                 }
-                                Some(val) => match val {
-                                    serde_json::Value::Bool(bool_val) => {
-                                        if !bool_val {
-                                            return Ok(true);
-                                        }
-                                    }
-                                    _ => {
-                                        return Err(
-                                            "Value for \"if\" in @include directive is required"
-                                                .to_string(),
-                                        );
-                                    }
-                                },
                             }
                         }
                         _ => (),
@@ -232,7 +216,7 @@ where
 {
     let result = match graphql_value {
         Value::Null => gson::Value::Null,
-        Value::Boolean(x) => gson::Value::Boolean(x.clone()),
+        Value::Boolean(x) => gson::Value::Boolean(*x),
         Value::Int(x) => {
             let val = x.as_i64();
             match val {
@@ -244,7 +228,7 @@ where
             }
         }
         Value::Float(x) => {
-            let val: gson::Number = gson::Number::Float(x.clone());
+            let val: gson::Number = gson::Number::Float(*x);
             gson::Value::Number(val)
         }
         Value::String(x) => gson::Value::String(x.to_owned()),
@@ -307,10 +291,7 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                 Scalar::Int => match value {
                     GsonValue::Absent => value.clone(),
                     GsonValue::Null => value.clone(),
-                    GsonValue::Number(x) => match x {
-                        GsonNumber::Integer(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
-                    },
+                    GsonValue::Number(GsonNumber::Integer(_)) => value.clone(),
                     _ => return Err(format!("Invalid input for {:?} type", scalar)),
                 },
                 Scalar::Float => match value {

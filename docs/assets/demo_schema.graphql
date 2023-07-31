@@ -48,6 +48,9 @@ input AccountFilter {
   id: IntFilter
   email: StringFilter
   createdAt: DatetimeFilter
+  and: [AccountFilter!]
+  or: [AccountFilter!]
+  not: AccountFilter
 }
 
 input AccountInsertInput {
@@ -137,6 +140,9 @@ input BlogFilter {
   name: StringFilter
   description: StringFilter
   createdAt: DatetimeFilter
+  and: [BlogFilter!]
+  or: [BlogFilter!]
+  not: BlogFilter
 }
 
 input BlogInsertInput {
@@ -200,6 +206,9 @@ input BlogPostFilter {
   body: StringFilter
   status: BlogPostStatusFilter
   createdAt: DatetimeFilter
+  and: [BlogPostFilter!]
+  or: [BlogPostFilter!]
+  not: BlogPostFilter
 }
 
 input BlogPostInsertInput {

@@ -48,7 +48,7 @@ fn to_base_type_name(
 }
 
 fn lowercase_first_letter(token: &str) -> String {
-    let first_char = token.chars().nth(0);
+    let first_char = token.chars().next();
     match first_char {
         Some(c) => format!("{}{}", c.to_lowercase(), &token[c.len_utf8()..]),
         None => token.to_string(),
@@ -1165,7 +1165,7 @@ impl ___Type for QueryType {
             .filter(|table| self.schema.graphql_table_select_types_are_valid(table))
         {
             {
-                let table_base_type_name = &self.schema.graphql_table_base_type_name(&table);
+                let table_base_type_name = &self.schema.graphql_table_base_type_name(table);
 
                 let connection_type = ConnectionType {
                     table: Arc::clone(table),
@@ -1314,7 +1314,7 @@ impl ___Type for MutationType {
 
         // TODO, filter to types in type map in case any were filtered out
         for table in self.schema.context.tables.values() {
-            let table_base_type_name = self.schema.graphql_table_base_type_name(&table);
+            let table_base_type_name = self.schema.graphql_table_base_type_name(table);
 
             if self.schema.graphql_table_insert_types_are_valid(table) {
                 f.push(__Field {
@@ -1513,7 +1513,7 @@ impl ___Type for EnumType {
                 let inflect_names = self.schema.inflect_names(enum_.schema_oid);
                 Some(
                     self.schema
-                        .graphql_enum_base_type_name(&enum_, inflect_names),
+                        .graphql_enum_base_type_name(enum_, inflect_names),
                 )
             }
             EnumSource::FilterIs => Some("FilterIs".to_string()),
@@ -1818,12 +1818,7 @@ impl Type {
 }
 
 pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> Option<__Type> {
-    let sql_type = schema.context.types.get(&col.type_oid);
-    if sql_type.is_none() {
-        // Should never happen
-        return None;
-    }
-    let sql_type = sql_type.unwrap();
+    let sql_type = schema.context.types.get(&col.type_oid)?;
     let maybe_type_w_list_mod = sql_type.to_graphql_type(col.max_characters, false, schema);
     match maybe_type_w_list_mod {
         None => None,
@@ -1889,18 +1884,14 @@ impl ___Type for NodeType {
             .filter(|x| x.permissions.is_selectable)
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
             .filter_map(|col| {
-                if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
-                    Some(__Field {
-                        name_: self.schema.graphql_column_field_name(&col),
-                        type_: utype,
-                        args: vec![],
-                        description: col.directives.description.clone(),
-                        deprecation_reason: None,
-                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                    })
-                } else {
-                    None
-                }
+                sql_column_to_graphql_type(col, &self.schema).map(|utype| __Field {
+                    name_: self.schema.graphql_column_field_name(col),
+                    type_: utype,
+                    args: vec![],
+                    description: col.directives.description.clone(),
+                    deprecation_reason: None,
+                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                })
             })
             .filter(|x| is_valid_graphql_name(&x.name_))
             .collect();
@@ -1945,10 +1936,7 @@ impl ___Type for NodeType {
                         None => true,
                         Some(sql_type) => {
                             // disallow pseudo types
-                            match &sql_type.category {
-                                TypeCategory::Pseudo => false,
-                                _ => true,
-                            }
+                            !matches!(&sql_type.category, TypeCategory::Pseudo)
                         }
                     }
                 })
@@ -1966,7 +1954,7 @@ impl ___Type for NodeType {
                             };
 
                             Some(__Field {
-                                name_: self.schema.graphql_function_field_name(&func),
+                                name_: self.schema.graphql_function_field_name(func),
                                 type_: gql_ret_type,
                                 args: gql_args,
                                 description: func.directives.description.clone(),
@@ -2005,7 +1993,7 @@ impl ___Type for NodeType {
             let foreign_table = foreign_table.unwrap();
             if !self
                 .schema
-                .graphql_table_select_types_are_valid(&foreign_table)
+                .graphql_table_select_types_are_valid(foreign_table)
             {
                 continue;
             }
@@ -2054,7 +2042,7 @@ impl ___Type for NodeType {
             let foreign_table = foreign_table.unwrap();
             if !self
                 .schema
-                .graphql_table_select_types_are_valid(&foreign_table)
+                .graphql_table_select_types_are_valid(foreign_table)
             {
                 continue;
             }
@@ -2065,7 +2053,7 @@ impl ___Type for NodeType {
                         table: Arc::clone(foreign_table),
                         fkey: Some(ForeignKeyReversible {
                             fkey: Arc::clone(fkey),
-                            reverse_reference: reverse_reference,
+                            reverse_reference,
                         }),
                         schema: Arc::clone(&self.schema),
                     };
@@ -2976,19 +2964,15 @@ impl ___Type for InsertInputType {
                 .filter(|x| !x.is_serial)
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 .filter_map(|col| {
-                    if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
-                        Some(__InputValue {
-                            name_: self.schema.graphql_column_field_name(&col),
-                            // If triggers are involved, we can't detect if a field is non-null. Default
-                            // all fields to non-null and let postgres errors handle it.
-                            type_: utype.nullable_type(),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                        })
-                    } else {
-                        None
-                    }
+                    sql_column_to_graphql_type(col, &self.schema).map(|utype| __InputValue {
+                        name_: self.schema.graphql_column_field_name(col),
+                        // If triggers are involved, we can't detect if a field is non-null. Default
+                        // all fields to non-null and let postgres errors handle it.
+                        type_: utype.nullable_type(),
+                        description: None,
+                        default_value: None,
+                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                    })
                 })
                 .collect(),
         )
@@ -3068,18 +3052,14 @@ impl ___Type for UpdateInputType {
                 .filter(|x| !x.is_serial)
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 .filter_map(|col| {
-                    if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
-                        Some(__InputValue {
-                            name_: self.schema.graphql_column_field_name(&col),
-                            // TODO: handle possible array inputs
-                            type_: utype.nullable_type(),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                        })
-                    } else {
-                        None
-                    }
+                    sql_column_to_graphql_type(col, &self.schema).map(|utype| __InputValue {
+                        name_: self.schema.graphql_column_field_name(col),
+                        // TODO: handle possible array inputs
+                        type_: utype.nullable_type(),
+                        description: None,
+                        default_value: None,
+                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                    })
                 })
                 .collect(),
         )
@@ -3221,7 +3201,7 @@ impl ___Type for FuncCallResponseType {
 use std::str::FromStr;
 use std::string::ToString;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum FilterOp {
     Equal,
     NotEqual,
@@ -3504,6 +3484,10 @@ impl ___Type for FilterTypeType {
     }
 }
 
+pub(crate) const AND_FILTER_NAME: &str = "and";
+pub(crate) const OR_FILTER_NAME: &str = "or";
+pub(crate) const NOT_FILTER_NAME: &str = "not";
+
 impl ___Type for FilterEntityType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::INPUT_OBJECT
@@ -3521,6 +3505,10 @@ impl ___Type for FilterEntityType {
     }
 
     fn input_fields(&self) -> Option<Vec<__InputValue>> {
+        let mut and_column_exists = false;
+        let mut or_column_exists = false;
+        let mut not_column_exists = false;
+
         let mut f: Vec<__InputValue> = self
             .table
             .columns
@@ -3536,6 +3524,16 @@ impl ___Type for FilterEntityType {
                 // Should be a scalar
                 if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
                     let column_graphql_name = self.schema.graphql_column_field_name(col);
+
+                    if column_graphql_name == AND_FILTER_NAME {
+                        and_column_exists = true;
+                    }
+                    if column_graphql_name == OR_FILTER_NAME {
+                        or_column_exists = true;
+                    }
+                    if column_graphql_name == NOT_FILTER_NAME {
+                        not_column_exists = true;
+                    }
 
                     match utype.unmodified_type() {
                         __Type::Scalar(s) => Some(__InputValue {
@@ -3585,6 +3583,74 @@ impl ___Type for FilterEntityType {
                 description: None,
                 default_value: None,
                 sql_type: Some(NodeSQLType::NodeId(pkey_cols)),
+            });
+        }
+
+        // If there is a column named `and` (and inflection is disabled) and
+        // we were to add the `and` filter entry in this list there would be two
+        // entries named `and` in the list returned by this method. Then
+        // during filter argument validation both of these will be checked
+        // against any key in the input named `and` and one of them will fail
+        // the validation. This means the user can neither use a simple filter
+        // on the `and` column nor use `and` in compound expressions.
+        //
+        // To prevent this we do not add the `and` filter entry which essentially
+        // disables the `and` compound filter. But at least the user is able to
+        // use simple column filters.
+        //
+        // Similiar logic applies for `or` and `not` filters.
+        //
+        // Arguably this smartness is unnecessary because users should not
+        // name their columns `and`, `or` or `not` but the counter argument is
+        // that in the case they do make such a mistake we degrade gracefully
+        // instead of punishing them too harshly.
+        if !and_column_exists {
+            f.push(__InputValue {
+                name_: AND_FILTER_NAME.to_string(),
+                type_: __Type::List(ListType {
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::FilterEntity(FilterEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        })),
+                    })),
+                }),
+                description: Some(
+                    "Returns true only if all its inner filters are true, otherwise returns false"
+                        .to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            });
+        }
+        if !or_column_exists {
+            f.push(__InputValue {
+                name_: OR_FILTER_NAME.to_string(),
+                type_: __Type::List(ListType {
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new( __Type::FilterEntity(FilterEntityType {
+                            table: Arc::clone(&self.table),
+                            schema: self.schema.clone(),
+                        }))
+                    })),
+                }),
+                description: Some(
+                    "Returns true if at least one of its inner filters is true, otherwise returns false".to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            });
+        }
+        if !not_column_exists {
+            f.push(__InputValue {
+                name_: NOT_FILTER_NAME.to_string(),
+                type_: __Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                }),
+                description: Some("Negates a filter".to_string()),
+                default_value: None,
+                sql_type: None,
             });
         }
 
@@ -3665,7 +3731,7 @@ impl ___Type for OrderByEntityType {
                 .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
                 // TODO  filter out arrays, json and composites
                 .map(|col| __InputValue {
-                    name_: self.schema.graphql_column_field_name(&col),
+                    name_: self.schema.graphql_column_field_name(col),
                     type_: __Type::OrderBy(OrderByType {}),
                     description: None,
                     default_value: None,
@@ -3881,7 +3947,7 @@ impl __Schema {
             .filter(|(_, x)| self.context.schemas.contains_key(&x.schema_oid))
         {
             let enum_type = EnumType {
-                enum_: EnumSource::Enum(Arc::clone(&enum_)),
+                enum_: EnumSource::Enum(Arc::clone(enum_)),
                 schema: Arc::clone(&schema_rc),
             };
 
