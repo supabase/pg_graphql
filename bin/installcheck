@@ -19,7 +19,7 @@ export PG_COLOR=auto
 # Stop the server (if running)
 trap 'pg_ctl stop -m i' sigint sigterm exit
 # Remove temporary data dir
-rm -rf "$tmpdir"
+rm -rf "$TMPDIR"
 
 ##############
 # Initialize #
@@ -28,7 +28,7 @@ rm -rf "$tmpdir"
 initdb --no-locale --encoding=UTF8 --nosync -U "$PGUSER"
 # Start the server
 pg_ctl start -o "-F -c listen_addresses=\"\" -c log_min_messages=WARNING -k $PGDATA"
-# Start the server
+# Create the test db
 createdb contrib_regression
 
 #########
@@ -38,8 +38,15 @@ TESTDIR="test"
 PGXS=$(dirname `pg_config --pgxs`)
 REGRESS="${PGXS}/../test/regress/pg_regress"
 
-# Collect Test List
-TESTS=$(ls ${TESTDIR}/sql | sed -e 's/\..*$//' | sort )
+# Test names can be passed as parameters to this script.
+# If any test names are passed run only those tests.
+# Otherwise run all tests.
+if [ "$#" -ne 0 ]
+then
+    TESTS=$@
+else
+    TESTS=$(ls ${TESTDIR}/sql | sed -e 's/\..*$//' | sort )
+fi
 
 # Execute the test fixtures
 psql -v ON_ERROR_STOP=1 -f test/fixtures.sql -d contrib_regression

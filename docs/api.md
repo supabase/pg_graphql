@@ -1857,7 +1857,7 @@ create table "Employee"(
     }
     ```
 
-=== "EmployeeAddress"
+=== "EmailAddress"
     ```sql
     type EmailAddress {
       nodeId: ID!
