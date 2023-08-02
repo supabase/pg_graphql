@@ -36,19 +36,19 @@ select
         ),
         'base_type_map', coalesce(
             (
-			   select 
+               select
                     jsonb_object_agg(
-						current_oid,
+                        current_oid,
                         base_oid
                     )
                 from (
-					select current_oid::int, min(base_oid::int) as base_oid
-                    from 
+                    select current_oid::int, min(base_oid::int) as base_oid
+                    from
                         type_hierarchy
-                    where 
+                    where
                         current_oid <> base_oid
                     group by current_oid
-				) as gt			 
+                ) as gt
             ),
             jsonb_build_object()
         ),
@@ -126,7 +126,7 @@ select
                         on pt.typrelid = tabs.oid
             ),
             jsonb_build_object()
-        ),        
+        ),
         'composites', coalesce(
             (
                 select

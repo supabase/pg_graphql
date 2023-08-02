@@ -56,7 +56,7 @@ begin;
           $$)
   );
 
-  
+
   select jsonb_pretty(
     graphql.resolve($$
       {
@@ -92,7 +92,7 @@ begin;
           edges {
             node {
               id
-              fieldInt    
+              fieldInt
             }
           }
         }
@@ -147,7 +147,7 @@ begin;
                   }
                 }
               }
-            }            
+            }
           $$)
   );
 
@@ -195,4 +195,4 @@ begin;
   -- TODO: Check that update mutation resolves the base types
   -- TODO: Check that delete mutation resolves the base types
 
-end;
+rollback;
