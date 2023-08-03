@@ -371,4 +371,26 @@ begin;
         }
     $$));
 
+    rollback to savepoint a;
+
+    create table account(
+        id serial primary key,
+        email varchar(255) not null
+    );
+
+    create function returns_account()
+        returns account language sql stable
+    as $$ select id, email from account; $$;
+
+    insert into public.account(email)
+    values
+        ('aardvark@x.com'),
+        ('bat@x.com');
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccount
+        }
+    $$));
+
 rollback;
