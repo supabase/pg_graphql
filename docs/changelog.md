@@ -35,8 +35,10 @@
 - bugfix: remove duplicate Enum registration
 - bugfix: foreign keys on non-null columns produce non-null GraphQL relationships
 
-## master
+## 1.3.0
 - rename enum variants with comment directive `@graphql({"mappings": "sql-value": "graphql_value""})`
 - bugfix: query with more than 50 fields fails
 - bugfix: @skip and @include directives missing from introspection schema
 - feature: Support for `and`, `or` and `not` operators in filters
+
+## master
