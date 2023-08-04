@@ -643,19 +643,21 @@ begin;
                 id
                 email
                 nodeId
+                __typename
             }
         }
     $$));
-                       jsonb_pretty                       
-----------------------------------------------------------
- {                                                       +
-     "data": {                                           +
-         "returnsAccount": {                             +
-             "id": 1,                                    +
-             "email": "aardvark@x.com",                  +
-             "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd"+
-         }                                               +
-     }                                                   +
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": {                                            +
+         "returnsAccount": {                              +
+             "id": 1,                                     +
+             "email": "aardvark@x.com",                   +
+             "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd",+
+             "__typename": "Account"                      +
+         }                                                +
+     }                                                    +
  }
 (1 row)
 

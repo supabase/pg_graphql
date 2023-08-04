@@ -393,6 +393,7 @@ begin;
                 id
                 email
                 nodeId
+                __typename
             }
         }
     $$));
