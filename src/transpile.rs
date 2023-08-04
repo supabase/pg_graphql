@@ -543,9 +543,7 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
 }
 
 impl FunctionCallBuilder {
-    fn create_query(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        let func_name = &self.function.name;
-
+    fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
         let referenced_arg_names: HashSet<&str> =
             self.args_builder.args.keys().map(|k| k.as_str()).collect();
 
@@ -577,20 +575,32 @@ impl FunctionCallBuilder {
 
         let args_clause = format!("({})", arg_clauses.join(", "));
 
-        let query = format!("select to_jsonb({func_name}{args_clause});");
+        let block_name = &rand_block_name();
+        let func_schema = quote_ident(&self.function.schema_name);
+        let func_name = quote_ident(&self.function.name);
+
+        let query = if let Some(node_builder) = &self.node_builder {
+            let select_clause = node_builder.to_sql(block_name, param_context)?;
+            format!(
+                "select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name};"
+            )
+        } else {
+            format!("select to_jsonb({func_schema}.{func_name}{args_clause}) {block_name};")
+        };
+
         Ok(query)
     }
 }
 
 impl MutationEntrypoint<'_> for FunctionCallBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.create_query(param_context)
+        self.to_sql(param_context)
     }
 }
 
 impl QueryEntrypoint for FunctionCallBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.create_query(param_context)
+        self.to_sql(param_context)
     }
 }
 

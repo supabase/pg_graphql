@@ -389,7 +389,11 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsAccount
+            returnsAccount {
+                id
+                email
+                nodeId
+            }
         }
     $$));
 

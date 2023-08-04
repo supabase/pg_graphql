@@ -263,8 +263,12 @@ where
                                 res_data[alias_or_name(selection)] = now_json;
                             }
                             _ => {
-                                let function_call_builder =
-                                    to_function_call_builder(field_def, selection, variables);
+                                let function_call_builder = to_function_call_builder(
+                                    field_def,
+                                    selection,
+                                    &fragment_definitions,
+                                    variables,
+                                );
 
                                 match function_call_builder {
                                     Ok(builder) => {
@@ -438,7 +442,10 @@ where
                                 }
                                 _ => {
                                     let builder = match to_function_call_builder(
-                                        field_def, selection, variables,
+                                        field_def,
+                                        selection,
+                                        &fragment_definitions,
+                                        variables,
                                     ) {
                                         Ok(builder) => builder,
                                         Err(err) => {

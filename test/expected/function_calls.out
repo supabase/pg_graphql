@@ -639,18 +639,23 @@ begin;
         ('bat@x.com');
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsAccount
+            returnsAccount {
+                id
+                email
+                nodeId
+            }
         }
     $$));
-             jsonb_pretty              
----------------------------------------
- {                                    +
-     "data": {                        +
-         "returnsAccount": {          +
-             "id": 1,                 +
-             "email": "aardvark@x.com"+
-         }                            +
-     }                                +
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "returnsAccount": {                             +
+             "id": 1,                                    +
+             "email": "aardvark@x.com",                  +
+             "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd"+
+         }                                               +
+     }                                                   +
  }
 (1 row)
 

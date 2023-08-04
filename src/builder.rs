@@ -5,6 +5,7 @@ use crate::sql_types::*;
 use graphql_parser::query::*;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -554,6 +555,8 @@ pub struct FunctionCallBuilder {
 
     // args
     pub args_builder: FuncCallArgsBuilder,
+
+    pub node_builder: Option<NodeBuilder>,
 }
 
 #[derive(Clone, Debug)]
@@ -570,6 +573,7 @@ pub enum FuncCallArgValue {
 pub fn to_function_call_builder<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
 ) -> Result<FunctionCallBuilder, String>
 where
@@ -585,10 +589,30 @@ where
             restrict_allowed_arguments(allowed_args, query_field)?;
             let args = read_func_call_args(field, query_field, variables)?;
 
+            let node_builder = match func_call_resp_type.return_type.deref() {
+                __Type::Scalar(_) => None,
+                __Type::Node(_) => {
+                    let node_builder =
+                        to_node_builder(field, query_field, fragment_definitions, variables)?;
+                    Some(node_builder)
+                }
+                _ => {
+                    return Err(format!(
+                        "unsupported return type: {}",
+                        func_call_resp_type
+                            .return_type
+                            .unmodified_type()
+                            .name()
+                            .ok_or("Encountered type without name in function call builder")?
+                    ))
+                }
+            };
+
             Ok(FunctionCallBuilder {
                 alias,
                 function: Arc::clone(&func_call_resp_type.function),
                 args_builder: args,
+                node_builder,
             })
         }
         _ => Err(format!(
@@ -1440,7 +1464,14 @@ where
 
     let alias = alias_or_name(query_field);
 
-    let xtype: NodeType = match type_ {
+    let unwrapped_type = match type_ {
+        __Type::FuncCallResponse(func_call_response_type) => {
+            func_call_response_type.return_type.deref().clone()
+        }
+        t => t,
+    };
+
+    let xtype: NodeType = match unwrapped_type {
         __Type::Node(xtype) => {
             restrict_allowed_arguments(vec![], query_field)?;
             xtype
