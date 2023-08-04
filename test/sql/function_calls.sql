@@ -397,4 +397,19 @@ begin;
         }
     $$));
 
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccount {
+                email
+                nodeId
+            }
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccount
+        }
+    $$));
+
 rollback;

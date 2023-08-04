@@ -581,6 +581,11 @@ impl FunctionCallBuilder {
 
         let query = if let Some(node_builder) = &self.node_builder {
             let select_clause = node_builder.to_sql(block_name, param_context)?;
+            let select_clause = if select_clause.is_empty() {
+                "jsonb_build_object()".to_string()
+            } else {
+                select_clause
+            };
             format!(
                 "select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name};"
             )

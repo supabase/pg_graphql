@@ -659,4 +659,39 @@ begin;
  }
 (1 row)
 
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccount {
+                email
+                nodeId
+            }
+        }
+    $$));
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "returnsAccount": {                             +
+             "email": "aardvark@x.com",                  +
+             "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd"+
+         }                                               +
+     }                                                   +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccount
+        }
+    $$));
+        jsonb_pretty         
+-----------------------------
+ {                          +
+     "data": {              +
+         "returnsAccount": {+
+         }                  +
+     }                      +
+ }
+(1 row)
+
 rollback;
