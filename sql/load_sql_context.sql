@@ -223,8 +223,8 @@ select
                                     30
                                 ),
                                 'resolve_base_type', coalesce(
-                                    (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) -> 'resolve_domain_types') = to_jsonb(true),
-                                    true
+                                    (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) -> 'resolve_base_type') = to_jsonb(true),
+                                    false
                                 )
                             )
                         )
