@@ -342,7 +342,7 @@ pub struct Context {
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
-    pub base_type_map: HashMap<u32, u32>,
+    base_type_map: HashMap<u32, u32>,
 }
 
 impl Hash for Context {
@@ -505,28 +505,10 @@ impl Context {
                 .iter()
                 .all(|col| referenced_columns_selectable.contains(col))
     }
-
-    pub fn resolve_base_sql_type(&self, type_oid: u32) -> Option<&Arc<Type>> {
-        let original_type = self.types.get(&type_oid)?;
-
-        match self.schemas.get(&original_type.schema_oid) {
-            None => return Some(original_type),
-            Some(schema) => {
-                if !schema.directives.resolve_base_type {
-                    return Some(original_type);
-                }
-            }
-        }
-
-        self.base_type_map
-            .get(&type_oid)
-            .and_then(|v| self.types.get(v))
-            .or(Some(original_type))
-    }
 }
 
 pub fn load_sql_config() -> Config {
-    let query = include_str!("../sql/load_sql_config.sql");
+    let query: &str = include_str!("../sql/load_sql_config.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let config: Config = serde_json::from_value(sql_result).unwrap();
     config
@@ -549,6 +531,50 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
+
+    fn replace_table_base_types(mut context: Context) -> Context {
+        for (_, table) in context.tables.iter_mut() {
+            let resolve_base_type = context
+                .schemas
+                .get(&table.schema_oid)
+                .is_some_and(|s| s.directives.resolve_base_type);
+
+            if !resolve_base_type {
+                continue;
+            }
+
+            let table = match Arc::get_mut(table) {
+                None => continue,
+                Some(table) => table,
+            };
+
+            for column in table.columns.iter_mut() {
+                let base_oid = match context.base_type_map.get(&column.type_oid) {
+                    Some(oid) => *oid,
+                    None => continue,
+                };
+
+                if let Some(column) = Arc::get_mut(column) {
+                    column.type_oid = base_oid;
+                }
+            }
+
+            //Technically speaking, we should check the schema of the function to see if we should resolve the base type
+            //Problem is this might be counter-intuitive to the user as in this case the function is acting as a virtual column of the table
+            for function in table.functions.iter_mut() {
+                let base_oid = match context.base_type_map.get(&function.type_oid) {
+                    Some(oid) => *oid,
+                    None => continue,
+                };
+
+                if let Some(function) = Arc::get_mut(function) {
+                    function.type_oid = base_oid;
+                }
+            }
+        }
+
+        context
+    }
 
     /// This pass cross-reference types with its details
     fn type_details(mut context: Context) -> Context {
@@ -679,6 +705,7 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     }
 
     context
+        .map(replace_table_base_types)
         .map(type_details)
         .map(column_types)
         .map(Arc::new)

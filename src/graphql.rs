@@ -1661,8 +1661,9 @@ impl Type {
             }
             TypeCategory::Array => match self.array_element_type_oid {
                 Some(array_element_type_oid) => {
+                    let sql_types = &schema.context.types;
                     let element_sql_type: Option<&Arc<Type>> =
-                        schema.context.resolve_base_sql_type(array_element_type_oid);
+                        sql_types.get(&array_element_type_oid);
 
                     let inner_graphql_type: __Type = match element_sql_type {
                         Some(sql_type) => match sql_type.permissions.is_usable {
@@ -1727,7 +1728,7 @@ impl Type {
 }
 
 pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> Option<__Type> {
-    let sql_type = schema.context.resolve_base_sql_type(col.type_oid)?;
+    let sql_type = schema.context.types.get(&col.type_oid)?;
     let maybe_type_w_list_mod = sql_type.to_graphql_type(col.max_characters, false, schema);
     match maybe_type_w_list_mod {
         None => None,
