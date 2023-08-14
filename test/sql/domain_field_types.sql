@@ -160,12 +160,12 @@ select
 -- Get the filter types, specifically shouldn't see json and jsonb types as they aren't supported yet
 select graphql.resolve(
   $$
-  {  
-    __type(name: "DomainTestFilter"){    
+  {
+    __type(name: "DomainTestFilter"){
       inputFields{
         name
         type{
-          name        
+          name
         }
       }
     }
@@ -174,7 +174,7 @@ select graphql.resolve(
 );
 
 -- Should probably test all of the filters but this is just a spot check
-select  
+select
     graphql.resolve (
       $$
       {
@@ -188,7 +188,7 @@ select
         }
       }
       $$
-    );  
+    );
 
 select
   graphql.resolve (
@@ -206,7 +206,7 @@ select
     $$
   );
 
-select  
+select
     graphql.resolve (
       $$
       {
@@ -239,7 +239,7 @@ select
   );
 
 -- Insert types and mutation
-select  
+select
     graphql.resolve (
     $$
     {
@@ -248,7 +248,7 @@ select
           name
           type {
             name
-            kind       
+            kind
           }
         }
       }
@@ -305,7 +305,7 @@ rollback to savepoint a;
 
 -- Update types and mutation
 
-select  
+select
     graphql.resolve (
       $$
       {
@@ -319,14 +319,14 @@ select
           }
         }
       }
-      $$    
+      $$
   );
 
-select  
+select
     graphql.resolve (
       $$
     mutation updateDomainTest {
-      updateDomainTestCollection(        
+      updateDomainTestCollection(
         set: {
           fieldInt: 43
           fieldSmallint: 32766

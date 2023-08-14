@@ -67,6 +67,47 @@ For example, to increase the max rows per page for each table in the `public` sc
 comment on schema public is e'@graphql({"max_rows": 100})';
 ```
 
+### Resolve Base Type
+
+The resolve_base_type option facilitates the resolution of a given type to its GraphQL representation.
+
+This functionality proves particularly valuable when dealing with sql domain types that should align with GraphQL's type mapping:
+
+```sql
+create domain pos_int as int check (value > 0);
+
+create table users {
+  id serial primary key,
+  age pos_int not null
+};
+```
+
+Will resolve to:
+
+```graphql
+type Users{
+  id: ID!
+  age: Opaque!
+}
+```
+
+Setting the resolve base type option:
+
+```sql
+comment on schema public is e'@graphql({"resolve_base_type": true})';
+```
+
+Will now resolve the base type of the pos_int domain type:
+
+```graphql
+type Users{
+  id: ID!
+  age: Int!
+}
+```
+
+By default this option is false but will default to true in the 2.0 release.
+
 ### totalCount
 
 `totalCount` is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.
