@@ -385,7 +385,8 @@ begin;
     insert into public.account(email)
     values
         ('aardvark@x.com'),
-        ('bat@x.com');
+        ('bat@x.com'),
+        ('cat@x.com');
 
     select jsonb_pretty(graphql.resolve($$
         query {
@@ -419,7 +420,7 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsSetofAccount(top: 1) {
+            returnsSetofAccount(top: 2, last: 1) {
                 pageInfo {
                     startCursor
                     endCursor
