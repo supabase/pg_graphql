@@ -387,6 +387,8 @@ begin;
         ('aardvark@x.com'),
         ('bat@x.com'),
         ('cat@x.com');
+    
+    comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
 
     select jsonb_pretty(graphql.resolve($$
         query {
@@ -437,6 +439,7 @@ begin;
                     }
                     __typename
                 }
+                totalCount
                 __typename
             }
         }

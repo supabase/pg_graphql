@@ -638,6 +638,8 @@ begin;
         ('aardvark@x.com'),
         ('bat@x.com'),
         ('cat@x.com');
+    
+    comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
     select jsonb_pretty(graphql.resolve($$
         query {
             returnsAccount {
@@ -719,6 +721,7 @@ begin;
                     }
                     __typename
                 }
+                totalCount
                 __typename
             }
         }
@@ -746,7 +749,8 @@ begin;
                  "startCursor": "WzJd",                               +
                  "hasPreviousPage": true                              +
              },                                                       +
-             "__typename": "AccountConnection"                        +
+             "__typename": "AccountConnection",                       +
+             "totalCount": 2                                          +
          }                                                            +
      }                                                                +
  }
