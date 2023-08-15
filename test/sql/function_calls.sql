@@ -445,4 +445,77 @@ begin;
         }
     $$));
 
+    -- functions with args named `first`, `last`, `before`, `after`, `filter`, or `orderBy` are not exposed
+    create function arg_named_first(first int)
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            argNamedFirst {
+                __typename
+            }
+        }
+    $$));
+
+    create function arg_named_last(last int)
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            argNamedLast {
+                __typename
+            }
+        }
+    $$));
+
+    create function arg_named_before(before int)
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            argNamedBefore {
+                __typename
+            }
+        }
+    $$));
+
+    create function arg_named_after(after int)
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            argNamedAfter {
+                __typename
+            }
+        }
+    $$));
+
+    create function arg_named_filter(filter int)
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            argNamedFilter {
+                __typename
+            }
+        }
+    $$));
+
+    create function arg_named_orderBy(orderBy int)
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            argNamedOrderBy {
+                __typename
+            }
+        }
+    $$));
+
 rollback;
