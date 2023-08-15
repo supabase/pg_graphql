@@ -696,4 +696,69 @@ begin;
  }
 (1 row)
 
+    create function returns_setof_account()
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsSetofAccount {
+                pageInfo {
+                    startCursor
+                    endCursor
+                    hasNextPage
+                    hasPreviousPage
+                }
+                edges {
+                    cursor
+                    node {
+                        nodeId
+                        id
+                        email
+                        __typename
+                    }
+                    __typename
+                }
+                __typename
+            }
+        }
+    $$));
+                             jsonb_pretty                              
+-----------------------------------------------------------------------
+ {                                                                    +
+     "data": {                                                        +
+         "returnsSetofAccount": {                                     +
+             "edges": [                                               +
+                 {                                                    +
+                     "node": {                                        +
+                         "id": 1,                                     +
+                         "email": "aardvark@x.com",                   +
+                         "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd",+
+                         "__typename": "Account"                      +
+                     },                                               +
+                     "cursor": "WzFd",                                +
+                     "__typename": "AccountEdge"                      +
+                 },                                                   +
+                 {                                                    +
+                     "node": {                                        +
+                         "id": 2,                                     +
+                         "email": "bat@x.com",                        +
+                         "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd",+
+                         "__typename": "Account"                      +
+                     },                                               +
+                     "cursor": "WzJd",                                +
+                     "__typename": "AccountEdge"                      +
+                 }                                                    +
+             ],                                                       +
+             "pageInfo": {                                            +
+                 "endCursor": "WzJd",                                 +
+                 "hasNextPage": false,                                +
+                 "startCursor": "WzFd",                               +
+                 "hasPreviousPage": false                             +
+             },                                                       +
+             "__typename": "AccountConnection"                        +
+         }                                                            +
+     }                                                                +
+ }
+(1 row)
+
 rollback;

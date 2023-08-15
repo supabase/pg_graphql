@@ -579,18 +579,29 @@ impl FunctionCallBuilder {
         let func_schema = quote_ident(&self.function.schema_name);
         let func_name = quote_ident(&self.function.name);
 
-        let query = if let Some(node_builder) = &self.node_builder {
-            let select_clause = node_builder.to_sql(block_name, param_context)?;
-            let select_clause = if select_clause.is_empty() {
-                "jsonb_build_object()".to_string()
-            } else {
-                select_clause
-            };
-            format!(
-                "select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name};"
-            )
-        } else {
-            format!("select to_jsonb({func_schema}.{func_name}{args_clause}) {block_name};")
+        let query = match &self.return_type_builder {
+            FuncCallReturnTypeBuilder::Scalar => {
+                format!("select to_jsonb({func_schema}.{func_name}{args_clause}) {block_name};")
+            }
+            FuncCallReturnTypeBuilder::Node(node_builder) => {
+                let select_clause = node_builder.to_sql(block_name, param_context)?;
+                let select_clause = if select_clause.is_empty() {
+                    "jsonb_build_object()".to_string()
+                } else {
+                    select_clause
+                };
+                format!("select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name};")
+            }
+            FuncCallReturnTypeBuilder::Connection(connection_builder) => {
+                let from_clause = format!("{func_schema}.{func_name}{args_clause}");
+                let select_clause = connection_builder.to_sql(
+                    Some(block_name),
+                    param_context,
+                    None,
+                    Some(from_clause),
+                )?;
+                format!("{select_clause}")
+            }
         };
 
         Ok(query)
@@ -918,10 +929,14 @@ impl ConnectionBuilder {
         quoted_parent_block_name: Option<&str>,
         param_context: &mut ParamContext,
         from_func: Option<FromFunction>,
+        from_clause: Option<String>,
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
 
-        let from_clause = self.from_clause(&quoted_block_name, &from_func);
+        let from_clause = match from_clause {
+            Some(from_clause) => format!("{from_clause} {quoted_block_name}"),
+            None => self.from_clause(&quoted_block_name, &from_func),
+        };
 
         let where_clause =
             self.filter
@@ -1074,7 +1089,7 @@ impl ConnectionBuilder {
 
 impl QueryEntrypoint for ConnectionBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(None, param_context, None)
+        self.to_sql(None, param_context, None, None)
     }
 }
 
@@ -1373,7 +1388,7 @@ impl NodeSelection {
             Self::Connection(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_sql(Some(block_name), param_context, None)?
+                builder.to_sql(Some(block_name), param_context, None, None)?
             ),
             Self::Node(builder) => format!(
                 "{}, {}",
@@ -1502,6 +1517,7 @@ impl FunctionBuilder {
                     input_table: Arc::clone(&self.table),
                     input_block_name: block_name.to_string(),
                 }),
+                None,
             )?,
         };
         Ok(sql_frag)

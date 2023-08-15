@@ -413,4 +413,32 @@ begin;
         }
     $$));
 
+    create function returns_setof_account()
+        returns setof account language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsSetofAccount {
+                pageInfo {
+                    startCursor
+                    endCursor
+                    hasNextPage
+                    hasPreviousPage
+                }
+                edges {
+                    cursor
+                    node {
+                        nodeId
+                        id
+                        email
+                        __typename
+                    }
+                    __typename
+                }
+                __typename
+            }
+        }
+    $$));
+
 rollback;

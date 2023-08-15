@@ -556,12 +556,17 @@ pub struct FunctionCallBuilder {
     // args
     pub args_builder: FuncCallArgsBuilder,
 
-    pub node_builder: Option<NodeBuilder>,
+    pub return_type_builder: FuncCallReturnTypeBuilder,
+}
+
+pub enum FuncCallReturnTypeBuilder {
+    Scalar,
+    Node(NodeBuilder),
+    Connection(ConnectionBuilder),
 }
 
 #[derive(Clone, Debug)]
 pub struct FuncCallArgsBuilder {
-    // String is arg name
     pub args: HashMap<String, FuncCallArgValue>,
 }
 
@@ -589,12 +594,17 @@ where
             restrict_allowed_arguments(allowed_args, query_field)?;
             let args = read_func_call_args(field, query_field, variables)?;
 
-            let node_builder = match func_call_resp_type.return_type.deref() {
-                __Type::Scalar(_) => None,
+            let return_type_builder = match func_call_resp_type.return_type.deref() {
+                __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
                 __Type::Node(_) => {
                     let node_builder =
                         to_node_builder(field, query_field, fragment_definitions, variables)?;
-                    Some(node_builder)
+                    FuncCallReturnTypeBuilder::Node(node_builder)
+                }
+                __Type::Connection(_) => {
+                    let connection_builder =
+                        to_connection_builder(field, query_field, fragment_definitions, variables)?;
+                    FuncCallReturnTypeBuilder::Connection(connection_builder)
                 }
                 _ => {
                     return Err(format!(
@@ -612,7 +622,7 @@ where
                 alias,
                 function: Arc::clone(&func_call_resp_type.function),
                 args_builder: args,
-                node_builder,
+                return_type_builder,
             })
         }
         _ => Err(format!(
@@ -633,10 +643,12 @@ where
     let mut args = HashMap::new();
     for arg in field.args() {
         let arg_value = read_argument(&arg.name(), field, query_field, variables)?;
-        args.insert(
-            arg.name(),
-            FuncCallArgValue::Value(gson::gson_to_json(&arg_value)?),
-        );
+        if !arg_value.is_absent() {
+            args.insert(
+                arg.name(),
+                FuncCallArgValue::Value(gson::gson_to_json(&arg_value)?),
+            );
+        };
     }
     Ok(FuncCallArgsBuilder { args })
 }
@@ -1169,7 +1181,6 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let validated: gson::Value = read_argument(arg_name, field, query_field, variables)?;
-
     let _: Scalar = match field.get_arg(arg_name).unwrap().type_().unmodified_type() {
         __Type::Scalar(x) => x,
         _ => return Err(format!("Could not argument {}", arg_name)),
@@ -1198,6 +1209,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
+    let type_ = type_.return_type();
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in connection builder")?;
@@ -1464,17 +1476,10 @@ where
 
     let alias = alias_or_name(query_field);
 
-    let unwrapped_type = match type_ {
-        __Type::FuncCallResponse(func_call_response_type) => {
-            func_call_response_type.return_type.deref().clone()
-        }
-        t => t,
-    };
-
-    let xtype: NodeType = match unwrapped_type {
+    let xtype: NodeType = match type_.return_type() {
         __Type::Node(xtype) => {
             restrict_allowed_arguments(vec![], query_field)?;
-            xtype
+            xtype.clone()
         }
         __Type::NodeInterface(node_interface) => {
             restrict_allowed_arguments(vec!["nodeId"], query_field)?;

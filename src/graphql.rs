@@ -5,7 +5,8 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::ops::Deref;
 use std::sync::Arc;
 
 lazy_static! {
@@ -866,6 +867,15 @@ impl __Type {
             _ => self.clone(),
         }
     }
+
+    pub fn return_type(&self) -> &Self {
+        match self {
+            __Type::FuncCallResponse(func_call_response_type) => {
+                func_call_response_type.return_type.deref()
+            }
+            t => t,
+        }
+    }
 }
 
 #[allow(clippy::upper_case_acronyms)]
@@ -1247,33 +1257,19 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
             None => None,
             Some(sql_type) => {
                 if let Some(return_type) = sql_type.to_graphql_type(None, func.is_set_of, schema) {
-                    let gql_args: Vec<__InputValue> = func
-                        .args()
-                        .filter(|(_, _, arg_name)| !arg_name.is_none())
-                        .filter_map(|(arg_type, _, arg_name)| match sql_types.get(&arg_type) {
-                            Some(t) => {
-                                if matches!(t.category, TypeCategory::Pseudo) {
-                                    None
-                                } else {
-                                    Some((t, arg_name.unwrap()))
-                                }
+                    let mut gql_args = function_args(schema, func);
+                    if let __Type::Connection(connection_type) = &return_type {
+                        let connection_args = connection_type.get_connection_input_args();
+                        let connection_arg_names: HashSet<String> =
+                            connection_args.iter().map(|arg| arg.name()).collect();
+                        for arg in &gql_args {
+                            if connection_arg_names.contains(&arg.name()) {
+                                return None;
                             }
-                            None => None,
-                        })
-                        .filter_map(|(arg_type, arg_name)| {
-                            match arg_type.to_graphql_type(None, false, schema) {
-                                Some(t) => Some((t, arg_name)),
-                                None => None,
-                            }
-                        })
-                        .map(|(arg_type, arg_name)| __InputValue {
-                            name_: arg_name.to_string(),
-                            type_: arg_type,
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        })
-                        .collect();
+                        }
+
+                        gql_args.extend(connection_args);
+                    }
 
                     Some(__Field {
                         name_: schema.graphql_function_field_name(&func),
@@ -1293,6 +1289,36 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
             }
         })
         .filter(|x| is_valid_graphql_name(&x.name_))
+        .collect()
+}
+
+fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputValue> {
+    let sql_types = &schema.context.types;
+    func.args()
+        .filter(|(_, _, arg_name)| !arg_name.is_none())
+        .filter_map(|(arg_type, _, arg_name)| match sql_types.get(&arg_type) {
+            Some(t) => {
+                if matches!(t.category, TypeCategory::Pseudo) {
+                    None
+                } else {
+                    Some((t, arg_name.unwrap()))
+                }
+            }
+            None => None,
+        })
+        .filter_map(
+            |(arg_type, arg_name)| match arg_type.to_graphql_type(None, false, schema) {
+                Some(t) => Some((t, arg_name)),
+                None => None,
+            },
+        )
+        .map(|(arg_type, arg_name)| __InputValue {
+            name_: arg_name.to_string(),
+            type_: arg_type,
+            description: None,
+            default_value: None,
+            sql_type: None,
+        })
         .collect()
 }
 
