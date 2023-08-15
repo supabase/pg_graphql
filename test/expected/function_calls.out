@@ -696,12 +696,12 @@ begin;
  }
 (1 row)
 
-    create function returns_setof_account()
+    create function returns_setof_account(top int)
         returns setof account language sql stable
-    as $$ select id, email from account; $$;
+    as $$ select id, email from account limit top; $$;
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsSetofAccount {
+            returnsSetofAccount(top: 1) {
                 pageInfo {
                     startCursor
                     endCursor
@@ -737,20 +737,10 @@ begin;
                      },                                               +
                      "cursor": "WzFd",                                +
                      "__typename": "AccountEdge"                      +
-                 },                                                   +
-                 {                                                    +
-                     "node": {                                        +
-                         "id": 2,                                     +
-                         "email": "bat@x.com",                        +
-                         "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDJd",+
-                         "__typename": "Account"                      +
-                     },                                               +
-                     "cursor": "WzJd",                                +
-                     "__typename": "AccountEdge"                      +
                  }                                                    +
              ],                                                       +
              "pageInfo": {                                            +
-                 "endCursor": "WzJd",                                 +
+                 "endCursor": "WzFd",                                 +
                  "hasNextPage": false,                                +
                  "startCursor": "WzFd",                               +
                  "hasPreviousPage": false                             +

@@ -188,6 +188,7 @@ where
                                 selection,
                                 &fragment_definitions,
                                 variables,
+                                &[],
                             );
 
                             match connection_builder {

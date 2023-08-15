@@ -413,13 +413,13 @@ begin;
         }
     $$));
 
-    create function returns_setof_account()
+    create function returns_setof_account(top int)
         returns setof account language sql stable
-    as $$ select id, email from account; $$;
+    as $$ select id, email from account limit top; $$;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsSetofAccount {
+            returnsSetofAccount(top: 1) {
                 pageInfo {
                     startCursor
                     endCursor
