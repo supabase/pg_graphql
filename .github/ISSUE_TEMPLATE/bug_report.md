@@ -29,3 +29,6 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
+
+**Security**
+If you beleive you have identified a security vulnerability in pg_graphql, please follow the instructions at [security.txt](https://supabase.com/.well-known/security.txt) and wait for a response before opening a GitHub issue.
