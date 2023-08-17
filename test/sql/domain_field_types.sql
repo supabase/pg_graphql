@@ -379,7 +379,7 @@ rollback to savepoint a;
 select graphql.resolve(
   $$
   mutation deleteDomainTest {
-    deleteDomainTestCollection(
+    deleteFromDomainTestCollection(
       filter: {
         id: {eq: 1}
       }

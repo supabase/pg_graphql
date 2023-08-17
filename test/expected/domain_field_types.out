@@ -148,12 +148,12 @@ select
 -- Get the filter types, specifically shouldn't see json and jsonb types as they aren't supported yet
 select graphql.resolve(
   $$
-  {  
-    __type(name: "DomainTestFilter"){    
+  {
+    __type(name: "DomainTestFilter"){
       inputFields{
         name
         type{
-          name        
+          name
         }
       }
     }
@@ -166,7 +166,7 @@ select graphql.resolve(
 (1 row)
 
 -- Should probably test all of the filters but this is just a spot check
-select  
+select
     graphql.resolve (
       $$
       {
@@ -180,7 +180,7 @@ select
         }
       }
       $$
-    );  
+    );
                                        resolve                                        
 --------------------------------------------------------------------------------------
  {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldInt": 42}}]}}}
@@ -206,7 +206,7 @@ select
  {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldBigint": "2165559898978"}}]}}}
 (1 row)
 
-select  
+select
     graphql.resolve (
       $$
       {
@@ -247,7 +247,7 @@ select
 (1 row)
 
 -- Insert types and mutation
-select  
+select
     graphql.resolve (
     $$
     {
@@ -256,7 +256,7 @@ select
           name
           type {
             name
-            kind       
+            kind
           }
         }
       }
@@ -319,7 +319,7 @@ select
 
 rollback to savepoint a;
 -- Update types and mutation
-select  
+select
     graphql.resolve (
       $$
       {
@@ -333,18 +333,18 @@ select
           }
         }
       }
-      $$    
+      $$
   );
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  {"data": {"__type": {"inputFields": [{"name": "fieldInt", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldSmallint", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldBigint", "type": {"kind": "SCALAR", "name": "BigInt"}}, {"name": "fieldNumeric", "type": {"kind": "SCALAR", "name": "BigFloat"}}, {"name": "fieldReal", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldDoublePrecision", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldBoolean", "type": {"kind": "SCALAR", "name": "Boolean"}}, {"name": "fieldText", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacter", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacterVarying", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldDate", "type": {"kind": "SCALAR", "name": "Date"}}, {"name": "fieldTime", "type": {"kind": "SCALAR", "name": "Time"}}, {"name": "fieldTimestamp", "type": {"kind": "SCALAR", "name": "Datetime"}}, {"name": "fieldJsonb", "type": {"kind": "SCALAR", "name": "JSON"}}, {"name": "fieldJson", "type": {"kind": "SCALAR", "name": "JSON"}}]}}}
 (1 row)
 
-select  
+select
     graphql.resolve (
       $$
     mutation updateDomainTest {
-      updateDomainTestCollection(        
+      updateDomainTestCollection(
         set: {
           fieldInt: 43
           fieldSmallint: 32766
@@ -399,7 +399,7 @@ rollback to savepoint a;
 select graphql.resolve(
   $$
   mutation deleteDomainTest {
-    deleteDomainTestCollection(
+    deleteFromDomainTestCollection(
       filter: {
         id: {eq: 1}
       }
@@ -427,9 +427,9 @@ select graphql.resolve(
   }
   $$
 );
-                                                 resolve                                                  
-----------------------------------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Unknown field \"deleteDomainTestCollection\" on type Mutation"}]}
+                                                                                                                                                                                                                                                        resolve                                                                                                                                                                                                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"deleteFromDomainTestCollection": {"records": [{"id": 1, "fieldInt": 42, "fieldDate": "2022-01-01", "fieldJson": "{\"b\": 2}", "fieldReal": 3.14, "fieldText": "Hello, world!", "fieldTime": "12:34:56", "fieldJsonb": "{\"a\": 1}", "fieldBigint": "2165559898978", "fieldBoolean": true, "fieldNumeric": "123.45", "fieldSmallint": 32767, "fieldCharacter": "A", "fieldTimestamp": "2022-01-01T12:34:56", "fieldDoublePrecision": 3.14159265359, "fieldCharacterVarying": "ABCD"}], "affectedCount": 1}}}
 (1 row)
 
 rollback;
