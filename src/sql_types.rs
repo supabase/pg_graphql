@@ -314,7 +314,7 @@ pub struct SchemaDirectives {
     pub inflect_names: bool,
     // @graphql({"max_rows": 20})
     pub max_rows: u64,
-    // @graphql({"resolve_base_type": true})"})
+    // @graphql({"resolve_base_type": true})")
     pub resolve_base_type: bool,
 }
 
@@ -549,7 +549,7 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
             }
 
             let array_element_type = match context.base_type_map.get(&array_element_type_oid) {
-                Some(type_) => type_.clone(),
+                Some(oid) => *oid,
                 None => continue,
             };
 
