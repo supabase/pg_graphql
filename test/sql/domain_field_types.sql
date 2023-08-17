@@ -109,7 +109,7 @@ VALUES
 savepoint a;
 
 -- Check that a plain query resolves the base types
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
       {
@@ -125,9 +125,10 @@ select
         }
       }
     $$
-  );
+  )
+);
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
       {
@@ -155,26 +156,29 @@ select
         }
       }
     $$
-  );
+  )
+);
 
 -- Get the filter types, specifically shouldn't see json and jsonb types as they aren't supported yet
-select graphql.resolve(
-  $$
-  {
-    __type(name: "DomainTestFilter"){
-      inputFields{
-        name
-        type{
+select jsonb_pretty(
+  graphql.resolve(
+    $$
+    {
+      __type(name: "DomainTestFilter"){
+        inputFields{
           name
+          type{
+            name
+          }
         }
       }
     }
-  }
-  $$
+    $$
+  )
 );
 
 -- Should probably test all of the filters but this is just a spot check
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
       {
@@ -188,9 +192,10 @@ select
         }
       }
       $$
-    );
+    )
+);
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
     {
@@ -204,9 +209,10 @@ select
       }
     }
     $$
-  );
+  )
+);
 
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
       {
@@ -220,9 +226,10 @@ select
         }
       }
       $$
-    );
+    )
+);
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
     {
@@ -236,10 +243,11 @@ select
       }
     }
     $$
-  );
+  )
+);
 
 -- Insert types and mutation
-select
+select jsonb_pretty(
     graphql.resolve (
     $$
     {
@@ -254,9 +262,10 @@ select
       }
     }
     $$
-    );
+    )
+);
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
       mutation newDomainTest {
@@ -299,13 +308,14 @@ select
         }
       }
     $$
-  );
+  )
+);
 
 rollback to savepoint a;
 
 -- Update types and mutation
 
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
       {
@@ -320,9 +330,10 @@ select
         }
       }
       $$
-  );
+  )
+);
 
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
     mutation updateDomainTest {
@@ -370,41 +381,45 @@ select
       }
     }
     $$
-    );
+    )
+);
 
 rollback to savepoint a;
 
 -- Delete mutation, more a canary in a coal mine than anything else as the types are the same as the select
 
-select graphql.resolve(
-  $$
-  mutation deleteDomainTest {
-    deleteFromDomainTestCollection(
-      filter: {
-        id: {eq: 1}
-      }
-    ) {
-      affectedCount
-      records {
-        id
-        fieldInt
-        fieldSmallint
-        fieldBigint
-        fieldNumeric
-        fieldReal
-        fieldDoublePrecision
-        fieldBoolean
-        fieldText
-        fieldCharacter
-        fieldCharacterVarying
-        fieldDate
-        fieldTime
-        fieldTimestamp
-        fieldJsonb
-        fieldJson
+select jsonb_pretty(
+  graphql.resolve(
+    $$
+    mutation deleteDomainTest {
+      deleteFromDomainTestCollection(
+        filter: {
+          id: {eq: 1}
+        }
+      ) {
+        affectedCount
+        records {
+          id
+          fieldInt
+          fieldSmallint
+          fieldBigint
+          fieldNumeric
+          fieldReal
+          fieldDoublePrecision
+          fieldBoolean
+          fieldText
+          fieldCharacter
+          fieldCharacterVarying
+          fieldDate
+          fieldTime
+          fieldTimestamp
+          fieldJsonb
+          fieldJson
+        }
       }
     }
-  }
-  $$
+    $$
+  )
 );
+
 rollback;

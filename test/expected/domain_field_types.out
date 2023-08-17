@@ -89,7 +89,7 @@ VALUES
   );
 savepoint a;
 -- Check that a plain query resolves the base types
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
       {
@@ -105,13 +105,141 @@ select
         }
       }
     $$
-  );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"__type": {"kind": "OBJECT", "fields": [{"name": "nodeId", "type": {"kind": "NON_NULL", "name": null}}, {"name": "id", "type": {"kind": "NON_NULL", "name": null}}, {"name": "fieldInt", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldSmallint", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldBigint", "type": {"kind": "SCALAR", "name": "BigInt"}}, {"name": "fieldNumeric", "type": {"kind": "SCALAR", "name": "BigFloat"}}, {"name": "fieldReal", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldDoublePrecision", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldBoolean", "type": {"kind": "SCALAR", "name": "Boolean"}}, {"name": "fieldText", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacter", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacterVarying", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldDate", "type": {"kind": "SCALAR", "name": "Date"}}, {"name": "fieldTime", "type": {"kind": "SCALAR", "name": "Time"}}, {"name": "fieldTimestamp", "type": {"kind": "SCALAR", "name": "Datetime"}}, {"name": "fieldJsonb", "type": {"kind": "SCALAR", "name": "JSON"}}, {"name": "fieldJson", "type": {"kind": "SCALAR", "name": "JSON"}}]}}}
+  )
+);
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": {                                 +
+             "kind": "OBJECT",                       +
+             "fields": [                             +
+                 {                                   +
+                     "name": "nodeId",               +
+                     "type": {                       +
+                         "kind": "NON_NULL",         +
+                         "name": null                +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "id",                   +
+                     "type": {                       +
+                         "kind": "NON_NULL",         +
+                         "name": null                +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldInt",             +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Int"               +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldSmallint",        +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Int"               +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBigint",          +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "BigInt"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldNumeric",         +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "BigFloat"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldReal",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Float"             +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDoublePrecision", +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Float"             +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBoolean",         +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Boolean"           +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldText",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacter",       +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacterVarying",+
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDate",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Date"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTime",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Time"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTimestamp",       +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Datetime"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldJsonb",           +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "JSON"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldJson",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "JSON"              +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
 (1 row)
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
       {
@@ -139,34 +267,199 @@ select
         }
       }
     $$
-  );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                           resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldInt": 42, "fieldDate": "2022-01-01", "fieldJson": "{\"b\": 2}", "fieldReal": 3.14, "fieldText": "Hello, world!", "fieldTime": "12:34:56", "fieldJsonb": "{\"a\": 1}", "fieldBigint": "2165559898978", "fieldBoolean": true, "fieldNumeric": "123.45", "fieldSmallint": 32767, "fieldCharacter": "A", "fieldTimestamp": "2022-01-01T12:34:56", "fieldDoublePrecision": 3.14159265359, "fieldCharacterVarying": "ABCD"}}, {"node": {"id": 2, "fieldInt": -123, "fieldDate": "2022-02-02", "fieldJson": "{\"d\": -4}", "fieldReal": -2.71, "fieldText": "Goodbye, world!", "fieldTime": "23:45:01", "fieldJsonb": "{\"c\": -3}", "fieldBigint": "-365989871454", "fieldBoolean": false, "fieldNumeric": "-987.65", "fieldSmallint": -32768, "fieldCharacter": "B", "fieldTimestamp": "2022-02-02T23:45:01", "fieldDoublePrecision": -2.71828182846, "fieldCharacterVarying": "EFGH"}}]}}}
+  )
+);
+                           jsonb_pretty                           
+------------------------------------------------------------------
+ {                                                               +
+     "data": {                                                   +
+         "domainTestCollection": {                               +
+             "edges": [                                          +
+                 {                                               +
+                     "node": {                                   +
+                         "id": 1,                                +
+                         "fieldInt": 42,                         +
+                         "fieldDate": "2022-01-01",              +
+                         "fieldJson": "{\"b\": 2}",              +
+                         "fieldReal": 3.14,                      +
+                         "fieldText": "Hello, world!",           +
+                         "fieldTime": "12:34:56",                +
+                         "fieldJsonb": "{\"a\": 1}",             +
+                         "fieldBigint": "2165559898978",         +
+                         "fieldBoolean": true,                   +
+                         "fieldNumeric": "123.45",               +
+                         "fieldSmallint": 32767,                 +
+                         "fieldCharacter": "A",                  +
+                         "fieldTimestamp": "2022-01-01T12:34:56",+
+                         "fieldDoublePrecision": 3.14159265359,  +
+                         "fieldCharacterVarying": "ABCD"         +
+                     }                                           +
+                 },                                              +
+                 {                                               +
+                     "node": {                                   +
+                         "id": 2,                                +
+                         "fieldInt": -123,                       +
+                         "fieldDate": "2022-02-02",              +
+                         "fieldJson": "{\"d\": -4}",             +
+                         "fieldReal": -2.71,                     +
+                         "fieldText": "Goodbye, world!",         +
+                         "fieldTime": "23:45:01",                +
+                         "fieldJsonb": "{\"c\": -3}",            +
+                         "fieldBigint": "-365989871454",         +
+                         "fieldBoolean": false,                  +
+                         "fieldNumeric": "-987.65",              +
+                         "fieldSmallint": -32768,                +
+                         "fieldCharacter": "B",                  +
+                         "fieldTimestamp": "2022-02-02T23:45:01",+
+                         "fieldDoublePrecision": -2.71828182846, +
+                         "fieldCharacterVarying": "EFGH"         +
+                     }                                           +
+                 }                                               +
+             ]                                                   +
+         }                                                       +
+     }                                                           +
+ }
 (1 row)
 
 -- Get the filter types, specifically shouldn't see json and jsonb types as they aren't supported yet
-select graphql.resolve(
-  $$
-  {
-    __type(name: "DomainTestFilter"){
-      inputFields{
-        name
-        type{
+select jsonb_pretty(
+  graphql.resolve(
+    $$
+    {
+      __type(name: "DomainTestFilter"){
+        inputFields{
           name
+          type{
+            name
+          }
         }
       }
     }
-  }
-  $$
+    $$
+  )
 );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"__type": {"inputFields": [{"name": "id", "type": {"name": "IntFilter"}}, {"name": "fieldInt", "type": {"name": "IntFilter"}}, {"name": "fieldSmallint", "type": {"name": "IntFilter"}}, {"name": "fieldBigint", "type": {"name": "BigIntFilter"}}, {"name": "fieldNumeric", "type": {"name": "BigFloatFilter"}}, {"name": "fieldReal", "type": {"name": "FloatFilter"}}, {"name": "fieldDoublePrecision", "type": {"name": "FloatFilter"}}, {"name": "fieldBoolean", "type": {"name": "BooleanFilter"}}, {"name": "fieldText", "type": {"name": "StringFilter"}}, {"name": "fieldCharacter", "type": {"name": "StringFilter"}}, {"name": "fieldCharacterVarying", "type": {"name": "StringFilter"}}, {"name": "fieldDate", "type": {"name": "DateFilter"}}, {"name": "fieldTime", "type": {"name": "TimeFilter"}}, {"name": "fieldTimestamp", "type": {"name": "DatetimeFilter"}}, {"name": "nodeId", "type": {"name": "IDFilter"}}, {"name": "and", "type": {"name": null}}, {"name": "or", "type": {"name": null}}, {"name": "not", "type": {"name": "DomainTestFilter"}}]}}}
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": {                                 +
+             "inputFields": [                        +
+                 {                                   +
+                     "name": "id",                   +
+                     "type": {                       +
+                         "name": "IntFilter"         +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldInt",             +
+                     "type": {                       +
+                         "name": "IntFilter"         +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldSmallint",        +
+                     "type": {                       +
+                         "name": "IntFilter"         +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBigint",          +
+                     "type": {                       +
+                         "name": "BigIntFilter"      +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldNumeric",         +
+                     "type": {                       +
+                         "name": "BigFloatFilter"    +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldReal",            +
+                     "type": {                       +
+                         "name": "FloatFilter"       +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDoublePrecision", +
+                     "type": {                       +
+                         "name": "FloatFilter"       +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBoolean",         +
+                     "type": {                       +
+                         "name": "BooleanFilter"     +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldText",            +
+                     "type": {                       +
+                         "name": "StringFilter"      +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacter",       +
+                     "type": {                       +
+                         "name": "StringFilter"      +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacterVarying",+
+                     "type": {                       +
+                         "name": "StringFilter"      +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDate",            +
+                     "type": {                       +
+                         "name": "DateFilter"        +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTime",            +
+                     "type": {                       +
+                         "name": "TimeFilter"        +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTimestamp",       +
+                     "type": {                       +
+                         "name": "DatetimeFilter"    +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "nodeId",               +
+                     "type": {                       +
+                         "name": "IDFilter"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "and",                  +
+                     "type": {                       +
+                         "name": null                +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "or",                   +
+                     "type": {                       +
+                         "name": null                +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "not",                  +
+                     "type": {                       +
+                         "name": "DomainTestFilter"  +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
 (1 row)
 
 -- Should probably test all of the filters but this is just a spot check
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
       {
@@ -180,13 +473,27 @@ select
         }
       }
       $$
-    );
-                                       resolve                                        
---------------------------------------------------------------------------------------
- {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldInt": 42}}]}}}
+    )
+);
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "domainTestCollection": {     +
+             "edges": [                +
+                 {                     +
+                     "node": {         +
+                         "id": 1,      +
+                         "fieldInt": 42+
+                     }                 +
+                 }                     +
+             ]                         +
+         }                             +
+     }                                 +
+ }
 (1 row)
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
     {
@@ -200,13 +507,27 @@ select
       }
     }
     $$
-  );
-                                               resolve                                                
-------------------------------------------------------------------------------------------------------
- {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldBigint": "2165559898978"}}]}}}
+  )
+);
+                      jsonb_pretty                      
+--------------------------------------------------------
+ {                                                     +
+     "data": {                                         +
+         "domainTestCollection": {                     +
+             "edges": [                                +
+                 {                                     +
+                     "node": {                         +
+                         "id": 1,                      +
+                         "fieldBigint": "2165559898978"+
+                     }                                 +
+                 }                                     +
+             ]                                         +
+         }                                             +
+     }                                                 +
+ }
 (1 row)
 
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
       {
@@ -220,13 +541,27 @@ select
         }
       }
       $$
-    );
-                                            resolve                                             
-------------------------------------------------------------------------------------------------
- {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldNumeric": "123.45"}}]}}}
+    )
+);
+                   jsonb_pretty                   
+--------------------------------------------------
+ {                                               +
+     "data": {                                   +
+         "domainTestCollection": {               +
+             "edges": [                          +
+                 {                               +
+                     "node": {                   +
+                         "id": 1,                +
+                         "fieldNumeric": "123.45"+
+                     }                           +
+                 }                               +
+             ]                                   +
+         }                                       +
+     }                                           +
+ }
 (1 row)
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
     {
@@ -240,14 +575,28 @@ select
       }
     }
     $$
-  );
-                                              resolve                                               
-----------------------------------------------------------------------------------------------------
- {"data": {"domainTestCollection": {"edges": [{"node": {"id": 1, "fieldText": "Hello, world!"}}]}}}
+  )
+);
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "domainTestCollection": {                   +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "fieldText": "Hello, world!"+
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
 (1 row)
 
 -- Insert types and mutation
-select
+select jsonb_pretty(
     graphql.resolve (
     $$
     {
@@ -262,13 +611,126 @@ select
       }
     }
     $$
-    );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"__type": {"inputFields": [{"name": "fieldInt", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldSmallint", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldBigint", "type": {"kind": "SCALAR", "name": "BigInt"}}, {"name": "fieldNumeric", "type": {"kind": "SCALAR", "name": "BigFloat"}}, {"name": "fieldReal", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldDoublePrecision", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldBoolean", "type": {"kind": "SCALAR", "name": "Boolean"}}, {"name": "fieldText", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacter", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacterVarying", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldDate", "type": {"kind": "SCALAR", "name": "Date"}}, {"name": "fieldTime", "type": {"kind": "SCALAR", "name": "Time"}}, {"name": "fieldTimestamp", "type": {"kind": "SCALAR", "name": "Datetime"}}, {"name": "fieldJsonb", "type": {"kind": "SCALAR", "name": "JSON"}}, {"name": "fieldJson", "type": {"kind": "SCALAR", "name": "JSON"}}]}}}
+    )
+);
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": {                                 +
+             "inputFields": [                        +
+                 {                                   +
+                     "name": "fieldInt",             +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Int"               +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldSmallint",        +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Int"               +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBigint",          +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "BigInt"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldNumeric",         +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "BigFloat"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldReal",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Float"             +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDoublePrecision", +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Float"             +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBoolean",         +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Boolean"           +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldText",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacter",       +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacterVarying",+
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDate",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Date"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTime",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Time"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTimestamp",       +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Datetime"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldJsonb",           +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "JSON"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldJson",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "JSON"              +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
 (1 row)
 
-select
+select jsonb_pretty(
   graphql.resolve (
     $$
       mutation newDomainTest {
@@ -311,15 +773,42 @@ select
         }
       }
     $$
-  );
-                                                                                                                                                                                                                                                       resolve                                                                                                                                                                                                                                                       
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"insertIntoDomainTestCollection": {"records": [{"id": 3, "fieldInt": 42, "fieldDate": "2022-01-01", "fieldJson": "{\"d\": 12}", "fieldReal": 3.14, "fieldText": "Hello, world!", "fieldTime": "12:34:56", "fieldJsonb": "{\"c\": -3}", "fieldBigint": "2165559898978", "fieldBoolean": true, "fieldNumeric": "123.45", "fieldSmallint": 32767, "fieldCharacter": "A", "fieldTimestamp": "2022-01-01T12:34:56", "fieldDoublePrecision": 3.141592, "fieldCharacterVarying": "ABCD"}], "affectedCount": 1}}}
+  )
+);
+                         jsonb_pretty                         
+--------------------------------------------------------------
+ {                                                           +
+     "data": {                                               +
+         "insertIntoDomainTestCollection": {                 +
+             "records": [                                    +
+                 {                                           +
+                     "id": 3,                                +
+                     "fieldInt": 42,                         +
+                     "fieldDate": "2022-01-01",              +
+                     "fieldJson": "{\"d\": 12}",             +
+                     "fieldReal": 3.14,                      +
+                     "fieldText": "Hello, world!",           +
+                     "fieldTime": "12:34:56",                +
+                     "fieldJsonb": "{\"c\": -3}",            +
+                     "fieldBigint": "2165559898978",         +
+                     "fieldBoolean": true,                   +
+                     "fieldNumeric": "123.45",               +
+                     "fieldSmallint": 32767,                 +
+                     "fieldCharacter": "A",                  +
+                     "fieldTimestamp": "2022-01-01T12:34:56",+
+                     "fieldDoublePrecision": 3.141592,       +
+                     "fieldCharacterVarying": "ABCD"         +
+                 }                                           +
+             ],                                              +
+             "affectedCount": 1                              +
+         }                                                   +
+     }                                                       +
+ }
 (1 row)
 
 rollback to savepoint a;
 -- Update types and mutation
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
       {
@@ -334,13 +823,126 @@ select
         }
       }
       $$
-  );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"__type": {"inputFields": [{"name": "fieldInt", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldSmallint", "type": {"kind": "SCALAR", "name": "Int"}}, {"name": "fieldBigint", "type": {"kind": "SCALAR", "name": "BigInt"}}, {"name": "fieldNumeric", "type": {"kind": "SCALAR", "name": "BigFloat"}}, {"name": "fieldReal", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldDoublePrecision", "type": {"kind": "SCALAR", "name": "Float"}}, {"name": "fieldBoolean", "type": {"kind": "SCALAR", "name": "Boolean"}}, {"name": "fieldText", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacter", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldCharacterVarying", "type": {"kind": "SCALAR", "name": "String"}}, {"name": "fieldDate", "type": {"kind": "SCALAR", "name": "Date"}}, {"name": "fieldTime", "type": {"kind": "SCALAR", "name": "Time"}}, {"name": "fieldTimestamp", "type": {"kind": "SCALAR", "name": "Datetime"}}, {"name": "fieldJsonb", "type": {"kind": "SCALAR", "name": "JSON"}}, {"name": "fieldJson", "type": {"kind": "SCALAR", "name": "JSON"}}]}}}
+  )
+);
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": {                                 +
+             "inputFields": [                        +
+                 {                                   +
+                     "name": "fieldInt",             +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Int"               +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldSmallint",        +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Int"               +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBigint",          +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "BigInt"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldNumeric",         +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "BigFloat"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldReal",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Float"             +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDoublePrecision", +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Float"             +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldBoolean",         +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Boolean"           +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldText",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacter",       +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldCharacterVarying",+
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "String"            +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldDate",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Date"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTime",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Time"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldTimestamp",       +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "Datetime"          +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldJsonb",           +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "JSON"              +
+                     }                               +
+                 },                                  +
+                 {                                   +
+                     "name": "fieldJson",            +
+                     "type": {                       +
+                         "kind": "SCALAR",           +
+                         "name": "JSON"              +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
 (1 row)
 
-select
+select jsonb_pretty(
     graphql.resolve (
       $$
     mutation updateDomainTest {
@@ -388,48 +990,103 @@ select
       }
     }
     $$
-    );
-                                                                                                                                                                                                                                                      resolve                                                                                                                                                                                                                                                       
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"updateDomainTestCollection": {"records": [{"id": 1, "fieldInt": 43, "fieldDate": "2022-01-02", "fieldJson": "{\"d\": 12}", "fieldReal": 3.15, "fieldText": "Hello, world!!", "fieldTime": "12:34:57", "fieldJsonb": "{\"c\": -3}", "fieldBigint": "2165559898977", "fieldBoolean": false, "fieldNumeric": "123.46", "fieldSmallint": 32766, "fieldCharacter": "B", "fieldTimestamp": "2022-01-02T12:34:57", "fieldDoublePrecision": 3.141593, "fieldCharacterVarying": "ABCDE"}], "affectedCount": 1}}}
+    )
+);
+                         jsonb_pretty                         
+--------------------------------------------------------------
+ {                                                           +
+     "data": {                                               +
+         "updateDomainTestCollection": {                     +
+             "records": [                                    +
+                 {                                           +
+                     "id": 1,                                +
+                     "fieldInt": 43,                         +
+                     "fieldDate": "2022-01-02",              +
+                     "fieldJson": "{\"d\": 12}",             +
+                     "fieldReal": 3.15,                      +
+                     "fieldText": "Hello, world!!",          +
+                     "fieldTime": "12:34:57",                +
+                     "fieldJsonb": "{\"c\": -3}",            +
+                     "fieldBigint": "2165559898977",         +
+                     "fieldBoolean": false,                  +
+                     "fieldNumeric": "123.46",               +
+                     "fieldSmallint": 32766,                 +
+                     "fieldCharacter": "B",                  +
+                     "fieldTimestamp": "2022-01-02T12:34:57",+
+                     "fieldDoublePrecision": 3.141593,       +
+                     "fieldCharacterVarying": "ABCDE"        +
+                 }                                           +
+             ],                                              +
+             "affectedCount": 1                              +
+         }                                                   +
+     }                                                       +
+ }
 (1 row)
 
 rollback to savepoint a;
 -- Delete mutation, more a canary in a coal mine than anything else as the types are the same as the select
-select graphql.resolve(
-  $$
-  mutation deleteDomainTest {
-    deleteFromDomainTestCollection(
-      filter: {
-        id: {eq: 1}
-      }
-    ) {
-      affectedCount
-      records {
-        id
-        fieldInt
-        fieldSmallint
-        fieldBigint
-        fieldNumeric
-        fieldReal
-        fieldDoublePrecision
-        fieldBoolean
-        fieldText
-        fieldCharacter
-        fieldCharacterVarying
-        fieldDate
-        fieldTime
-        fieldTimestamp
-        fieldJsonb
-        fieldJson
+select jsonb_pretty(
+  graphql.resolve(
+    $$
+    mutation deleteDomainTest {
+      deleteFromDomainTestCollection(
+        filter: {
+          id: {eq: 1}
+        }
+      ) {
+        affectedCount
+        records {
+          id
+          fieldInt
+          fieldSmallint
+          fieldBigint
+          fieldNumeric
+          fieldReal
+          fieldDoublePrecision
+          fieldBoolean
+          fieldText
+          fieldCharacter
+          fieldCharacterVarying
+          fieldDate
+          fieldTime
+          fieldTimestamp
+          fieldJsonb
+          fieldJson
+        }
       }
     }
-  }
-  $$
+    $$
+  )
 );
-                                                                                                                                                                                                                                                        resolve                                                                                                                                                                                                                                                         
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"deleteFromDomainTestCollection": {"records": [{"id": 1, "fieldInt": 42, "fieldDate": "2022-01-01", "fieldJson": "{\"b\": 2}", "fieldReal": 3.14, "fieldText": "Hello, world!", "fieldTime": "12:34:56", "fieldJsonb": "{\"a\": 1}", "fieldBigint": "2165559898978", "fieldBoolean": true, "fieldNumeric": "123.45", "fieldSmallint": 32767, "fieldCharacter": "A", "fieldTimestamp": "2022-01-01T12:34:56", "fieldDoublePrecision": 3.14159265359, "fieldCharacterVarying": "ABCD"}], "affectedCount": 1}}}
+                         jsonb_pretty                         
+--------------------------------------------------------------
+ {                                                           +
+     "data": {                                               +
+         "deleteFromDomainTestCollection": {                 +
+             "records": [                                    +
+                 {                                           +
+                     "id": 1,                                +
+                     "fieldInt": 42,                         +
+                     "fieldDate": "2022-01-01",              +
+                     "fieldJson": "{\"b\": 2}",              +
+                     "fieldReal": 3.14,                      +
+                     "fieldText": "Hello, world!",           +
+                     "fieldTime": "12:34:56",                +
+                     "fieldJsonb": "{\"a\": 1}",             +
+                     "fieldBigint": "2165559898978",         +
+                     "fieldBoolean": true,                   +
+                     "fieldNumeric": "123.45",               +
+                     "fieldSmallint": 32767,                 +
+                     "fieldCharacter": "A",                  +
+                     "fieldTimestamp": "2022-01-01T12:34:56",+
+                     "fieldDoublePrecision": 3.14159265359,  +
+                     "fieldCharacterVarying": "ABCD"         +
+                 }                                           +
+             ],                                              +
+             "affectedCount": 1                              +
+         }                                                   +
+     }                                                       +
+ }
 (1 row)
 
 rollback;

@@ -532,6 +532,35 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
 
+    fn replace_array_element_base_type(mut context: Context) -> Context {
+        for (_, type_) in context.types.iter_mut() {
+            let array_element_type_oid = match type_.array_element_type_oid {
+                Some(oid) => oid,
+                None => continue,
+            };
+
+            let resolve_base_type = context
+                .schemas
+                .get(&type_.schema_oid)
+                .is_some_and(|s| s.directives.resolve_base_type);
+
+            if !resolve_base_type {
+                continue;
+            }
+
+            let array_element_type = match context.base_type_map.get(&array_element_type_oid) {
+                Some(type_) => type_.clone(),
+                None => continue,
+            };
+
+            if let Some(type_) = Arc::get_mut(type_) {
+                type_.array_element_type_oid = Some(array_element_type);
+            }
+        }
+
+        context
+    }
+
     fn replace_table_base_types(mut context: Context) -> Context {
         for (_, table) in context.tables.iter_mut() {
             let resolve_base_type = context
@@ -705,6 +734,7 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     }
 
     context
+        .map(replace_array_element_base_type)
         .map(replace_table_base_types)
         .map(type_details)
         .map(column_types)

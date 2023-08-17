@@ -69,20 +69,20 @@ comment on schema public is e'@graphql({"max_rows": 100})';
 
 ### Resolve Base Type
 
-The resolve_base_type option facilitates the resolution of a given type to its GraphQL representation.
+The resolve_base_type will map the base type for table fields and functions instead of the type defined.
 
-This functionality proves particularly valuable when dealing with sql domain types that should align with GraphQL's type mapping:
+It's main usage is when dealing with sql domain types that should align with GraphQL's type mapping:
 
 ```sql
 create domain pos_int as int check (value > 0);
 
-create table users {
+create table users (
   id serial primary key,
-  age pos_int not null
-};
+  age private.pos_int not null
+);
 ```
 
-Will resolve to:
+Will resolve to an Opaque type as there is no type mapping for the domain type pos_int to any graphql scalar type:
 
 ```graphql
 type Users{
@@ -97,7 +97,7 @@ Setting the resolve base type option:
 comment on schema public is e'@graphql({"resolve_base_type": true})';
 ```
 
-Will now resolve the base type of the pos_int domain type:
+Will now resolve the base type of the pos_int domain type to int:
 
 ```graphql
 type Users{
@@ -107,6 +107,31 @@ type Users{
 ```
 
 By default this option is false but will default to true in the 2.0 release.
+
+Do note this option respects the schema of the table not the type:
+
+```sql
+create domain private.pos_int as int check (value > 0);
+
+comment on schema public is e'@graphql({"resolve_base_type": true})';
+-- Not needed, this is the default
+comment on schema private is e'@graphql({"resolve_base_type": false})';
+
+create table users {
+  id serial primary key,
+  age private.pos_int not null
+};
+```
+
+Will still resolve to:
+
+```graphql
+type Users{
+  id: ID!
+  age: Int!
+}
+```
+
 
 ### totalCount
 
