@@ -2,6 +2,7 @@ use crate::builder::*;
 use crate::graphql::*;
 use crate::omit::*;
 use crate::parser_util::*;
+use crate::sql_types::get_one_readonly;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, SelectionSet,
@@ -257,7 +258,7 @@ where
                             }
                             "heartbeat" => {
                                 let now_jsonb: pgrx::JsonB =
-                                    pgrx::Spi::get_one("select to_jsonb(now())")
+                                    get_one_readonly("select to_jsonb(now())")
                                         .expect("Internal error: queries should not fail")
                                         .expect("Internal Error: queries should not return null");
                                 let now_json = now_jsonb.0;

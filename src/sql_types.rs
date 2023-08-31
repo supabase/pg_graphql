@@ -572,9 +572,20 @@ impl Context {
     }
 }
 
+/// This method is similar to `Spi::get_one` with the only difference
+/// being that it calls `client.select` instead of `client.update`.
+/// The `client.update` method generates a new transaction id so
+/// calling `Spi::get_one` is not possible when postgres is in
+/// recovery mode.
+pub(crate) fn get_one_readonly<A: FromDatum + IntoDatum>(
+    query: &str,
+) -> std::result::Result<Option<A>, pgrx::spi::Error> {
+    Spi::connect(|client| client.select(query, Some(1), None)?.first().get_one())
+}
+
 pub fn load_sql_config() -> Config {
     let query = include_str!("../sql/load_sql_config.sql");
-    let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
+    let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query).unwrap().unwrap().0;
     let config: Config = serde_json::from_value(sql_result).unwrap();
     config
 }
@@ -594,7 +605,7 @@ pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
 pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
-    let sql_result: serde_json::Value = Spi::get_one::<JsonB>(query).unwrap().unwrap().0;
+    let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query).unwrap().unwrap().0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
 
     /// This pass cross-reference types with its details
