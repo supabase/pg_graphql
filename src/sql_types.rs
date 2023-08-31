@@ -74,6 +74,7 @@ pub struct Function {
     pub schema_name: String,
     pub arg_types: Vec<u32>,
     pub arg_names: Option<Vec<String>>,
+    pub num_args: u32,
     pub arg_type_names: Vec<String>,
     pub volatility: FunctionVolatility,
     pub type_oid: u32,
@@ -306,8 +307,10 @@ pub struct Table {
     pub columns: Vec<Arc<Column>>,
     pub comment: Option<String>,
     pub relkind: String, // r = table, v = view, m = mat view, f = foreign table
+    pub reltype: u32,
     pub permissions: TablePermissions,
     pub indexes: Vec<Index>,
+    #[serde(default)]
     pub functions: Vec<Arc<Function>>,
     pub directives: TableDirectives,
 }
@@ -736,9 +739,32 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
         context
     }
 
+    /// This pass populates functions for tables
+    fn populate_table_functions(mut context: Context) -> Context {
+        let mut arg_type_to_func: HashMap<u32, Vec<&Arc<Function>>> = HashMap::new();
+        for function in context.functions.iter().filter(|f| f.num_args == 1) {
+            let functions = arg_type_to_func.entry(function.arg_types[0]).or_default();
+            functions.push(function);
+        }
+        for (_, table) in &mut context.tables {
+            if let Some(table) = Arc::get_mut(table) {
+                match arg_type_to_func.get(&table.reltype) {
+                    Some(functions) => {
+                        for function in functions {
+                            table.functions.push(Arc::clone(function));
+                        }
+                    }
+                    None => {}
+                }
+            }
+        }
+        context
+    }
+
     context
         .map(type_details)
         .map(column_types)
+        .map(populate_table_functions)
         .map(Arc::new)
         .map_err(|e| {
             format!(
