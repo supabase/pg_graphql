@@ -1455,6 +1455,62 @@ begin;
  }
 (1 row)
 
+    -- overloaded functions are also not supported yet
+    -- added a test here just to document their current behaviour
+    create function an_overloaded_function()
+        returns int language sql stable
+    as $$ select 1; $$;
+    create function an_overloaded_function(a int)
+        returns int language sql stable
+    as $$ select 2; $$;
+    create function an_overloaded_function(a text)
+        returns int language sql stable
+    as $$ select 2; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            anOverloadedFunction
+        }
+    $$));
+           jsonb_pretty            
+-----------------------------------
+ {                                +
+     "data": {                    +
+         "anOverloadedFunction": 1+
+     }                            +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            anOverloadedFunction (a: 1)
+        }
+    $$));
+                         jsonb_pretty                         
+--------------------------------------------------------------
+ {                                                           +
+     "data": null,                                           +
+     "errors": [                                             +
+         {                                                   +
+             "message": "Invalid input for String(None) type"+
+         }                                                   +
+     ]                                                       +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            anOverloadedFunction (a: "some text")
+        }
+    $$));
+           jsonb_pretty            
+-----------------------------------
+ {                                +
+     "data": {                    +
+         "anOverloadedFunction": 2+
+     }                            +
+ }
+(1 row)
+
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;
@@ -1713,6 +1769,42 @@ begin;
                          "name": "accountCollection",       +
                          "type": {                          +
                              "kind": "OBJECT"               +
+                         }                                  +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                         ],                                 +
+                         "name": "anOverloadedFunction",    +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         }                                  +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "anOverloadedFunction",    +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         }                                  +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "anOverloadedFunction",    +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
                          }                                  +
                      },                                     +
                      {                                      +

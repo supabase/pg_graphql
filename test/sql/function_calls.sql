@@ -476,6 +476,38 @@ begin;
         }
     $$));
 
+    -- overloaded functions are also not supported yet
+    -- added a test here just to document their current behaviour
+    create function an_overloaded_function()
+        returns int language sql stable
+    as $$ select 1; $$;
+
+    create function an_overloaded_function(a int)
+        returns int language sql stable
+    as $$ select 2; $$;
+
+    create function an_overloaded_function(a text)
+        returns int language sql stable
+    as $$ select 2; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            anOverloadedFunction
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            anOverloadedFunction (a: 1)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            anOverloadedFunction (a: "some text")
+        }
+    $$));
+
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;
