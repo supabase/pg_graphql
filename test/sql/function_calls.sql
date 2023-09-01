@@ -457,57 +457,6 @@ begin;
         }
     $$));
 
-    -- functions returning record are not supported yet
-    -- currently they do return the fields from the returned record
-    -- but do not return nodeId and __typename fields
-    -- Their schema queries also return a type of scalar
-    create function returns_record()
-        returns record language sql stable
-    as $$ select id, email from account; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            returnsRecord {
-                id
-                email
-                nodeId
-                __typename
-            }
-        }
-    $$));
-
-    -- overloaded functions are also not supported yet
-    -- added a test here just to document their current behaviour
-    create function an_overloaded_function()
-        returns int language sql stable
-    as $$ select 1; $$;
-
-    create function an_overloaded_function(a int)
-        returns int language sql stable
-    as $$ select 2; $$;
-
-    create function an_overloaded_function(a text)
-        returns int language sql stable
-    as $$ select 2; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            anOverloadedFunction
-        }
-    $$));
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            anOverloadedFunction (a: 1)
-        }
-    $$));
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            anOverloadedFunction (a: "some text")
-        }
-    $$));
-
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;
