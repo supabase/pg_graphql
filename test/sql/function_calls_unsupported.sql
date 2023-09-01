@@ -82,10 +82,10 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            noArgName(arg0: 1) 
+            noArgName(arg0: 1)
         }
     $$));
-    
+
     -- function names which clash with other fields like
     -- table collections are not handled yet.
     create function accountCollection()
