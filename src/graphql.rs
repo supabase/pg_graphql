@@ -3991,16 +3991,15 @@ impl __Schema {
     }
 
     pub fn mutations_exist(&self) -> bool {
-        self.context
-            .tables
-            .values()
-            .filter(|x| self.graphql_table_select_types_are_valid(x))
-            .any(|x| {
-                x.permissions.is_selectable
-                    && (x.permissions.is_insertable
-                        || x.permissions.is_updatable
-                        || x.permissions.is_deletable)
-            })
+        let mutation = MutationType {
+            schema: Arc::new(self.clone()),
+        };
+        if let Some(fields) = mutation.fields(true) {
+            if fields.len() > 0 {
+                return true;
+            }
+        }
+        return false;
     }
 
     // queryType: __Type!
