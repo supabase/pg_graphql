@@ -185,6 +185,26 @@ begin;
         }
     $$));
 
+    select jsonb_pretty(graphql.resolve($$ 
+    query IntrospectionQuery {
+        __schema {
+            mutationType {
+                fields {
+                    name
+                    type {
+                        kind
+                    }
+                    args {
+                        name
+                        type {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
+
     rollback to savepoint a;
 
     -- Only stable and immutable functions appear on the query object
@@ -371,6 +391,27 @@ begin;
         }
     $$));
 
+    select jsonb_pretty(graphql.resolve($$ 
+    query IntrospectionQuery {
+        __schema {
+            queryType {
+                fields {
+                    name
+                    type {
+                        kind
+                    }
+                    args {
+                        name
+                        type {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
+
+
     rollback to savepoint a;
 
     create table account(
@@ -517,5 +558,25 @@ begin;
             }
         }
     $$));
+
+    select jsonb_pretty(graphql.resolve($$ 
+    query IntrospectionQuery {
+        __schema {
+            queryType {
+                fields {
+                    name
+                    type {
+                        kind
+                    }
+                    args {
+                        name
+                        type {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
 
 rollback;
