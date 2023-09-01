@@ -1426,6 +1426,35 @@ begin;
  }
 (1 row)
 
+    -- functions returning record are not supported yet
+    -- currently they do return the fields from the returned record
+    -- but do not return nodeId and __typename fields
+    -- Their schema queries also return a type of scalar
+    create function returns_record()
+        returns record language sql stable
+    as $$ select id, email from account; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsRecord {
+                id
+                email
+                nodeId
+                __typename
+            }
+        }
+    $$));
+             jsonb_pretty              
+---------------------------------------
+ {                                    +
+     "data": {                        +
+         "returnsRecord": {           +
+             "id": 1,                 +
+             "email": "aardvark@x.com"+
+         }                            +
+     }                                +
+ }
+(1 row)
+
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;
@@ -1756,6 +1785,14 @@ begin;
                          "name": "returnsAccount",          +
                          "type": {                          +
                              "kind": "OBJECT"               +
+                         }                                  +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                         ],                                 +
+                         "name": "returnsRecord",           +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
                          }                                  +
                      },                                     +
                      {                                      +

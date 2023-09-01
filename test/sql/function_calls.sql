@@ -457,6 +457,25 @@ begin;
         }
     $$));
 
+    -- functions returning record are not supported yet
+    -- currently they do return the fields from the returned record
+    -- but do not return nodeId and __typename fields
+    -- Their schema queries also return a type of scalar
+    create function returns_record()
+        returns record language sql stable
+    as $$ select id, email from account; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsRecord {
+                id
+                email
+                nodeId
+                __typename
+            }
+        }
+    $$));
+
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;
