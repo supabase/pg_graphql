@@ -185,7 +185,7 @@ begin;
         }
     $$));
 
-    select jsonb_pretty(graphql.resolve($$ 
+    select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
             mutationType {
@@ -391,7 +391,7 @@ begin;
         }
     $$));
 
-    select jsonb_pretty(graphql.resolve($$ 
+    select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
             queryType {
@@ -578,7 +578,7 @@ begin;
         }
     $$));
 
-    select jsonb_pretty(graphql.resolve($$ 
+    select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
             queryType {
