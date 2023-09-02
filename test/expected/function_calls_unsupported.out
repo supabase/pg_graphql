@@ -187,4 +187,22 @@ begin;
  }
 (1 row)
 
+    select graphql.resolve($$
+        mutation {
+            insertIntoAccountCollection(objects: [
+                { email: "foo@barsley.com" },
+                { email: "bar@foosworth.com" }
+            ]) {
+                affectedCount
+                records {
+                    id
+                }
+            }
+        }
+    $$);
+                                              resolve                                               
+----------------------------------------------------------------------------------------------------
+ {"data": {"insertIntoAccountCollection": {"records": [{"id": 4}, {"id": 5}], "affectedCount": 2}}}
+(1 row)
+
 rollback;
