@@ -132,4 +132,14 @@ begin;
         }
     $$));
 
+    -- functions returning void are not supported
+    create function void_returning_func(variadic int[])
+        returns void language sql immutable
+    as $$ $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            voidReturningFunc
+        }
+    $$));
 rollback;

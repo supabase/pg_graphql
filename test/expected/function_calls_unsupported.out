@@ -226,4 +226,25 @@ begin;
  }
 (1 row)
 
+    -- functions returning void are not supported
+    create function void_returning_func(variadic int[])
+        returns void language sql immutable
+    as $$ $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            voidReturningFunc
+        }
+    $$));
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "data": null,                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "function public.void_returning_func() does not exist"+
+         }                                                                    +
+     ]                                                                        +
+ }
+(1 row)
+
 rollback;
