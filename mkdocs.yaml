@@ -11,6 +11,7 @@ nav:
     - SQL Interface: 'sql_interface.md'
     - API: 'api.md'
     - Views: 'views.md'
+    - Functions: 'functions.md'
     - Computed Fields: 'computed_fields.md'
     - Security: 'security.md'
     - Configuration: 'configuration.md'
