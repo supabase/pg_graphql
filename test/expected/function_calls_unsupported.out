@@ -1,7 +1,7 @@
 begin;
     -- These following tests are there to just document
     -- the current behaviour and any limitations. Do not
-    -- assume that just because they pass it the expected
+    -- assume that just because they pass it is the expected
     -- behaviour.
     create table account(
         id serial primary key,
@@ -135,55 +135,6 @@ begin;
              "message": "Input contains extra keys [\"arg0\"]"+
          }                                                    +
      ]                                                        +
- }
-(1 row)
-
-    -- function names which clash with other fields like
-    -- table collections are not handled yet.
-    create function accountCollection()
-        returns account language sql stable
-    as $$ select id, email from account; $$;
-    select jsonb_pretty(
-        graphql.resolve($$
-        {
-            accountCollection {
-                edges {
-                    node {
-                        id
-                        email
-                    }
-                }
-            }
-        }
-        $$)
-    );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": {                                    +
-         "accountCollection": {                   +
-             "edges": [                           +
-                 {                                +
-                     "node": {                    +
-                         "id": 1,                 +
-                         "email": "aardvark@x.com"+
-                     }                            +
-                 },                               +
-                 {                                +
-                     "node": {                    +
-                         "id": 2,                 +
-                         "email": "bat@x.com"     +
-                     }                            +
-                 },                               +
-                 {                                +
-                     "node": {                    +
-                         "id": 3,                 +
-                         "email": "cat@x.com"     +
-                     }                            +
-                 }                                +
-             ]                                    +
-         }                                        +
-     }                                            +
  }
 (1 row)
 

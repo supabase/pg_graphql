@@ -1,7 +1,7 @@
 begin;
     -- These following tests are there to just document
     -- the current behaviour and any limitations. Do not
-    -- assume that just because they pass it the expected
+    -- assume that just because they pass it is the expected
     -- behaviour.
 
     create table account(
@@ -85,27 +85,6 @@ begin;
             noArgName(arg0: 1)
         }
     $$));
-
-    -- function names which clash with other fields like
-    -- table collections are not handled yet.
-    create function accountCollection()
-        returns account language sql stable
-    as $$ select id, email from account; $$;
-
-    select jsonb_pretty(
-        graphql.resolve($$
-        {
-            accountCollection {
-                edges {
-                    node {
-                        id
-                        email
-                    }
-                }
-            }
-        }
-        $$)
-    );
 
     select graphql.resolve($$
         mutation {
