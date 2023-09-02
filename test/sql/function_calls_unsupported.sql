@@ -121,4 +121,15 @@ begin;
         }
     $$);
 
+    -- variadic functions are not supported
+    create function variadic_func(variadic int[])
+        returns int language sql immutable
+    as $$ select 42; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            variadicFunc
+        }
+    $$));
+
 rollback;

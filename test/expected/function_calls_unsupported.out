@@ -205,4 +205,25 @@ begin;
  {"data": {"insertIntoAccountCollection": {"records": [{"id": 4}, {"id": 5}], "affectedCount": 2}}}
 (1 row)
 
+    -- variadic functions are not supported
+    create function variadic_func(variadic int[])
+        returns int language sql immutable
+    as $$ select 42; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            variadicFunc
+        }
+    $$));
+                              jsonb_pretty                               
+-------------------------------------------------------------------------
+ {                                                                      +
+     "data": null,                                                      +
+     "errors": [                                                        +
+         {                                                              +
+             "message": "function public.variadic_func() does not exist"+
+         }                                                              +
+     ]                                                                  +
+ }
+(1 row)
+
 rollback;
