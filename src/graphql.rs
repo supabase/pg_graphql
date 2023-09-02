@@ -1142,11 +1142,7 @@ impl ___Type for QueryType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut f = function_fields(
-            &self.schema,
-            &[FunctionVolatility::Immutable, FunctionVolatility::Stable],
-        );
-
+        let mut f = Vec::new();
         let single_entrypoint = __Field {
             name_: "node".to_string(),
             type_: __Type::NodeInterface(NodeInterfaceType {
@@ -1200,6 +1196,19 @@ impl ___Type for QueryType {
                 f.push(collection_entrypoint);
             }
         }
+
+        let existing_fields: HashSet<String> = f.iter().map(|f| f.name()).collect();
+
+        let function_fields = function_fields(
+            &self.schema,
+            &[FunctionVolatility::Immutable, FunctionVolatility::Stable],
+        );
+
+        f.extend(
+            function_fields
+                .into_iter()
+                .filter(|ff| !existing_fields.contains(&ff.name())),
+        );
 
         // Default fields always preset
         f.extend(vec![
@@ -1336,7 +1345,7 @@ impl ___Type for MutationType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut f = function_fields(&self.schema, &[FunctionVolatility::Volatile]);
+        let mut f = Vec::new();
 
         // TODO, filter to types in type map in case any were filtered out
         for table in self.schema.context.tables.values() {
@@ -1467,6 +1476,15 @@ impl ___Type for MutationType {
                 })
             }
         }
+        let existing_fields: HashSet<String> = f.iter().map(|f| f.name()).collect();
+
+        let function_fields = function_fields(&self.schema, &[FunctionVolatility::Volatile]);
+
+        f.extend(
+            function_fields
+                .into_iter()
+                .filter(|ff| !existing_fields.contains(&ff.name())),
+        );
         f.sort_by_key(|a| a.name());
         Some(f)
     }

@@ -123,7 +123,7 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            noArgName(arg0: 1) 
+            noArgName(arg0: 1)
         }
     $$));
                          jsonb_pretty                          
@@ -138,29 +138,52 @@ begin;
  }
 (1 row)
 
-    
     -- function names which clash with other fields like
     -- table collections are not handled yet.
     create function accountCollection()
         returns account language sql stable
     as $$ select id, email from account; $$;
-    select jsonb_pretty(graphql.resolve($$
-        query {
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
             accountCollection {
-                id
-                email
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
             }
         }
-    $$));
-                     jsonb_pretty                     
-------------------------------------------------------
- {                                                   +
-     "data": null,                                   +
-     "errors": [                                     +
-         {                                           +
-             "message": "unknown field in connection"+
-         }                                           +
-     ]                                               +
+        $$)
+    );
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 2,                 +
+                         "email": "bat@x.com"     +
+                     }                            +
+                 },                               +
+                 {                                +
+                     "node": {                    +
+                         "id": 3,                 +
+                         "email": "cat@x.com"     +
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
  }
 (1 row)
 

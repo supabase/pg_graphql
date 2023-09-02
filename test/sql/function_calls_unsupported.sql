@@ -92,13 +92,19 @@ begin;
         returns account language sql stable
     as $$ select id, email from account; $$;
 
-    select jsonb_pretty(graphql.resolve($$
-        query {
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
             accountCollection {
-                id
-                email
+                edges {
+                    node {
+                        id
+                        email
+                    }
+                }
             }
         }
-    $$));
+        $$)
+    );
 
 rollback;
