@@ -159,3 +159,10 @@ Set returning functions are exposed as [collections](/pg_graphql/api/#collection
       }
     }
     ```
+
+The following functions are not supported:
+
+* Functions that return a record type.
+* Overloaded functions.
+* Functions with a nameless argument.
+* Variadic functions.
