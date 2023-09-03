@@ -477,7 +477,7 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsAccountWithId(id_to_search: 1) {
+            returnsAccountWithId(idToSearch: 1) {
                 email
             }
         }

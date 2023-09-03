@@ -1476,7 +1476,7 @@ begin;
     as $$ select id, email from account where id = id_to_search; $$;
     select jsonb_pretty(graphql.resolve($$
         query {
-            returnsAccountWithId(id_to_search: 1) {
+            returnsAccountWithId(idToSearch: 1) {
                 email
             }
         }
@@ -1832,7 +1832,7 @@ begin;
                      {                                                          +
                          "args": [                                              +
                              {                                                  +
-                                 "name": "id_to_search",                        +
+                                 "name": "idToSearch",                          +
                                  "type": {                                      +
                                      "name": "Int"                              +
                                  }                                              +

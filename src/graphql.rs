@@ -17,26 +17,22 @@ fn is_valid_graphql_name(name: &str) -> bool {
     GRAPHQL_NAME_RE.is_match(name)
 }
 
-fn to_base_type_name(
-    table_name: &str,
-    name_override: &Option<String>,
-    inflect_names: bool,
-) -> String {
+fn to_base_type_name(name: &str, name_override: &Option<String>, inflect_names: bool) -> String {
     match name_override {
         Some(name) => return name.to_string(),
         None => (),
     };
 
     match inflect_names {
-        false => table_name.to_string(),
+        false => name.to_string(),
         true => {
             let mut padded = "+".to_string();
-            padded.push_str(table_name);
+            padded.push_str(name);
 
             // account_BY_email => Account_By_Email
             let casing: String = padded
                 .chars()
-                .zip(table_name.chars())
+                .zip(name.chars())
                 .map(|(prev, cur)| match prev.is_alphanumeric() {
                     true => cur.to_string(),
                     false => cur.to_uppercase().to_string(),
@@ -107,6 +103,12 @@ impl __Schema {
             &function.directives.name,
             self.inflect_names(function.schema_oid),
         );
+        lowercase_first_letter(&base_type_name)
+    }
+
+    fn graphql_function_arg_name(&self, function: &Function, arg_name: &str) -> String {
+        let base_type_name =
+            to_base_type_name(&arg_name, &None, self.inflect_names(function.schema_oid));
         lowercase_first_letter(&base_type_name)
     }
 
@@ -982,6 +984,27 @@ pub struct FuncCallResponseType {
     pub return_type: Box<__Type>,
 }
 
+impl FuncCallResponseType {
+    pub fn inflected_to_sql_args(&self) -> HashMap<String, (String, String)> {
+        let inflected_name_to_sql_name: HashMap<String, (String, String)> = self
+            .function
+            .args()
+            .filter_map(|(_, arg_type_name, arg_name)| match arg_name {
+                None => None,
+                Some(arg_name) => Some((arg_type_name, arg_name)),
+            })
+            .map(|(arg_type_name, arg_name)| {
+                (
+                    self.schema
+                        .graphql_function_arg_name(&self.function, arg_name),
+                    (arg_type_name.to_string(), arg_name.to_string()),
+                )
+            })
+            .collect();
+        inflected_name_to_sql_name
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ForeignKeyReversible {
     pub fkey: Arc<ForeignKey>,
@@ -1322,7 +1345,7 @@ fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputVal
             },
         )
         .map(|(arg_type, arg_name)| __InputValue {
-            name_: arg_name.to_string(),
+            name_: schema.graphql_function_arg_name(func, arg_name),
             type_: arg_type,
             description: None,
             default_value: None,

@@ -544,33 +544,12 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
 
 impl FunctionCallBuilder {
     fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        let referenced_arg_names: HashSet<&str> =
-            self.args_builder.args.keys().map(|k| k.as_str()).collect();
-
-        let referenced_args: Vec<(u32, &str, &str)> = self
-            .function
-            .args()
-            .filter_map(|(arg_type, arg_type_name, arg_name)| {
-                if let Some(arg_name) = arg_name {
-                    Some((arg_type, arg_type_name, arg_name))
-                } else {
-                    None
-                }
-            })
-            .filter(|(_, _, arg_name)| referenced_arg_names.contains(arg_name))
-            .collect();
-
         let mut arg_clauses = vec![];
-        for (_, arg_type_name, arg_name) in referenced_args {
-            let arg_clause = match self.args_builder.args.get(arg_name) {
-                Some(arg) => match arg {
-                    FuncCallArgValue::Value(val) => param_context.clause_for(val, arg_type_name)?,
-                },
-                None => {
-                    return Err(format!("No value set for argument {}", arg_name));
-                }
-            };
-            arg_clauses.push(arg_clause);
+        for (arg, arg_value) in &self.args_builder.args {
+            if let Some(arg) = arg {
+                let arg_clause = param_context.clause_for(arg_value, &arg.type_name)?;
+                arg_clauses.push(arg_clause);
+            }
         }
 
         let args_clause = format!("({})", arg_clauses.join(", "));

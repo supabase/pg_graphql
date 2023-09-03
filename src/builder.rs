@@ -570,12 +570,13 @@ pub enum FuncCallReturnTypeBuilder {
 
 #[derive(Clone, Debug)]
 pub struct FuncCallArgsBuilder {
-    pub args: HashMap<String, FuncCallArgValue>,
+    pub args: Vec<(Option<FuncCallSqlArgName>, serde_json::Value)>,
 }
 
 #[derive(Clone, Debug)]
-pub enum FuncCallArgValue {
-    Value(serde_json::Value),
+pub struct FuncCallSqlArgName {
+    pub type_name: String,
+    pub name: String,
 }
 
 pub fn to_function_call_builder<'a, T>(
@@ -595,7 +596,7 @@ where
             let args = field.args();
             let allowed_args: Vec<&str> = args.iter().map(|a| a.name_.as_str()).collect();
             restrict_allowed_arguments(&allowed_args, query_field)?;
-            let args = read_func_call_args(field, query_field, variables)?;
+            let args = read_func_call_args(field, query_field, variables, &func_call_resp_type)?;
 
             let return_type_builder = match func_call_resp_type.return_type.deref() {
                 __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
@@ -649,18 +650,24 @@ fn read_func_call_args<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    func_call_resp_type: &FuncCallResponseType,
 ) -> Result<FuncCallArgsBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let mut args = HashMap::new();
+    let inflected_to_sql_args = func_call_resp_type.inflected_to_sql_args();
+    let mut args = vec![];
     for arg in field.args() {
         let arg_value = read_argument(&arg.name(), field, query_field, variables)?;
         if !arg_value.is_absent() {
-            args.insert(
-                arg.name(),
-                FuncCallArgValue::Value(gson::gson_to_json(&arg_value)?),
-            );
+            let func_call_sql_arg_name = match inflected_to_sql_args.get(&arg.name()) {
+                Some((type_name, name)) => Some(FuncCallSqlArgName {
+                    type_name: type_name.clone(),
+                    name: name.clone(),
+                }),
+                None => None,
+            };
+            args.push((func_call_sql_arg_name, gson::gson_to_json(&arg_value)?));
         };
     }
     Ok(FuncCallArgsBuilder { args })
