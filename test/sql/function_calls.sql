@@ -457,6 +457,18 @@ begin;
         }
     $$));
 
+    create function returns_account_with_id(id_to_search int)
+        returns account language sql stable
+    as $$ select id, email from account where id = id_to_search; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccountWithId(id_to_search: 1) {
+                email
+            }
+        }
+    $$));
+
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;

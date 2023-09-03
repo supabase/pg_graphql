@@ -208,6 +208,7 @@ where
                                 selection,
                                 &fragment_definitions,
                                 variables,
+                                &[],
                             );
 
                             match node_builder {

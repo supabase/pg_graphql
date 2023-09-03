@@ -270,6 +270,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             );
                             InsertSelection::Records(node_builder?)
                         }
@@ -425,6 +426,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             );
                             UpdateSelection::Records(node_builder?)
                         }
@@ -521,6 +523,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             );
                             DeleteSelection::Records(node_builder?)
                         }
@@ -597,8 +600,13 @@ where
             let return_type_builder = match func_call_resp_type.return_type.deref() {
                 __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
                 __Type::Node(_) => {
-                    let node_builder =
-                        to_node_builder(field, query_field, fragment_definitions, variables)?;
+                    let node_builder = to_node_builder(
+                        field,
+                        query_field,
+                        fragment_definitions,
+                        variables,
+                        &allowed_args,
+                    )?;
                     FuncCallReturnTypeBuilder::Node(node_builder)
                 }
                 __Type::Connection(_) => {
@@ -1443,6 +1451,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             )?;
                             EdgeSelection::Node(node_builder)
                         }
@@ -1473,6 +1482,7 @@ pub fn to_node_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    extra_allowed_args: &[&str],
 ) -> Result<NodeBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1483,7 +1493,7 @@ where
 
     let xtype: NodeType = match type_.return_type() {
         __Type::Node(xtype) => {
-            restrict_allowed_arguments(&[], query_field)?;
+            restrict_allowed_arguments(extra_allowed_args, query_field)?;
             xtype.clone()
         }
         __Type::NodeInterface(node_interface) => {
@@ -1525,7 +1535,9 @@ where
     let field_map = field_map(&__Type::Node(xtype.clone()));
 
     let mut builder_fields = vec![];
-    restrict_allowed_arguments(&["nodeId"], query_field)?;
+    let mut allowed_args = vec!["nodeId"];
+    allowed_args.extend(extra_allowed_args);
+    restrict_allowed_arguments(&allowed_args, query_field)?;
 
     // The nodeId argument is only valid on the entrypoint field for Node
     // relationships to "node" e.g. within edges, do not have any arguments
@@ -1568,6 +1580,7 @@ where
                                         selection_field,
                                         fragment_definitions,
                                         variables,
+                                        &[],
                                         // TODO need ref to fkey here
                                     )?;
                                     FunctionSelection::Node(node_builder)
@@ -1622,6 +1635,7 @@ where
                                     selection_field,
                                     fragment_definitions,
                                     variables,
+                                    &[],
                                 );
                                 NodeSelection::Node(node_builder?)
                             }

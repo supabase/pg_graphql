@@ -1426,6 +1426,27 @@ begin;
  }
 (1 row)
 
+    create function returns_account_with_id(id_to_search int)
+        returns account language sql stable
+    as $$ select id, email from account where id = id_to_search; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccountWithId(id_to_search: 1) {
+                email
+            }
+        }
+    $$));
+             jsonb_pretty              
+---------------------------------------
+ {                                    +
+     "data": {                        +
+         "returnsAccountWithId": {    +
+             "email": "aardvark@x.com"+
+         }                            +
+     }                                +
+ }
+(1 row)
+
     create function returns_setof_account(top int)
         returns setof account language sql stable
     as $$ select id, email from account limit top; $$;
@@ -1754,6 +1775,20 @@ begin;
                          "args": [                          +
                          ],                                 +
                          "name": "returnsAccount",          +
+                         "type": {                          +
+                             "kind": "OBJECT"               +
+                         }                                  +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "id_to_search",    +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "returnsAccountWithId",    +
                          "type": {                          +
                              "kind": "OBJECT"               +
                          }                                  +
