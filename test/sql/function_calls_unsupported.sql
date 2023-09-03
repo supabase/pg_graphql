@@ -67,7 +67,7 @@ begin;
         }
     $$));
 
-    -- functions without names are not supported yet
+    -- functions without arg names are not supported yet
     -- we will need to generate synthetic names like arg1, arg2 etc.
     -- for these to be supported
     create function no_arg_name(int)
