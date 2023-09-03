@@ -160,6 +160,10 @@ Set returning functions are exposed as [collections](/pg_graphql/api/#collection
     }
     ```
 
+!!! note
+
+    A set returning function with any of its argument names clashing with argument names of a collection (`first`, `last`, `before`, `after`, `filter`, or `orderBy`) will not be exposed.
+
 The following functions are not supported:
 
 * Functions that return a record type.
