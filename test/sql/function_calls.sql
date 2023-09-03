@@ -19,9 +19,11 @@ begin;
         returns int language sql volatile
     as $$ select a + b; $$;
 
+    comment on function add_ints is e'@graphql({"name": "intsAdd"})';
+
     select jsonb_pretty(graphql.resolve($$
         mutation {
-            addInts(a: 2, b: 3)
+            intsAdd(a: 2, b: 3)
         }
     $$));
 
@@ -228,9 +230,11 @@ begin;
         returns int language sql immutable
     as $$ select a + b; $$;
 
+    comment on function add_ints is e'@graphql({"name": "intsAdd"})';
+
     select jsonb_pretty(graphql.resolve($$
         query {
-            addInts(a: 2, b: 3)
+            intsAdd(a: 2, b: 3)
         }
     $$));
 

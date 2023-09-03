@@ -22,16 +22,17 @@ begin;
     create function add_ints(a int, b int)
         returns int language sql volatile
     as $$ select a + b; $$;
+    comment on function add_ints is e'@graphql({"name": "intsAdd"})';
     select jsonb_pretty(graphql.resolve($$
         mutation {
-            addInts(a: 2, b: 3)
+            intsAdd(a: 2, b: 3)
         }
     $$));
      jsonb_pretty     
 ----------------------
  {                   +
      "data": {       +
-         "addInts": 5+
+         "intsAdd": 5+
      }               +
  }
 (1 row)
@@ -387,27 +388,6 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "b",               +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             }                              +
-                         ],                                 +
-                         "name": "addInts",                 +
-                         "type": {                          +
-                             "kind": "SCALAR"               +
-                         },                                 +
-                         "description": null                +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "a",               +
-                                 "type": {                  +
                                      "name": "BigFloat"     +
                                  }                          +
                              },                             +
@@ -595,6 +575,27 @@ begin;
                      {                                      +
                          "args": [                          +
                              {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "intsAdd",                 +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
                                  "name": "d",               +
                                  "type": {                  +
                                      "name": "Date"         +
@@ -712,16 +713,17 @@ begin;
     create function add_ints(a int, b int)
         returns int language sql immutable
     as $$ select a + b; $$;
+    comment on function add_ints is e'@graphql({"name": "intsAdd"})';
     select jsonb_pretty(graphql.resolve($$
         query {
-            addInts(a: 2, b: 3)
+            intsAdd(a: 2, b: 3)
         }
     $$));
      jsonb_pretty     
 ----------------------
  {                   +
      "data": {       +
-         "addInts": 5+
+         "intsAdd": 5+
      }               +
  }
 (1 row)
@@ -1077,27 +1079,6 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "Int"                     +
-                                 }                                     +
-                             },                                        +
-                             {                                         +
-                                 "name": "b",                          +
-                                 "type": {                             +
-                                     "name": "Int"                     +
-                                 }                                     +
-                             }                                         +
-                         ],                                            +
-                         "name": "addInts",                            +
-                         "type": {                                     +
-                             "kind": "SCALAR"                          +
-                         },                                            +
-                         "description": null                           +
-                     },                                                +
-                     {                                                 +
-                         "args": [                                     +
-                             {                                         +
-                                 "name": "a",                          +
-                                 "type": {                             +
                                      "name": "BigFloat"                +
                                  }                                     +
                              },                                        +
@@ -1277,6 +1258,27 @@ begin;
                              }                                         +
                          ],                                            +
                          "name": "getJsonbObj",                        +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "intsAdd",                            +
                          "type": {                                     +
                              "kind": "SCALAR"                          +
                          },                                            +
