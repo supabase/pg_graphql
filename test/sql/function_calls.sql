@@ -27,15 +27,19 @@ begin;
         }
     $$));
 
+    comment on schema public is e'@graphql({"inflect_names": false})';
+
     create function add_bigints(a bigint, b bigint)
         returns bigint language sql volatile
     as $$ select a + b; $$;
 
     select jsonb_pretty(graphql.resolve($$
         mutation {
-            addBigints(a: 3, b: 4)
+            add_bigints(a: 3, b: 4)
         }
     $$));
+
+    comment on schema public is e'@graphql({"inflect_names": true})';
 
     create function add_reals(a real, b real)
         returns real language sql volatile
@@ -433,7 +437,7 @@ begin;
         returns account language sql stable
     as $$ select id, email from account; $$;
 
-    insert into public.account(email)
+    insert into account(email)
     values
         ('aardvark@x.com'),
         ('bat@x.com'),
