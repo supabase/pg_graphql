@@ -7,6 +7,8 @@ begin;
         returns smallint language sql volatile
     as $$ select a + b; $$;
 
+    comment on function add_smallints is e'@graphql({"description": "adds two smallints"})';
+
     select jsonb_pretty(graphql.resolve($$
         mutation {
             addSmallints(a: 1, b: 2)
@@ -191,6 +193,7 @@ begin;
             mutationType {
                 fields {
                     name
+                    description
                     type {
                         kind
                     }
@@ -212,6 +215,8 @@ begin;
     create function add_smallints(a smallint, b smallint)
         returns smallint language sql stable
     as $$ select a + b; $$;
+
+    comment on function add_smallints is e'@graphql({"description": "returns a + b"})';
 
     select jsonb_pretty(graphql.resolve($$
         query {
@@ -397,6 +402,7 @@ begin;
             queryType {
                 fields {
                     name
+                    description
                     type {
                         kind
                     }
@@ -577,6 +583,7 @@ begin;
             queryType {
                 fields {
                     name
+                    description
                     type {
                         kind
                     }

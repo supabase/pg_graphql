@@ -4,6 +4,7 @@ begin;
     create function add_smallints(a smallint, b smallint)
         returns smallint language sql volatile
     as $$ select a + b; $$;
+    comment on function add_smallints is e'@graphql({"description": "adds two smallints"})';
     select jsonb_pretty(graphql.resolve($$
         mutation {
             addSmallints(a: 1, b: 2)
@@ -318,6 +319,7 @@ begin;
             mutationType {
                 fields {
                     name
+                    description
                     type {
                         kind
                     }
@@ -331,341 +333,359 @@ begin;
             }
         }
     } $$));
-                       jsonb_pretty                        
------------------------------------------------------------
- {                                                        +
-     "data": {                                            +
-         "__schema": {                                    +
-             "mutationType": {                            +
-                 "fields": [                              +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "BigInt"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "BigInt"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addBigints",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addDoubles",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addInts",               +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "BigFloat"   +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "BigFloat"   +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addNumerics",           +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addReals",              +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addSmallints",          +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Boolean"    +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Boolean"    +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "andBools",              +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "concatChars",           +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "concatText",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "concatVarchars",        +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "input",         +
-                                 "type": {                +
-                                     "name": "JSON"       +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "key",           +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "getJsonObj",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "input",         +
-                                 "type": {                +
-                                     "name": "JSON"       +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "key",           +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "getJsonbObj",           +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "d",             +
-                                 "type": {                +
-                                     "name": "Date"       +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextDay",               +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Time"       +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextHour",              +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Opaque"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextHourWithTimezone",  +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Datetime"   +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextMinute",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Datetime"   +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextMinuteWithTimezone",+
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "input",         +
-                                 "type": {                +
-                                     "name": "UUID"       +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "uuidIdentity",          +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     }                                    +
-                 ]                                        +
-             }                                            +
-         }                                                +
-     }                                                    +
+                        jsonb_pretty                         
+-------------------------------------------------------------
+ {                                                          +
+     "data": {                                              +
+         "__schema": {                                      +
+             "mutationType": {                              +
+                 "fields": [                                +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "BigInt"       +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "BigInt"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "addBigints",              +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Float"        +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "Float"        +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "addDoubles",              +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "addInts",                 +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "BigFloat"     +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "BigFloat"     +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "addNumerics",             +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Float"        +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "Float"        +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "addReals",                +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "Int"          +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "addSmallints",            +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": "adds two smallints"+
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "Boolean"      +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "Boolean"      +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "andBools",                +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "concatChars",             +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "concatText",              +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "a",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "b",               +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "concatVarchars",          +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "input",           +
+                                 "type": {                  +
+                                     "name": "JSON"         +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "key",             +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "getJsonObj",              +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "input",           +
+                                 "type": {                  +
+                                     "name": "JSON"         +
+                                 }                          +
+                             },                             +
+                             {                              +
+                                 "name": "key",             +
+                                 "type": {                  +
+                                     "name": "String"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "getJsonbObj",             +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "d",               +
+                                 "type": {                  +
+                                     "name": "Date"         +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "nextDay",                 +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "t",               +
+                                 "type": {                  +
+                                     "name": "Time"         +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "nextHour",                +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "t",               +
+                                 "type": {                  +
+                                     "name": "Opaque"       +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "nextHourWithTimezone",    +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "t",               +
+                                 "type": {                  +
+                                     "name": "Datetime"     +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "nextMinute",              +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "t",               +
+                                 "type": {                  +
+                                     "name": "Datetime"     +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "nextMinuteWithTimezone",  +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     },                                     +
+                     {                                      +
+                         "args": [                          +
+                             {                              +
+                                 "name": "input",           +
+                                 "type": {                  +
+                                     "name": "UUID"         +
+                                 }                          +
+                             }                              +
+                         ],                                 +
+                         "name": "uuidIdentity",            +
+                         "type": {                          +
+                             "kind": "SCALAR"               +
+                         },                                 +
+                         "description": null                +
+                     }                                      +
+                 ]                                          +
+             }                                              +
+         }                                                  +
+     }                                                      +
  }
 (1 row)
 
@@ -674,6 +694,7 @@ begin;
     create function add_smallints(a smallint, b smallint)
         returns smallint language sql stable
     as $$ select a + b; $$;
+    comment on function add_smallints is e'@graphql({"description": "returns a + b"})';
     select jsonb_pretty(graphql.resolve($$
         query {
             addSmallints(a: 1, b: 2)
@@ -988,6 +1009,7 @@ begin;
             queryType {
                 fields {
                     name
+                    description
                     type {
                         kind
                     }
@@ -1001,355 +1023,374 @@ begin;
             }
         }
     } $$));
-                       jsonb_pretty                        
------------------------------------------------------------
- {                                                        +
-     "data": {                                            +
-         "__schema": {                                    +
-             "queryType": {                               +
-                 "fields": [                              +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "BigInt"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "BigInt"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addBigints",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addDoubles",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addInts",               +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "BigFloat"   +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "BigFloat"   +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addNumerics",           +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Float"      +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addReals",              +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Int"        +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "addSmallints",          +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "Boolean"    +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "Boolean"    +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "andBools",              +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "concatChars",           +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "concatText",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "a",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "b",             +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "concatVarchars",        +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "input",         +
-                                 "type": {                +
-                                     "name": "JSON"       +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "key",           +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "getJsonObj",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "input",         +
-                                 "type": {                +
-                                     "name": "JSON"       +
-                                 }                        +
-                             },                           +
-                             {                            +
-                                 "name": "key",           +
-                                 "type": {                +
-                                     "name": "String"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "getJsonbObj",           +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "d",             +
-                                 "type": {                +
-                                     "name": "Date"       +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextDay",               +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Time"       +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextHour",              +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Opaque"     +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextHourWithTimezone",  +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Datetime"   +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextMinute",            +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "t",             +
-                                 "type": {                +
-                                     "name": "Datetime"   +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "nextMinuteWithTimezone",+
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "nodeId",        +
-                                 "type": {                +
-                                     "name": null         +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "node",                  +
-                         "type": {                        +
-                             "kind": "INTERFACE"          +
-                         }                                +
-                     },                                   +
-                     {                                    +
-                         "args": [                        +
-                             {                            +
-                                 "name": "input",         +
-                                 "type": {                +
-                                     "name": "UUID"       +
-                                 }                        +
-                             }                            +
-                         ],                               +
-                         "name": "uuidIdentity",          +
-                         "type": {                        +
-                             "kind": "SCALAR"             +
-                         }                                +
-                     }                                    +
-                 ]                                        +
-             }                                            +
-         }                                                +
-     }                                                    +
+                              jsonb_pretty                              
+------------------------------------------------------------------------
+ {                                                                     +
+     "data": {                                                         +
+         "__schema": {                                                 +
+             "queryType": {                                            +
+                 "fields": [                                           +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "BigInt"                  +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "BigInt"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "addBigints",                         +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "Float"                   +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "Float"                   +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "addDoubles",                         +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "addInts",                            +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "BigFloat"                +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "BigFloat"                +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "addNumerics",                        +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "Float"                   +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "Float"                   +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "addReals",                           +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "addSmallints",                       +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": "returns a + b"                +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "Boolean"                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "Boolean"                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "andBools",                           +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "concatChars",                        +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "concatText",                         +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "a",                          +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "b",                          +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "concatVarchars",                     +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "input",                      +
+                                 "type": {                             +
+                                     "name": "JSON"                    +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "key",                        +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getJsonObj",                         +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "input",                      +
+                                 "type": {                             +
+                                     "name": "JSON"                    +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "key",                        +
+                                 "type": {                             +
+                                     "name": "String"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getJsonbObj",                        +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "d",                          +
+                                 "type": {                             +
+                                     "name": "Date"                    +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "nextDay",                            +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "t",                          +
+                                 "type": {                             +
+                                     "name": "Time"                    +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "nextHour",                           +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "t",                          +
+                                 "type": {                             +
+                                     "name": "Opaque"                  +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "nextHourWithTimezone",               +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "t",                          +
+                                 "type": {                             +
+                                     "name": "Datetime"                +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "nextMinute",                         +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "t",                          +
+                                 "type": {                             +
+                                     "name": "Datetime"                +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "nextMinuteWithTimezone",             +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "nodeId",                     +
+                                 "type": {                             +
+                                     "name": null                      +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "node",                               +
+                         "type": {                                     +
+                             "kind": "INTERFACE"                       +
+                         },                                            +
+                         "description": "Retrieve a record by its `ID`"+
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "input",                      +
+                                 "type": {                             +
+                                     "name": "UUID"                    +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "uuidIdentity",                       +
+                         "type": {                                     +
+                             "kind": "SCALAR"                          +
+                         },                                            +
+                         "description": null                           +
+                     }                                                 +
+                 ]                                                     +
+             }                                                         +
+         }                                                             +
+     }                                                                 +
  }
 (1 row)
 
@@ -1643,6 +1684,7 @@ begin;
             queryType {
                 fields {
                     name
+                    description
                     type {
                         kind
                     }
@@ -1656,197 +1698,203 @@ begin;
             }
         }
     } $$));
-                        jsonb_pretty                         
--------------------------------------------------------------
- {                                                          +
-     "data": {                                              +
-         "__schema": {                                      +
-             "queryType": {                                 +
-                 "fields": [                                +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "first",           +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "last",            +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "before",          +
-                                 "type": {                  +
-                                     "name": "Cursor"       +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "after",           +
-                                 "type": {                  +
-                                     "name": "Cursor"       +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "filter",          +
-                                 "type": {                  +
-                                     "name": "AccountFilter"+
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "orderBy",         +
-                                 "type": {                  +
-                                     "name": null           +
-                                 }                          +
-                             }                              +
-                         ],                                 +
-                         "name": "accountCollection",       +
-                         "type": {                          +
-                             "kind": "OBJECT"               +
-                         }                                  +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "orderby",         +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "first",           +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "last",            +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "before",          +
-                                 "type": {                  +
-                                     "name": "Cursor"       +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "after",           +
-                                 "type": {                  +
-                                     "name": "Cursor"       +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "filter",          +
-                                 "type": {                  +
-                                     "name": "AccountFilter"+
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "orderBy",         +
-                                 "type": {                  +
-                                     "name": null           +
-                                 }                          +
-                             }                              +
-                         ],                                 +
-                         "name": "argNamedOrderby",         +
-                         "type": {                          +
-                             "kind": "OBJECT"               +
-                         }                                  +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "nodeId",          +
-                                 "type": {                  +
-                                     "name": null           +
-                                 }                          +
-                             }                              +
-                         ],                                 +
-                         "name": "node",                    +
-                         "type": {                          +
-                             "kind": "INTERFACE"            +
-                         }                                  +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                         ],                                 +
-                         "name": "returnsAccount",          +
-                         "type": {                          +
-                             "kind": "OBJECT"               +
-                         }                                  +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "id_to_search",    +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             }                              +
-                         ],                                 +
-                         "name": "returnsAccountWithId",    +
-                         "type": {                          +
-                             "kind": "OBJECT"               +
-                         }                                  +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "top",             +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "first",           +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "last",            +
-                                 "type": {                  +
-                                     "name": "Int"          +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "before",          +
-                                 "type": {                  +
-                                     "name": "Cursor"       +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "after",           +
-                                 "type": {                  +
-                                     "name": "Cursor"       +
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "filter",          +
-                                 "type": {                  +
-                                     "name": "AccountFilter"+
-                                 }                          +
-                             },                             +
-                             {                              +
-                                 "name": "orderBy",         +
-                                 "type": {                  +
-                                     "name": null           +
-                                 }                          +
-                             }                              +
-                         ],                                 +
-                         "name": "returnsSetofAccount",     +
-                         "type": {                          +
-                             "kind": "OBJECT"               +
-                         }                                  +
-                     }                                      +
-                 ]                                          +
-             }                                              +
-         }                                                  +
-     }                                                      +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "data": {                                                                  +
+         "__schema": {                                                          +
+             "queryType": {                                                     +
+                 "fields": [                                                    +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "first",                               +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "last",                                +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "before",                              +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "after",                               +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "filter",                              +
+                                 "type": {                                      +
+                                     "name": "AccountFilter"                    +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "orderBy",                             +
+                                 "type": {                                      +
+                                     "name": null                               +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "accountCollection",                           +
+                         "type": {                                              +
+                             "kind": "OBJECT"                                   +
+                         },                                                     +
+                         "description": "A pagable collection of type `Account`"+
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "orderby",                             +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "first",                               +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "last",                                +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "before",                              +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "after",                               +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "filter",                              +
+                                 "type": {                                      +
+                                     "name": "AccountFilter"                    +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "orderBy",                             +
+                                 "type": {                                      +
+                                     "name": null                               +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "argNamedOrderby",                             +
+                         "type": {                                              +
+                             "kind": "OBJECT"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "nodeId",                              +
+                                 "type": {                                      +
+                                     "name": null                               +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "node",                                        +
+                         "type": {                                              +
+                             "kind": "INTERFACE"                                +
+                         },                                                     +
+                         "description": "Retrieve a record by its `ID`"         +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                         ],                                                     +
+                         "name": "returnsAccount",                              +
+                         "type": {                                              +
+                             "kind": "OBJECT"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "id_to_search",                        +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "returnsAccountWithId",                        +
+                         "type": {                                              +
+                             "kind": "OBJECT"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "top",                                 +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "first",                               +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "last",                                +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "before",                              +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "after",                               +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "filter",                              +
+                                 "type": {                                      +
+                                     "name": "AccountFilter"                    +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "orderBy",                             +
+                                 "type": {                                      +
+                                     "name": null                               +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "returnsSetofAccount",                         +
+                         "type": {                                              +
+                             "kind": "OBJECT"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     }                                                          +
+                 ]                                                              +
+             }                                                                  +
+         }                                                                      +
+     }                                                                          +
  }
 (1 row)
 
