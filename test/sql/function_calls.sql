@@ -471,9 +471,21 @@ begin;
         }
     $$));
 
+    comment on schema public is e'@graphql({"inflect_names": false})';
+
     create function returns_account_with_id(id_to_search int)
         returns account language sql stable
     as $$ select id, email from account where id = id_to_search; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returns_account_with_id(id_to_search: 1) {
+                email
+            }
+        }
+    $$));
+
+    comment on schema public is e'@graphql({"inflect_names": true})';
 
     select jsonb_pretty(graphql.resolve($$
         query {
