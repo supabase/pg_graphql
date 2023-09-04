@@ -105,7 +105,7 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
     }
     ```
 
-Set returning functions are exposed as [collections](/pg_graphql/api/#collections).
+Functions returning multiple rows of a table or view are exposed as [collections](/pg_graphql/api/#collections).
 
 === "Function"
 
