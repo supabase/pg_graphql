@@ -38,7 +38,7 @@ Only functions marked `immutable` or `stable` are available on the query type. F
       email varchar(255) not null
     );
 
-    create function save_email(email text)
+    create function add_account(email text)
       returns int language sql volatile
     as $$ insert into account (email) values (email) returning id; $$;
     ```
@@ -47,7 +47,7 @@ Only functions marked `immutable` or `stable` are available on the query type. F
 
     ```graphql
     mutation {
-      saveEmail(email: "email@example.com")
+      addAccount(email: "email@example.com")
     }
     ```
 
@@ -56,7 +56,7 @@ Only functions marked `immutable` or `stable` are available on the query type. F
     ```json
     {
       "data": {
-        "saveEmail": 1
+        "addAccount": 1
       }
     }
     ```
@@ -85,7 +85,7 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
 
     ```graphql
     query {
-      returnsAccount(accountId: 1) {
+      accountById(accountId: 1) {
           id
           email
       }
@@ -97,10 +97,10 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
     ```json
     {
       "data": {
-          "returnsAccount": {
-            "id": 1,
-            "email": "email@example.com"
-          }
+        "accountById": {
+          "id": 1,
+          "email": "a@example.com"
+        }
       }
     }
     ```
@@ -130,7 +130,7 @@ Set returning functions are exposed as [collections](/pg_graphql/api/#collection
 
     ```graphql
     query {
-      accountsByEmail(email_to_search: "a@example.com", first: 1) {
+      accountsByEmail(emailToSearch: "a@example.com", first: 1) {
       edges {
             node {
               id
