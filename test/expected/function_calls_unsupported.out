@@ -165,15 +165,15 @@ begin;
             variadicFunc
         }
     $$));
-                              jsonb_pretty                               
--------------------------------------------------------------------------
- {                                                                      +
-     "data": null,                                                      +
-     "errors": [                                                        +
-         {                                                              +
-             "message": "function public.variadic_func() does not exist"+
-         }                                                              +
-     ]                                                                  +
+                             jsonb_pretty                              
+-----------------------------------------------------------------------
+ {                                                                    +
+     "data": null,                                                    +
+     "errors": [                                                      +
+         {                                                            +
+             "message": "Unknown field \"variadicFunc\" on type Query"+
+         }                                                            +
+     ]                                                                +
  }
 (1 row)
 
@@ -186,15 +186,15 @@ begin;
             voidReturningFunc
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "function public.void_returning_func() does not exist"+
-         }                                                                    +
-     ]                                                                        +
+                                jsonb_pretty                                
+----------------------------------------------------------------------------
+ {                                                                         +
+     "data": null,                                                         +
+     "errors": [                                                           +
+         {                                                                 +
+             "message": "Unknown field \"voidReturningFunc\" on type Query"+
+         }                                                                 +
+     ]                                                                     +
  }
 (1 row)
 

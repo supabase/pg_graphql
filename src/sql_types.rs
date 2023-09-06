@@ -94,6 +94,28 @@ impl Function {
             arg_names: &self.arg_names,
         }
     }
+
+    pub fn is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
+        self.return_type_is_supported(types) && self.arg_types_are_supported(types)
+    }
+
+    fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
+        self.args().all(|(arg_type, _, _)| {
+            if let Some(return_type) = types.get(&arg_type) {
+                return_type.category == TypeCategory::Other
+            } else {
+                false
+            }
+        })
+    }
+
+    fn return_type_is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
+        if let Some(return_type) = types.get(&self.type_oid) {
+            return_type.category != TypeCategory::Pseudo
+        } else {
+            false
+        }
+    }
 }
 
 struct ArgsIterator<'a> {

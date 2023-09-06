@@ -1272,19 +1272,8 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
         .context
         .functions
         .iter()
+        .filter(|func| func.is_supported(sql_types))
         .filter(|func| volatilities.contains(&func.volatility))
-        .filter(|func| {
-            match sql_types.get(&func.type_oid) {
-                None => true,
-                Some(sql_type) => {
-                    // disallow pseudo types
-                    match &sql_type.category {
-                        TypeCategory::Pseudo => false,
-                        _ => true,
-                    }
-                }
-            }
-        })
         .filter_map(|func| match sql_types.get(&func.type_oid) {
             None => None,
             Some(sql_type) => {
