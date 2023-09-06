@@ -170,4 +170,5 @@ The following functions are not supported:
 * Overloaded functions.
 * Functions with a nameless argument.
 * Functions with a default argument.
+* Functions returning void.
 * Variadic functions.
