@@ -95,8 +95,12 @@ impl Function {
         }
     }
 
-    pub fn is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
-        self.return_type_is_supported(types) && self.arg_types_are_supported(types)
+    pub fn is_supported(&self, context: &Context) -> bool {
+        let types = &context.types;
+        let all_functions = &context.functions;
+        self.return_type_is_supported(types)
+            && self.arg_types_are_supported(types)
+            && !self.is_function_overloaded(all_functions)
     }
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
@@ -112,6 +116,19 @@ impl Function {
     fn return_type_is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
         if let Some(return_type) = types.get(&self.type_oid) {
             return_type.category != TypeCategory::Pseudo && return_type.name != "record"
+        } else {
+            false
+        }
+    }
+
+    fn is_function_overloaded(&self, all_functions: &[Arc<Function>]) -> bool {
+        let mut function_name_to_count = HashMap::new();
+        for function_name in all_functions.iter().map(|f| &f.name) {
+            let entry = function_name_to_count.entry(function_name).or_insert(0);
+            *entry += 1;
+        }
+        if let Some(&count) = function_name_to_count.get(&self.name) {
+            count > 1
         } else {
             false
         }

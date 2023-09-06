@@ -83,12 +83,15 @@ begin;
             anOverloadedFunction
         }
     $$));
-           jsonb_pretty            
------------------------------------
- {                                +
-     "data": {                    +
-         "anOverloadedFunction": 1+
-     }                            +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "data": null,                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Unknown field \"anOverloadedFunction\" on type Query"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -97,12 +100,15 @@ begin;
             anOverloadedFunction (a: 1)
         }
     $$));
-           jsonb_pretty            
------------------------------------
- {                                +
-     "data": {                    +
-         "anOverloadedFunction": 2+
-     }                            +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "data": null,                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Unknown field \"anOverloadedFunction\" on type Query"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -111,15 +117,15 @@ begin;
             anOverloadedFunction (a: "some text")
         }
     $$));
-                    jsonb_pretty                     
------------------------------------------------------
- {                                                  +
-     "data": null,                                  +
-     "errors": [                                    +
-         {                                          +
-             "message": "Invalid input for Int type"+
-         }                                          +
-     ]                                              +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "data": null,                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Unknown field \"anOverloadedFunction\" on type Query"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -295,45 +301,6 @@ begin;
                              "kind": "OBJECT"                                   +
                          },                                                     +
                          "description": "A pagable collection of type `Account`"+
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "a",                                   +
-                                 "type": {                                      +
-                                     "name": "String"                           +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "anOverloadedFunction",                        +
-                         "type": {                                              +
-                             "kind": "SCALAR"                                   +
-                         },                                                     +
-                         "description": null                                    +
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                         ],                                                     +
-                         "name": "anOverloadedFunction",                        +
-                         "type": {                                              +
-                             "kind": "SCALAR"                                   +
-                         },                                                     +
-                         "description": null                                    +
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "a",                                   +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "anOverloadedFunction",                        +
-                         "type": {                                              +
-                             "kind": "SCALAR"                                   +
-                         },                                                     +
-                         "description": null                                    +
                      },                                                         +
                      {                                                          +
                          "args": [                                              +
