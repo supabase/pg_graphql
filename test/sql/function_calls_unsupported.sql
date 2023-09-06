@@ -147,7 +147,7 @@ begin;
             funcReturningArray
         }
     $$));
-    
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {

@@ -265,7 +265,6 @@ begin;
  }
 (1 row)
 
-    
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
