@@ -166,7 +166,8 @@ Functions returning multiple rows of a table or view are exposed as [collections
 
 The following functions are not supported:
 
-* Functions that return a record type.
+* Functions that accept or return a record type.
 * Overloaded functions.
 * Functions with a nameless argument.
+* Functions with a default argument.
 * Variadic functions.
