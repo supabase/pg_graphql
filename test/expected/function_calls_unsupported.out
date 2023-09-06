@@ -29,15 +29,15 @@ begin;
             }
         }
     $$));
-             jsonb_pretty              
----------------------------------------
- {                                    +
-     "data": {                        +
-         "returnsRecord": {           +
-             "id": 1,                 +
-             "email": "aardvark@x.com"+
-         }                            +
-     }                                +
+                              jsonb_pretty                              
+------------------------------------------------------------------------
+ {                                                                     +
+     "data": null,                                                     +
+     "errors": [                                                       +
+         {                                                             +
+             "message": "Unknown field \"returnsRecord\" on type Query"+
+         }                                                             +
+     ]                                                                 +
  }
 (1 row)
 
@@ -358,15 +358,6 @@ begin;
                              "kind": "INTERFACE"                                +
                          },                                                     +
                          "description": "Retrieve a record by its `ID`"         +
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                         ],                                                     +
-                         "name": "returnsRecord",                               +
-                         "type": {                                              +
-                             "kind": "SCALAR"                                   +
-                         },                                                     +
-                         "description": null                                    +
                      }                                                          +
                  ]                                                              +
              }                                                                  +
