@@ -1268,11 +1268,12 @@ impl ___Type for QueryType {
 
 fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) -> Vec<__Field> {
     let sql_types = &schema.context.types;
+    let function_name_to_count = Function::function_names_to_count(&schema.context.functions);
     schema
         .context
         .functions
         .iter()
-        .filter(|func| func.is_supported(&schema.context))
+        .filter(|func| func.is_supported(&schema.context, &function_name_to_count))
         .filter(|func| volatilities.contains(&func.volatility))
         .filter_map(|func| match sql_types.get(&func.type_oid) {
             None => None,

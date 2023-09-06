@@ -95,12 +95,24 @@ impl Function {
         }
     }
 
-    pub fn is_supported(&self, context: &Context) -> bool {
+    pub fn function_names_to_count(all_functions: &[Arc<Function>]) -> HashMap<&String, u32> {
+        let mut function_name_to_count = HashMap::new();
+        for function_name in all_functions.iter().map(|f| &f.name) {
+            let entry = function_name_to_count.entry(function_name).or_insert(0u32);
+            *entry += 1;
+        }
+        function_name_to_count
+    }
+
+    pub fn is_supported(
+        &self,
+        context: &Context,
+        function_name_to_count: &HashMap<&String, u32>,
+    ) -> bool {
         let types = &context.types;
-        let all_functions = &context.functions;
         self.return_type_is_supported(types)
             && self.arg_types_are_supported(types)
-            && !self.is_function_overloaded(all_functions)
+            && !self.is_function_overloaded(function_name_to_count)
             && !self.has_a_nameless_arg()
     }
 
@@ -121,13 +133,7 @@ impl Function {
             false
         }
     }
-
-    fn is_function_overloaded(&self, all_functions: &[Arc<Function>]) -> bool {
-        let mut function_name_to_count = HashMap::new();
-        for function_name in all_functions.iter().map(|f| &f.name) {
-            let entry = function_name_to_count.entry(function_name).or_insert(0);
-            *entry += 1;
-        }
+    fn is_function_overloaded(&self, function_name_to_count: &HashMap<&String, u32>) -> bool {
         if let Some(&count) = function_name_to_count.get(&self.name) {
             count > 1
         } else {
