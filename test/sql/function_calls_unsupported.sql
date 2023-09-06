@@ -95,12 +95,6 @@ begin;
         }
     $$));
 
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            noArgName(arg0: 1)
-        }
-    $$));
-
     select graphql.resolve($$
         mutation {
             insertIntoAccountCollection(objects: [

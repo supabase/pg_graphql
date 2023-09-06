@@ -140,32 +140,15 @@ begin;
             noArgName
         }
     $$));
-                             jsonb_pretty                              
------------------------------------------------------------------------
- {                                                                    +
-     "data": null,                                                    +
-     "errors": [                                                      +
-         {                                                            +
-             "message": "function public.no_arg_name() does not exist"+
-         }                                                            +
-     ]                                                                +
- }
-(1 row)
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            noArgName(arg0: 1)
-        }
-    $$));
-                         jsonb_pretty                          
----------------------------------------------------------------
- {                                                            +
-     "data": null,                                            +
-     "errors": [                                              +
-         {                                                    +
-             "message": "Input contains extra keys [\"arg0\"]"+
-         }                                                    +
-     ]                                                        +
+                            jsonb_pretty                            
+--------------------------------------------------------------------
+ {                                                                 +
+     "data": null,                                                 +
+     "errors": [                                                   +
+         {                                                         +
+             "message": "Unknown field \"noArgName\" on type Query"+
+         }                                                         +
+     ]                                                             +
  }
 (1 row)
 
@@ -301,15 +284,6 @@ begin;
                              "kind": "OBJECT"                                   +
                          },                                                     +
                          "description": "A pagable collection of type `Account`"+
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                         ],                                                     +
-                         "name": "noArgName",                                   +
-                         "type": {                                              +
-                             "kind": "SCALAR"                                   +
-                         },                                                     +
-                         "description": null                                    +
                      },                                                         +
                      {                                                          +
                          "args": [                                              +

@@ -101,6 +101,7 @@ impl Function {
         self.return_type_is_supported(types)
             && self.arg_types_are_supported(types)
             && !self.is_function_overloaded(all_functions)
+            && !self.has_a_nameless_arg()
     }
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
@@ -132,6 +133,10 @@ impl Function {
         } else {
             false
         }
+    }
+
+    fn has_a_nameless_arg(&self) -> bool {
+        self.args().any(|(_, _, arg_name)| arg_name.is_none())
     }
 }
 
