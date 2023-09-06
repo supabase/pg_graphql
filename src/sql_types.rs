@@ -75,6 +75,7 @@ pub struct Function {
     pub arg_types: Vec<u32>,
     pub arg_names: Option<Vec<String>>,
     pub num_args: u32,
+    pub num_default_args: u32,
     pub arg_type_names: Vec<String>,
     pub volatility: FunctionVolatility,
     pub type_oid: u32,
@@ -114,6 +115,7 @@ impl Function {
             && self.arg_types_are_supported(types)
             && !self.is_function_overloaded(function_name_to_count)
             && !self.has_a_nameless_arg()
+            && !self.has_a_default_arg()
     }
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
@@ -143,6 +145,10 @@ impl Function {
 
     fn has_a_nameless_arg(&self) -> bool {
         self.args().any(|(_, _, arg_name)| arg_name.is_none())
+    }
+
+    fn has_a_default_arg(&self) -> bool {
+        self.num_default_args > 0
     }
 }
 

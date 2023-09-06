@@ -380,6 +380,7 @@ select
                             'arg_types', proargtypes::int[],
                             'arg_names', proargnames::text[],
                             'num_args', pronargs,
+                            'num_default_args', pronargdefaults,
                             'arg_type_names', pp.proargtypes::regtype[]::text[],
                             'volatility', pp.provolatile,
                             -- Functions may be defined as "returns sefof <entity> rows 1"

@@ -130,6 +130,26 @@ begin;
             voidReturningFunc
         }
     $$));
+
+    create function func_with_a_default_int(a int default 42)
+        returns int language sql immutable
+    as $$ select a; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcWithADefaultInt
+        }
+    $$));
+
+    create function func_with_a_default_null_text(a text default null)
+        returns text language sql immutable
+    as $$ select a; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcWithADefaultNullText
+        }
+    $$));
     
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
