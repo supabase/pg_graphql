@@ -5,7 +5,7 @@ For example, a function to add two numbers will be available on the query type a
 === "Function"
 
     ```sql
-    create function add_nums(a int, b int)
+    create function "addNums"(a int, b int)
       returns int language sql immutable
     as $$ select a + b; $$;
     ```
@@ -38,7 +38,7 @@ Only functions marked `immutable` or `stable` are available on the query type. F
       email varchar(255) not null
     );
 
-    create function add_account(email text)
+    create function "addAccount"(email text)
       returns int language sql volatile
     as $$ insert into account (email) values (email) returning id; $$;
     ```
@@ -76,9 +76,9 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
       ('a@example.com'),
       ('b@example.com');
 
-    create function account_by_id(account_id int)
+    create function "accountById"("accountId" int)
       returns account language sql stable
-    as $$ select id, email from account where id = account_id; $$;
+    as $$ select id, email from account where id = "accountId"; $$;
     ```
 
 === "Query"
@@ -121,9 +121,9 @@ Functions returning multiple rows of a table or view are exposed as [collections
       ('a@example.com'),
       ('b@example.com');
 
-    create function accounts_by_email(email_to_search text)
+    create function "accountsByEmail"("emailToSearch" text)
       returns setof account language sql stable
-    as $$ select id, email from account where email = email_to_search; $$;
+    as $$ select id, email from account where email = "emailToSearch"; $$;
     ```
 
 === "Query"
