@@ -1,8 +1,5 @@
 begin;
-    -- These following tests are there to just document
-    -- the current behaviour and any limitations. Do not
-    -- assume that just because they pass it is the expected
-    -- behaviour.
+    -- functions in this file are not supported yet
 
     create table account(
         id serial primary key,
@@ -15,10 +12,7 @@ begin;
         ('bat@x.com'),
         ('cat@x.com');
 
-    -- functions returning record are not supported yet
-    -- currently they do return the fields from the returned record
-    -- but do not return nodeId and __typename fields
-    -- Their schema queries also return a type of scalar
+    -- functions which return a record
     create function returns_record()
         returns record language sql stable
     as $$ select id, email from account; $$;
@@ -34,8 +28,8 @@ begin;
         }
     $$));
 
-    -- functions accepting table tuple type are also not supported
-    create function "acceptsTableTupleType"(rec public.account)
+    -- functions which accept a table tuple type
+    create function accepts_table_tuple_type(rec public.account)
         returns int
         immutable
         language sql
@@ -49,9 +43,7 @@ begin;
         }
     $$));
 
-    -- overloaded functions are also not supported yet
-    -- some of the simpler cases can work, but not
-    -- everything works.
+    -- overloaded functions
     create function an_overloaded_function()
         returns int language sql stable
     as $$ select 1; $$;
@@ -82,9 +74,7 @@ begin;
         }
     $$));
 
-    -- functions without arg names are not supported yet
-    -- we will need to generate synthetic names like arg1, arg2 etc.
-    -- for these to be supported
+    -- functions without arg names
     create function no_arg_name(int)
         returns int language sql immutable
     as $$ select 42; $$;
@@ -95,21 +85,7 @@ begin;
         }
     $$));
 
-    select graphql.resolve($$
-        mutation {
-            insertIntoAccountCollection(objects: [
-                { email: "foo@barsley.com" },
-                { email: "bar@foosworth.com" }
-            ]) {
-                affectedCount
-                records {
-                    id
-                }
-            }
-        }
-    $$);
-
-    -- variadic functions are not supported
+    -- variadic functions
     create function variadic_func(variadic int[])
         returns int language sql immutable
     as $$ select 42; $$;
@@ -120,7 +96,7 @@ begin;
         }
     $$));
 
-    -- functions returning void are not supported
+    -- functions returning void
     create function void_returning_func(variadic int[])
         returns void language sql immutable
     as $$ $$;
@@ -131,6 +107,7 @@ begin;
         }
     $$));
 
+    -- functions with a default value
     create function func_with_a_default_int(a int default 42)
         returns int language sql immutable
     as $$ select a; $$;
