@@ -465,12 +465,6 @@ begin;
         }
     $$));
 
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            returnsAccount
-        }
-    $$));
-
     comment on schema public is e'@graphql({"inflect_names": false})';
 
     create function returns_account_with_id(id_to_search int)

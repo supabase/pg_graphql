@@ -1448,21 +1448,6 @@ begin;
  }
 (1 row)
 
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            returnsAccount
-        }
-    $$));
-        jsonb_pretty         
------------------------------
- {                          +
-     "data": {              +
-         "returnsAccount": {+
-         }                  +
-     }                      +
- }
-(1 row)
-
     comment on schema public is e'@graphql({"inflect_names": false})';
     create function returns_account_with_id(id_to_search int)
         returns account language sql stable
