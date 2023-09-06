@@ -46,12 +46,12 @@ begin;
             add_bigints(a: 3, b: 4)
         }
     $$));
-       jsonb_pretty       
---------------------------
- {                       +
-     "data": {           +
-         "add_bigints": 7+
-     }                   +
+        jsonb_pretty        
+----------------------------
+ {                         +
+     "data": {             +
+         "add_bigints": "7"+
+     }                     +
  }
 (1 row)
 
@@ -98,12 +98,12 @@ begin;
             addNumerics(a: "11.12", b: "13.14")
         }
     $$));
-         jsonb_pretty         
-------------------------------
- {                           +
-     "data": {               +
-         "addNumerics": 24.26+
-     }                       +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": {                 +
+         "addNumerics": "24.26"+
+     }                         +
  }
 (1 row)
 
@@ -252,14 +252,12 @@ begin;
             getJsonObj(input: "{\"a\": {\"b\": \"foo\"}}", key: "a")
         }
     $$));
-      jsonb_pretty       
--------------------------
- {                      +
-     "data": {          +
-         "getJsonObj": {+
-             "b": "foo" +
-         }              +
-     }                  +
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "getJsonObj": "{\"b\": \"foo\"}"+
+     }                                   +
  }
 (1 row)
 
@@ -271,14 +269,12 @@ begin;
             getJsonbObj(input: "{\"a\": {\"b\": \"foo\"}}", key: "a")
         }
     $$));
-       jsonb_pretty       
---------------------------
- {                       +
-     "data": {           +
-         "getJsonbObj": {+
-             "b": "foo"  +
-         }               +
-     }                   +
+               jsonb_pretty                
+-------------------------------------------
+ {                                        +
+     "data": {                            +
+         "getJsonbObj": "{\"b\": \"foo\"}"+
+     }                                    +
  }
 (1 row)
 
@@ -738,12 +734,12 @@ begin;
             addBigints(a: 3, b: 4)
         }
     $$));
-      jsonb_pretty       
--------------------------
- {                      +
-     "data": {          +
-         "addBigints": 7+
-     }                  +
+       jsonb_pretty        
+---------------------------
+ {                        +
+     "data": {            +
+         "addBigints": "7"+
+     }                    +
  }
 (1 row)
 
@@ -789,12 +785,12 @@ begin;
             addNumerics(a: "11.12", b: "13.14")
         }
     $$));
-         jsonb_pretty         
-------------------------------
- {                           +
-     "data": {               +
-         "addNumerics": 24.26+
-     }                       +
+          jsonb_pretty          
+--------------------------------
+ {                             +
+     "data": {                 +
+         "addNumerics": "24.26"+
+     }                         +
  }
 (1 row)
 
@@ -943,14 +939,12 @@ begin;
             getJsonObj(input: "{\"a\": {\"b\": \"foo\"}}", key: "a")
         }
     $$));
-      jsonb_pretty       
--------------------------
- {                      +
-     "data": {          +
-         "getJsonObj": {+
-             "b": "foo" +
-         }              +
-     }                  +
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "getJsonObj": "{\"b\": \"foo\"}"+
+     }                                   +
  }
 (1 row)
 
@@ -962,14 +956,12 @@ begin;
             getJsonbObj(input: "{\"a\": {\"b\": \"foo\"}}", key: "a")
         }
     $$));
-       jsonb_pretty       
---------------------------
- {                       +
-     "data": {           +
-         "getJsonbObj": {+
-             "b": "foo"  +
-         }               +
-     }                   +
+               jsonb_pretty                
+-------------------------------------------
+ {                                        +
+     "data": {                            +
+         "getJsonbObj": "{\"b\": \"foo\"}"+
+     }                                    +
  }
 (1 row)
 

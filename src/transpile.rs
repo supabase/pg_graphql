@@ -560,7 +560,8 @@ impl FunctionCallBuilder {
 
         let query = match &self.return_type_builder {
             FuncCallReturnTypeBuilder::Scalar => {
-                format!("select to_jsonb({func_schema}.{func_name}{args_clause}) {block_name};")
+                let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
+                format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
             }
             FuncCallReturnTypeBuilder::Node(node_builder) => {
                 let select_clause = node_builder.to_sql(block_name, param_context)?;
