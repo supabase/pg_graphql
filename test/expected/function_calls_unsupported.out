@@ -225,6 +225,46 @@ begin;
  }
 (1 row)
 
+    create function func_accepting_array(a int[])
+        returns int language sql immutable
+    as $$ select 0; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcAcceptingArray(a: [1, 2, 3])
+        }
+    $$));
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "data": null,                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Unknown field \"funcAcceptingArray\" on type Query"+
+         }                                                                  +
+     ]                                                                      +
+ }
+(1 row)
+
+    create function func_returning_array()
+        returns int[] language sql immutable
+    as $$ select array[1, 2, 3]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcReturningArray
+        }
+    $$));
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "data": null,                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Unknown field \"funcReturningArray\" on type Query"+
+         }                                                                  +
+     ]                                                                      +
+ }
+(1 row)
+
     
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {

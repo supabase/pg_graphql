@@ -173,3 +173,4 @@ The following functions are not supported:
 * Functions with a default argument.
 * Functions returning void.
 * Variadic functions.
+* Function that accept or return an array type.

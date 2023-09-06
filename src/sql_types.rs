@@ -130,11 +130,14 @@ impl Function {
 
     fn return_type_is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
         if let Some(return_type) = types.get(&self.type_oid) {
-            return_type.category != TypeCategory::Pseudo && return_type.name != "record"
+            return_type.category != TypeCategory::Pseudo
+                && return_type.name != "record"
+                && !self.type_name.ends_with("[]")
         } else {
             false
         }
     }
+
     fn is_function_overloaded(&self, function_name_to_count: &HashMap<&String, u32>) -> bool {
         if let Some(&count) = function_name_to_count.get(&self.name) {
             count > 1
