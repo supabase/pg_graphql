@@ -34,14 +34,20 @@ begin;
         }
     $$));
 
-    -- functions accepting records are also not supported
-    create function accepts_record(rec public.account)
+    -- functions accepting table tuple type are also not supported
+    create function "acceptsTableTupleType"(rec public.account)
         returns int
         immutable
         language sql
     as $$
         select 1;
     $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            acceptsTableTupleType
+        }
+    $$));
 
     -- overloaded functions are also not supported yet
     -- some of the simpler cases can work, but not
