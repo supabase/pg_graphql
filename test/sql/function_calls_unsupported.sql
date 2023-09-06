@@ -34,6 +34,15 @@ begin;
         }
     $$));
 
+    -- functions accepting records are also not supported
+    create function accepts_record(rec public.account)
+        returns int
+        immutable
+        language sql
+    as $$
+        select 1;
+    $$;
+
     -- overloaded functions are also not supported yet
     -- some of the simpler cases can work, but not
     -- everything works.
@@ -121,4 +130,25 @@ begin;
             voidReturningFunc
         }
     $$));
+    
+    select jsonb_pretty(graphql.resolve($$
+    query IntrospectionQuery {
+        __schema {
+            queryType {
+                fields {
+                    name
+                    description
+                    type {
+                        kind
+                    }
+                    args {
+                        name
+                        type {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
 rollback;

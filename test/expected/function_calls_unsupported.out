@@ -41,6 +41,14 @@ begin;
  }
 (1 row)
 
+    -- functions accepting records are also not supported
+    create function accepts_record(rec public.account)
+        returns int
+        immutable
+        language sql
+    as $$
+        select 1;
+    $$;
     -- overloaded functions are also not supported yet
     -- some of the simpler cases can work, but not
     -- everything works.
@@ -195,6 +203,158 @@ begin;
              "message": "Unknown field \"voidReturningFunc\" on type Query"+
          }                                                                 +
      ]                                                                     +
+ }
+(1 row)
+
+    
+    select jsonb_pretty(graphql.resolve($$
+    query IntrospectionQuery {
+        __schema {
+            queryType {
+                fields {
+                    name
+                    description
+                    type {
+                        kind
+                    }
+                    args {
+                        name
+                        type {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "data": {                                                                  +
+         "__schema": {                                                          +
+             "queryType": {                                                     +
+                 "fields": [                                                    +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "first",                               +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "last",                                +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "before",                              +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "after",                               +
+                                 "type": {                                      +
+                                     "name": "Cursor"                           +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "filter",                              +
+                                 "type": {                                      +
+                                     "name": "AccountFilter"                    +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "orderBy",                             +
+                                 "type": {                                      +
+                                     "name": null                               +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "accountCollection",                           +
+                         "type": {                                              +
+                             "kind": "OBJECT"                                   +
+                         },                                                     +
+                         "description": "A pagable collection of type `Account`"+
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                         ],                                                     +
+                         "name": "anOverloadedFunction",                        +
+                         "type": {                                              +
+                             "kind": "SCALAR"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "a",                                   +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "anOverloadedFunction",                        +
+                         "type": {                                              +
+                             "kind": "SCALAR"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "a",                                   +
+                                 "type": {                                      +
+                                     "name": "String"                           +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "anOverloadedFunction",                        +
+                         "type": {                                              +
+                             "kind": "SCALAR"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                         ],                                                     +
+                         "name": "noArgName",                                   +
+                         "type": {                                              +
+                             "kind": "SCALAR"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                             {                                                  +
+                                 "name": "nodeId",                              +
+                                 "type": {                                      +
+                                     "name": null                               +
+                                 }                                              +
+                             }                                                  +
+                         ],                                                     +
+                         "name": "node",                                        +
+                         "type": {                                              +
+                             "kind": "INTERFACE"                                +
+                         },                                                     +
+                         "description": "Retrieve a record by its `ID`"         +
+                     },                                                         +
+                     {                                                          +
+                         "args": [                                              +
+                         ],                                                     +
+                         "name": "returnsRecord",                               +
+                         "type": {                                              +
+                             "kind": "SCALAR"                                   +
+                         },                                                     +
+                         "description": null                                    +
+                     }                                                          +
+                 ]                                                              +
+             }                                                                  +
+         }                                                                      +
+     }                                                                          +
  }
 (1 row)
 
