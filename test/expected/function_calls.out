@@ -1657,7 +1657,7 @@ begin;
  }
 (1 row)
 
-    create function arg_named_orderBy(orderBy int)
+    create function "arg_named_orderBy"("orderBy" int)
         returns setof account language sql stable
     as $$ select id, email from account; $$;
     select jsonb_pretty(graphql.resolve($$
@@ -1750,57 +1750,6 @@ begin;
                              "kind": "OBJECT"                                   +
                          },                                                     +
                          "description": "A pagable collection of type `Account`"+
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "orderby",                             +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "first",                               +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "last",                                +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "before",                              +
-                                 "type": {                                      +
-                                     "name": "Cursor"                           +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "after",                               +
-                                 "type": {                                      +
-                                     "name": "Cursor"                           +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "filter",                              +
-                                 "type": {                                      +
-                                     "name": "AccountFilter"                    +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "orderBy",                             +
-                                 "type": {                                      +
-                                     "name": null                               +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "argNamedOrderby",                             +
-                         "type": {                                              +
-                             "kind": "OBJECT"                                   +
-                         },                                                     +
-                         "description": null                                    +
                      },                                                         +
                      {                                                          +
                          "args": [                                              +

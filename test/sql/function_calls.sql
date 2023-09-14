@@ -579,7 +579,7 @@ begin;
         }
     $$));
 
-    create function arg_named_orderBy(orderBy int)
+    create function "arg_named_orderBy"("orderBy" int)
         returns setof account language sql stable
     as $$ select id, email from account; $$;
 
