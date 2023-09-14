@@ -1470,6 +1470,24 @@ begin;
  }
 (1 row)
 
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returns_account_with_id(id_to_search: 42) { # search a non-existent id
+                id
+                email
+                nodeId
+            }
+        }
+    $$));
+              jsonb_pretty               
+-----------------------------------------
+ {                                      +
+     "data": {                          +
+         "returns_account_with_id": null+
+     }                                  +
+ }
+(1 row)
+
     comment on schema public is e'@graphql({"inflect_names": true})';
     select jsonb_pretty(graphql.resolve($$
         query {
