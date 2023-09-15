@@ -79,8 +79,6 @@ pub trait QueryEntrypoint {
             }
         };
 
-        // notice!("SQL: {sql}");
-
         let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
             let val = c.select(sql, Some(1), Some(param_context.params))?;
             // Get a value from the query
