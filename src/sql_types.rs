@@ -116,6 +116,7 @@ impl Function {
             && !self.is_function_overloaded(function_name_to_count)
             && !self.has_a_nameless_arg()
             && !self.has_a_default_arg()
+            && self.permissions.is_executable
     }
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
