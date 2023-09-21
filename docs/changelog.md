@@ -43,3 +43,4 @@
 - bugfix: queries failed to run if the database was in read-only replica mode
 
 ## master
+- feature: add support to resolve domain types to their base types
