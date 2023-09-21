@@ -63,75 +63,91 @@ For more fine grained adjustments to reflected names, see [renaming](#renaming).
 The default page size for collections is 30 entries. To adjust the number of entries on each page, set a `max_rows` directive on the relevant schema entity.
 
 For example, to increase the max rows per page for each table in the `public` schema:
+
 ```sql
 comment on schema public is e'@graphql({"max_rows": 100})';
 ```
 
 ### Resolve Base Type
 
-The resolve_base_type will map the base type for table fields and functions instead of the type defined.
-
-It's main usage is when dealing with sql domain types that should align with GraphQL's type mapping:
+By default, Postgres domain types are mapped to GraphQL `Opaque` type. For example:
 
 ```sql
 create domain pos_int as int check (value > 0);
 
 create table users (
   id serial primary key,
-  age private.pos_int not null
+  age pos_int
 );
 ```
 
-Will resolve to an Opaque type as there is no type mapping for the domain type pos_int to any graphql scalar type:
+The `age` field is an `Opaque` type:
 
 ```graphql
-type Users{
+type Users {
   id: ID!
-  age: Opaque!
+  age: Opaque
 }
 ```
 
-Setting the resolve base type option:
+Set the `resolve_base_type` directive to `true` to resolve the domain types to their base types instead. For example:
 
 ```sql
 comment on schema public is e'@graphql({"resolve_base_type": true})';
 ```
 
-Will now resolve the base type of the pos_int domain type to int:
+The `age` field is an `Int` type now:
 
 ```graphql
-type Users{
+type Users {
   id: ID!
-  age: Int!
+  age: Int
 }
 ```
 
-By default this option is false but will default to true in the 2.0 release.
-
-Do note this option respects the schema of the table not the type:
+Note that a `not null` constraint on the domain type doesn't make the GraphQL type non-null. For example:
 
 ```sql
-create domain private.pos_int as int check (value > 0);
-
 comment on schema public is e'@graphql({"resolve_base_type": true})';
--- Not needed, this is the default
-comment on schema private is e'@graphql({"resolve_base_type": false})';
+
+create domain pos_int as int not null;
 
 create table users {
   id serial primary key,
-  age private.pos_int not null
+  age pos_int
 };
 ```
 
-Will still resolve to:
+The `age` field is still nullable:
 
 ```graphql
-type Users{
+type Users {
+  id: ID!
+  age: Int
+}
+```
+
+To make a domain type field non-null, add the `not null` constraint on the field in the table:
+
+```sql
+comment on schema public is e'@graphql({"resolve_base_type": true})';
+
+create domain pos_int as int not null;
+
+create table users {
+  id serial primary key,
+  age pos_int not null
+};
+```
+
+The `age` field is now non-null:
+
+```graphql
+type Users {
   id: ID!
   age: Int!
 }
 ```
-
 
 ### totalCount
 
