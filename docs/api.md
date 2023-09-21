@@ -1983,6 +1983,23 @@ The returns the following data. Note that `config` is serialized as a string
 
 Use serialized JSON strings when updating or inserting `JSON` fields via the GraphQL API.
 
+Note: You have to escape the escape character to insert double-quotes in `JSON` fields :
+```json
+{
+  "data": {
+    "userCollection": {
+      "edges": [
+        {
+          "node": {
+            "caracteristics": "{\"description\": \"A \\\"valid\\\" string with double-quotes\"}"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
 JSON does not currently support filtering.
 
 ### BigInt
