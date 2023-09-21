@@ -3381,6 +3381,9 @@ impl ___Type for FilterEntityType {
         let mut or_column_exists = false;
         let mut not_column_exists = false;
 
+        const JSON_TYPE_OID: u32 = 114;
+        const JSONB_TYPE_OID: u32 = 3802;
+
         let mut f: Vec<__InputValue> = self
             .table
             .columns
@@ -3391,7 +3394,7 @@ impl ___Type for FilterEntityType {
             // No filtering on composites
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
             // No filtering on json/b. they do not support = or <>
-            .filter(|x| !vec![3802, 114].contains(&x.type_oid))
+            .filter(|x| ![JSON_TYPE_OID, JSONB_TYPE_OID].contains(&x.type_oid))
             .filter_map(|col| {
                 // Should be a scalar
                 if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
