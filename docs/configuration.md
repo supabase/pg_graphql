@@ -105,6 +105,10 @@ type Users {
 }
 ```
 
+!!! note
+
+    `resolve_base_type` should be enabled on the schema where the domain type is used, not where it is defined. In the above example, it should be enabled on the schema of the `users` table, not the schema of the `pos_int` domain type.
+
 Note that a `not null` constraint on the domain type doesn't make the GraphQL type non-null. For example:
 
 ```sql
