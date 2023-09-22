@@ -68,7 +68,7 @@ begin;
                 edges {
                   node {
                     id
-                    email 
+                    email
                   }
                 }
               }
@@ -93,5 +93,4 @@ begin;
  }
 (1 row)
 
-    
 rollback;
