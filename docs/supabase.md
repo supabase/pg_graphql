@@ -145,10 +145,10 @@ First, we need to add the new schema to the API search path. In the example belo
 Next, make sure the schema and entities (tables/views/functions) that you intend to expose are accessible by the relevant roles. For example, to match permissions from the public schema:
 
 ```sql
-grant usage on app to anon, authenticated, service_role;
-grant all on all tables in schema app to anon, authenticated, service_role;
-grant all on all routines in schema app to anon, authenticated, service_role;
-grant all on all sequences in schema app to anon, authenticated, service_role;
+grant usage on schema app to anon, authenticated, service_role;
+grant all privileges on all tables in schema app to anon, authenticated, service_role;
+grant all privileges on all routines in schema app to anon, authenticated, service_role;
+grant all privileges on all sequences in schema app to anon, authenticated, service_role;
 alter default privileges for role postgres in schema app grant all on tables to anon, authenticated, service_role;
 alter default privileges for role postgres in schema app grant all on routines to anon, authenticated, service_role;
 alter default privileges for role postgres in schema app grant all on sequences to anon, authenticated, service_role;
