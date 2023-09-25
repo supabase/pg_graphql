@@ -246,12 +246,12 @@ checksum = "3a4f925191b4367301851c6d99b09890311d74b0d43f274c0b34c86d308a3663"
 
 [[package]]
 name = "cargo_toml"
-version = "0.15.3"
+version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "599aa35200ffff8f04c1925aa1acc92fa2e08874379ef42e210a80e527e60838"
+checksum = "70a1f1117a8ff2f3547295da90f473c392d8d1107c90cea1ea82b1a544a97a4a"
 dependencies = [
  "serde",
- "toml 0.7.6",
+ "toml",
 ]
 
 [[package]]
@@ -1113,9 +1113,9 @@ dependencies = [
 
 [[package]]
 name = "pgrx"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2c4fe036f9493e674a7db27f7a06d54acb89735a0c1d4421128c341d3cf240f"
+checksum = "dde2cf81d16772f2e75c91edd2e868de1bd67a79d6c45c3d25c62b2ed3851d70"
 dependencies = [
  "atomic-traits",
  "bitflags 2.4.0",
@@ -1138,9 +1138,9 @@ dependencies = [
 
 [[package]]
 name = "pgrx-macros"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "943f9e2f46585b8f4540c72e26b079303b3520f8de0da090f96acaabe3f99e28"
+checksum = "1b9c035c16a41b126f8c2b37307f2c717b5ee72ff8e7495ff502ad35471a0b38"
 dependencies = [
  "pgrx-sql-entity-graph",
  "proc-macro2",
@@ -1150,9 +1150,9 @@ dependencies = [
 
 [[package]]
 name = "pgrx-pg-config"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a48800161320294c5a5ab72d38235e2e97f3bf1849661ee977502c8e64362285"
+checksum = "16f9d9b6310ea9f13570d773d173bbcfe47ac844075bf6a3e207e7209786c631"
 dependencies = [
  "cargo_toml",
  "dirs",
@@ -1162,15 +1162,15 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "toml 0.8.0",
+ "toml",
  "url",
 ]
 
 [[package]]
 name = "pgrx-pg-sys"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27dd6c4f2f098f62b5a8f07cf6447f640ce81637d20f269662a043a55195ed9d"
+checksum = "f821614646963302a8499b8ac8332cc0e2ae3f8715a0220986984443d8880f74"
 dependencies = [
  "bindgen",
  "eyre",
@@ -1190,9 +1190,9 @@ dependencies = [
 
 [[package]]
 name = "pgrx-sql-entity-graph"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7514a083c8c062f8bb9f53ced124f120515af3b49b92a57305e749ec736f98c"
+checksum = "4743b5b23fd418cded0c2dbe4b1529628f7fa59b8d68426eafdde0cb51541c96"
 dependencies = [
  "convert_case",
  "eyre",
@@ -1205,9 +1205,9 @@ dependencies = [
 
 [[package]]
 name = "pgrx-tests"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a71327ab5e5ddbc2d43ffad391ce515a358096c3713b360b57c5eec107d1cb7"
+checksum = "177bb8f6811bd65180c5a24a33666baed0ed5c08cc584c4bdb78f7fe19304363"
 dependencies = [
  "clap-cargo",
  "eyre",
@@ -1897,18 +1897,6 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.7.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c17e963a819c331dcacd7ab957d80bc2b9a9c1e71c804826d2f283dd65306542"
-dependencies = [
- "serde",
- "serde_spanned",
- "toml_datetime",
- "toml_edit 0.19.12",
-]
-
-[[package]]
-name = "toml"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c226a7bba6d859b63c92c4b4fe69c5b6b72d0cb897dbc8e6012298e6154cb56e"
@@ -1916,7 +1904,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.20.0",
+ "toml_edit",
 ]
 
 [[package]]
@@ -1930,19 +1918,6 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.19.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c500344a19072298cd05a7224b3c0c629348b78692bf48466c5238656e315a78"
-dependencies = [
- "indexmap",
- "serde",
- "serde_spanned",
- "toml_datetime",
- "winnow 0.4.9",
-]
-
-[[package]]
-name = "toml_edit"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ff63e60a958cefbb518ae1fd6566af80d9d4be430a33f3723dfc47d1d411d95"
@@ -1951,7 +1926,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow 0.5.15",
+ "winnow",
 ]
 
 [[package]]
@@ -2242,15 +2217,6 @@ name = "windows_x86_64_msvc"
 version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a515f5799fe4961cb532f983ce2b23082366b898e52ffbce459c86f67c8378a"
-
-[[package]]
-name = "winnow"
-version = "0.4.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81a2094c43cc94775293eaa0e499fbc30048a6d824ac82c0351a8c0bf9112529"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "winnow"
