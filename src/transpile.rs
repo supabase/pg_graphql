@@ -79,8 +79,6 @@ pub trait QueryEntrypoint {
             }
         };
 
-        // notice!("SQL: {sql}");
-
         let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
             let val = c.select(sql, Some(1), Some(param_context.params))?;
             // Get a value from the query
@@ -336,7 +334,7 @@ impl InsertSelection {
                 format!(
                     "{}, coalesce(jsonb_agg({}), jsonb_build_array())",
                     quote_literal(&x.alias),
-                    x.to_sql(block_name, param_context, false)?
+                    x.to_sql(block_name, param_context)?
                 )
             }
             Self::Typename { alias, typename } => {
@@ -361,7 +359,7 @@ impl UpdateSelection {
                 format!(
                     "{}, coalesce(jsonb_agg({}), jsonb_build_array())",
                     quote_literal(&x.alias),
-                    x.to_sql(block_name, param_context, false)?
+                    x.to_sql(block_name, param_context)?
                 )
             }
             Self::Typename { alias, typename } => {
@@ -386,7 +384,7 @@ impl DeleteSelection {
                 format!(
                     "{}, coalesce(jsonb_agg({}), jsonb_build_array())",
                     quote_literal(&x.alias),
-                    x.to_sql(block_name, param_context, false)?
+                    x.to_sql(block_name, param_context)?
                 )
             }
             Self::Typename { alias, typename } => {
@@ -566,14 +564,13 @@ impl FunctionCallBuilder {
                 format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
             }
             FuncCallReturnTypeBuilder::Node(node_builder) => {
-                let select_clause = node_builder.to_sql(block_name, param_context, true)?;
+                let select_clause = node_builder.to_sql(block_name, param_context)?;
                 let select_clause = if select_clause.is_empty() {
                     "jsonb_build_object()".to_string()
                 } else {
                     select_clause
                 };
-                let cte_name = &rand_block_name();
-                format!("with {cte_name} as (select {func_schema}.{func_name}{args_clause} {block_name}) select {select_clause} from {cte_name} where {cte_name} is not null;")
+                format!("select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name};")
             }
             FuncCallReturnTypeBuilder::Connection(connection_builder) => {
                 let from_clause = format!("{func_schema}.{func_name}{args_clause}");
@@ -582,7 +579,6 @@ impl FunctionCallBuilder {
                     param_context,
                     None,
                     Some(from_clause),
-                    false,
                 )?;
                 format!("{select_clause}")
             }
@@ -862,7 +858,6 @@ impl ConnectionBuilder {
         &self,
         quoted_block_name: &str,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
@@ -873,7 +868,6 @@ impl ConnectionBuilder {
                     &self.order_by,
                     &self.source.table,
                     param_context,
-                    parenthesize_block_name,
                 )
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -916,7 +910,6 @@ impl ConnectionBuilder {
         param_context: &mut ParamContext,
         from_func: Option<FromFunction>,
         from_clause: Option<String>,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
 
@@ -948,8 +941,7 @@ impl ConnectionBuilder {
 
         let cursor = &self.before.clone().or_else(|| self.after.clone());
 
-        let object_clause =
-            self.object_clause(&quoted_block_name, param_context, parenthesize_block_name)?;
+        let object_clause = self.object_clause(&quoted_block_name, param_context)?;
 
         let selectable_columns_clause = self.source.table.to_selectable_columns_clause();
 
@@ -1077,7 +1069,7 @@ impl ConnectionBuilder {
 
 impl QueryEntrypoint for ConnectionBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(None, param_context, None, None, false)
+        self.to_sql(None, param_context, None, None)
     }
 }
 
@@ -1151,20 +1143,13 @@ impl ConnectionSelection {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         Ok(match self {
             Self::Edge(x) => {
                 format!(
                     "{}, {}",
                     quote_literal(&x.alias),
-                    x.to_sql(
-                        block_name,
-                        order_by,
-                        table,
-                        param_context,
-                        parenthesize_block_name
-                    )?
+                    x.to_sql(block_name, order_by, table, param_context)?
                 )
             }
             Self::PageInfo(x) => {
@@ -1194,20 +1179,11 @@ impl EdgeBuilder {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| {
-                x.to_sql(
-                    block_name,
-                    order_by,
-                    table,
-                    param_context,
-                    parenthesize_block_name,
-                )
-            })
+            .map(|x| x.to_sql(block_name, order_by, table, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let x = frags.join(", ");
@@ -1232,7 +1208,6 @@ impl EdgeSelection {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         Ok(match self {
             Self::Cursor { alias } => {
@@ -1242,7 +1217,7 @@ impl EdgeSelection {
             Self::Node(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_sql(block_name, param_context, parenthesize_block_name)?
+                builder.to_sql(block_name, param_context)?
             ),
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(alias), quote_literal(typename))
@@ -1256,16 +1231,15 @@ impl NodeBuilder {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(block_name, param_context, parenthesize_block_name))
+            .map(|x| x.to_sql(block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         const MAX_ARGS_IN_JSONB_BUILD_OBJECT: usize = 100; //jsonb_build_object has a limit of 100 arguments
-        const ARGS_PER_FRAG: usize = 2; // each x.to_sql(...) function above returns a pair of args
+        const ARGS_PER_FRAG: usize = 2; // each x.to_sql(...) function above return a pair of args
         const CHUNK_SIZE: usize = MAX_ARGS_IN_JSONB_BUILD_OBJECT / ARGS_PER_FRAG;
 
         let frags: Vec<String> = frags
@@ -1280,7 +1254,6 @@ impl NodeBuilder {
         &self,
         parent_block_name: &str,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
@@ -1294,7 +1267,7 @@ impl NodeBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&quoted_block_name, param_context, parenthesize_block_name))
+            .map(|x| x.to_sql(&quoted_block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let object_clause = frags.join(", ");
@@ -1325,7 +1298,7 @@ impl QueryEntrypoint for NodeBuilder {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
-        let object_clause = self.to_sql(&quoted_block_name, param_context, false)?;
+        let object_clause = self.to_sql(&quoted_block_name, param_context)?;
 
         if self.node_id.is_none() {
             return Err("Expected nodeId argument missing".to_string());
@@ -1389,25 +1362,18 @@ impl NodeSelection {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         Ok(match self {
             // TODO need to provide alias when called from node builder.
             Self::Connection(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_sql(
-                    Some(block_name),
-                    param_context,
-                    None,
-                    None,
-                    parenthesize_block_name
-                )?
+                builder.to_sql(Some(block_name), param_context, None, None)?
             ),
             Self::Node(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_relation_sql(block_name, param_context, parenthesize_block_name)?
+                builder.to_relation_sql(block_name, param_context)?
             ),
             Self::Column(builder) => {
                 let type_adjustment_clause = apply_suffix_casts(builder.column.type_oid);
@@ -1415,7 +1381,7 @@ impl NodeSelection {
                 format!(
                     "{}, {}{}",
                     quote_literal(&builder.alias),
-                    builder.to_sql(block_name, parenthesize_block_name)?,
+                    builder.to_sql(block_name)?,
                     type_adjustment_clause
                 )
             }
@@ -1424,14 +1390,14 @@ impl NodeSelection {
                 format!(
                     "{}, {}{}",
                     quote_literal(&builder.alias),
-                    builder.to_sql(block_name, param_context, parenthesize_block_name)?,
+                    builder.to_sql(block_name, param_context)?,
                     type_adjustment_clause
                 )
             }
             Self::NodeId(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_sql(block_name, parenthesize_block_name)?
+                builder.to_sql(block_name)?
             ),
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(alias), quote_literal(typename))
@@ -1441,16 +1407,8 @@ impl NodeSelection {
 }
 
 impl ColumnBuilder {
-    pub fn to_sql(
-        &self,
-        block_name: &str,
-        parenthesize_block_name: bool,
-    ) -> Result<String, String> {
-        let col = if parenthesize_block_name {
-            format!("({}).{}", &block_name, quote_ident(&self.column.name))
-        } else {
-            format!("{}.{}", &block_name, quote_ident(&self.column.name))
-        };
+    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+        let col = format!("{}.{}", &block_name, quote_ident(&self.column.name));
         let maybe_enum = self.column.type_.as_ref().and_then(|t| match t.details {
             Some(TypeDetails::Enum(ref enum_)) => Some(enum_),
             _ => None,
@@ -1479,21 +1437,11 @@ impl ColumnBuilder {
 }
 
 impl NodeIdBuilder {
-    pub fn to_sql(
-        &self,
-        block_name: &str,
-        parenthesize_block_name: bool,
-    ) -> Result<String, String> {
+    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
         let column_selects: Vec<String> = self
             .columns
             .iter()
-            .map(|col| {
-                if parenthesize_block_name {
-                    format!("({}).{}", block_name, col.name)
-                } else {
-                    format!("{}.{}", block_name, col.name)
-                }
-            })
+            .map(|col| format!("{}.{}", block_name, col.name))
             .collect();
         let column_clause = column_selects.join(", ");
         let schema_name = quote_literal(&self.schema_name);
@@ -1509,7 +1457,6 @@ impl FunctionBuilder {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-        parenthesize_block_name: bool,
     ) -> Result<String, String> {
         let schema_name = quote_ident(&self.function.schema_name);
         let function_name = quote_ident(&self.function.name);
@@ -1522,11 +1469,7 @@ impl FunctionBuilder {
             ),
             FunctionSelection::Node(node_builder) => {
                 let func_block_name = rand_block_name();
-                let object_clause = node_builder.to_sql(
-                    &func_block_name,
-                    param_context,
-                    parenthesize_block_name,
-                )?;
+                let object_clause = node_builder.to_sql(&func_block_name, param_context)?;
 
                 let from_clause = format!(
                     "{schema_name}.{function_name}({block_name}::{}.{})",
@@ -1555,7 +1498,6 @@ impl FunctionBuilder {
                     input_block_name: block_name.to_string(),
                 }),
                 None,
-                parenthesize_block_name,
             )?,
         };
         Ok(sql_frag)
