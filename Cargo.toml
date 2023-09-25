@@ -14,7 +14,7 @@ pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
 pg_test = []
 
 [dependencies]
-pgrx = "=0.10.1"
+pgrx = "=0.10.2"
 graphql-parser = "0.4"
 serde = { version = "1.0", features = ["rc"] }
 serde_json = "1.0"
@@ -28,7 +28,7 @@ lazy_static = "1"
 bimap = { version = "0.6.3", features = ["serde"] }
 
 [dev-dependencies]
-pgrx-tests = "=0.10.1"
+pgrx-tests = "=0.10.2"
 
 [profile.dev]
 panic = "unwind"
