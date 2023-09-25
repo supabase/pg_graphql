@@ -10,11 +10,11 @@ All requests resolve in a single round-trip leading to fast response times and h
 
 If you haven't created a Supabase project, do that [here](https://database.new) so you can follow along with the guide.
 
-## API
+## Clients
 
 If you're new to GraphQL or Supabase, we strongly recommend starting with Supabase GraphQL by following the [Supabase Studio guide](#supabase-studio).
 
-Fore more experienced users, or when you're ready to productionize your application, access the API using [supabase-js](#supabase-js), [GraphiQL](#connecting-graphiql), or any HTTP client, for example [cURL](#curl).
+For more experienced users, or when you're ready to productionize your application, access the API using [supabase-js](#supabase-js), [GraphiQL](#connecting-graphiql), or any HTTP client, for example [cURL](#curl).
 
 ### Supabase Studio
 
@@ -118,6 +118,43 @@ If you'd prefer to connect to Supabase GraphQL using an external IDE like Graphi
   </body>
 </html>
 ```
+
+
+## Schema & Table Visibility
+
+pg_graphql uses Postgres' `search_path` and permissions system to determine which schemas and entities are exposed in the GraphQL schema. By default on Supabase, tables, views, and functions in the `public` schema are visible to anonymous (`anon`) and logged in (`authenticated`) roles.
+
+### Remove a Table from the API
+
+To remove a table from the GraphQL API, you can revoke permission on that table from the the relevant role. For example, to remove table `foo` from the API for anonymous users you could run:
+
+```sql
+revoke all on table public.foo from anon;
+```
+
+You can similarly revoke permissions using the more granular `insert`, `update`, `delete`, and `truncate` permissions to remove individual entrypoints in the GraphQL API. For example, revoking `update` permission removes the `updateFooCollection` entrypoing in the API's `Mutation` type.
+
+### Add a Schema to the API
+
+Adding a schema to the GraphQL API is a two step process.
+
+First, we need to add the new schema to the API search path. In the example below, we add a comma separated value for the new `app` schema:
+
+![add_schema](./assets/supabase_add_schema.png)
+
+Next, make sure the schema and entities (tables/views/functions) that you intend to expose are accessible by the relevant roles. For example, to match permissions from the public schema:
+
+```sql
+grant usage on schema app to anon, authenticated, service_role;
+grant all privileges on all tables in schema app to anon, authenticated, service_role;
+grant all privileges on all routines in schema app to anon, authenticated, service_role;
+grant all privileges on all sequences in schema app to anon, authenticated, service_role;
+alter default privileges for role postgres in schema app grant all on tables to anon, authenticated, service_role;
+alter default privileges for role postgres in schema app grant all on routines to anon, authenticated, service_role;
+alter default privileges for role postgres in schema app grant all on sequences to anon, authenticated, service_role;
+```
+
+Note that in practice you likely prefer a more secure set of permissions, particularly for anonymous API users.
 
 ## Version Management
 
