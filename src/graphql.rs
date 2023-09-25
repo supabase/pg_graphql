@@ -1656,7 +1656,13 @@ impl Type {
                     25 => __Type::Scalar(Scalar::String(None)), // text
                     // char, bpchar, varchar
                     18 | 1042 | 1043 => __Type::Scalar(Scalar::String(max_characters)),
-                    _ => __Type::Scalar(Scalar::Opaque),
+                    _ => match self.name.as_str() {
+                        // would be nice to do something better here like confirm the type came
+                        // from an extension but until types from extensions become a bigger issue
+                        // this avoids slowing down the sql context query
+                        "citext" => __Type::Scalar(Scalar::String(None)),
+                        _ => __Type::Scalar(Scalar::Opaque),
+                    },
                 })
             }
             TypeCategory::Array => match self.array_element_type_oid {
