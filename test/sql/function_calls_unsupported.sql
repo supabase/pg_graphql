@@ -148,6 +148,44 @@ begin;
         }
     $$));
 
+    -- function returning type not on search path
+    create schema dev;
+    create table dev.book(
+        id int primary key
+    );
+    insert into dev.book values (1);
+
+    create function "returnsBook"()
+        returns dev.book
+        stable
+        language sql
+    as $$
+        select db from dev.book db limit 1;
+    $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsBook
+        }
+    $$));
+
+    -- function accepting type not on search path
+    create type dev.invisible as enum ('ONLY');
+
+    create function "badInputArg"(val dev.invisible)
+        returns int
+        stable
+        language sql
+    as $$
+        select 1;
+    $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            badInputArg
+        }
+    $$));
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
