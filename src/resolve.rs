@@ -189,6 +189,7 @@ where
                                 selection,
                                 &fragment_definitions,
                                 variables,
+                                &[],
                             );
 
                             match connection_builder {
@@ -207,6 +208,7 @@ where
                                 selection,
                                 &fragment_definitions,
                                 variables,
+                                &[],
                             );
 
                             match node_builder {
@@ -263,9 +265,30 @@ where
                                 let now_json = now_jsonb.0;
                                 res_data[alias_or_name(selection)] = now_json;
                             }
-                            _ => res_errors.push(ErrorMessage {
-                                message: "unexpected type found on query object".to_string(),
-                            }),
+                            _ => {
+                                let function_call_builder = to_function_call_builder(
+                                    field_def,
+                                    selection,
+                                    &fragment_definitions,
+                                    variables,
+                                );
+
+                                match function_call_builder {
+                                    Ok(builder) => {
+                                        match <FunctionCallBuilder as QueryEntrypoint>::execute(
+                                            &builder,
+                                        ) {
+                                            Ok(d) => {
+                                                res_data[alias_or_name(selection)] = d;
+                                            }
+                                            Err(msg) => {
+                                                res_errors.push(ErrorMessage { message: msg })
+                                            }
+                                        }
+                                    }
+                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                }
+                            }
                         },
                     },
                 }
@@ -420,10 +443,26 @@ where
                                         serde_json::json!(mutation_type.name());
                                     conn
                                 }
-                                _ => Err(format!(
-                                    "unexpected type found on mutation object: {}",
-                                    field_def.type_.name().unwrap_or_default()
-                                ))?,
+                                _ => {
+                                    let builder = match to_function_call_builder(
+                                        field_def,
+                                        selection,
+                                        &fragment_definitions,
+                                        variables,
+                                    ) {
+                                        Ok(builder) => builder,
+                                        Err(err) => {
+                                            return Err(err);
+                                        }
+                                    };
+
+                                    let (d, conn) =
+                                        <FunctionCallBuilder as MutationEntrypoint>::execute(
+                                            &builder, conn,
+                                        )?;
+                                    res_data[alias_or_name(selection)] = d;
+                                    conn
+                                }
                             },
                         },
                     }

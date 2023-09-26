@@ -1,6 +1,7 @@
 use bimap::BiBTreeMap;
 use cached::proc_macro::cached;
 use cached::SizedCache;
+use lazy_static::lazy_static;
 use pgrx::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -56,17 +57,144 @@ pub struct FunctionPermissions {
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum FunctionVolatility {
+    #[serde(rename(deserialize = "v"))]
+    Volatile,
+    #[serde(rename(deserialize = "s"))]
+    Stable,
+    #[serde(rename(deserialize = "i"))]
+    Immutable,
+}
+
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Function {
     pub oid: u32,
     pub name: String,
     pub schema_oid: u32,
     pub schema_name: String,
+    pub arg_types: Vec<u32>,
+    pub arg_names: Option<Vec<String>>,
+    pub num_args: u32,
+    pub num_default_args: u32,
+    pub arg_type_names: Vec<String>,
+    pub volatility: FunctionVolatility,
     pub type_oid: u32,
     pub type_name: String,
     pub is_set_of: bool,
     pub comment: Option<String>,
     pub directives: FunctionDirectives,
     pub permissions: FunctionPermissions,
+}
+
+impl Function {
+    pub fn args(&self) -> impl Iterator<Item = (u32, &str, Option<&str>)> {
+        ArgsIterator {
+            index: 0,
+            arg_types: &self.arg_types,
+            arg_type_names: &self.arg_type_names,
+            arg_names: &self.arg_names,
+        }
+    }
+
+    pub fn function_names_to_count(all_functions: &[Arc<Function>]) -> HashMap<&String, u32> {
+        let mut function_name_to_count = HashMap::new();
+        for function_name in all_functions.iter().map(|f| &f.name) {
+            let entry = function_name_to_count.entry(function_name).or_insert(0u32);
+            *entry += 1;
+        }
+        function_name_to_count
+    }
+
+    pub fn is_supported(
+        &self,
+        context: &Context,
+        function_name_to_count: &HashMap<&String, u32>,
+    ) -> bool {
+        let types = &context.types;
+        self.return_type_is_supported(types)
+            && self.arg_types_are_supported(types)
+            && !self.is_function_overloaded(function_name_to_count)
+            && !self.has_a_nameless_arg()
+            && !self.has_a_default_arg()
+            && self.permissions.is_executable
+    }
+
+    fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
+        self.args().all(|(arg_type, _, _)| {
+            if let Some(return_type) = types.get(&arg_type) {
+                return_type.category == TypeCategory::Other
+            } else {
+                false
+            }
+        })
+    }
+
+    fn return_type_is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
+        if let Some(return_type) = types.get(&self.type_oid) {
+            return_type.category != TypeCategory::Pseudo
+                && return_type.name != "record"
+                && !self.type_name.ends_with("[]")
+        } else {
+            false
+        }
+    }
+
+    fn is_function_overloaded(&self, function_name_to_count: &HashMap<&String, u32>) -> bool {
+        if let Some(&count) = function_name_to_count.get(&self.name) {
+            count > 1
+        } else {
+            false
+        }
+    }
+
+    fn has_a_nameless_arg(&self) -> bool {
+        self.args().any(|(_, _, arg_name)| arg_name.is_none())
+    }
+
+    fn has_a_default_arg(&self) -> bool {
+        self.num_default_args > 0
+    }
+}
+
+struct ArgsIterator<'a> {
+    index: usize,
+    arg_types: &'a [u32],
+    arg_type_names: &'a Vec<String>,
+    arg_names: &'a Option<Vec<String>>,
+}
+
+lazy_static! {
+    static ref TEXT_TYPE: String = "text".to_string();
+}
+
+impl<'a> Iterator for ArgsIterator<'a> {
+    type Item = (u32, &'a str, Option<&'a str>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.arg_types.len() {
+            debug_assert!(self.arg_types.len() == self.arg_type_names.len());
+            let arg_name = if let Some(arg_names) = self.arg_names {
+                debug_assert!(arg_names.len() >= self.arg_types.len());
+                let arg_name = arg_names[self.index].as_str();
+                if arg_name != "" {
+                    Some(arg_name)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let arg_type = self.arg_types[self.index];
+            let mut arg_type_name = &self.arg_type_names[self.index];
+            if arg_type_name == "character" {
+                arg_type_name = &TEXT_TYPE;
+            }
+            self.index += 1;
+            Some((arg_type, arg_type_name, arg_name))
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -239,8 +367,10 @@ pub struct Table {
     pub columns: Vec<Arc<Column>>,
     pub comment: Option<String>,
     pub relkind: String, // r = table, v = view, m = mat view, f = foreign table
+    pub reltype: u32,
     pub permissions: TablePermissions,
     pub indexes: Vec<Index>,
+    #[serde(default)]
     pub functions: Vec<Arc<Function>>,
     pub directives: TableDirectives,
 }
@@ -340,6 +470,7 @@ pub struct Context {
     pub types: HashMap<u32, Arc<Type>>,
     pub enums: HashMap<u32, Arc<Enum>>,
     pub composites: Vec<Arc<Composite>>,
+    pub functions: Vec<Arc<Function>>,
 }
 
 impl Hash for Context {
@@ -668,9 +799,32 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
         context
     }
 
+    /// This pass populates functions for tables
+    fn populate_table_functions(mut context: Context) -> Context {
+        let mut arg_type_to_func: HashMap<u32, Vec<&Arc<Function>>> = HashMap::new();
+        for function in context.functions.iter().filter(|f| f.num_args == 1) {
+            let functions = arg_type_to_func.entry(function.arg_types[0]).or_default();
+            functions.push(function);
+        }
+        for (_, table) in &mut context.tables {
+            if let Some(table) = Arc::get_mut(table) {
+                match arg_type_to_func.get(&table.reltype) {
+                    Some(functions) => {
+                        for function in functions {
+                            table.functions.push(Arc::clone(function));
+                        }
+                    }
+                    None => {}
+                }
+            }
+        }
+        context
+    }
+
     context
         .map(type_details)
         .map(column_types)
+        .map(populate_table_functions)
         .map(Arc::new)
         .map_err(|e| {
             format!(

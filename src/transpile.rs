@@ -55,10 +55,10 @@ pub trait MutationEntrypoint<'conn> {
         let res: pgrx::JsonB = match res_q.first().get::<JsonB>(1) {
             Ok(Some(dat)) => dat,
             Ok(None) => JsonB(serde_json::Value::Null),
-            Err(_) => {
-                return Err(
-                    "Internal Error: Failed to load result from transpiled query".to_string(),
-                );
+            Err(e) => {
+                return Err(format!(
+                    "Internal Error: Failed to load result from transpiled query: {e}"
+                ));
             }
         };
 
@@ -542,6 +542,64 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
     }
 }
 
+impl FunctionCallBuilder {
+    fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        let mut arg_clauses = vec![];
+        for (arg, arg_value) in &self.args_builder.args {
+            if let Some(arg) = arg {
+                let arg_clause = param_context.clause_for(arg_value, &arg.type_name)?;
+                arg_clauses.push(arg_clause);
+            }
+        }
+
+        let args_clause = format!("({})", arg_clauses.join(", "));
+
+        let block_name = &rand_block_name();
+        let func_schema = quote_ident(&self.function.schema_name);
+        let func_name = quote_ident(&self.function.name);
+
+        let query = match &self.return_type_builder {
+            FuncCallReturnTypeBuilder::Scalar => {
+                let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
+                format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
+            }
+            FuncCallReturnTypeBuilder::Node(node_builder) => {
+                let select_clause = node_builder.to_sql(block_name, param_context)?;
+                let select_clause = if select_clause.is_empty() {
+                    "jsonb_build_object()".to_string()
+                } else {
+                    select_clause
+                };
+                format!("select coalesce((select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name} where {block_name} is not null), null::jsonb);")
+            }
+            FuncCallReturnTypeBuilder::Connection(connection_builder) => {
+                let from_clause = format!("{func_schema}.{func_name}{args_clause}");
+                let select_clause = connection_builder.to_sql(
+                    Some(block_name),
+                    param_context,
+                    None,
+                    Some(from_clause),
+                )?;
+                format!("{select_clause}")
+            }
+        };
+
+        Ok(query)
+    }
+}
+
+impl MutationEntrypoint<'_> for FunctionCallBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        self.to_sql(param_context)
+    }
+}
+
+impl QueryEntrypoint for FunctionCallBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        self.to_sql(param_context)
+    }
+}
+
 impl OrderByBuilder {
     fn to_order_by_clause(&self, block_name: &str) -> String {
         let mut frags = vec![];
@@ -600,11 +658,7 @@ pub struct ParamContext {
 impl ParamContext {
     // Pushes a parameter into the context and returns a SQL clause to reference it
     //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
-    fn clause_for(
-        &mut self,
-        value: &serde_json::Value,
-        type_name: &String,
-    ) -> Result<String, String> {
+    fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String> {
         let type_oid = match type_name.ends_with("[]") {
             true => PgOid::BuiltIn(PgBuiltInOids::TEXTARRAYOID),
             false => PgOid::BuiltIn(PgBuiltInOids::TEXTOID),
@@ -855,10 +909,14 @@ impl ConnectionBuilder {
         quoted_parent_block_name: Option<&str>,
         param_context: &mut ParamContext,
         from_func: Option<FromFunction>,
+        from_clause: Option<String>,
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name();
 
-        let from_clause = self.from_clause(&quoted_block_name, &from_func);
+        let from_clause = match from_clause {
+            Some(from_clause) => format!("{from_clause} {quoted_block_name}"),
+            None => self.from_clause(&quoted_block_name, &from_func),
+        };
 
         let where_clause =
             self.filter
@@ -1011,7 +1069,7 @@ impl ConnectionBuilder {
 
 impl QueryEntrypoint for ConnectionBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(None, param_context, None)
+        self.to_sql(None, param_context, None, None)
     }
 }
 
@@ -1310,7 +1368,7 @@ impl NodeSelection {
             Self::Connection(builder) => format!(
                 "{}, {}",
                 quote_literal(&builder.alias),
-                builder.to_sql(Some(block_name), param_context, None)?
+                builder.to_sql(Some(block_name), param_context, None, None)?
             ),
             Self::Node(builder) => format!(
                 "{}, {}",
@@ -1439,6 +1497,7 @@ impl FunctionBuilder {
                     input_table: Arc::clone(&self.table),
                     input_block_name: block_name.to_string(),
                 }),
+                None,
             )?,
         };
         Ok(sql_frag)

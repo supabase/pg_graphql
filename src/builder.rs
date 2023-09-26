@@ -5,6 +5,7 @@ use crate::sql_types::*;
 use graphql_parser::query::*;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -242,7 +243,7 @@ where
     match &type_ {
         __Type::InsertResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(vec!["objects"], query_field)?;
+            restrict_allowed_arguments(&["objects"], query_field)?;
 
             let objects: Vec<InsertRowBuilder> =
                 read_argument_objects(field, query_field, variables)?;
@@ -269,6 +270,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             );
                             InsertSelection::Records(node_builder?)
                         }
@@ -396,7 +398,7 @@ where
     match &type_ {
         __Type::UpdateResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(vec!["set", "filter", "atMost"], query_field)?;
+            restrict_allowed_arguments(&["set", "filter", "atMost"], query_field)?;
 
             let set: SetBuilder = read_argument_set(field, query_field, variables)?;
             let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
@@ -424,6 +426,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             );
                             UpdateSelection::Records(node_builder?)
                         }
@@ -493,7 +496,7 @@ where
     match &type_ {
         __Type::DeleteResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(vec!["filter", "atMost"], query_field)?;
+            restrict_allowed_arguments(&["filter", "atMost"], query_field)?;
 
             let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
             let at_most: i64 = read_argument_at_most(field, query_field, variables)?;
@@ -520,6 +523,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             );
                             DeleteSelection::Records(node_builder?)
                         }
@@ -544,6 +548,129 @@ where
             type_.name()
         )),
     }
+}
+
+pub struct FunctionCallBuilder {
+    pub alias: String,
+
+    // metadata
+    pub function: Arc<Function>,
+
+    // args
+    pub args_builder: FuncCallArgsBuilder,
+
+    pub return_type_builder: FuncCallReturnTypeBuilder,
+}
+
+pub enum FuncCallReturnTypeBuilder {
+    Scalar,
+    Node(NodeBuilder),
+    Connection(ConnectionBuilder),
+}
+
+#[derive(Clone, Debug)]
+pub struct FuncCallArgsBuilder {
+    pub args: Vec<(Option<FuncCallSqlArgName>, serde_json::Value)>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FuncCallSqlArgName {
+    pub type_name: String,
+    pub name: String,
+}
+
+pub fn to_function_call_builder<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
+) -> Result<FunctionCallBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let type_ = field.type_().unmodified_type();
+    let alias = alias_or_name(query_field);
+
+    match &type_ {
+        __Type::FuncCallResponse(func_call_resp_type) => {
+            let args = field.args();
+            let allowed_args: Vec<&str> = args.iter().map(|a| a.name_.as_str()).collect();
+            restrict_allowed_arguments(&allowed_args, query_field)?;
+            let args = read_func_call_args(field, query_field, variables, &func_call_resp_type)?;
+
+            let return_type_builder = match func_call_resp_type.return_type.deref() {
+                __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
+                __Type::Node(_) => {
+                    let node_builder = to_node_builder(
+                        field,
+                        query_field,
+                        fragment_definitions,
+                        variables,
+                        &allowed_args,
+                    )?;
+                    FuncCallReturnTypeBuilder::Node(node_builder)
+                }
+                __Type::Connection(_) => {
+                    let connection_builder = to_connection_builder(
+                        field,
+                        query_field,
+                        fragment_definitions,
+                        variables,
+                        &allowed_args,
+                    )?;
+                    FuncCallReturnTypeBuilder::Connection(connection_builder)
+                }
+                _ => {
+                    return Err(format!(
+                        "unsupported return type: {}",
+                        func_call_resp_type
+                            .return_type
+                            .unmodified_type()
+                            .name()
+                            .ok_or("Encountered type without name in function call builder")?
+                    ))
+                }
+            };
+
+            Ok(FunctionCallBuilder {
+                alias,
+                function: Arc::clone(&func_call_resp_type.function),
+                args_builder: args,
+                return_type_builder,
+            })
+        }
+        _ => Err(format!(
+            "can not build query for non-function type {:?}",
+            type_.name()
+        )),
+    }
+}
+
+fn read_func_call_args<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    variables: &serde_json::Value,
+    func_call_resp_type: &FuncCallResponseType,
+) -> Result<FuncCallArgsBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let inflected_to_sql_args = func_call_resp_type.inflected_to_sql_args();
+    let mut args = vec![];
+    for arg in field.args() {
+        let arg_value = read_argument(&arg.name(), field, query_field, variables)?;
+        if !arg_value.is_absent() {
+            let func_call_sql_arg_name = match inflected_to_sql_args.get(&arg.name()) {
+                Some((type_name, name)) => Some(FuncCallSqlArgName {
+                    type_name: type_name.clone(),
+                    name: name.clone(),
+                }),
+                None => None,
+            };
+            args.push((func_call_sql_arg_name, gson::gson_to_json(&arg_value)?));
+        };
+    }
+    Ok(FuncCallArgsBuilder { args })
 }
 
 #[derive(Clone, Debug)]
@@ -817,7 +944,7 @@ pub enum FunctionSelection {
 }
 
 fn restrict_allowed_arguments<'a, T>(
-    arg_names: Vec<&str>,
+    arg_names: &[&str],
     query_field: &graphql_parser::query::Field<'a, T>,
 ) -> Result<(), String>
 where
@@ -1074,7 +1201,6 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let validated: gson::Value = read_argument(arg_name, field, query_field, variables)?;
-
     let _: Scalar = match field.get_arg(arg_name).unwrap().type_().unmodified_type() {
         __Type::Scalar(x) => x,
         _ => return Err(format!("Could not argument {}", arg_name)),
@@ -1098,11 +1224,13 @@ pub fn to_connection_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    extra_allowed_args: &[&str],
 ) -> Result<ConnectionBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
+    let type_ = type_.return_type();
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in connection builder")?;
@@ -1112,10 +1240,9 @@ where
     match &type_ {
         __Type::Connection(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(
-                vec!["first", "last", "before", "after", "filter", "orderBy"],
-                query_field,
-            )?;
+            let mut allowed_args = vec!["first", "last", "before", "after", "filter", "orderBy"];
+            allowed_args.extend(extra_allowed_args);
+            restrict_allowed_arguments(&allowed_args, query_field)?;
 
             // TODO: only one of first/last, before/after provided
             let first: gson::Value = read_argument("first", field, query_field, variables)?;
@@ -1331,6 +1458,7 @@ where
                                 selection_field,
                                 fragment_definitions,
                                 variables,
+                                &[],
                             )?;
                             EdgeSelection::Node(node_builder)
                         }
@@ -1361,6 +1489,7 @@ pub fn to_node_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    extra_allowed_args: &[&str],
 ) -> Result<NodeBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1369,13 +1498,13 @@ where
 
     let alias = alias_or_name(query_field);
 
-    let xtype: NodeType = match type_ {
+    let xtype: NodeType = match type_.return_type() {
         __Type::Node(xtype) => {
-            restrict_allowed_arguments(vec![], query_field)?;
-            xtype
+            restrict_allowed_arguments(extra_allowed_args, query_field)?;
+            xtype.clone()
         }
         __Type::NodeInterface(node_interface) => {
-            restrict_allowed_arguments(vec!["nodeId"], query_field)?;
+            restrict_allowed_arguments(&["nodeId"], query_field)?;
             // The nodeId argument is only valid on the entrypoint field for Node
             // relationships to "node" e.g. within edges, do not have any arguments
             let node_id: NodeIdInstance = read_argument_node_id(field, query_field, variables)?;
@@ -1413,7 +1542,9 @@ where
     let field_map = field_map(&__Type::Node(xtype.clone()));
 
     let mut builder_fields = vec![];
-    restrict_allowed_arguments(vec!["nodeId"], query_field)?;
+    let mut allowed_args = vec!["nodeId"];
+    allowed_args.extend(extra_allowed_args);
+    restrict_allowed_arguments(&allowed_args, query_field)?;
 
     // The nodeId argument is only valid on the entrypoint field for Node
     // relationships to "node" e.g. within edges, do not have any arguments
@@ -1456,6 +1587,7 @@ where
                                         selection_field,
                                         fragment_definitions,
                                         variables,
+                                        &[],
                                         // TODO need ref to fkey here
                                     )?;
                                     FunctionSelection::Node(node_builder)
@@ -1466,7 +1598,7 @@ where
                                         selection_field,
                                         fragment_definitions,
                                         variables,
-                                        // TODO need ref to fkey here
+                                        &[], // TODO need ref to fkey here
                                     )?;
                                     FunctionSelection::Connection(connection_builder)
                                 }
@@ -1500,6 +1632,7 @@ where
                                     selection_field,
                                     fragment_definitions,
                                     variables,
+                                    &[],
                                 );
                                 NodeSelection::Connection(con_builder?)
                             }
@@ -1509,6 +1642,7 @@ where
                                     selection_field,
                                     fragment_definitions,
                                     variables,
+                                    &[],
                                 );
                                 NodeSelection::Node(node_builder?)
                             }

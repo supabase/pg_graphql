@@ -17,6 +17,15 @@ pub enum Value {
     Object(HashMap<String, Value>),
 }
 
+impl Value {
+    pub(crate) fn is_absent(&self) -> bool {
+        match self {
+            Value::Absent => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Number {
     Integer(i64),

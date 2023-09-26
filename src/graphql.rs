@@ -5,7 +5,8 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::ops::Deref;
 use std::sync::Arc;
 
 lazy_static! {
@@ -16,26 +17,22 @@ fn is_valid_graphql_name(name: &str) -> bool {
     GRAPHQL_NAME_RE.is_match(name)
 }
 
-fn to_base_type_name(
-    table_name: &str,
-    name_override: &Option<String>,
-    inflect_names: bool,
-) -> String {
+fn to_base_type_name(name: &str, name_override: &Option<String>, inflect_names: bool) -> String {
     match name_override {
         Some(name) => return name.to_string(),
         None => (),
     };
 
     match inflect_names {
-        false => table_name.to_string(),
+        false => name.to_string(),
         true => {
             let mut padded = "+".to_string();
-            padded.push_str(table_name);
+            padded.push_str(name);
 
             // account_BY_email => Account_By_Email
             let casing: String = padded
                 .chars()
-                .zip(table_name.chars())
+                .zip(name.chars())
                 .map(|(prev, cur)| match prev.is_alphanumeric() {
                     true => cur.to_string(),
                     false => cur.to_uppercase().to_string(),
@@ -106,6 +103,12 @@ impl __Schema {
             &function.directives.name,
             self.inflect_names(function.schema_oid),
         );
+        lowercase_first_letter(&base_type_name)
+    }
+
+    fn graphql_function_arg_name(&self, function: &Function, arg_name: &str) -> String {
+        let base_type_name =
+            to_base_type_name(&arg_name, &None, self.inflect_names(function.schema_oid));
         lowercase_first_letter(&base_type_name)
     }
 
@@ -517,6 +520,7 @@ pub enum __Type {
     UpdateInput(UpdateInputType),
     UpdateResponse(UpdateResponseType),
     DeleteResponse(DeleteResponseType),
+    FuncCallResponse(FuncCallResponseType),
     OrderBy(OrderByType),
     OrderByEntity(OrderByEntityType),
     FilterType(FilterTypeType),
@@ -596,6 +600,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.kind(),
             Self::UpdateResponse(x) => x.kind(),
             Self::DeleteResponse(x) => x.kind(),
+            Self::FuncCallResponse(x) => x.kind(),
             Self::FilterType(x) => x.kind(),
             Self::FilterEntity(x) => x.kind(),
             Self::OrderBy(x) => x.kind(),
@@ -630,6 +635,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.name(),
             Self::UpdateResponse(x) => x.name(),
             Self::DeleteResponse(x) => x.name(),
+            Self::FuncCallResponse(x) => x.name(),
             Self::FilterType(x) => x.name(),
             Self::FilterEntity(x) => x.name(),
             Self::OrderBy(x) => x.name(),
@@ -664,6 +670,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.description(),
             Self::UpdateResponse(x) => x.description(),
             Self::DeleteResponse(x) => x.description(),
+            Self::FuncCallResponse(x) => x.description(),
             Self::FilterType(x) => x.description(),
             Self::FilterEntity(x) => x.description(),
             Self::OrderBy(x) => x.description(),
@@ -699,6 +706,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.fields(_include_deprecated),
             Self::UpdateResponse(x) => x.fields(_include_deprecated),
             Self::DeleteResponse(x) => x.fields(_include_deprecated),
+            Self::FuncCallResponse(x) => x.fields(_include_deprecated),
             Self::FilterType(x) => x.fields(_include_deprecated),
             Self::FilterEntity(x) => x.fields(_include_deprecated),
             Self::OrderBy(x) => x.fields(_include_deprecated),
@@ -734,6 +742,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.interfaces(),
             Self::UpdateResponse(x) => x.interfaces(),
             Self::DeleteResponse(x) => x.interfaces(),
+            Self::FuncCallResponse(x) => x.interfaces(),
             Self::FilterType(x) => x.interfaces(),
             Self::FilterEntity(x) => x.interfaces(),
             Self::OrderBy(x) => x.interfaces(),
@@ -778,6 +787,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.enum_values(_include_deprecated),
             Self::UpdateResponse(x) => x.enum_values(_include_deprecated),
             Self::DeleteResponse(x) => x.enum_values(_include_deprecated),
+            Self::FuncCallResponse(x) => x.enum_values(_include_deprecated),
             Self::FilterType(x) => x.enum_values(_include_deprecated),
             Self::FilterEntity(x) => x.enum_values(_include_deprecated),
             Self::OrderBy(x) => x.enum_values(_include_deprecated),
@@ -813,6 +823,7 @@ impl ___Type for __Type {
             Self::UpdateInput(x) => x.input_fields(),
             Self::UpdateResponse(x) => x.input_fields(),
             Self::DeleteResponse(x) => x.input_fields(),
+            Self::FuncCallResponse(x) => x.input_fields(),
             Self::FilterType(x) => x.input_fields(),
             Self::FilterEntity(x) => x.input_fields(),
             Self::OrderBy(x) => x.input_fields(),
@@ -856,6 +867,15 @@ impl __Type {
         match self {
             __Type::NonNull(x) => (*x.type_).clone(),
             _ => self.clone(),
+        }
+    }
+
+    pub fn return_type(&self) -> &Self {
+        match self {
+            __Type::FuncCallResponse(func_call_response_type) => {
+                func_call_response_type.return_type.deref()
+            }
+            t => t,
         }
     }
 }
@@ -955,6 +975,34 @@ pub struct UpdateResponseType {
 pub struct DeleteResponseType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct FuncCallResponseType {
+    pub function: Arc<Function>,
+    pub schema: Arc<__Schema>,
+    pub return_type: Box<__Type>,
+}
+
+impl FuncCallResponseType {
+    pub fn inflected_to_sql_args(&self) -> HashMap<String, (String, String)> {
+        let inflected_name_to_sql_name: HashMap<String, (String, String)> = self
+            .function
+            .args()
+            .filter_map(|(_, arg_type_name, arg_name)| match arg_name {
+                None => None,
+                Some(arg_name) => Some((arg_type_name, arg_name)),
+            })
+            .map(|(arg_type_name, arg_name)| {
+                (
+                    self.schema
+                        .graphql_function_arg_name(&self.function, arg_name),
+                    (arg_type_name.to_string(), arg_name.to_string()),
+                )
+            })
+            .collect();
+        inflected_name_to_sql_name
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -1117,8 +1165,7 @@ impl ___Type for QueryType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut f = vec![];
-
+        let mut f = Vec::new();
         let single_entrypoint = __Field {
             name_: "node".to_string(),
             type_: __Type::NodeInterface(NodeInterfaceType {
@@ -1173,6 +1220,19 @@ impl ___Type for QueryType {
             }
         }
 
+        let existing_fields: HashSet<String> = f.iter().map(|f| f.name()).collect();
+
+        let function_fields = function_fields(
+            &self.schema,
+            &[FunctionVolatility::Immutable, FunctionVolatility::Stable],
+        );
+
+        f.extend(
+            function_fields
+                .into_iter()
+                .filter(|ff| !existing_fields.contains(&ff.name())),
+        );
+
         // Default fields always preset
         f.extend(vec![
             __Field {
@@ -1206,6 +1266,84 @@ impl ___Type for QueryType {
     }
 }
 
+fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) -> Vec<__Field> {
+    let sql_types = &schema.context.types;
+    let function_name_to_count = Function::function_names_to_count(&schema.context.functions);
+    schema
+        .context
+        .functions
+        .iter()
+        .filter(|func| func.is_supported(&schema.context, &function_name_to_count))
+        .filter(|func| volatilities.contains(&func.volatility))
+        .filter_map(|func| match sql_types.get(&func.type_oid) {
+            None => None,
+            Some(sql_type) => {
+                if let Some(return_type) = sql_type.to_graphql_type(None, func.is_set_of, schema) {
+                    let mut gql_args = function_args(schema, func);
+                    if let __Type::Connection(connection_type) = &return_type {
+                        let connection_args = connection_type.get_connection_input_args();
+                        let connection_arg_names: HashSet<String> =
+                            connection_args.iter().map(|arg| arg.name()).collect();
+                        for arg in &gql_args {
+                            if connection_arg_names.contains(&arg.name()) {
+                                return None;
+                            }
+                        }
+
+                        gql_args.extend(connection_args);
+                    }
+
+                    Some(__Field {
+                        name_: schema.graphql_function_field_name(&func),
+                        type_: __Type::FuncCallResponse(FuncCallResponseType {
+                            function: Arc::clone(func),
+                            schema: Arc::clone(schema),
+                            return_type: Box::new(return_type),
+                        }),
+                        args: gql_args,
+                        description: func.directives.description.clone(),
+                        deprecation_reason: None,
+                        sql_type: Some(NodeSQLType::Function(Arc::clone(func))),
+                    })
+                } else {
+                    None
+                }
+            }
+        })
+        .filter(|x| is_valid_graphql_name(&x.name_))
+        .collect()
+}
+
+fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputValue> {
+    let sql_types = &schema.context.types;
+    func.args()
+        .filter(|(_, _, arg_name)| !arg_name.is_none())
+        .filter_map(|(arg_type, _, arg_name)| match sql_types.get(&arg_type) {
+            Some(t) => {
+                if matches!(t.category, TypeCategory::Pseudo) {
+                    None
+                } else {
+                    Some((t, arg_name.unwrap()))
+                }
+            }
+            None => None,
+        })
+        .filter_map(
+            |(arg_type, arg_name)| match arg_type.to_graphql_type(None, false, schema) {
+                Some(t) => Some((t, arg_name)),
+                None => None,
+            },
+        )
+        .map(|(arg_type, arg_name)| __InputValue {
+            name_: schema.graphql_function_arg_name(func, arg_name),
+            type_: arg_type,
+            description: None,
+            default_value: None,
+            sql_type: None,
+        })
+        .collect()
+}
+
 impl ___Type for MutationType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::OBJECT
@@ -1220,7 +1358,7 @@ impl ___Type for MutationType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut f = vec![];
+        let mut f = Vec::new();
 
         // TODO, filter to types in type map in case any were filtered out
         for table in self.schema.context.tables.values() {
@@ -1351,6 +1489,15 @@ impl ___Type for MutationType {
                 })
             }
         }
+        let existing_fields: HashSet<String> = f.iter().map(|f| f.name()).collect();
+
+        let function_fields = function_fields(&self.schema, &[FunctionVolatility::Volatile]);
+
+        f.extend(
+            function_fields
+                .into_iter()
+                .filter(|ff| !existing_fields.contains(&ff.name())),
+        );
         f.sort_by_key(|a| a.name());
         Some(f)
     }
@@ -3076,6 +3223,44 @@ impl ___Type for DeleteResponseType {
     }
 }
 
+impl ___Type for FuncCallResponseType {
+    fn kind(&self) -> __TypeKind {
+        self.return_type.kind()
+    }
+
+    fn name(&self) -> Option<String> {
+        self.return_type.name()
+    }
+
+    fn description(&self) -> Option<String> {
+        self.return_type.description()
+    }
+
+    fn enum_values(&self, include_deprecated: bool) -> Option<Vec<__EnumValue>> {
+        self.return_type.enum_values(include_deprecated)
+    }
+
+    fn fields(&self, include_deprecated: bool) -> Option<Vec<__Field>> {
+        self.return_type.fields(include_deprecated)
+    }
+
+    fn input_fields(&self) -> Option<Vec<__InputValue>> {
+        self.return_type.input_fields()
+    }
+
+    fn interfaces(&self) -> Option<Vec<__Type>> {
+        self.return_type.interfaces()
+    }
+
+    fn of_type(&self) -> Option<__Type> {
+        self.return_type.of_type()
+    }
+
+    fn possible_types(&self) -> Option<Vec<__Type>> {
+        self.return_type.possible_types()
+    }
+}
+
 use std::str::FromStr;
 use std::string::ToString;
 
@@ -3843,16 +4028,15 @@ impl __Schema {
     }
 
     pub fn mutations_exist(&self) -> bool {
-        self.context
-            .tables
-            .values()
-            .filter(|x| self.graphql_table_select_types_are_valid(x))
-            .any(|x| {
-                x.permissions.is_selectable
-                    && (x.permissions.is_insertable
-                        || x.permissions.is_updatable
-                        || x.permissions.is_deletable)
-            })
+        let mutation = MutationType {
+            schema: Arc::new(self.clone()),
+        };
+        if let Some(fields) = mutation.fields(true) {
+            if fields.len() > 0 {
+                return true;
+            }
+        }
+        return false;
     }
 
     // queryType: __Type!

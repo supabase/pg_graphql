@@ -36,10 +36,13 @@
 - bugfix: foreign keys on non-null columns produce non-null GraphQL relationships
 
 ## 1.3.0
-- rename enum variants with comment directive `@graphql({"mappings": "sql-value": "graphql_value""})`
+- feature: rename enum variants with comment directive `@graphql({"mappings": "sql-value": "graphql_value""})`
 - bugfix: query with more than 50 fields fails
 - bugfix: @skip and @include directives missing from introspection schema
 - feature: Support for `and`, `or` and `not` operators in filters
 - bugfix: queries failed to run if the database was in read-only replica mode
 
 ## master
+- feature: citext type represented as a GraphQL String
+- feature: Support for Postgres 16
+- feature: Support for user defined function
