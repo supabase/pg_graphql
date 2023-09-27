@@ -622,4 +622,30 @@ begin;
         }
     } $$));
 
+    set search_path = public, graphql, graphql_public;
+
+    create function graphql.function_in_graphql()
+        returns smallint language sql immutable
+    as $$ select 10; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            function_in_graphql
+        }
+    $$));
+
+    create schema if not exists graphql_public;
+
+    create function graphql_public.function_in_graphql_public()
+        returns smallint language sql immutable
+    as $$ select 10; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            function_in_graphql_public
+        }
+    $$));
+
+    set search_path to default;
+
 rollback;

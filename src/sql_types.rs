@@ -117,6 +117,7 @@ impl Function {
             && !self.has_a_nameless_arg()
             && !self.has_a_default_arg()
             && self.permissions.is_executable
+            && !self.is_in_a_system_schema()
     }
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
@@ -153,6 +154,10 @@ impl Function {
 
     fn has_a_default_arg(&self) -> bool {
         self.num_default_args > 0
+    }
+
+    fn is_in_a_system_schema(&self) -> bool {
+        self.schema_name == "graphql" || self.schema_name == "graphql_public"
     }
 }
 
