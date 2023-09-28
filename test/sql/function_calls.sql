@@ -622,29 +622,65 @@ begin;
         }
     } $$));
 
-    set search_path = public, graphql, graphql_public;
+    rollback to savepoint a;
 
-    create function graphql.function_in_graphql()
-        returns smallint language sql immutable
-    as $$ select 10; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            function_in_graphql
-        }
-    $$));
-
+    -- Confirm that internal functions on the supabase default search_path
+    -- are excluded from GraphQL API
+    create schema if not exists auth;
+    create schema if not exists extensions;
     create schema if not exists graphql_public;
+    -- functions in the counter_example schema should be visible
+    create schema if not exists counter_example;
 
-    create function graphql_public.function_in_graphql_public()
+    -- Create a function in each excluded schema to confirm it isn't visible
+    create function graphql.should_be_invisible_one()
         returns smallint language sql immutable
     as $$ select 10; $$;
 
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            function_in_graphql_public
-        }
-    $$));
+    create function graphql_public.should_be_invisible_two()
+        returns smallint language sql immutable
+    as $$ select 10; $$;
+
+    create function auth.should_be_invisible_three()
+        returns smallint language sql immutable
+    as $$ select 10; $$;
+
+    create function extensions.should_be_invisible_four()
+        returns smallint language sql immutable
+    as $$ select 10; $$;
+
+    -- Create a function in counter_example which should be visible to
+    -- preclude the posibility of some other error preventing the above schemas
+    -- from being visible
+    create function counter_example.visible()
+        returns smallint language sql immutable
+    as $$ select 10; $$;
+
+    -- Set search path to include all supabase system schemas + the counter example
+    set search_path = public, graphql, graphql_public, auth, extensions, counter_example;
+
+    -- Show all fields available on the QueryType. Only the function "visible" should be seen
+    -- in the output
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  name
+                  fields {
+                    name
+                  }
+                }
+                mutationType {
+                  name
+                  fields {
+                    name
+                  }
+                }
+              }
+            }
+        $$)
+    );
 
     set search_path to default;
 
