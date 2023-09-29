@@ -157,7 +157,9 @@ impl Function {
     }
 
     fn is_in_a_system_schema(&self) -> bool {
-        self.schema_name == "graphql" || self.schema_name == "graphql_public"
+        // These are default schemas in supabase configuration
+        let system_schemas = &["graphql", "graphql_public", "auth", "extensions"];
+        system_schemas.contains(&self.schema_name.as_str())
     }
 }
 
