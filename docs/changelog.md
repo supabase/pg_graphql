@@ -42,7 +42,9 @@
 - feature: Support for `and`, `or` and `not` operators in filters
 - bugfix: queries failed to run if the database was in read-only replica mode
 
-## master
+## 1.4.0
 - feature: citext type represented as a GraphQL String
 - feature: Support for Postgres 16
 - feature: Support for user defined function
+
+## master
