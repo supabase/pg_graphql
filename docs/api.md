@@ -2,9 +2,9 @@
 In our API, each SQL table is reflected as a set of GraphQL types. At a high level, tables become types and columns/foreign keys become fields on those types.
 
 
-By default, PostgreSQL table and column names are not inflected when reflecting GraphQL  names. For example, an `account_holder` table has GraphQL type name `account_holder`. In cases where SQL entities are named using `snake_case`, [enable inflection](/pg_graphql/configuration/#inflection) to match GraphQL/Javascript conventions e.g. `account_holder` -> `AccountHolder`.
+By default, PostgreSQL table and column names are not inflected when reflecting GraphQL  names. For example, an `account_holder` table has GraphQL type name `account_holder`. In cases where SQL entities are named using `snake_case`, [enable inflection](configuration.md#inflection) to match GraphQL/Javascript conventions e.g. `account_holder` -> `AccountHolder`.
 
-Individual table, column, and relationship names may also be [manually overridden](/pg_graphql/configuration/#tables-type).
+Individual table, column, and relationship names may also be [manually overridden](configuration.md#tables-type).
 
 
 ## QueryType
