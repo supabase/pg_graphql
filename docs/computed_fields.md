@@ -31,7 +31,7 @@ Computed relations can be helpful to express relationships:
 - between entities that don't support foreign keys
 - too complex to be expressed via a foreign key
 
-If the relationship is simple, but involves an entity that does not support foreign keys e.g. Foreign Data Wrappers / Views, defining a comment directive is the easiest solution. See the [view doc](/pg_graphql/views) for a complete example. Note that for entities that do not support a primary key, like views, you must define one using a [comment directive](/pg_graphql/configuration/#comment-directives) to use them in a computed relationship.
+If the relationship is simple, but involves an entity that does not support foreign keys e.g. Foreign Data Wrappers / Views, defining a comment directive is the easiest solution. See the [view doc](views.md) for a complete example. Note that for entities that do not support a primary key, like views, you must define one using a [comment directive](configuration.md#comment-directives) to use them in a computed relationship.
 
 Alternatively, if the relationship is complex, or you need compatibility with PostgREST, you can define a relationship using set returning functions.
 

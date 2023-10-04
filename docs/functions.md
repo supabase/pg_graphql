@@ -88,7 +88,7 @@ Functions marked `immutable` or `stable` are available on the query type. Functi
 ## Supported Return Types
 
 
-Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom scalar types](/pg_graphql/api/#custom-scalars) are supported as function arguments and return types. Function types returning a table or view are supported as well:
+Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom scalar types](api.md#custom-scalars) are supported as function arguments and return types. Function types returning a table or view are supported as well:
 
 === "Function"
 
@@ -142,7 +142,7 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
     }
     ```
 
-Functions returning multiple rows of a table or view are exposed as [collections](/pg_graphql/api/#collections).
+Functions returning multiple rows of a table or view are exposed as [collections](api.md#collections).
 
 === "Function"
 

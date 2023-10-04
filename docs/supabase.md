@@ -37,7 +37,7 @@ Head back to GraphiQL to see the new table reflected in your GraphQL API's Query
 
 ![graphiql](./assets/supabase_graphiql_query_table.png)
 
-If you'd like your type and field names to match the GraphQL convention of `PascalCase` for types and `camelCase` for fields, check out the [pg_graphql inflection guide](/pg_graphql/configuration/#inflection).
+If you'd like your type and field names to match the GraphQL convention of `PascalCase` for types and `camelCase` for fields, check out the [pg_graphql inflection guide](configuration.md#inflection).
 
 ### HTTP Request
 
@@ -77,7 +77,7 @@ and there are no `variables`
 
 The JS ecosystem supports multiple prominent GraphQL frameworks. [supabase-js](https://supabase.com/docs/reference/javascript/introduction) is unopinionated about your GraphQL tooling and can integrate with all of them.
 
-For an example integration, check out the [Relay guide](/pg_graphql/usage_with_relay), complete with Supabase Auth support.
+For an example integration, check out the [Relay guide](usage_with_relay.md), complete with Supabase Auth support.
 
 ### GraphiQL
 
@@ -181,7 +181,7 @@ create extension pg_graphql; -- install default version 1.2.0
 
 To upgrade your GraphQL API with 0 downtime.
 
-When making a decision to upgrade, you can review features of the upgraded version in the [changelog](/pg_graphql/changelog/).
+When making a decision to upgrade, you can review features of the upgraded version in the [changelog](changelog.md).
 
 Always test a new version of pg_graphql extensively on a development or staging instance before updating your production instance. pg_graphql follows SemVer, which makes API backwards compatibility relatively safe for minor and patch updates. Even so, it's critical to verify that changes do not negatively impact the specifics of your project's API in other ways, e.g. requests/sec or CPU load.
 

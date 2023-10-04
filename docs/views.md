@@ -4,7 +4,7 @@ Views, materialized views, and foreign tables can be exposed with pg_graphql.
 
 ## Primary Keys (Required)
 
-A primary key is required for an entity to be reflected in the GraphQL schema. Tables can define primary keys with SQL DDL, but primary keys are not available for views, materialized views, or foreign tables. For those entities, you can set a "fake" primary key with a [comment directive](/pg_graphql/configuration/#comment-directives).
+A primary key is required for an entity to be reflected in the GraphQL schema. Tables can define primary keys with SQL DDL, but primary keys are not available for views, materialized views, or foreign tables. For those entities, you can set a "fake" primary key with a [comment directive](configuration.md#comment-directives).
 ```json
 {"primary_key_columns": [<column_name_1>, ..., <column_name_n>]}
 ```
@@ -38,7 +38,7 @@ type Person {
 
 ## Relationships
 
-pg_graphql identifies relationships among entities by inspecting foreign keys. Views, materialized views, and foreign tables do not support foreign keys. For this reason, relationships can also be defined in [comment directive](/pg_graphql/configuration/#comment-directives) using the structure:
+pg_graphql identifies relationships among entities by inspecting foreign keys. Views, materialized views, and foreign tables do not support foreign keys. For this reason, relationships can also be defined in [comment directive](configuration.md#comment-directives) using the structure:
 
 
 
