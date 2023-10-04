@@ -580,7 +580,7 @@ impl FunctionCallBuilder {
                     None,
                     Some(from_clause),
                 )?;
-                format!("{select_clause}")
+                select_clause.to_string()
             }
         };
 
