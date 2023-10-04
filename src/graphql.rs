@@ -108,7 +108,7 @@ impl __Schema {
 
     fn graphql_function_arg_name(&self, function: &Function, arg_name: &str) -> String {
         let base_type_name =
-            to_base_type_name(&arg_name, &None, self.inflect_names(function.schema_oid));
+            to_base_type_name(arg_name, &None, self.inflect_names(function.schema_oid));
         lowercase_first_letter(&base_type_name)
     }
 
@@ -989,9 +989,8 @@ impl FuncCallResponseType {
         let inflected_name_to_sql_name: HashMap<String, (String, String)> = self
             .function
             .args()
-            .filter_map(|(_, arg_type_name, arg_name)| match arg_name {
-                None => None,
-                Some(arg_name) => Some((arg_type_name, arg_name)),
+            .filter_map(|(_, arg_type_name, arg_name)| {
+                arg_name.map(|arg_name| (arg_type_name, arg_name))
             })
             .map(|(arg_type_name, arg_name)| {
                 (
@@ -1294,7 +1293,7 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
                     }
 
                     Some(__Field {
-                        name_: schema.graphql_function_field_name(&func),
+                        name_: schema.graphql_function_field_name(func),
                         type_: __Type::FuncCallResponse(FuncCallResponseType {
                             function: Arc::clone(func),
                             schema: Arc::clone(schema),
@@ -1328,12 +1327,11 @@ fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputVal
             }
             None => None,
         })
-        .filter_map(
-            |(arg_type, arg_name)| match arg_type.to_graphql_type(None, false, schema) {
-                Some(t) => Some((t, arg_name)),
-                None => None,
-            },
-        )
+        .filter_map(|(arg_type, arg_name)| {
+            arg_type
+                .to_graphql_type(None, false, schema)
+                .map(|t| (t, arg_name))
+        })
         .map(|(arg_type, arg_name)| __InputValue {
             name_: schema.graphql_function_arg_name(func, arg_name),
             type_: arg_type,
@@ -3582,7 +3580,7 @@ impl ___Type for FilterEntityType {
             // No filtering on composites
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
             // No filtering on json/b. they do not support = or <>
-            .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
+            .filter(|x| !["json", "jsonb"].contains(&x.type_name.as_ref()))
             .filter_map(|col| {
                 // Should be a scalar
                 if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
@@ -3791,7 +3789,7 @@ impl ___Type for OrderByEntityType {
                 // No filtering on composites
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
                 // No filtering on json/b. they do not support = or <>
-                .filter(|x| !vec!["json", "jsonb"].contains(&x.type_name.as_ref()))
+                .filter(|x| !["json", "jsonb"].contains(&x.type_name.as_ref()))
                 // TODO  filter out arrays, json and composites
                 .map(|col| __InputValue {
                     name_: self.schema.graphql_column_field_name(col),
@@ -4032,11 +4030,11 @@ impl __Schema {
             schema: Arc::new(self.clone()),
         };
         if let Some(fields) = mutation.fields(true) {
-            if fields.len() > 0 {
+            if !fields.is_empty() {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     // queryType: __Type!

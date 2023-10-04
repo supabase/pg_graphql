@@ -596,7 +596,7 @@ where
             let args = field.args();
             let allowed_args: Vec<&str> = args.iter().map(|a| a.name_.as_str()).collect();
             restrict_allowed_arguments(&allowed_args, query_field)?;
-            let args = read_func_call_args(field, query_field, variables, &func_call_resp_type)?;
+            let args = read_func_call_args(field, query_field, variables, func_call_resp_type)?;
 
             let return_type_builder = match func_call_resp_type.return_type.deref() {
                 __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
@@ -660,13 +660,13 @@ where
     for arg in field.args() {
         let arg_value = read_argument(&arg.name(), field, query_field, variables)?;
         if !arg_value.is_absent() {
-            let func_call_sql_arg_name = match inflected_to_sql_args.get(&arg.name()) {
-                Some((type_name, name)) => Some(FuncCallSqlArgName {
-                    type_name: type_name.clone(),
-                    name: name.clone(),
-                }),
-                None => None,
-            };
+            let func_call_sql_arg_name =
+                inflected_to_sql_args
+                    .get(&arg.name())
+                    .map(|(type_name, name)| FuncCallSqlArgName {
+                        type_name: type_name.clone(),
+                        name: name.clone(),
+                    });
             args.push((func_call_sql_arg_name, gson::gson_to_json(&arg_value)?));
         };
     }
@@ -1234,7 +1234,7 @@ where
     let type_name = type_
         .name()
         .ok_or("Encountered type without name in connection builder")?;
-    let field_map = field_map(&type_);
+    let field_map = field_map(type_);
     let alias = alias_or_name(query_field);
 
     match &type_ {
@@ -2097,7 +2097,7 @@ impl __Schema {
                                     let mut f_builders: Vec<__FieldBuilder> = vec![];
 
                                     for vec_field in vec_fields {
-                                        if vec!["__type".to_string(), "__schema".to_string()]
+                                        if ["__type".to_string(), "__schema".to_string()]
                                             .contains(&vec_field.name())
                                         {
                                             continue;
