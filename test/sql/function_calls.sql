@@ -735,4 +735,19 @@ begin;
         }
     $$));
 
+    create function concat_text(a text, b text default 'world')
+        returns text language sql immutable
+    as $$ select a || b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            concatText(b: "world!", a: "hello ")
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            concatText(a: "hello ")
+        }
+    $$));
 rollback;
