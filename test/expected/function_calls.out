@@ -1953,10 +1953,11 @@ begin;
                   fields {
                     name
                     args {
+                      name
+                      defaultValue
+                      type {
                         name
-                        type {
-                            name
-                        }
+                      }
                     }
                   }
                 }
@@ -1964,46 +1965,49 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": {                                    +
-         "__schema": {                            +
-             "queryType": {                       +
-                 "name": "Query",                 +
-                 "fields": [                      +
-                     {                            +
-                         "args": [                +
-                             {                    +
-                                 "name": "a",     +
-                                 "type": {        +
-                                     "name": "Int"+
-                                 }                +
-                             },                   +
-                             {                    +
-                                 "name": "b",     +
-                                 "type": {        +
-                                     "name": "Int"+
-                                 }                +
-                             }                    +
-                         ],                       +
-                         "name": "addSmallints"   +
-                     },                           +
-                     {                            +
-                         "args": [                +
-                             {                    +
-                                 "name": "nodeId",+
-                                 "type": {        +
-                                     "name": null +
-                                 }                +
-                             }                    +
-                         ],                       +
-                         "name": "node"           +
-                     }                            +
-                 ]                                +
-             }                                    +
-         }                                        +
-     }                                            +
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__schema": {                               +
+             "queryType": {                          +
+                 "name": "Query",                    +
+                 "fields": [                         +
+                     {                               +
+                         "args": [                   +
+                             {                       +
+                                 "name": "a",        +
+                                 "type": {           +
+                                     "name": "Int"   +
+                                 },                  +
+                                 "defaultValue": null+
+                             },                      +
+                             {                       +
+                                 "name": "b",        +
+                                 "type": {           +
+                                     "name": "Int"   +
+                                 },                  +
+                                 "defaultValue": null+
+                             }                       +
+                         ],                          +
+                         "name": "addSmallints"      +
+                     },                              +
+                     {                               +
+                         "args": [                   +
+                             {                       +
+                                 "name": "nodeId",   +
+                                 "type": {           +
+                                     "name": null    +
+                                 },                  +
+                                 "defaultValue": null+
+                             }                       +
+                         ],                          +
+                         "name": "node"              +
+                     }                               +
+                 ]                                   +
+             }                                       +
+         }                                           +
+     }                                               +
  }
 (1 row)
 

@@ -699,10 +699,11 @@ begin;
                   fields {
                     name
                     args {
+                      name
+                      defaultValue
+                      type {
                         name
-                        type {
-                            name
-                        }
+                      }
                     }
                   }
                 }
