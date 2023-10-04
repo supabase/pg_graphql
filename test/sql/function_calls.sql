@@ -684,4 +684,55 @@ begin;
 
     set search_path to default;
 
+    rollback to savepoint a;
+
+    create function add_smallints(a smallint default 1, b smallint default 2)
+        returns smallint language sql immutable
+    as $$ select a + b; $$;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  name
+                  fields {
+                    name
+                    args {
+                        name
+                        type {
+                            name
+                        }
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(a: 10, b: 20)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(a: 10)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(b: 20)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints
+        }
+    $$));
+
 rollback;

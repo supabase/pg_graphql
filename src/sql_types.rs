@@ -115,7 +115,6 @@ impl Function {
             && self.arg_types_are_supported(types)
             && !self.is_function_overloaded(function_name_to_count)
             && !self.has_a_nameless_arg()
-            && !self.has_a_default_arg()
             && self.permissions.is_executable
             && !self.is_in_a_system_schema()
     }
@@ -150,10 +149,6 @@ impl Function {
 
     fn has_a_nameless_arg(&self) -> bool {
         self.args().any(|(_, _, arg_name)| arg_name.is_none())
-    }
-
-    fn has_a_default_arg(&self) -> bool {
-        self.num_default_args > 0
     }
 
     fn is_in_a_system_schema(&self) -> bool {

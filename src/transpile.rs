@@ -548,7 +548,8 @@ impl FunctionCallBuilder {
         for (arg, arg_value) in &self.args_builder.args {
             if let Some(arg) = arg {
                 let arg_clause = param_context.clause_for(arg_value, &arg.type_name)?;
-                arg_clauses.push(arg_clause);
+                let named_arg_clause = format!("{} => {}", quote_ident(&arg.name), arg_clause);
+                arg_clauses.push(named_arg_clause);
             }
         }
 

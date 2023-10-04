@@ -184,47 +184,6 @@ begin;
  }
 (1 row)
 
-    -- functions with a default value
-    create function func_with_a_default_int(a int default 42)
-        returns int language sql immutable
-    as $$ select a; $$;
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            funcWithADefaultInt
-        }
-    $$));
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Unknown field \"funcWithADefaultInt\" on type Query"+
-         }                                                                   +
-     ]                                                                       +
- }
-(1 row)
-
-    create function func_with_a_default_null_text(a text default null)
-        returns text language sql immutable
-    as $$ select a; $$;
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            funcWithADefaultNullText
-        }
-    $$));
-                                   jsonb_pretty                                    
------------------------------------------------------------------------------------
- {                                                                                +
-     "data": null,                                                                +
-     "errors": [                                                                  +
-         {                                                                        +
-             "message": "Unknown field \"funcWithADefaultNullText\" on type Query"+
-         }                                                                        +
-     ]                                                                            +
- }
-(1 row)
-
     create function func_accepting_array(a int[])
         returns int language sql immutable
     as $$ select 0; $$;
