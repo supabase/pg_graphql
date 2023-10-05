@@ -178,7 +178,7 @@ impl<'a> Iterator for ArgsIterator<'a> {
             let arg_name = if let Some(arg_names) = self.arg_names {
                 debug_assert!(arg_names.len() >= self.arg_types.len());
                 let arg_name = arg_names[self.index].as_str();
-                if arg_name != "" {
+                if !arg_name.is_empty() {
                     Some(arg_name)
                 } else {
                     None
@@ -808,15 +808,12 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
             let functions = arg_type_to_func.entry(function.arg_types[0]).or_default();
             functions.push(function);
         }
-        for (_, table) in &mut context.tables {
+        for table in &mut context.tables.values_mut() {
             if let Some(table) = Arc::get_mut(table) {
-                match arg_type_to_func.get(&table.reltype) {
-                    Some(functions) => {
-                        for function in functions {
-                            table.functions.push(Arc::clone(function));
-                        }
+                if let Some(functions) = arg_type_to_func.get(&table.reltype) {
+                    for function in functions {
+                        table.functions.push(Arc::clone(function));
                     }
-                    None => {}
                 }
             }
         }
