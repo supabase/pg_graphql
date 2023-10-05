@@ -45,6 +45,7 @@
 ## 1.4.0
 - feature: citext type represented as a GraphQL String
 - feature: Support for Postgres 16
-- feature: Support for user defined function
+- feature: Support for user defined functions
 
 ## master
+- feature: Support for user defined functions with default arguments

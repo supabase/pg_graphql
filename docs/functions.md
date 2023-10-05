@@ -231,6 +231,47 @@ Functions returning multiple rows of a table or view are exposed as [collections
 
     A set returning function with any of its argument names clashing with argument names of a collection (`first`, `last`, `before`, `after`, `filter`, or `orderBy`) will not be exposed.
 
+## Default Arguments
+
+Functions with default arguments can have their default arguments omitted.
+
+=== "Function"
+
+    ```sql
+    create function "addNums"(a int default 1, b int default 2)
+      returns int
+      immutable
+      language sql
+    as $$ select a + b; $$;
+    ```
+
+=== "QueryType"
+
+    ```graphql
+    type Query {
+      addNums(a: Int, b: Int): Int
+    }
+    ```
+
+
+=== "Query"
+
+    ```graphql
+    query {
+      addNums(b: 20)
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "addNums": 21
+      }
+    }
+    ```
+
 ## Limitations
 
 The following features are not yet supported. Any function using these features is not exposed in the API:
@@ -239,7 +280,6 @@ The following features are not yet supported. Any function using these features 
 * Functions that accept a table's tuple type
 * Overloaded functions
 * Functions with a nameless argument
-* Functions with a default argument
 * Functions returning void
 * Variadic functions
 * Function that accept or return an array type

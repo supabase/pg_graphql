@@ -684,4 +684,82 @@ begin;
 
     set search_path to default;
 
+    rollback to savepoint a;
+
+    create function add_smallints(a smallint default 1, b smallint default 2)
+        returns smallint language sql immutable
+    as $$ select a + b; $$;
+
+    create function func_with_defaults(
+        a smallint default 1,
+        b integer default 2,
+        c boolean default false,
+        d real default 3.14,
+        e double precision default 2.718,
+        f text default 'hello'
+    )
+        returns smallint language sql immutable
+    as $$ select 0; $$;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  name
+                  fields {
+                    name
+                    args {
+                      name
+                      defaultValue
+                      type {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(a: 10, b: 20)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(a: 10)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(b: 20)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints
+        }
+    $$));
+
+    create function concat_text(a text, b text default 'world')
+        returns text language sql immutable
+    as $$ select a || b; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            concatText(b: "world!", a: "hello ")
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            concatText(a: "hello ")
+        }
+    $$));
 rollback;

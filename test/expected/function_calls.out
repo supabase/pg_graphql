@@ -1940,4 +1940,219 @@ begin;
 (1 row)
 
     set search_path to default;
+    rollback to savepoint a;
+    create function add_smallints(a smallint default 1, b smallint default 2)
+        returns smallint language sql immutable
+    as $$ select a + b; $$;
+    create function func_with_defaults(
+        a smallint default 1,
+        b integer default 2,
+        c boolean default false,
+        d real default 3.14,
+        e double precision default 2.718,
+        f text default 'hello'
+    )
+        returns smallint language sql immutable
+    as $$ select 0; $$;
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  name
+                  fields {
+                    name
+                    args {
+                      name
+                      defaultValue
+                      type {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": {                                            +
+         "__schema": {                                    +
+             "queryType": {                               +
+                 "name": "Query",                         +
+                 "fields": [                              +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "1"      +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "2"      +
+                             }                            +
+                         ],                               +
+                         "name": "addSmallints"           +
+                     },                                   +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "1"      +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "2"      +
+                             },                           +
+                             {                            +
+                                 "name": "c",             +
+                                 "type": {                +
+                                     "name": "Boolean"    +
+                                 },                       +
+                                 "defaultValue": "false"  +
+                             },                           +
+                             {                            +
+                                 "name": "d",             +
+                                 "type": {                +
+                                     "name": "Float"      +
+                                 },                       +
+                                 "defaultValue": "3.14"   +
+                             },                           +
+                             {                            +
+                                 "name": "e",             +
+                                 "type": {                +
+                                     "name": "Float"      +
+                                 },                       +
+                                 "defaultValue": "2.718"  +
+                             },                           +
+                             {                            +
+                                 "name": "f",             +
+                                 "type": {                +
+                                     "name": "String"     +
+                                 },                       +
+                                 "defaultValue": "'hello'"+
+                             }                            +
+                         ],                               +
+                         "name": "funcWithDefaults"       +
+                     },                                   +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "nodeId",        +
+                                 "type": {                +
+                                     "name": null         +
+                                 },                       +
+                                 "defaultValue": null     +
+                             }                            +
+                         ],                               +
+                         "name": "node"                   +
+                     }                                    +
+                 ]                                        +
+             }                                            +
+         }                                                +
+     }                                                    +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(a: 10, b: 20)
+        }
+    $$));
+        jsonb_pretty        
+----------------------------
+ {                         +
+     "data": {             +
+         "addSmallints": 30+
+     }                     +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(a: 10)
+        }
+    $$));
+        jsonb_pretty        
+----------------------------
+ {                         +
+     "data": {             +
+         "addSmallints": 12+
+     }                     +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints(b: 20)
+        }
+    $$));
+        jsonb_pretty        
+----------------------------
+ {                         +
+     "data": {             +
+         "addSmallints": 21+
+     }                     +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            addSmallints
+        }
+    $$));
+       jsonb_pretty        
+---------------------------
+ {                        +
+     "data": {            +
+         "addSmallints": 3+
+     }                    +
+ }
+(1 row)
+
+    create function concat_text(a text, b text default 'world')
+        returns text language sql immutable
+    as $$ select a || b; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            concatText(b: "world!", a: "hello ")
+        }
+    $$));
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "concatText": "hello world!"+
+     }                               +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            concatText(a: "hello ")
+        }
+    $$));
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "concatText": "hello world"+
+     }                              +
+ }
+(1 row)
+
 rollback;

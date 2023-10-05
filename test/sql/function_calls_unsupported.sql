@@ -107,27 +107,6 @@ begin;
         }
     $$));
 
-    -- functions with a default value
-    create function func_with_a_default_int(a int default 42)
-        returns int language sql immutable
-    as $$ select a; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            funcWithADefaultInt
-        }
-    $$));
-
-    create function func_with_a_default_null_text(a text default null)
-        returns text language sql immutable
-    as $$ select a; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            funcWithADefaultNullText
-        }
-    $$));
-
     create function func_accepting_array(a int[])
         returns int language sql immutable
     as $$ select 0; $$;

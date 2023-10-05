@@ -74,6 +74,7 @@ pub struct Function {
     pub schema_name: String,
     pub arg_types: Vec<u32>,
     pub arg_names: Option<Vec<String>>,
+    pub arg_defaults: Option<String>,
     pub num_args: u32,
     pub num_default_args: u32,
     pub arg_type_names: Vec<String>,
@@ -87,13 +88,14 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn args(&self) -> impl Iterator<Item = (u32, &str, Option<&str>)> {
-        ArgsIterator {
-            index: 0,
-            arg_types: &self.arg_types,
-            arg_type_names: &self.arg_type_names,
-            arg_names: &self.arg_names,
-        }
+    pub fn args(&self) -> impl Iterator<Item = (u32, &str, Option<&str>, Option<String>)> {
+        ArgsIterator::new(
+            &self.arg_types,
+            &self.arg_type_names,
+            &self.arg_names,
+            &self.arg_defaults,
+            self.num_default_args,
+        )
     }
 
     pub fn function_names_to_count(all_functions: &[Arc<Function>]) -> HashMap<&String, u32> {
@@ -115,13 +117,12 @@ impl Function {
             && self.arg_types_are_supported(types)
             && !self.is_function_overloaded(function_name_to_count)
             && !self.has_a_nameless_arg()
-            && !self.has_a_default_arg()
             && self.permissions.is_executable
             && !self.is_in_a_system_schema()
     }
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
-        self.args().all(|(arg_type, _, _)| {
+        self.args().all(|(arg_type, _, _, _)| {
             if let Some(return_type) = types.get(&arg_type) {
                 return_type.category == TypeCategory::Other
             } else {
@@ -149,11 +150,7 @@ impl Function {
     }
 
     fn has_a_nameless_arg(&self) -> bool {
-        self.args().any(|(_, _, arg_name)| arg_name.is_none())
-    }
-
-    fn has_a_default_arg(&self) -> bool {
-        self.num_default_args > 0
+        self.args().any(|(_, _, arg_name, _)| arg_name.is_none())
     }
 
     fn is_in_a_system_schema(&self) -> bool {
@@ -168,6 +165,75 @@ struct ArgsIterator<'a> {
     arg_types: &'a [u32],
     arg_type_names: &'a Vec<String>,
     arg_names: &'a Option<Vec<String>>,
+    arg_defaults: Vec<Option<String>>,
+}
+
+impl<'a> ArgsIterator<'a> {
+    fn new(
+        arg_types: &'a [u32],
+        arg_type_names: &'a Vec<String>,
+        arg_names: &'a Option<Vec<String>>,
+        arg_defaults: &'a Option<String>,
+        num_default_args: u32,
+    ) -> ArgsIterator<'a> {
+        ArgsIterator {
+            index: 0,
+            arg_types,
+            arg_type_names,
+            arg_names,
+            arg_defaults: Self::defaults(
+                arg_types,
+                arg_defaults,
+                num_default_args as usize,
+                arg_types.len(),
+            ),
+        }
+    }
+
+    fn defaults(
+        arg_types: &'a [u32],
+        arg_defaults: &'a Option<String>,
+        num_default_args: usize,
+        num_total_args: usize,
+    ) -> Vec<Option<String>> {
+        let mut defaults = vec![None; num_total_args];
+        let Some(arg_defaults) = arg_defaults else {
+            return defaults;
+        };
+
+        if num_default_args == 0 {
+            return defaults;
+        }
+
+        let default_strs: Vec<&str> = arg_defaults.split(',').collect();
+
+        if default_strs.len() != num_default_args {
+            return defaults;
+        }
+
+        debug_assert!(num_default_args <= num_total_args);
+        let start_idx = num_total_args - num_default_args;
+        for i in start_idx..num_total_args {
+            defaults[i] =
+                Self::sql_to_graphql_default(default_strs[i - start_idx], arg_types[i - start_idx])
+        }
+
+        defaults
+    }
+
+    fn sql_to_graphql_default(default_str: &str, type_oid: u32) -> Option<String> {
+        let trimmed = default_str.trim();
+        match type_oid {
+            21 | 23 => trimmed.parse::<i32>().ok().map(|i| i.to_string()),
+            16 => trimmed.parse::<bool>().ok().map(|i| i.to_string()),
+            700 | 701 => trimmed.parse::<f64>().ok().map(|i| i.to_string()),
+            25 => trimmed
+                .strip_suffix("::text")
+                .to_owned()
+                .map(|i| i.trim_matches(',').to_string()),
+            _ => None,
+        }
+    }
 }
 
 lazy_static! {
@@ -175,7 +241,7 @@ lazy_static! {
 }
 
 impl<'a> Iterator for ArgsIterator<'a> {
-    type Item = (u32, &'a str, Option<&'a str>);
+    type Item = (u32, &'a str, Option<&'a str>, Option<String>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.arg_types.len() {
@@ -196,8 +262,9 @@ impl<'a> Iterator for ArgsIterator<'a> {
             if arg_type_name == "character" {
                 arg_type_name = &TEXT_TYPE;
             }
+            let arg_default = self.arg_defaults[self.index].clone();
             self.index += 1;
-            Some((arg_type, arg_type_name, arg_name))
+            Some((arg_type, arg_type_name, arg_name, arg_default))
         } else {
             None
         }
