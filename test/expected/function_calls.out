@@ -1944,6 +1944,16 @@ begin;
     create function add_smallints(a smallint default 1, b smallint default 2)
         returns smallint language sql immutable
     as $$ select a + b; $$;
+    create function func_with_defaults(
+        a smallint default 1,
+        b integer default 2,
+        c boolean default false,
+        d real default 3.14,
+        e double precision default 2.718,
+        f text default 'hello'
+    )
+        returns smallint language sql immutable
+    as $$ select 0; $$;
     select jsonb_pretty(
         graphql.resolve($$
             query IntrospectionQuery {
@@ -1965,49 +1975,96 @@ begin;
             }
         $$)
     );
-                     jsonb_pretty                     
-------------------------------------------------------
- {                                                   +
-     "data": {                                       +
-         "__schema": {                               +
-             "queryType": {                          +
-                 "name": "Query",                    +
-                 "fields": [                         +
-                     {                               +
-                         "args": [                   +
-                             {                       +
-                                 "name": "a",        +
-                                 "type": {           +
-                                     "name": "Int"   +
-                                 },                  +
-                                 "defaultValue": null+
-                             },                      +
-                             {                       +
-                                 "name": "b",        +
-                                 "type": {           +
-                                     "name": "Int"   +
-                                 },                  +
-                                 "defaultValue": null+
-                             }                       +
-                         ],                          +
-                         "name": "addSmallints"      +
-                     },                              +
-                     {                               +
-                         "args": [                   +
-                             {                       +
-                                 "name": "nodeId",   +
-                                 "type": {           +
-                                     "name": null    +
-                                 },                  +
-                                 "defaultValue": null+
-                             }                       +
-                         ],                          +
-                         "name": "node"              +
-                     }                               +
-                 ]                                   +
-             }                                       +
-         }                                           +
-     }                                               +
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": {                                            +
+         "__schema": {                                    +
+             "queryType": {                               +
+                 "name": "Query",                         +
+                 "fields": [                              +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "1"      +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "2"      +
+                             }                            +
+                         ],                               +
+                         "name": "addSmallints"           +
+                     },                                   +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "1"      +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "name": "Int"        +
+                                 },                       +
+                                 "defaultValue": "2"      +
+                             },                           +
+                             {                            +
+                                 "name": "c",             +
+                                 "type": {                +
+                                     "name": "Boolean"    +
+                                 },                       +
+                                 "defaultValue": "false"  +
+                             },                           +
+                             {                            +
+                                 "name": "d",             +
+                                 "type": {                +
+                                     "name": "Float"      +
+                                 },                       +
+                                 "defaultValue": "3.14"   +
+                             },                           +
+                             {                            +
+                                 "name": "e",             +
+                                 "type": {                +
+                                     "name": "Float"      +
+                                 },                       +
+                                 "defaultValue": "2.718"  +
+                             },                           +
+                             {                            +
+                                 "name": "f",             +
+                                 "type": {                +
+                                     "name": "String"     +
+                                 },                       +
+                                 "defaultValue": "'hello'"+
+                             }                            +
+                         ],                               +
+                         "name": "funcWithDefaults"       +
+                     },                                   +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "nodeId",        +
+                                 "type": {                +
+                                     "name": null         +
+                                 },                       +
+                                 "defaultValue": null     +
+                             }                            +
+                         ],                               +
+                         "name": "node"                   +
+                     }                                    +
+                 ]                                        +
+             }                                            +
+         }                                                +
+     }                                                    +
  }
 (1 row)
 

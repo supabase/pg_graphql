@@ -989,7 +989,7 @@ impl FuncCallResponseType {
         let inflected_name_to_sql_name: HashMap<String, (String, String)> = self
             .function
             .args()
-            .filter_map(|(_, arg_type_name, arg_name)| {
+            .filter_map(|(_, arg_type_name, arg_name, _)| {
                 arg_name.map(|arg_name| (arg_type_name, arg_name))
             })
             .map(|(arg_type_name, arg_name)| {
@@ -1316,27 +1316,29 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
 fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputValue> {
     let sql_types = &schema.context.types;
     func.args()
-        .filter(|(_, _, arg_name)| !arg_name.is_none())
-        .filter_map(|(arg_type, _, arg_name)| match sql_types.get(&arg_type) {
-            Some(t) => {
-                if matches!(t.category, TypeCategory::Pseudo) {
-                    None
-                } else {
-                    Some((t, arg_name.unwrap()))
+        .filter(|(_, _, arg_name, _)| !arg_name.is_none())
+        .filter_map(
+            |(arg_type, _, arg_name, arg_default)| match sql_types.get(&arg_type) {
+                Some(t) => {
+                    if matches!(t.category, TypeCategory::Pseudo) {
+                        None
+                    } else {
+                        Some((t, arg_name.unwrap(), arg_default))
+                    }
                 }
-            }
-            None => None,
-        })
-        .filter_map(|(arg_type, arg_name)| {
+                None => None,
+            },
+        )
+        .filter_map(|(arg_type, arg_name, arg_default)| {
             arg_type
                 .to_graphql_type(None, false, schema)
-                .map(|t| (t, arg_name))
+                .map(|t| (t, arg_name, arg_default))
         })
-        .map(|(arg_type, arg_name)| __InputValue {
+        .map(|(arg_type, arg_name, arg_default)| __InputValue {
             name_: schema.graphql_function_arg_name(func, arg_name),
             type_: arg_type,
             description: None,
-            default_value: None,
+            default_value: arg_default,
             sql_type: None,
         })
         .collect()

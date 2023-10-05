@@ -690,6 +690,17 @@ begin;
         returns smallint language sql immutable
     as $$ select a + b; $$;
 
+    create function func_with_defaults(
+        a smallint default 1,
+        b integer default 2,
+        c boolean default false,
+        d real default 3.14,
+        e double precision default 2.718,
+        f text default 'hello'
+    )
+        returns smallint language sql immutable
+    as $$ select 0; $$;
+
     select jsonb_pretty(
         graphql.resolve($$
             query IntrospectionQuery {

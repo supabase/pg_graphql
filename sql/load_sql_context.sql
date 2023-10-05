@@ -379,6 +379,7 @@ select
                             'schema_name', pronamespace::regnamespace::text,
                             'arg_types', proargtypes::int[],
                             'arg_names', proargnames::text[],
+                            'arg_defaults', pg_get_expr(proargdefaults, 0)::text,
                             'num_args', pronargs,
                             'num_default_args', pronargdefaults,
                             'arg_type_names', pp.proargtypes::regtype[]::text[],
