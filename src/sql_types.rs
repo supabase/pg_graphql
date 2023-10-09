@@ -135,6 +135,8 @@ impl Function {
         if let Some(return_type) = types.get(&self.type_oid) {
             return_type.category != TypeCategory::Pseudo
                 && return_type.name != "record"
+                && return_type.name != "trigger"
+                && return_type.name != "event_trigger"
                 && !self.type_name.ends_with("[]")
         } else {
             false

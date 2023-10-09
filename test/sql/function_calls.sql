@@ -701,6 +701,14 @@ begin;
         returns smallint language sql immutable
     as $$ select 0; $$;
 
+    create function returns_trigger()
+        returns trigger language plpgsql immutable
+    as $$ begin return null; end; $$;
+
+    create function returns_event_trigger()
+        returns event_trigger language plpgsql immutable
+    as $$ begin end; $$;
+
     select jsonb_pretty(
         graphql.resolve($$
             query IntrospectionQuery {
