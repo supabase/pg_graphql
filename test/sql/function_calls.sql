@@ -770,4 +770,16 @@ begin;
             concatText(a: "hello ")
         }
     $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTrigger
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsEventTrigger
+        }
+    $$));
 rollback;

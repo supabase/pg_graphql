@@ -2161,4 +2161,38 @@ begin;
  }
 (1 row)
 
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTrigger
+        }
+    $$));
+                              jsonb_pretty                               
+-------------------------------------------------------------------------
+ {                                                                      +
+     "data": null,                                                      +
+     "errors": [                                                        +
+         {                                                              +
+             "message": "Unknown field \"returnsTrigger\" on type Query"+
+         }                                                              +
+     ]                                                                  +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsEventTrigger
+        }
+    $$));
+                                 jsonb_pretty                                 
+------------------------------------------------------------------------------
+ {                                                                           +
+     "data": null,                                                           +
+     "errors": [                                                             +
+         {                                                                   +
+             "message": "Unknown field \"returnsEventTrigger\" on type Query"+
+         }                                                                   +
+     ]                                                                       +
+ }
+(1 row)
+
 rollback;
