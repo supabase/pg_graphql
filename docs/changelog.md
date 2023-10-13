@@ -47,5 +47,8 @@
 - feature: Support for Postgres 16
 - feature: Support for user defined functions
 
-## master
+## 1.4.1
 - feature: Support for user defined functions with default arguments
+- bugfix: Trigger functions excluded from API
+
+## master
