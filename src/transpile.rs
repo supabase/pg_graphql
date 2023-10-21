@@ -7,6 +7,8 @@ use pgrx::prelude::*;
 use pgrx::spi::SpiClient;
 use pgrx::*;
 use serde::ser::{Serialize, SerializeMap, Serializer};
+use serde_json::json;
+use serde_json::Map;
 use std::cmp;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -564,14 +566,14 @@ impl FunctionCallBuilder {
                 let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
                 format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
             }
-            FuncCallReturnTypeBuilder::Node(node_builder) => {
-                let select_clause = node_builder.to_sql(block_name, param_context)?;
-                let select_clause = if select_clause.is_empty() {
-                    "jsonb_build_object()".to_string()
-                } else {
-                    select_clause
-                };
-                format!("select coalesce((select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name} where {block_name} is not null), null::jsonb);")
+            FuncCallReturnTypeBuilder::Node(_node_builder) => {
+                // let select_clause = node_builder.to_sql(block_name, param_context)?;
+                // let select_clause = if select_clause.is_empty() {
+                //     "jsonb_build_object()".to_string()
+                // } else {
+                //     select_clause
+                // };
+                format!("select {func_schema}.{func_name}{args_clause} {block_name};")
             }
             FuncCallReturnTypeBuilder::Connection(connection_builder) => {
                 let from_clause = format!("{func_schema}.{func_name}{args_clause}");
@@ -598,6 +600,61 @@ impl MutationEntrypoint<'_> for FunctionCallBuilder {
 impl QueryEntrypoint for FunctionCallBuilder {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
         self.to_sql(param_context)
+    }
+
+    fn execute(&self) -> Result<serde_json::Value, String> {
+        let mut param_context = ParamContext { params: vec![] };
+        let sql = &self.to_sql(&mut param_context);
+        let sql = match sql {
+            Ok(sql) => sql,
+            Err(err) => {
+                return Err(err.to_string());
+            }
+        };
+
+        notice!("Function call sql: {sql}");
+
+        let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
+            let tuple_table = c.select(sql, Some(1), Some(param_context.params))?;
+            // Get a value from the query
+            if tuple_table.is_empty() {
+                notice!("No rows returned");
+                Ok(None)
+            } else {
+                notice!("Some rows returned");
+                let first = tuple_table.first();
+                notice!("Num columns: {}", first.columns()?);
+                match first.get_datum_by_ordinal(1)? {
+                    Some(d) => {
+                        let mut map = Map::new();
+                        notice!("Got datum");
+                        let heap_tuple = unsafe { PgHeapTuple::from_composite_datum(d) };
+                        notice!("Heap tuple len: {}", heap_tuple.len());
+                        let id = heap_tuple.get_by_name::<i32>("id")?;
+                        notice!("Id is {id:?}");
+                        if let Some(id) = id {
+                            map.insert("id".to_string(), json!(id));
+                        }
+                        let email = heap_tuple.get_by_name::<String>("email")?;
+                        notice!("Email is {email:?}");
+                        if let Some(email) = email {
+                            map.insert("email".to_string(), json!(email));
+                        }
+                        Ok(Some(JsonB(serde_json::Value::Object(map))))
+                    }
+                    None => {
+                        notice!("No datum found");
+                        Ok(None)
+                    }
+                }
+            }
+        });
+
+        match spi_result {
+            Ok(Some(jsonb)) => Ok(jsonb.0),
+            Ok(None) => Ok(serde_json::Value::Null),
+            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
+        }
     }
 }
 

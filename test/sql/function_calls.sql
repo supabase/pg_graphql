@@ -782,4 +782,30 @@ begin;
             returnsEventTrigger
         }
     $$));
+
+    rollback to savepoint a;
+
+    create table account(
+      id serial primary key,
+      email varchar(255) not null
+    );
+
+    create function returns_account_by_id(id int)
+        returns account language sql stable
+    as $$ select id, email from account where id = $1; $$;
+
+    insert into account(email)
+    values
+        ('aardvark@x.com'),
+        ('bat@x.com'),
+        ('cat@x.com');
+    
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccountById(id: 1) {
+                id
+                email
+            }
+        }
+    $$));
 rollback;
