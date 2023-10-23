@@ -17,6 +17,7 @@ nav:
     - Configuration: 'configuration.md'
     - Guides:
       - Supabase: 'supabase.md'
+      - Usage with Apollo: 'usage_with_apollo.md'
       - Usage with Relay: 'usage_with_relay.md'
     - Example Schema: 'example_schema.md'
     - Installation: 'installation.md'
