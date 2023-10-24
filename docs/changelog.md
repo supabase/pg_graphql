@@ -51,4 +51,7 @@
 - feature: Support for user defined functions with default arguments
 - bugfix: Trigger functions excluded from API
 
+## 1.4.2
+- bugfix: UDF call returned null if the row returned by the function had any null column
+
 ## master
