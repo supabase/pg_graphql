@@ -491,7 +491,7 @@ impl Table {
     pub fn primary_key_columns(&self) -> Vec<&Arc<Column>> {
         self.primary_key()
             .map(|x| x.column_names)
-            .unwrap_or(vec![])
+            .unwrap_or_default()
             .iter()
             .map(|col_name| {
                 self.columns

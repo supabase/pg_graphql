@@ -571,7 +571,7 @@ impl FunctionCallBuilder {
                 } else {
                     select_clause
                 };
-                format!("select coalesce((select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name} where {block_name} is not null), null::jsonb);")
+                format!("select coalesce((select {select_clause} from {func_schema}.{func_name}{args_clause} {block_name} where not ({block_name} is null)), null::jsonb);")
             }
             FuncCallReturnTypeBuilder::Connection(connection_builder) => {
                 let from_clause = format!("{func_schema}.{func_name}{args_clause}");

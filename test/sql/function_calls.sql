@@ -782,4 +782,85 @@ begin;
             returnsEventTrigger
         }
     $$));
+
+    rollback to savepoint a;
+
+    create table account(
+        id int,
+        email varchar(255),
+        name text null
+    );
+
+    create function returns_all_columns_non_null_account()
+        returns account language sql stable
+    as $$ select id, email, name from account where id = 1; $$;
+
+    create function returns_one_column_null_account()
+        returns account language sql stable
+    as $$ select id, email, name from account where id = 2; $$;
+
+    create function returns_all_columns_null_account()
+        returns account language sql stable
+    as $$ select id, email, name from account where id is null; $$;
+
+    create function returns_null_account()
+        returns account language sql stable
+    as $$ select id, email, name from account where id = 9; $$;
+
+    insert into account(id, email, name)
+    values
+        (1, 'aardvark@x.com', 'aardvark'),--all columns non-null
+        (2, 'bat@x.com', null),--mixed: some null, some non-null
+        (null, null, null);--all columns null
+
+    -- comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAllColumnsNonNullAccount {
+                id
+                email
+                name
+                __typename
+            }
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsOneColumnNullAccount {
+                id
+                email
+                name
+                __typename
+            }
+        }
+    $$));
+
+    -- With current implementation we can't distinguish between
+    -- when all columns of a composite type are null and when
+    -- the composite type itself is null. In both these cases
+    -- the result will be null for the top-level field.
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAllColumnsNullAccount {
+                id
+                email
+                name
+                __typename
+            }
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsNullAccount {
+                id
+                email
+                name
+                __typename
+            }
+        }
+    $$));
+
 rollback;
