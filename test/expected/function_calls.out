@@ -2268,7 +2268,7 @@ begin;
 (1 row)
 
     -- With current implementation we can't distinguish between
-    -- when all columns of a composite type are null and when 
+    -- when all columns of a composite type are null and when
     -- the composite type itself is null. In both these cases
     -- the result will be null for the top-level field.
     select jsonb_pretty(graphql.resolve($$
