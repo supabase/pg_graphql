@@ -88,7 +88,7 @@ Functions marked `immutable` or `stable` are available on the query type. Functi
 ## Supported Return Types
 
 
-Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom scalar types](api.md#custom-scalars) are supported as function arguments and return types. Function types returning a table or view are supported as well:
+Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom scalar types](api.md#custom-scalars) are supported as function arguments and return types. Function types returning a table or view are supported as well. Such functions implement the [Node interface](api.md#node):
 
 === "Function"
 
@@ -125,6 +125,7 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
       accountById(accountId: 1) {
           id
           email
+          nodeId
       }
     }
     ```
@@ -137,7 +138,53 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
         "accountById": {
           "id": 1,
           "email": "a@example.com"
+          "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd"
         }
+      }
+    }
+    ```
+
+Since Postgres considers a row/composite type containing only null values to be null, the result can be a little surprising in this case. Instead of an object with all columns null, the top-level field is null:
+
+=== "Function"
+
+    ```sql
+    create table account(
+        id int,
+        email varchar(255),
+        name text null
+    );
+
+    insert into account(id, email, name)
+    values
+        (1, 'aardvark@x.com', 'aardvark'),
+        (2, 'bat@x.com', null),
+        (null, null, null);
+
+    create function returns_account_with_all_null_columns()
+        returns account language sql stable
+    as $$ select id, email, name from account where id is null; $$;
+    ```
+
+=== "Query"
+
+    ```graphql
+    query {
+      returnsAccountWithAllNullColumns {
+        id
+        email
+        name
+        __typename
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "returnsAccountWithAllNullColumns": null
       }
     }
     ```
