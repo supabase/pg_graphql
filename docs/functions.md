@@ -144,7 +144,7 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
     }
     ```
 
-If all the columns of a row are null, the result can be a little surprising. Instead of an object with all columns null, the top-level field is null:
+Since Postgres considers a row/composite type containing only null values to be null, the result can be a little surprising in this case. Instead of an object with all columns null, the top-level field is null:
 
 === "Function"
 
