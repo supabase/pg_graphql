@@ -23,6 +23,11 @@ For arbitrary computations that do not meet the requirements for [generated colu
 --8<-- "test/expected/extend_type_with_function.out"
 ```
 
+If the function is written in SQL, its volatility can impact freshness of data returned in mutations:
+
+```sql
+--8<-- "test/expected/issue_337.out"
+```
 
 ## Computed Relationships
 
