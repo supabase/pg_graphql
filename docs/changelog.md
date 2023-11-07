@@ -55,3 +55,4 @@
 - bugfix: UDF call returned null if the row returned by the function had any null column
 
 ## master
+- bugfix: make non-default args non-null in UDFs
