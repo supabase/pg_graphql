@@ -206,7 +206,12 @@ begin;
                     args {
                         name
                         type {
+                            kind
                             name
+                            ofType {
+                                kind
+                                name
+                            }
                         }
                     }
                 }
@@ -417,7 +422,12 @@ begin;
                     args {
                         name
                         type {
+                            kind
                             name
+                            ofType {
+                                kind
+                                name
+                            }
                         }
                     }
                 }
@@ -614,7 +624,12 @@ begin;
                     args {
                         name
                         type {
+                            kind
                             name
+                            ofType {
+                                kind
+                                name
+                            }
                         }
                     }
                 }
@@ -721,7 +736,12 @@ begin;
                       name
                       defaultValue
                       type {
+                        kind
                         name
+                        ofType {
+                            kind
+                            name
+                        }
                       }
                     }
                   }

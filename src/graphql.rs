@@ -1330,9 +1330,15 @@ fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputVal
             },
         )
         .filter_map(|(arg_type, arg_name, arg_default)| {
-            arg_type
-                .to_graphql_type(None, false, schema)
-                .map(|t| (t, arg_name, arg_default))
+            arg_type.to_graphql_type(None, false, schema).map(|t| {
+                // wrap arg type in non-null if arg is not default
+                let t = if arg_default.is_none() {
+                    __Type::NonNull(NonNullType { type_: Box::new(t) })
+                } else {
+                    t
+                };
+                (t, arg_name, arg_default)
+            })
         })
         .map(|(arg_type, arg_name, arg_default)| __InputValue {
             name_: schema.graphql_function_arg_name(func, arg_name),

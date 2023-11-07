@@ -325,7 +325,12 @@ begin;
                     args {
                         name
                         type {
+                            kind
                             name
+                            ofType {
+                                kind
+                                name
+                            }
                         }
                     }
                 }
@@ -344,13 +349,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "BigInt"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "BigInt"   +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "BigInt"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "BigInt"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -365,13 +380,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "Float"        +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Float"    +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "Float"        +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Float"    +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -386,13 +411,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "BigFloat"     +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "BigFloat" +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "BigFloat"     +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "BigFloat" +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -407,13 +442,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "Float"        +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Float"    +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "Float"        +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Float"    +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -428,13 +473,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "Int"          +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Int"      +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "Int"          +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Int"      +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -449,13 +504,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "Boolean"      +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Boolean"  +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "Boolean"      +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Boolean"  +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -470,13 +535,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -491,13 +566,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -512,13 +597,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -533,13 +628,23 @@ begin;
                              {                              +
                                  "name": "input",           +
                                  "type": {                  +
-                                     "name": "JSON"         +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "JSON"     +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "key",             +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -554,13 +659,23 @@ begin;
                              {                              +
                                  "name": "input",           +
                                  "type": {                  +
-                                     "name": "JSON"         +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "JSON"     +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "key",             +
                                  "type": {                  +
-                                     "name": "String"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "String"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -575,13 +690,23 @@ begin;
                              {                              +
                                  "name": "a",               +
                                  "type": {                  +
-                                     "name": "Int"          +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Int"      +
+                                     }                      +
                                  }                          +
                              },                             +
                              {                              +
                                  "name": "b",               +
                                  "type": {                  +
-                                     "name": "Int"          +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Int"      +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -596,7 +721,12 @@ begin;
                              {                              +
                                  "name": "d",               +
                                  "type": {                  +
-                                     "name": "Date"         +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Date"     +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -611,7 +741,12 @@ begin;
                              {                              +
                                  "name": "t",               +
                                  "type": {                  +
-                                     "name": "Time"         +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Time"     +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -626,7 +761,12 @@ begin;
                              {                              +
                                  "name": "t",               +
                                  "type": {                  +
-                                     "name": "Opaque"       +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Opaque"   +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -641,7 +781,12 @@ begin;
                              {                              +
                                  "name": "t",               +
                                  "type": {                  +
-                                     "name": "Datetime"     +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Datetime" +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -656,7 +801,12 @@ begin;
                              {                              +
                                  "name": "t",               +
                                  "type": {                  +
-                                     "name": "Datetime"     +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "Datetime" +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -671,7 +821,12 @@ begin;
                              {                              +
                                  "name": "input",           +
                                  "type": {                  +
-                                     "name": "UUID"         +
+                                     "kind": "NON_NULL",    +
+                                     "name": null,          +
+                                     "ofType": {            +
+                                         "kind": "SCALAR",  +
+                                         "name": "UUID"     +
+                                     }                      +
                                  }                          +
                              }                              +
                          ],                                 +
@@ -1012,7 +1167,12 @@ begin;
                     args {
                         name
                         type {
+                            kind
                             name
+                            ofType {
+                                kind
+                                name
+                            }
                         }
                     }
                 }
@@ -1031,13 +1191,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "BigInt"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "BigInt"              +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "BigInt"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "BigInt"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1052,13 +1222,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "Float"                   +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Float"               +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "Float"                   +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Float"               +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1073,13 +1253,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "BigFloat"                +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "BigFloat"            +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "BigFloat"                +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "BigFloat"            +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1094,13 +1284,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "Float"                   +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Float"               +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "Float"                   +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Float"               +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1115,13 +1315,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "Int"                     +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int"                 +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "Int"                     +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int"                 +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1136,13 +1346,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "Boolean"                 +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Boolean"             +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "Boolean"                 +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Boolean"             +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1157,13 +1377,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1178,13 +1408,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1199,13 +1439,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1220,13 +1470,23 @@ begin;
                              {                                         +
                                  "name": "input",                      +
                                  "type": {                             +
-                                     "name": "JSON"                    +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "JSON"                +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "key",                        +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1241,13 +1501,23 @@ begin;
                              {                                         +
                                  "name": "input",                      +
                                  "type": {                             +
-                                     "name": "JSON"                    +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "JSON"                +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "key",                        +
                                  "type": {                             +
-                                     "name": "String"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "String"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1262,13 +1532,23 @@ begin;
                              {                                         +
                                  "name": "a",                          +
                                  "type": {                             +
-                                     "name": "Int"                     +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int"                 +
+                                     }                                 +
                                  }                                     +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
                                  "type": {                             +
-                                     "name": "Int"                     +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int"                 +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1283,7 +1563,12 @@ begin;
                              {                                         +
                                  "name": "d",                          +
                                  "type": {                             +
-                                     "name": "Date"                    +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Date"                +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1298,7 +1583,12 @@ begin;
                              {                                         +
                                  "name": "t",                          +
                                  "type": {                             +
-                                     "name": "Time"                    +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Time"                +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1313,7 +1603,12 @@ begin;
                              {                                         +
                                  "name": "t",                          +
                                  "type": {                             +
-                                     "name": "Opaque"                  +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Opaque"              +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1328,7 +1623,12 @@ begin;
                              {                                         +
                                  "name": "t",                          +
                                  "type": {                             +
-                                     "name": "Datetime"                +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Datetime"            +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1343,7 +1643,12 @@ begin;
                              {                                         +
                                  "name": "t",                          +
                                  "type": {                             +
-                                     "name": "Datetime"                +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Datetime"            +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1358,7 +1663,12 @@ begin;
                              {                                         +
                                  "name": "nodeId",                     +
                                  "type": {                             +
-                                     "name": null                      +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "ID"                  +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1373,7 +1683,12 @@ begin;
                              {                                         +
                                  "name": "input",                      +
                                  "type": {                             +
-                                     "name": "UUID"                    +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "UUID"                +
+                                     }                                 +
                                  }                                     +
                              }                                         +
                          ],                                            +
@@ -1710,7 +2025,12 @@ begin;
                     args {
                         name
                         type {
+                            kind
                             name
+                            ofType {
+                                kind
+                                name
+                            }
                         }
                     }
                 }
@@ -1729,37 +2049,52 @@ begin;
                              {                                                  +
                                  "name": "first",                               +
                                  "type": {                                      +
-                                     "name": "Int"                              +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Int",                             +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "last",                                +
                                  "type": {                                      +
-                                     "name": "Int"                              +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Int",                             +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "before",                              +
                                  "type": {                                      +
-                                     "name": "Cursor"                           +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Cursor",                          +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "after",                               +
                                  "type": {                                      +
-                                     "name": "Cursor"                           +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Cursor",                          +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "filter",                              +
                                  "type": {                                      +
-                                     "name": "AccountFilter"                    +
+                                     "kind": "INPUT_OBJECT",                    +
+                                     "name": "AccountFilter",                   +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "orderBy",                             +
                                  "type": {                                      +
-                                     "name": null                               +
+                                     "kind": "LIST",                            +
+                                     "name": null,                              +
+                                     "ofType": {                                +
+                                         "kind": "NON_NULL",                    +
+                                         "name": null                           +
+                                     }                                          +
                                  }                                              +
                              }                                                  +
                          ],                                                     +
@@ -1774,7 +2109,12 @@ begin;
                              {                                                  +
                                  "name": "nodeId",                              +
                                  "type": {                                      +
-                                     "name": null                               +
+                                     "kind": "NON_NULL",                        +
+                                     "name": null,                              +
+                                     "ofType": {                                +
+                                         "kind": "SCALAR",                      +
+                                         "name": "ID"                           +
+                                     }                                          +
                                  }                                              +
                              }                                                  +
                          ],                                                     +
@@ -1798,7 +2138,12 @@ begin;
                              {                                                  +
                                  "name": "idToSearch",                          +
                                  "type": {                                      +
-                                     "name": "Int"                              +
+                                     "kind": "NON_NULL",                        +
+                                     "name": null,                              +
+                                     "ofType": {                                +
+                                         "kind": "SCALAR",                      +
+                                         "name": "Int"                          +
+                                     }                                          +
                                  }                                              +
                              }                                                  +
                          ],                                                     +
@@ -1813,43 +2158,63 @@ begin;
                              {                                                  +
                                  "name": "top",                                 +
                                  "type": {                                      +
-                                     "name": "Int"                              +
+                                     "kind": "NON_NULL",                        +
+                                     "name": null,                              +
+                                     "ofType": {                                +
+                                         "kind": "SCALAR",                      +
+                                         "name": "Int"                          +
+                                     }                                          +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "first",                               +
                                  "type": {                                      +
-                                     "name": "Int"                              +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Int",                             +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "last",                                +
                                  "type": {                                      +
-                                     "name": "Int"                              +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Int",                             +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "before",                              +
                                  "type": {                                      +
-                                     "name": "Cursor"                           +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Cursor",                          +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "after",                               +
                                  "type": {                                      +
-                                     "name": "Cursor"                           +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Cursor",                          +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "filter",                              +
                                  "type": {                                      +
-                                     "name": "AccountFilter"                    +
+                                     "kind": "INPUT_OBJECT",                    +
+                                     "name": "AccountFilter",                   +
+                                     "ofType": null                             +
                                  }                                              +
                              },                                                 +
                              {                                                  +
                                  "name": "orderBy",                             +
                                  "type": {                                      +
-                                     "name": null                               +
+                                     "kind": "LIST",                            +
+                                     "name": null,                              +
+                                     "ofType": {                                +
+                                         "kind": "NON_NULL",                    +
+                                         "name": null                           +
+                                     }                                          +
                                  }                                              +
                              }                                                  +
                          ],                                                     +
@@ -1972,7 +2337,12 @@ begin;
                       name
                       defaultValue
                       type {
+                        kind
                         name
+                        ofType {
+                            kind
+                            name
+                        }
                       }
                     }
                   }
@@ -1994,14 +2364,18 @@ begin;
                              {                            +
                                  "name": "a",             +
                                  "type": {                +
-                                     "name": "Int"        +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "1"      +
                              },                           +
                              {                            +
                                  "name": "b",             +
                                  "type": {                +
-                                     "name": "Int"        +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "2"      +
                              }                            +
@@ -2013,42 +2387,54 @@ begin;
                              {                            +
                                  "name": "a",             +
                                  "type": {                +
-                                     "name": "Int"        +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "1"      +
                              },                           +
                              {                            +
                                  "name": "b",             +
                                  "type": {                +
-                                     "name": "Int"        +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "2"      +
                              },                           +
                              {                            +
                                  "name": "c",             +
                                  "type": {                +
-                                     "name": "Boolean"    +
+                                     "kind": "SCALAR",    +
+                                     "name": "Boolean",   +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "false"  +
                              },                           +
                              {                            +
                                  "name": "d",             +
                                  "type": {                +
-                                     "name": "Float"      +
+                                     "kind": "SCALAR",    +
+                                     "name": "Float",     +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "3.14"   +
                              },                           +
                              {                            +
                                  "name": "e",             +
                                  "type": {                +
-                                     "name": "Float"      +
+                                     "kind": "SCALAR",    +
+                                     "name": "Float",     +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "2.718"  +
                              },                           +
                              {                            +
                                  "name": "f",             +
                                  "type": {                +
-                                     "name": "String"     +
+                                     "kind": "SCALAR",    +
+                                     "name": "String",    +
+                                     "ofType": null       +
                                  },                       +
                                  "defaultValue": "'hello'"+
                              }                            +
@@ -2060,7 +2446,12 @@ begin;
                              {                            +
                                  "name": "nodeId",        +
                                  "type": {                +
-                                     "name": null         +
+                                     "kind": "NON_NULL",  +
+                                     "name": null,        +
+                                     "ofType": {          +
+                                         "kind": "SCALAR",+
+                                         "name": "ID"     +
+                                     }                    +
                                  },                       +
                                  "defaultValue": null     +
                              }                            +
