@@ -1,0 +1,74 @@
+begin;
+    create function "someFunc" (arg uuid)
+        returns int
+        immutable
+        language sql
+    as $$ select 1; $$;
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+            __type(name: "Query") {
+                fields(includeDeprecated: true) {
+                    name
+                    args {
+                      name
+                      type {
+                        kind
+                        name
+                        ofType {
+                          kind
+                          name
+                        }
+                      }
+                    }
+                }
+
+            }
+            }
+        $$)
+    );
+                     jsonb_pretty                      
+-------------------------------------------------------
+ {                                                    +
+     "data": {                                        +
+         "__type": {                                  +
+             "fields": [                              +
+                 {                                    +
+                     "args": [                        +
+                         {                            +
+                             "name": "nodeId",        +
+                             "type": {                +
+                                 "kind": "NON_NULL",  +
+                                 "name": null,        +
+                                 "ofType": {          +
+                                     "kind": "SCALAR",+
+                                     "name": "ID"     +
+                                 }                    +
+                             }                        +
+                         }                            +
+                     ],                               +
+                     "name": "node"                   +
+                 },                                   +
+                 {                                    +
+                     "args": [                        +
+                         {                            +
+                             "name": "arg",           +
+                             "type": {                +
+                                 "kind": "NON_NULL",  +
+                                 "name": null,        +
+                                 "ofType": {          +
+                                     "kind": "SCALAR",+
+                                     "name": "UUID"   +
+                                 }                    +
+                             }                        +
+                         }                            +
+                     ],                               +
+                     "name": "someFunc"               +
+                 }                                    +
+             ]                                        +
+         }                                            +
+     }                                                +
+ }
+(1 row)
+
+rollback;
