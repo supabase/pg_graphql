@@ -6,6 +6,26 @@ By default, PostgreSQL table and column names are not inflected when reflecting 
 
 Individual table, column, and relationship names may also be [manually overridden](configuration.md#tables-type).
 
+## Primary Keys (Required)
+
+Every table must have a primary key for it to be exposed in the GraphQL schema. For example, the following `Blog` table will be available in the GraphQL schema as `blogCollection` since it has a primary key named `id`:
+
+```sql
+create table "Blog"(
+  id serial primary key,
+  name varchar(255) not null,
+);
+```
+
+But the following table will not be exposed because it doesn't have a primary key:
+
+```sql
+create table "Blog"(
+  id int,
+  name varchar(255) not null,
+);
+```
+
 
 ## QueryType
 
