@@ -18,8 +18,8 @@ For more experienced users, or when you're ready to productionize your applicati
 
 ### Supabase Studio
 
-The easiest way to make a GraphQL request with Supabase is to use [Supabase Studio's builtin GraphiQL IDE](https://app.supabase.com/project/_/database/graphiql).
-You can access GraphiQL [here](https://app.supabase.com/project/_/database/graphiql) by selecting the relevant project. Alternatively, navigate there within Studio at `Database > GraphiQL`.
+The easiest way to make a GraphQL request with Supabase is to use [Supabase Studio's builtin GraphiQL IDE](https://app.supabase.com/project/_/api/graphiql).
+You can access GraphiQL [here](https://app.supabase.com/project/_/api/graphiql) by selecting the relevant project. Alternatively, navigate there within Studio at `API Docs > GraphQL > GraphiQL`.
 
 ![graphiql](./assets/supabase_graphiql.png)
 
