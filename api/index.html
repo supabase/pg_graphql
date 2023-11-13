@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#querytype" class="md-skip">
+        <a href="#primary-keys-required" class="md-skip">
           Skip to content
         </a>
       
@@ -284,6 +284,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primary-keys-required" class="md-nav__link">
+    Primary Keys (Required)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#querytype" class="md-nav__link">
@@ -712,6 +719,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#primary-keys-required" class="md-nav__link">
+    Primary Keys (Required)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#querytype" class="md-nav__link">
     QueryType
   </a>
@@ -919,6 +933,25 @@
 <p>In our API, each SQL table is reflected as a set of GraphQL types. At a high level, tables become types and columns/foreign keys become fields on those types.</p>
 <p>By default, PostgreSQL table and column names are not inflected when reflecting GraphQL  names. For example, an <code>account_holder</code> table has GraphQL type name <code>account_holder</code>. In cases where SQL entities are named using <code>snake_case</code>, <a href="../configuration/#inflection">enable inflection</a> to match GraphQL/Javascript conventions e.g. <code>account_holder</code> -&gt; <code>AccountHolder</code>.</p>
 <p>Individual table, column, and relationship names may also be <a href="../configuration/#tables-type">manually overridden</a>.</p>
+<h2 id="primary-keys-required">Primary Keys (Required)</h2>
+<p>Every table must have a primary key for it to be exposed in the GraphQL schema. For example, the following <code>Blog</code> table will be available in the GraphQL schema as <code>blogCollection</code> since it has a primary key named <code>id</code>:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="p">);</span>
+</code></pre></div></td></tr></table></div>
+<p>But the following table will not be exposed because it doesn't have a primary key:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Blog&quot;</span><span class="p">(</span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">int</span><span class="p">,</span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="p">);</span>
+</code></pre></div></td></tr></table></div>
 <h2 id="querytype">QueryType</h2>
 <p>The <code>Query</code> type is the entrypoint for all read access into the graph.</p>
 <h3 id="node">Node</h3>
