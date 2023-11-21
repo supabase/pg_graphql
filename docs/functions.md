@@ -18,7 +18,7 @@ For example, a function to add two numbers will be available on the query type a
 
     ```graphql
     type Query {
-      addNums(a: Int, b: Int): Int
+      addNums(a: Int!, b: Int!): Int
     }
     ```
 
@@ -62,7 +62,7 @@ Functions marked `immutable` or `stable` are available on the query type. Functi
 
     ```graphql
     type Mutation {
-      addAccount(email: String): Int
+      addAccount(email: String!): Int
     }
     ```
 
@@ -110,11 +110,11 @@ Built-in GraphQL scalar types `Int`, `Float`, `String`, `Boolean` and [custom sc
     as $$ select id, email from account where id = "accountId"; $$;
     ```
 
-=== "MutationType"
+=== "QueryType"
 
     ```graphql
-    type Mutation {
-      addAccount(email: String): Int
+    type Query {
+      accountById(email: String!): Account
     }
     ```
 
@@ -161,7 +161,7 @@ Since Postgres considers a row/composite type containing only null values to be 
         (2, 'bat@x.com', null),
         (null, null, null);
 
-    create function returns_account_with_all_null_columns()
+    create function "returnsAccountWithAllNullColumns"()
         returns account language sql stable
     as $$ select id, email, name from account where id is null; $$;
     ```
@@ -217,7 +217,7 @@ Functions returning multiple rows of a table or view are exposed as [collections
     ```graphql
     type Query {
       accountsByEmail(
-        emailToSearch: String
+        emailToSearch: String!
 
         """Query the first `n` records in the collection"""
         first: Int
@@ -323,7 +323,6 @@ Functions with default arguments can have their default arguments omitted.
 
 The following features are not yet supported. Any function using these features is not exposed in the API:
 
-* Functions that return a record type
 * Functions that accept a table's tuple type
 * Overloaded functions
 * Functions with a nameless argument
