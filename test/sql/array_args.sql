@@ -111,6 +111,36 @@ begin;
         }
     $$));
 
+    create function get_date_array_item(arr date[], i int)
+        returns date language sql stable
+    as $$ select arr[i]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getDateArrayItem(arr: ["2023-11-22", "2023-11-23", "2023-11-24"], i: 3)
+        }
+    $$));
+
+    create function get_time_array_item(arr time[], i int)
+        returns time language sql stable
+    as $$ select arr[i]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getTimeArrayItem(arr: ["5:05", "5:06", "5:07"], i: 1)
+        }
+    $$));
+
+    create function get_timestamp_array_item(arr timestamp[], i int)
+        returns timestamp language sql stable
+    as $$ select arr[i]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getTimestampArrayItem(arr: ["2023-07-28 12:39:05", "2023-08-28 12:39:05", "2023-09-28 12:39:05"], i: 2)
+        }
+    $$));
+
     -- functions returning arrays
     create function returns_smallint_array()
         returns smallint[] language sql stable
@@ -222,4 +252,72 @@ begin;
         }
     $$));
 
+    create function returns_date_array()
+        returns date[] language sql stable
+    as $$ select '{"2023-11-22", "2023-11-23", "2023-11-24"}'::date[]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsDateArray
+        }
+    $$));
+
+    create function returns_time_array()
+        returns time[] language sql stable
+    as $$ select '{"5:05", "5:06", "5:07"}'::time[]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTimeArray
+        }
+    $$));
+
+    create function returns_timestamp_array()
+        returns timestamp[] language sql stable
+    as $$ select '{"2023-07-28 12:39:05", "2023-08-28 12:39:05", "2023-09-28 12:39:05"}'::timestamp[]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTimestampArray
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+    query IntrospectionQuery {
+        __schema {
+            queryType {
+                fields {
+                    name
+                    description
+                    type {
+                        kind
+                        name
+                        ofType {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                            }
+                        }
+                    }
+                    args {
+                        name
+                        type {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                                ofType {
+                                    kind
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
 rollback;
