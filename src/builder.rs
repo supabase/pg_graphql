@@ -3,6 +3,7 @@ use crate::gson;
 use crate::parser_util::*;
 use crate::sql_types::*;
 use graphql_parser::query::*;
+use pgrx::notice;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -564,6 +565,7 @@ pub struct FunctionCallBuilder {
 
 pub enum FuncCallReturnTypeBuilder {
     Scalar,
+    List,
     Node(NodeBuilder),
     Connection(ConnectionBuilder),
 }
@@ -600,6 +602,7 @@ where
 
             let return_type_builder = match func_call_resp_type.return_type.deref() {
                 __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
+                __Type::List(_) => FuncCallReturnTypeBuilder::List,
                 __Type::Node(_) => {
                     let node_builder = to_node_builder(
                         field,
@@ -620,7 +623,8 @@ where
                     )?;
                     FuncCallReturnTypeBuilder::Connection(connection_builder)
                 }
-                _ => {
+                t => {
+                    notice!("TYPE: {t:?}");
                     return Err(format!(
                         "unsupported return type: {}",
                         func_call_resp_type
@@ -628,7 +632,7 @@ where
                             .unmodified_type()
                             .name()
                             .ok_or("Encountered type without name in function call builder")?
-                    ))
+                    ));
                 }
             };
 

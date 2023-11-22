@@ -564,6 +564,10 @@ impl FunctionCallBuilder {
                 let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
                 format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
             }
+            FuncCallReturnTypeBuilder::List => {
+                let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
+                format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
+            }
             FuncCallReturnTypeBuilder::Node(node_builder) => {
                 let select_clause = node_builder.to_sql(block_name, param_context)?;
                 let select_clause = if select_clause.is_empty() {
@@ -1353,6 +1357,9 @@ fn apply_suffix_casts(type_oid: u32) -> String {
         20 => "::text",           // bigints as text
         114 | 3802 => "#>> '{}'", // json/b as stringified
         1700 => "::text",         // numeric as text
+        1016 => "::text[]",       // bigint arrays as array of text
+        199 | 3807 => "#>> '{}'", // json/b array as array of text
+        1231 => "::text[]",       // numeric array as array of text
         _ => "",
     }
     .to_string()

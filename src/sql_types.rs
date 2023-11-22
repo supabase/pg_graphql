@@ -125,6 +125,7 @@ impl Function {
         self.args().all(|(arg_type, _, _, _)| {
             if let Some(return_type) = types.get(&arg_type) {
                 return_type.category == TypeCategory::Other
+                    || return_type.category == TypeCategory::Array
             } else {
                 false
             }
@@ -137,7 +138,6 @@ impl Function {
                 && return_type.name != "record"
                 && return_type.name != "trigger"
                 && return_type.name != "event_trigger"
-                && !self.type_name.ends_with("[]")
         } else {
             false
         }
