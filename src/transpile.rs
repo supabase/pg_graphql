@@ -1358,7 +1358,7 @@ fn apply_suffix_casts(type_oid: u32) -> String {
         114 | 3802 => "#>> '{}'", // json/b as stringified
         1700 => "::text",         // numeric as text
         1016 => "::text[]",       // bigint arrays as array of text
-        199 | 3807 => "#>> '{}'", // json/b array as array of text
+        199 | 3807 => "::text[]", // json/b array as array of text
         1231 => "::text[]",       // numeric array as array of text
         _ => "",
     }

@@ -67,7 +67,7 @@ begin;
 
     select jsonb_pretty(graphql.resolve($$
         query {
-            getBoolArrayItem(arr: [true, false], i: 2)
+            getBoolArrayItem(arr: [true, false], i: 1)
         }
     $$));
 
@@ -78,6 +78,36 @@ begin;
     select jsonb_pretty(graphql.resolve($$
         query {
             getUuidArrayItem(arr: ["e8dc3a9a-2c72-11ee-b094-776acede6790", "d3ef3a8c-2c72-11ee-b094-776acede7221"], i: 2)
+        }
+    $$));
+
+    create function get_text_array_item(arr text[], i int)
+        returns text language sql stable
+    as $$ select arr[i]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getTextArrayItem(arr: ["hello", "world"], i: 1)
+        }
+    $$));
+
+    create function get_json_array_item(arr json[], i int)
+        returns json language sql stable
+    as $$ select arr[i]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getJsonArrayItem(arr: ["{\"hello\": \"world\"}", "{\"bye\": \"world\"}"], i: 2)
+        }
+    $$));
+
+    create function get_jsonb_array_item(arr jsonb[], i int)
+        returns jsonb language sql stable
+    as $$ select arr[i]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getJsonbArrayItem(arr: ["{\"hello\": \"world\"}", "{\"bye\": \"world\"}"], i: 1)
         }
     $$));
 
@@ -159,6 +189,36 @@ begin;
     select jsonb_pretty(graphql.resolve($$
         query {
             returnsUuidArray
+        }
+    $$));
+
+    create function returns_text_array()
+        returns text[] language sql stable
+    as $$ select '{"hello", "world"}'::text[]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTextArray
+        }
+    $$));
+
+    create function returns_json_array()
+        returns json[] language sql stable
+    as $$ select array[json_build_object('hello', 'world'), json_build_object('bye', 'world')]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsJsonArray
+        }
+    $$));
+
+    create function returns_jsonb_array()
+        returns jsonb[] language sql stable
+    as $$ select array[jsonb_build_object('hello', 'world'), jsonb_build_object('bye', 'world')]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsJsonbArray
         }
     $$));
 
