@@ -107,26 +107,6 @@ begin;
         }
     $$));
 
-    create function func_accepting_array(a int[])
-        returns int language sql immutable
-    as $$ select 0; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            funcAcceptingArray(a: [1, 2, 3])
-        }
-    $$));
-
-    create function func_returning_array()
-        returns int[] language sql immutable
-    as $$ select array[1, 2, 3]; $$;
-
-    select jsonb_pretty(graphql.resolve($$
-        query {
-            funcReturningArray
-        }
-    $$));
-
     -- function returning type not on search path
     create schema dev;
     create table dev.book(
