@@ -3,7 +3,6 @@ use crate::gson;
 use crate::parser_util::*;
 use crate::sql_types::*;
 use graphql_parser::query::*;
-use pgrx::notice;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -623,8 +622,7 @@ where
                     )?;
                     FuncCallReturnTypeBuilder::Connection(connection_builder)
                 }
-                t => {
-                    notice!("TYPE: {t:?}");
+                _ => {
                     return Err(format!(
                         "unsupported return type: {}",
                         func_call_resp_type
@@ -2211,6 +2209,14 @@ impl __Schema {
                                     let inner_type = (*(non_null_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
                                         &inner_type,
+                                        selection_field,
+                                        fragment_definitions,
+                                        variables,
+                                    )?)
+                                }
+                                __Type::FuncCallResponse(func_call_resp_type) => {
+                                    Some(self.to_type_builder_from_type(
+                                        &func_call_resp_type.return_type,
                                         selection_field,
                                         fragment_definitions,
                                         variables,

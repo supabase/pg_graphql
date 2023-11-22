@@ -187,6 +187,57 @@ begin;
  }
 (1 row)
 
+    create function get_date_array_item(arr date[], i int)
+        returns date language sql stable
+    as $$ select arr[i]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getDateArrayItem(arr: ["2023-11-22", "2023-11-23", "2023-11-24"], i: 3)
+        }
+    $$));
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "getDateArrayItem": "2023-11-24"+
+     }                                   +
+ }
+(1 row)
+
+    create function get_time_array_item(arr time[], i int)
+        returns time language sql stable
+    as $$ select arr[i]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getTimeArrayItem(arr: ["5:05", "5:06", "5:07"], i: 1)
+        }
+    $$));
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "getTimeArrayItem": "05:05:00"+
+     }                                 +
+ }
+(1 row)
+
+    create function get_timestamp_array_item(arr timestamp[], i int)
+        returns timestamp language sql stable
+    as $$ select arr[i]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            getTimestampArrayItem(arr: ["2023-07-28 12:39:05", "2023-08-28 12:39:05", "2023-09-28 12:39:05"], i: 2)
+        }
+    $$));
+                      jsonb_pretty                      
+--------------------------------------------------------
+ {                                                     +
+     "data": {                                         +
+         "getTimestampArrayItem": "2023-08-28T12:39:05"+
+     }                                                 +
+ }
+(1 row)
+
     -- functions returning arrays
     create function returns_smallint_array()
         returns smallint[] language sql stable
@@ -411,6 +462,984 @@ begin;
              "{\"bye\": \"world\"}"   +
          ]                            +
      }                                +
+ }
+(1 row)
+
+    create function returns_date_array()
+        returns date[] language sql stable
+    as $$ select '{"2023-11-22", "2023-11-23", "2023-11-24"}'::date[]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsDateArray
+        }
+    $$));
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "returnsDateArray": [+
+             "2023-11-22",    +
+             "2023-11-23",    +
+             "2023-11-24"     +
+         ]                    +
+     }                        +
+ }
+(1 row)
+
+    create function returns_time_array()
+        returns time[] language sql stable
+    as $$ select '{"5:05", "5:06", "5:07"}'::time[]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTimeArray
+        }
+    $$));
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "returnsTimeArray": [+
+             "05:05:00",      +
+             "05:06:00",      +
+             "05:07:00"       +
+         ]                    +
+     }                        +
+ }
+(1 row)
+
+    create function returns_timestamp_array()
+        returns timestamp[] language sql stable
+    as $$ select '{"2023-07-28 12:39:05", "2023-08-28 12:39:05", "2023-09-28 12:39:05"}'::timestamp[]; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsTimestampArray
+        }
+    $$));
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "returnsTimestampArray": [+
+             "2023-07-28T12:39:05",+
+             "2023-08-28T12:39:05",+
+             "2023-09-28T12:39:05" +
+         ]                         +
+     }                             +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+    query IntrospectionQuery {
+        __schema {
+            queryType {
+                fields {
+                    name
+                    description
+                    type {
+                        kind
+                        name
+                        ofType {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                            }
+                        }
+                    }
+                    args {
+                        name
+                        type {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                                ofType {
+                                    kind
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } $$));
+                              jsonb_pretty                              
+------------------------------------------------------------------------
+ {                                                                     +
+     "data": {                                                         +
+         "__schema": {                                                 +
+             "queryType": {                                            +
+                 "fields": [                                           +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "BigInt"          +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getBigintArrayItem",                 +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "BigInt",                         +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "BigInt",                     +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Boolean"         +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getBoolArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Boolean",                        +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Boolean",                    +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Date"            +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getDateArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Date",                           +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Date",                       +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Float"           +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getDoubleArrayItem",                 +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Float",                          +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Float",                      +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Int"             +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getIntArrayItem",                    +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Int",                            +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Int",                        +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "JSON"            +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getJsonArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "JSON",                           +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "JSON",                       +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "JSON"            +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getJsonbArrayItem",                  +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "JSON",                           +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "JSON",                       +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "BigFloat"        +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getNumericArrayItem",                +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "BigFloat",                       +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "BigFloat",                   +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Float"           +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getRealArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Float",                          +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Float",                      +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Int"             +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getSmallintArrayItem",               +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Int",                            +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Int",                        +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "String"          +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getTextArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "String",                         +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "String",                     +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Time"            +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getTimeArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Time",                           +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Time",                       +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Datetime"        +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getTimestampArrayItem",              +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "Datetime",                       +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Datetime",                   +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "UUID"            +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             },                                        +
+                             {                                         +
+                                 "name": "i",                          +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "Int",                +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "getUuidArrayItem",                   +
+                         "type": {                                     +
+                             "kind": "SCALAR",                         +
+                             "name": "UUID",                           +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "UUID",                       +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "nodeId",                     +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "SCALAR",             +
+                                         "name": "ID",                 +
+                                         "ofType": null                +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "node",                               +
+                         "type": {                                     +
+                             "kind": "INTERFACE",                      +
+                             "name": "Node",                           +
+                             "ofType": null                            +
+                         },                                            +
+                         "description": "Retrieve a record by its `ID`"+
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsBigintArray",                 +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "BigInt"                  +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsBoolArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Boolean"                 +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsDateArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Date"                    +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsDoubleArray",                 +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Float"                   +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsIntArray",                    +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsJsonArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "JSON"                    +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsJsonbArray",                  +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "JSON"                    +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsNumericArray",                +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "BigFloat"                +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsRealArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Float"                   +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsSmallintArray",               +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Int"                     +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsTextArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "String"                  +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsTimeArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Time"                    +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsTimestampArray",              +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "Datetime"                +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                         ],                                            +
+                         "name": "returnsUuidArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "LIST",                       +
+                                 "name": null,                         +
+                                 "ofType": {                           +
+                                     "kind": "SCALAR",                 +
+                                     "name": "UUID"                    +
+                                 }                                     +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
+                     }                                                 +
+                 ]                                                     +
+             }                                                         +
+         }                                                             +
+     }                                                                 +
  }
 (1 row)
 
