@@ -560,11 +560,7 @@ impl FunctionCallBuilder {
         let func_name = quote_ident(&self.function.name);
 
         let query = match &self.return_type_builder {
-            FuncCallReturnTypeBuilder::Scalar => {
-                let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
-                format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
-            }
-            FuncCallReturnTypeBuilder::List => {
+            FuncCallReturnTypeBuilder::Scalar | FuncCallReturnTypeBuilder::List => {
                 let type_adjustment_clause = apply_suffix_casts(self.function.type_oid);
                 format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
             }
