@@ -528,6 +528,27 @@ begin;
  }
 (1 row)
 
+    -- array args with default values are not yet supported
+    create function return_input_array(arr smallint[] = '{4, 2}'::smallint[])
+        returns smallint[] language sql stable
+    as $$ select arr; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnInputArray
+        }
+    $$));
+                      jsonb_pretty                       
+---------------------------------------------------------
+ {                                                      +
+     "data": null,                                      +
+     "errors": [                                        +
+         {                                              +
+             "message": "Invalid input for NonNull type"+
+         }                                              +
+     ]                                                  +
+ }
+(1 row)
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
@@ -1127,6 +1148,36 @@ begin;
                              "ofType": null                            +
                          },                                            +
                          "description": "Retrieve a record by its `ID`"+
+                     },                                                +
+                     {                                                 +
+                         "args": [                                     +
+                             {                                         +
+                                 "name": "arr",                        +
+                                 "type": {                             +
+                                     "kind": "NON_NULL",               +
+                                     "name": null,                     +
+                                     "ofType": {                       +
+                                         "kind": "LIST",               +
+                                         "name": null,                 +
+                                         "ofType": {                   +
+                                             "kind": "SCALAR",         +
+                                             "name": "Int"             +
+                                         }                             +
+                                     }                                 +
+                                 }                                     +
+                             }                                         +
+                         ],                                            +
+                         "name": "returnInputArray",                   +
+                         "type": {                                     +
+                             "kind": "LIST",                           +
+                             "name": null,                             +
+                             "ofType": {                               +
+                                 "kind": "SCALAR",                     +
+                                 "name": "Int",                        +
+                                 "ofType": null                        +
+                             }                                         +
+                         },                                            +
+                         "description": null                           +
                      },                                                +
                      {                                                 +
                          "args": [                                     +

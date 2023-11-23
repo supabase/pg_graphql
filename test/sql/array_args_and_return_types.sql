@@ -282,6 +282,17 @@ begin;
         }
     $$));
 
+    -- array args with default values are not yet supported
+    create function return_input_array(arr smallint[] = '{4, 2}'::smallint[])
+        returns smallint[] language sql stable
+    as $$ select arr; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnInputArray
+        }
+    $$));
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {
