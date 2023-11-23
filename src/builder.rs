@@ -2195,7 +2195,12 @@ impl __Schema {
                             None => __TypeField::PossibleTypes(None),
                         },
                         "ofType" => {
-                            let unwrapped_type_builder = match type_ {
+                            let field_type = if let __Type::FuncCallResponse(func_call_resp_type) = type_ {
+                                func_call_resp_type.return_type.deref()
+                            } else {
+                                type_
+                            };
+                            let unwrapped_type_builder = match field_type {
                                 __Type::List(list_type) => {
                                     let inner_type: __Type = (*(list_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
@@ -2209,14 +2214,6 @@ impl __Schema {
                                     let inner_type = (*(non_null_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
                                         &inner_type,
-                                        selection_field,
-                                        fragment_definitions,
-                                        variables,
-                                    )?)
-                                }
-                                __Type::FuncCallResponse(func_call_resp_type) => {
-                                    Some(self.to_type_builder_from_type(
-                                        &func_call_resp_type.return_type,
                                         selection_field,
                                         fragment_definitions,
                                         variables,
