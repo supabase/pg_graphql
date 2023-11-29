@@ -56,3 +56,4 @@
 
 ## master
 - bugfix: make non-default args non-null in UDFs
+- feature: add support for array types in UDFs
