@@ -2436,7 +2436,7 @@ begin;
                                      "name": "String",    +
                                      "ofType": null       +
                                  },                       +
-                                 "defaultValue": "'hello'"+
+                                 "defaultValue": "hello"  +
                              }                            +
                          ],                               +
                          "name": "funcWithDefaults"       +
