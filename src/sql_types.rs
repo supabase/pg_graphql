@@ -134,12 +134,39 @@ impl Function {
 
     fn return_type_is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
         if let Some(return_type) = types.get(&self.type_oid) {
+            let array_element_type_is_supported = self.array_element_type_is_supported(
+                &return_type.category,
+                return_type.array_element_type_oid,
+                types,
+            );
             return_type.category != TypeCategory::Pseudo
                 && return_type.name != "record"
                 && return_type.name != "trigger"
                 && return_type.name != "event_trigger"
+                && array_element_type_is_supported
         } else {
             false
+        }
+    }
+
+    fn array_element_type_is_supported(
+        &self,
+        type_category: &TypeCategory,
+        array_element_type_oid: Option<u32>,
+        types: &HashMap<u32, Arc<Type>>,
+    ) -> bool {
+        if *type_category == TypeCategory::Array {
+            if let Some(array_element_type_oid) = array_element_type_oid {
+                if let Some(array_element_type) = types.get(&array_element_type_oid) {
+                    array_element_type.category == TypeCategory::Other
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            true
         }
     }
 

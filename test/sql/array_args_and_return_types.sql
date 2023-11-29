@@ -662,4 +662,22 @@ begin;
         }
     $$));
 
+    -- composite type arrays are not supported
+    create table account(
+        id serial primary key,
+        email varchar(255) not null
+    );
+
+    create function returns_account_array()
+        returns Account[] language sql stable
+    as $$ select '{"(1, \"a@example.com\")", "(2, \"b@example.com\")"}'::Account[]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnsAccountArray {
+                id
+            }
+        }
+    $$));
+
 rollback;
