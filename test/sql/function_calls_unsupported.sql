@@ -145,6 +145,21 @@ begin;
         }
     $$));
 
+
+    -- function returning enum
+    create type "Algorithm" as enum ('aead-ietf');
+    comment on type "Algorithm" is '@graphql({"mappings": {"aead-ietf": "AEAD_IETF"}})';
+
+    create function return_algorithm()
+        returns "Algorithm" language sql volatile
+    as $$ select 'aead-ietf'::"Algorithm"; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        mutation {
+            returnAlgorithm
+        }
+    $$));
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {

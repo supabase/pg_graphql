@@ -140,6 +140,7 @@ impl Function {
                 types,
             );
             return_type.category != TypeCategory::Pseudo
+                && return_type.category != TypeCategory::Enum
                 && return_type.name != "record"
                 && return_type.name != "trigger"
                 && return_type.name != "event_trigger"
