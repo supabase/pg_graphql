@@ -160,6 +160,16 @@ begin;
         }
     $$));
 
+    create function accept_algorithm(e "Algorithm")
+        returns int language sql stable
+    as $$ select 0; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            acceptAlgorithm(e: "AEAD_IETF")
+        }
+    $$));
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {

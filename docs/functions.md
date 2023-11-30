@@ -420,4 +420,4 @@ The following features are not yet supported. Any function using these features 
 * Functions returning void
 * Variadic functions
 * Functions that accept or return an array of composite type
-* Functions that return an enum type or an array of enum type
+* Functions that accept or return an enum type or an array of enum type

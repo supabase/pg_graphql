@@ -263,6 +263,26 @@ begin;
  }
 (1 row)
 
+    create function accept_algorithm(e "Algorithm")
+        returns int language sql stable
+    as $$ select 0; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            acceptAlgorithm(e: "AEAD_IETF")
+        }
+    $$));
+                               jsonb_pretty                               
+--------------------------------------------------------------------------
+ {                                                                       +
+     "data": null,                                                       +
+     "errors": [                                                         +
+         {                                                               +
+             "message": "Unknown field \"acceptAlgorithm\" on type Query"+
+         }                                                               +
+     ]                                                                   +
+ }
+(1 row)
+
     select jsonb_pretty(graphql.resolve($$
     query IntrospectionQuery {
         __schema {

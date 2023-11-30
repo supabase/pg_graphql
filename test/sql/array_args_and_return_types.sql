@@ -694,4 +694,14 @@ begin;
         }
     $$));
 
+    create function accept_algorithm_array(e "Algorithm"[])
+        returns int language sql stable
+    as $$ select 0; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            acceptAlgorithmArray(e: ["AEAD_IETF"])
+        }
+    $$));
+
 rollback;

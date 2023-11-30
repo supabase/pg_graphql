@@ -123,9 +123,14 @@ impl Function {
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
         self.args().all(|(arg_type, _, _, _)| {
-            if let Some(return_type) = types.get(&arg_type) {
-                return_type.category == TypeCategory::Other
-                    || return_type.category == TypeCategory::Array
+            if let Some(arg_type) = types.get(&arg_type) {
+                let array_element_type_is_supported = self.array_element_type_is_supported(
+                    &arg_type.category,
+                    arg_type.array_element_type_oid,
+                    types,
+                );
+                arg_type.category == TypeCategory::Other
+                    || (arg_type.category == TypeCategory::Array && array_element_type_is_supported)
             } else {
                 false
             }
