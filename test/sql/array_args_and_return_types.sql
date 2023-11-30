@@ -680,4 +680,18 @@ begin;
         }
     $$));
 
+    -- enum type arrays are not supported
+    create type "Algorithm" as enum ('aead-ietf');
+    comment on type "Algorithm" is '@graphql({"mappings": {"aead-ietf": "AEAD_IETF"}})';
+
+    create function return_algorithm_array()
+        returns "Algorithm"[] language sql stable
+    as $$ select array['aead-ietf']::"Algorithm"[]; $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            returnAlgorithmArray
+        }
+    $$));
+
 rollback;
