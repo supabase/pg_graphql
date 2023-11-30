@@ -123,8 +123,14 @@ impl Function {
 
     fn arg_types_are_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
         self.args().all(|(arg_type, _, _, _)| {
-            if let Some(return_type) = types.get(&arg_type) {
-                return_type.category == TypeCategory::Other
+            if let Some(arg_type) = types.get(&arg_type) {
+                let array_element_type_is_supported = self.array_element_type_is_supported(
+                    &arg_type.category,
+                    arg_type.array_element_type_oid,
+                    types,
+                );
+                arg_type.category == TypeCategory::Other
+                    || (arg_type.category == TypeCategory::Array && array_element_type_is_supported)
             } else {
                 false
             }
@@ -133,13 +139,40 @@ impl Function {
 
     fn return_type_is_supported(&self, types: &HashMap<u32, Arc<Type>>) -> bool {
         if let Some(return_type) = types.get(&self.type_oid) {
+            let array_element_type_is_supported = self.array_element_type_is_supported(
+                &return_type.category,
+                return_type.array_element_type_oid,
+                types,
+            );
             return_type.category != TypeCategory::Pseudo
+                && return_type.category != TypeCategory::Enum
                 && return_type.name != "record"
                 && return_type.name != "trigger"
                 && return_type.name != "event_trigger"
-                && !self.type_name.ends_with("[]")
+                && array_element_type_is_supported
         } else {
             false
+        }
+    }
+
+    fn array_element_type_is_supported(
+        &self,
+        type_category: &TypeCategory,
+        array_element_type_oid: Option<u32>,
+        types: &HashMap<u32, Arc<Type>>,
+    ) -> bool {
+        if *type_category == TypeCategory::Array {
+            if let Some(array_element_type_oid) = array_element_type_oid {
+                if let Some(array_element_type) = types.get(&array_element_type_oid) {
+                    array_element_type.category == TypeCategory::Other
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            true
         }
     }
 

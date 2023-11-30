@@ -57,3 +57,4 @@
 ## master
 - bugfix: make non-default args non-null in UDFs
 - bugfix: default value of a string type argument in a UDF was wrapped in single quotes
+- feature: add support for array types in UDFs

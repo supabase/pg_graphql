@@ -564,6 +564,7 @@ pub struct FunctionCallBuilder {
 
 pub enum FuncCallReturnTypeBuilder {
     Scalar,
+    List,
     Node(NodeBuilder),
     Connection(ConnectionBuilder),
 }
@@ -600,6 +601,7 @@ where
 
             let return_type_builder = match func_call_resp_type.return_type.deref() {
                 __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
+                __Type::List(_) => FuncCallReturnTypeBuilder::List,
                 __Type::Node(_) => {
                     let node_builder = to_node_builder(
                         field,
@@ -628,7 +630,7 @@ where
                             .unmodified_type()
                             .name()
                             .ok_or("Encountered type without name in function call builder")?
-                    ))
+                    ));
                 }
             };
 
@@ -2193,7 +2195,12 @@ impl __Schema {
                             None => __TypeField::PossibleTypes(None),
                         },
                         "ofType" => {
-                            let unwrapped_type_builder = match type_ {
+                            let field_type = if let __Type::FuncCallResponse(func_call_resp_type) = type_ {
+                                func_call_resp_type.return_type.deref()
+                            } else {
+                                type_
+                            };
+                            let unwrapped_type_builder = match field_type {
                                 __Type::List(list_type) => {
                                     let inner_type: __Type = (*(list_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(

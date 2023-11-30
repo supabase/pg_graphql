@@ -278,6 +278,97 @@ Functions returning multiple rows of a table or view are exposed as [collections
 
     A set returning function with any of its argument names clashing with argument names of a collection (`first`, `last`, `before`, `after`, `filter`, or `orderBy`) will not be exposed.
 
+Functions accepting or returning arrays of non-composite types are also supported. In the following example, the `ids` array is used to filter rows from the `Account` table:
+
+=== "Function"
+
+    ```sql
+    create table "Account"(
+      id serial primary key,
+      email varchar(255) not null
+    );
+
+    insert into "Account"(email)
+    values
+      ('a@example.com'),
+      ('b@example.com'),
+      ('c@example.com');
+
+    create function "accountsByIds"("ids" int[])
+      returns setof "Account"
+      stable
+      language sql
+    as $$ select id, email from "Account" where id = any(ids); $$;
+    ```
+
+=== "QueryType"
+
+    ```graphql
+    type Query {
+      accountsByIds(
+        ids: Int[]!
+
+        """Query the first `n` records in the collection"""
+        first: Int
+
+        """Query the last `n` records in the collection"""
+        last: Int
+
+        """Query values in the collection before the provided cursor"""
+        before: Cursor
+
+        """Query values in the collection after the provided cursor"""
+        after: Cursor
+
+        """Filters to apply to the results set when querying from the collection"""
+        filter: AccountFilter
+
+        """Sort order to apply to the collection"""
+        orderBy: [AccountOrderBy!]
+      ): AccountConnection
+    }
+    ```
+
+=== "Query"
+
+    ```graphql
+    query {
+      accountsByIds(ids: [1, 2]) {
+        edges {
+          node {
+            id
+            email
+          }
+        }
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "accountsByIds": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "email": "a@example.com"
+              }
+            },
+            {
+              "node": {
+                "id": 2,
+                "email": "b@example.com"
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
 ## Default Arguments
 
 Functions with default arguments can have their default arguments omitted.
@@ -328,4 +419,5 @@ The following features are not yet supported. Any function using these features 
 * Functions with a nameless argument
 * Functions returning void
 * Variadic functions
-* Function that accept or return an array type
+* Functions that accept or return an array of composite type
+* Functions that accept or return an enum type or an array of enum type
