@@ -259,7 +259,7 @@ impl<'a> ArgsIterator<'a> {
             25 => trimmed
                 .strip_suffix("::text")
                 .to_owned()
-                .map(|i| i.trim_matches(',').to_string()),
+                .map(|i| i.trim_matches(',').trim_matches('\'').to_string()),
             _ => None,
         }
     }
