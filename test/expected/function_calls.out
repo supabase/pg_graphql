@@ -2310,6 +2310,7 @@ begin;
         returns smallint language sql immutable
     as $$ select a + b; $$;
     create function func_with_defaults(
+        arg_without_a_default int,
         a smallint default 1,
         b integer default 2,
         c boolean default false,
@@ -2351,117 +2352,129 @@ begin;
             }
         $$)
     );
-                        jsonb_pretty                         
--------------------------------------------------------------
- {                                                          +
-     "data": {                                              +
-         "__schema": {                                      +
-             "queryType": {                                 +
-                 "name": "Query",                           +
-                 "fields": [                                +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "a",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Int",         +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "1"        +
-                             },                             +
-                             {                              +
-                                 "name": "b",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Int",         +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "2"        +
-                             }                              +
-                         ],                                 +
-                         "name": "addSmallints"             +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "a",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Int",         +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "1"        +
-                             },                             +
-                             {                              +
-                                 "name": "b",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Int",         +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "2"        +
-                             },                             +
-                             {                              +
-                                 "name": "c",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Boolean",     +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "false"    +
-                             },                             +
-                             {                              +
-                                 "name": "d",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Float",       +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "3.14"     +
-                             },                             +
-                             {                              +
-                                 "name": "e",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "Float",       +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "2.718"    +
-                             },                             +
-                             {                              +
-                                 "name": "f",               +
-                                 "type": {                  +
-                                     "kind": "SCALAR",      +
-                                     "name": "String",      +
-                                     "ofType": null         +
-                                 },                         +
-                                 "defaultValue": "\"hello\""+
-                             }                              +
-                         ],                                 +
-                         "name": "funcWithDefaults"         +
-                     },                                     +
-                     {                                      +
-                         "args": [                          +
-                             {                              +
-                                 "name": "nodeId",          +
-                                 "type": {                  +
-                                     "kind": "NON_NULL",    +
-                                     "name": null,          +
-                                     "ofType": {            +
-                                         "kind": "SCALAR",  +
-                                         "name": "ID"       +
-                                     }                      +
-                                 },                         +
-                                 "defaultValue": null       +
-                             }                              +
-                         ],                                 +
-                         "name": "node"                     +
-                     }                                      +
-                 ]                                          +
-             }                                              +
-         }                                                  +
-     }                                                      +
+                         jsonb_pretty                          
+---------------------------------------------------------------
+ {                                                            +
+     "data": {                                                +
+         "__schema": {                                        +
+             "queryType": {                                   +
+                 "name": "Query",                             +
+                 "fields": [                                  +
+                     {                                        +
+                         "args": [                            +
+                             {                                +
+                                 "name": "a",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Int",           +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "1"          +
+                             },                               +
+                             {                                +
+                                 "name": "b",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Int",           +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "2"          +
+                             }                                +
+                         ],                                   +
+                         "name": "addSmallints"               +
+                     },                                       +
+                     {                                        +
+                         "args": [                            +
+                             {                                +
+                                 "name": "argWithoutADefault",+
+                                 "type": {                    +
+                                     "kind": "NON_NULL",      +
+                                     "name": null,            +
+                                     "ofType": {              +
+                                         "kind": "SCALAR",    +
+                                         "name": "Int"        +
+                                     }                        +
+                                 },                           +
+                                 "defaultValue": null         +
+                             },                               +
+                             {                                +
+                                 "name": "a",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Int",           +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "1"          +
+                             },                               +
+                             {                                +
+                                 "name": "b",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Int",           +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "2"          +
+                             },                               +
+                             {                                +
+                                 "name": "c",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Boolean",       +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "false"      +
+                             },                               +
+                             {                                +
+                                 "name": "d",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Float",         +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "3.14"       +
+                             },                               +
+                             {                                +
+                                 "name": "e",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "Float",         +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "2.718"      +
+                             },                               +
+                             {                                +
+                                 "name": "f",                 +
+                                 "type": {                    +
+                                     "kind": "SCALAR",        +
+                                     "name": "String",        +
+                                     "ofType": null           +
+                                 },                           +
+                                 "defaultValue": "\"hello\""  +
+                             }                                +
+                         ],                                   +
+                         "name": "funcWithDefaults"           +
+                     },                                       +
+                     {                                        +
+                         "args": [                            +
+                             {                                +
+                                 "name": "nodeId",            +
+                                 "type": {                    +
+                                     "kind": "NON_NULL",      +
+                                     "name": null,            +
+                                     "ofType": {              +
+                                         "kind": "SCALAR",    +
+                                         "name": "ID"         +
+                                     }                        +
+                                 },                           +
+                                 "defaultValue": null         +
+                             }                                +
+                         ],                                   +
+                         "name": "node"                       +
+                     }                                        +
+                 ]                                            +
+             }                                                +
+         }                                                    +
+     }                                                        +
  }
 (1 row)
 

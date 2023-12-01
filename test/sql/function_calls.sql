@@ -706,6 +706,7 @@ begin;
     as $$ select a + b; $$;
 
     create function func_with_defaults(
+        arg_without_a_default int,
         a smallint default 1,
         b integer default 2,
         c boolean default false,

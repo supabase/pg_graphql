@@ -250,7 +250,7 @@ impl<'a> ArgsIterator<'a> {
         let start_idx = num_total_args - num_default_args;
         for i in start_idx..num_total_args {
             defaults[i] =
-                Self::sql_to_graphql_default(default_strs[i - start_idx], arg_types[i - start_idx])
+                Self::sql_to_graphql_default(default_strs[i - start_idx], arg_types[i])
         }
 
         defaults
