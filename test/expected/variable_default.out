@@ -4,9 +4,9 @@ begin;
     );
     insert into blog(id)
     select generate_series(1, 5);
-    -- User defined default for variable $first. 
+    -- User defined default for variable $first.
     -- Returns 2 rows
-    -- No value provided for variable $first so user defined default applies 
+    -- No value provided for variable $first so user defined default applies
     select graphql.resolve($$
         query Blogs($first: Int = 2) {
           blogCollection(first: $first) {
