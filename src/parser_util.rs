@@ -210,6 +210,7 @@ where
 pub fn to_gson<'a, T>(
     graphql_value: &Value<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<gson::Value, String>
 where
     T: Text<'a> + AsRef<str>,
@@ -236,7 +237,7 @@ where
         Value::List(x_arr) => {
             let mut out_arr: Vec<gson::Value> = vec![];
             for x in x_arr {
-                let val = to_gson(x, variables)?;
+                let val = to_gson(x, variables, variable_definitions)?;
                 out_arr.push(val);
             }
             gson::Value::Array(out_arr)
@@ -244,7 +245,7 @@ where
         Value::Object(obj) => {
             let mut out_map: HashMap<String, gson::Value> = HashMap::new();
             for (key, graphql_val) in obj.iter() {
-                let val = to_gson(graphql_val, variables)?;
+                let val = to_gson(graphql_val, variables, variable_definitions)?;
                 out_map.insert(key.as_ref().to_string(), val);
             }
             gson::Value::Object(out_map)
@@ -252,8 +253,20 @@ where
         Value::Variable(var_name) => {
             let var = variables.get(var_name.as_ref());
             match var {
-                None => gson::Value::Absent,
                 Some(x) => gson::json_to_gson(x)?,
+                None => {
+                    let variable_default: Option<&graphql_parser::query::Value<'a, T>> =
+                        variable_definitions
+                            .iter()
+                            .find(|var_def| var_def.name.as_ref() == var_name.as_ref())
+                            .map(|x| x.default_value.as_ref())
+                            .flatten();
+
+                    match variable_default {
+                        Some(x) => to_gson(x, variables, variable_definitions)?,
+                        None => gson::Value::Absent,
+                    }
+                }
             }
         }
     };

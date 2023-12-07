@@ -67,7 +67,7 @@ where
 
     let user_json_unvalidated = match user_input {
         None => gson::Value::Absent,
-        Some(val) => to_gson(val, variables)?,
+        Some(val) => to_gson(val, variables, variable_definitions)?,
     };
 
     let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
@@ -2302,11 +2302,12 @@ impl __Schema {
                             None => __TypeField::PossibleTypes(None),
                         },
                         "ofType" => {
-                            let field_type = if let __Type::FuncCallResponse(func_call_resp_type) = type_ {
-                                func_call_resp_type.return_type.deref()
-                            } else {
-                                type_
-                            };
+                            let field_type =
+                                if let __Type::FuncCallResponse(func_call_resp_type) = type_ {
+                                    func_call_resp_type.return_type.deref()
+                                } else {
+                                    type_
+                                };
                             let unwrapped_type_builder = match field_type {
                                 __Type::List(list_type) => {
                                     let inner_type: __Type = (*(list_type.type_)).clone();
