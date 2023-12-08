@@ -1,0 +1,67 @@
+begin;
+    create table blog(
+        id int primary key
+    );
+    insert into blog(id)
+    select generate_series(1, 5);
+    -- User defined default for variable $first.
+    -- Returns 2 rows
+    -- No value provided for variable $first so user defined default applies
+    select graphql.resolve($$
+        query Blogs($first: Int = 2) {
+          blogCollection(first: $first) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+    $$);
+                                       resolve                                       
+-------------------------------------------------------------------------------------
+ {"data": {"blogCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}]}}}
+(1 row)
+
+    -- Returns 1 row
+    -- Provided value for variable $first applies
+    select graphql.resolve($$
+        query Blogs($first: Int = 2) {
+          blogCollection(first: $first) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      $$,
+      variables := jsonb_build_object(
+        'first', 1
+      )
+    );
+                            resolve                             
+----------------------------------------------------------------
+ {"data": {"blogCollection": {"edges": [{"node": {"id": 1}}]}}}
+(1 row)
+
+    -- Returns all rows
+    -- No default, no variable value. Falls back to sever side behavior
+    select graphql.resolve($$
+        query Blogs($first: Int) {
+          blogCollection(first: $first) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      $$
+    );
+                                                                      resolve                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"blogCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}]}}}
+(1 row)
+
+rollback;

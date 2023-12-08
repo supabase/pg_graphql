@@ -6,7 +6,7 @@ use crate::sql_types::get_one_readonly;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, SelectionSet,
-    Text,
+    Text, VariableDefinition,
 };
 use itertools::Itertools;
 use serde_json::{json, Value};
@@ -93,7 +93,7 @@ where
                 resolve_query(query, schema, variables, fragment_defs)
             }
             OperationDefinition::SelectionSet(selection_set) => {
-                resolve_selection_set(selection_set, schema, variables, fragment_defs)
+                resolve_selection_set(selection_set, schema, variables, fragment_defs, &vec![])
             }
             OperationDefinition::Mutation(mutation) => {
                 resolve_mutation(mutation, schema, variables, fragment_defs)
@@ -117,11 +117,13 @@ fn resolve_query<'a, 'b, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
+    let variable_definitions = &query.variable_definitions;
     resolve_selection_set(
         query.selection_set,
         schema_type,
         variables,
         fragment_definitions,
+        variable_definitions,
     )
 }
 
@@ -130,6 +132,7 @@ fn resolve_selection_set<'a, 'b, T>(
     schema_type: &__Schema,
     variables: &Value,
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -190,6 +193,7 @@ where
                                 &fragment_definitions,
                                 variables,
                                 &[],
+                                variable_definitions,
                             );
 
                             match connection_builder {
@@ -209,6 +213,7 @@ where
                                 &fragment_definitions,
                                 variables,
                                 &[],
+                                variable_definitions,
                             );
 
                             match node_builder {
@@ -228,6 +233,7 @@ where
                                 &fragment_definitions,
                                 None,
                                 variables,
+                                variable_definitions,
                             );
 
                             match __type_builder {
@@ -243,6 +249,7 @@ where
                                 selection,
                                 &fragment_definitions,
                                 variables,
+                                variable_definitions,
                             );
 
                             match __schema_builder {
@@ -271,6 +278,7 @@ where
                                     selection,
                                     &fragment_definitions,
                                     variables,
+                                    variable_definitions,
                                 );
 
                                 match function_call_builder {
@@ -316,11 +324,13 @@ fn resolve_mutation<'a, 'b, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
+    let variable_definitions = &query.variable_definitions;
     resolve_mutation_selection_set(
         query.selection_set,
         schema_type,
         variables,
         fragment_definitions,
+        variable_definitions,
     )
 }
 
@@ -329,6 +339,7 @@ fn resolve_mutation_selection_set<'a, 'b, T>(
     schema_type: &__Schema,
     variables: &Value,
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -391,6 +402,7 @@ where
                                     selection,
                                     &fragment_definitions,
                                     variables,
+                                    variable_definitions,
                                 ) {
                                     Ok(builder) => builder,
                                     Err(err) => {
@@ -409,6 +421,7 @@ where
                                     selection,
                                     &fragment_definitions,
                                     variables,
+                                    variable_definitions,
                                 ) {
                                     Ok(builder) => builder,
                                     Err(err) => {
@@ -426,6 +439,7 @@ where
                                     selection,
                                     &fragment_definitions,
                                     variables,
+                                    variable_definitions,
                                 ) {
                                     Ok(builder) => builder,
                                     Err(err) => {
@@ -449,6 +463,7 @@ where
                                         selection,
                                         &fragment_definitions,
                                         variables,
+                                        variable_definitions,
                                     ) {
                                         Ok(builder) => builder,
                                         Err(err) => {

@@ -48,6 +48,7 @@ fn read_argument<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<gson::Value, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -66,7 +67,7 @@ where
 
     let user_json_unvalidated = match user_input {
         None => gson::Value::Absent,
-        Some(val) => to_gson(val, variables)?,
+        Some(val) => to_gson(val, variables, variable_definitions)?,
     };
 
     let user_json_validated = validate_arg_from_type(&input_value.type_(), &user_json_unvalidated)?;
@@ -77,12 +78,19 @@ fn read_argument_at_most<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<i64, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let at_most: gson::Value = read_argument("atMost", field, query_field, variables)
-        .unwrap_or(gson::Value::Number(gson::Number::Integer(1)));
+    let at_most: gson::Value = read_argument(
+        "atMost",
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )
+    .unwrap_or(gson::Value::Number(gson::Number::Integer(1)));
     match at_most {
         gson::Value::Number(gson::Number::Integer(x)) => Ok(x),
         _ => Err("Internal Error: failed to parse validated atFirst".to_string()),
@@ -144,13 +152,19 @@ fn read_argument_node_id<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<NodeIdInstance, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
-    let node_id_base64_encoded_json_string: gson::Value =
-        read_argument("nodeId", field, query_field, variables)?;
+    let node_id_base64_encoded_json_string: gson::Value = read_argument(
+        "nodeId",
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )?;
 
     parse_node_id(node_id_base64_encoded_json_string)
 }
@@ -159,12 +173,19 @@ fn read_argument_objects<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Vec<InsertRowBuilder>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // [{"name": "bob", "email": "a@b.com"}, {..}]
-    let validated: gson::Value = read_argument("objects", field, query_field, variables)?;
+    let validated: gson::Value = read_argument(
+        "objects",
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )?;
 
     // [<Table>OrderBy!]
     let insert_type: InsertInputType =
@@ -229,6 +250,7 @@ pub fn to_insert_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<InsertBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -246,7 +268,7 @@ where
             restrict_allowed_arguments(&["objects"], query_field)?;
 
             let objects: Vec<InsertRowBuilder> =
-                read_argument_objects(field, query_field, variables)?;
+                read_argument_objects(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<InsertSelection> = vec![];
 
@@ -271,6 +293,7 @@ where
                                 fragment_definitions,
                                 variables,
                                 &[],
+                                variable_definitions,
                             );
                             InsertSelection::Records(node_builder?)
                         }
@@ -330,11 +353,13 @@ fn read_argument_set<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<SetBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let validated: gson::Value = read_argument("set", field, query_field, variables)?;
+    let validated: gson::Value =
+        read_argument("set", field, query_field, variables, variable_definitions)?;
 
     let update_type: UpdateInputType = match field.get_arg("set").unwrap().type_().unmodified_type()
     {
@@ -384,6 +409,7 @@ pub fn to_update_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<UpdateBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -400,9 +426,12 @@ where
             // Raise for disallowed arguments
             restrict_allowed_arguments(&["set", "filter", "atMost"], query_field)?;
 
-            let set: SetBuilder = read_argument_set(field, query_field, variables)?;
-            let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
-            let at_most: i64 = read_argument_at_most(field, query_field, variables)?;
+            let set: SetBuilder =
+                read_argument_set(field, query_field, variables, variable_definitions)?;
+            let filter: FilterBuilder =
+                read_argument_filter(field, query_field, variables, variable_definitions)?;
+            let at_most: i64 =
+                read_argument_at_most(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<UpdateSelection> = vec![];
 
@@ -427,6 +456,7 @@ where
                                 fragment_definitions,
                                 variables,
                                 &[],
+                                variable_definitions,
                             );
                             UpdateSelection::Records(node_builder?)
                         }
@@ -482,6 +512,7 @@ pub fn to_delete_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<DeleteBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -498,8 +529,10 @@ where
             // Raise for disallowed arguments
             restrict_allowed_arguments(&["filter", "atMost"], query_field)?;
 
-            let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
-            let at_most: i64 = read_argument_at_most(field, query_field, variables)?;
+            let filter: FilterBuilder =
+                read_argument_filter(field, query_field, variables, variable_definitions)?;
+            let at_most: i64 =
+                read_argument_at_most(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<DeleteSelection> = vec![];
 
@@ -524,6 +557,7 @@ where
                                 fragment_definitions,
                                 variables,
                                 &[],
+                                variable_definitions,
                             );
                             DeleteSelection::Records(node_builder?)
                         }
@@ -585,6 +619,7 @@ pub fn to_function_call_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FunctionCallBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -597,7 +632,13 @@ where
             let args = field.args();
             let allowed_args: Vec<&str> = args.iter().map(|a| a.name_.as_str()).collect();
             restrict_allowed_arguments(&allowed_args, query_field)?;
-            let args = read_func_call_args(field, query_field, variables, func_call_resp_type)?;
+            let args = read_func_call_args(
+                field,
+                query_field,
+                variables,
+                func_call_resp_type,
+                variable_definitions,
+            )?;
 
             let return_type_builder = match func_call_resp_type.return_type.deref() {
                 __Type::Scalar(_) => FuncCallReturnTypeBuilder::Scalar,
@@ -609,6 +650,7 @@ where
                         fragment_definitions,
                         variables,
                         &allowed_args,
+                        variable_definitions,
                     )?;
                     FuncCallReturnTypeBuilder::Node(node_builder)
                 }
@@ -619,6 +661,7 @@ where
                         fragment_definitions,
                         variables,
                         &allowed_args,
+                        variable_definitions,
                     )?;
                     FuncCallReturnTypeBuilder::Connection(connection_builder)
                 }
@@ -653,6 +696,7 @@ fn read_func_call_args<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
     func_call_resp_type: &FuncCallResponseType,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FuncCallArgsBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -660,7 +704,13 @@ where
     let inflected_to_sql_args = func_call_resp_type.inflected_to_sql_args();
     let mut args = vec![];
     for arg in field.args() {
-        let arg_value = read_argument(&arg.name(), field, query_field, variables)?;
+        let arg_value = read_argument(
+            &arg.name(),
+            field,
+            query_field,
+            variables,
+            variable_definitions,
+        )?;
         if !arg_value.is_absent() {
             let func_call_sql_arg_name =
                 inflected_to_sql_args
@@ -971,11 +1021,18 @@ fn read_argument_filter<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FilterBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let validated: gson::Value = read_argument("filter", field, query_field, variables)?;
+    let validated: gson::Value = read_argument(
+        "filter",
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )?;
 
     let filter_type = field.get_arg("filter").unwrap().type_().unmodified_type();
     if !matches!(filter_type, __Type::FilterEntity(_)) {
@@ -1114,12 +1171,19 @@ fn read_argument_order_by<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<OrderByBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // [{"id": "DescNullsLast"}]
-    let validated: gson::Value = read_argument("orderBy", field, query_field, variables)?;
+    let validated: gson::Value = read_argument(
+        "orderBy",
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )?;
 
     // [<Table>OrderBy!]
     let order_type: OrderByEntityType =
@@ -1199,11 +1263,18 @@ fn read_argument_cursor<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Option<Cursor>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let validated: gson::Value = read_argument(arg_name, field, query_field, variables)?;
+    let validated: gson::Value = read_argument(
+        arg_name,
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )?;
     let _: Scalar = match field.get_arg(arg_name).unwrap().type_().unmodified_type() {
         __Type::Scalar(x) => x,
         _ => return Err(format!("Could not argument {}", arg_name)),
@@ -1228,6 +1299,7 @@ pub fn to_connection_builder<'a, T>(
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     extra_allowed_args: &[&str],
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<ConnectionBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1248,7 +1320,8 @@ where
             restrict_allowed_arguments(&allowed_args, query_field)?;
 
             // TODO: only one of first/last, before/after provided
-            let first: gson::Value = read_argument("first", field, query_field, variables)?;
+            let first: gson::Value =
+                read_argument("first", field, query_field, variables, variable_definitions)?;
             let first: Option<u64> = match first {
                 gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
@@ -1260,7 +1333,8 @@ where
                 }
             };
 
-            let last: gson::Value = read_argument("last", field, query_field, variables)?;
+            let last: gson::Value =
+                read_argument("last", field, query_field, variables, variable_definitions)?;
             let last: Option<u64> = match last {
                 gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
@@ -1281,10 +1355,15 @@ where
                 .map(|x| x.directives.max_rows)
                 .unwrap_or(30);
 
-            let before: Option<Cursor> =
-                read_argument_cursor("before", field, query_field, variables)?;
+            let before: Option<Cursor> = read_argument_cursor(
+                "before",
+                field,
+                query_field,
+                variables,
+                variable_definitions,
+            )?;
             let after: Option<Cursor> =
-                read_argument_cursor("after", field, query_field, variables)?;
+                read_argument_cursor("after", field, query_field, variables, variable_definitions)?;
 
             // Validate compatible input arguments
             if first.is_some() && last.is_some() {
@@ -1297,8 +1376,10 @@ where
                 return Err("\"last\" may only be used with \"before\"".to_string());
             }
 
-            let filter: FilterBuilder = read_argument_filter(field, query_field, variables)?;
-            let order_by: OrderByBuilder = read_argument_order_by(field, query_field, variables)?;
+            let filter: FilterBuilder =
+                read_argument_filter(field, query_field, variables, variable_definitions)?;
+            let order_by: OrderByBuilder =
+                read_argument_order_by(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<ConnectionSelection> = vec![];
 
@@ -1318,6 +1399,7 @@ where
                             selection_field,
                             fragment_definitions,
                             variables,
+                            variable_definitions,
                         )?),
                         __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
                             f,
@@ -1428,6 +1510,7 @@ fn to_edge_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<EdgeBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1462,6 +1545,7 @@ where
                                 fragment_definitions,
                                 variables,
                                 &[],
+                                variable_definitions,
                             )?;
                             EdgeSelection::Node(node_builder)
                         }
@@ -1493,6 +1577,7 @@ pub fn to_node_builder<'a, T>(
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     extra_allowed_args: &[&str],
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<NodeBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
@@ -1510,7 +1595,8 @@ where
             restrict_allowed_arguments(&["nodeId"], query_field)?;
             // The nodeId argument is only valid on the entrypoint field for Node
             // relationships to "node" e.g. within edges, do not have any arguments
-            let node_id: NodeIdInstance = read_argument_node_id(field, query_field, variables)?;
+            let node_id: NodeIdInstance =
+                read_argument_node_id(field, query_field, variables, variable_definitions)?;
 
             let possible_types: Vec<__Type> = node_interface.possible_types().unwrap_or(vec![]);
             let xtype = possible_types.iter().find_map(|x| match x {
@@ -1552,7 +1638,12 @@ where
     // The nodeId argument is only valid on the entrypoint field for Node
     // relationships to "node" e.g. within edges, do not have any arguments
     let node_id: Option<NodeIdInstance> = match field.get_arg("nodeId").is_some() {
-        true => Some(read_argument_node_id(field, query_field, variables)?),
+        true => Some(read_argument_node_id(
+            field,
+            query_field,
+            variables,
+            variable_definitions,
+        )?),
         false => None,
     };
 
@@ -1592,6 +1683,7 @@ where
                                         fragment_definitions,
                                         variables,
                                         &[],
+                                        variable_definitions,
                                         // TODO need ref to fkey here
                                     )?;
                                     FunctionSelection::Node(node_builder)
@@ -1603,6 +1695,7 @@ where
                                         fragment_definitions,
                                         variables,
                                         &[], // TODO need ref to fkey here
+                                        variable_definitions,
                                     )?;
                                     FunctionSelection::Connection(connection_builder)
                                 }
@@ -1637,6 +1730,7 @@ where
                                     fragment_definitions,
                                     variables,
                                     &[],
+                                    variable_definitions,
                                 );
                                 NodeSelection::Connection(con_builder?)
                             }
@@ -1647,6 +1741,7 @@ where
                                     fragment_definitions,
                                     variables,
                                     &[],
+                                    variable_definitions,
                                 );
                                 NodeSelection::Node(node_builder?)
                             }
@@ -1877,6 +1972,7 @@ impl __Schema {
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
+        variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__InputValueBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -1904,6 +2000,7 @@ impl __Schema {
                         selection_field,
                         fragment_definitions,
                         variables,
+                        variable_definitions,
                     )?;
                     __InputValueField::Type(t_builder)
                 }
@@ -1940,6 +2037,7 @@ impl __Schema {
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
+        variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__FieldBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -1969,6 +2067,7 @@ impl __Schema {
                             selection_field,
                             fragment_definitions,
                             variables,
+                            variable_definitions,
                         )?;
                         f_builders.push(f_builder)
                     }
@@ -1982,6 +2081,7 @@ impl __Schema {
                         selection_field,
                         fragment_definitions,
                         variables,
+                        variable_definitions,
                     )?;
                     __FieldField::Type(t_builder)
                 }
@@ -2013,6 +2113,7 @@ impl __Schema {
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         mut type_name: Option<String>,
         variables: &serde_json::Value,
+        variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<Option<__TypeBuilder>, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -2022,7 +2123,7 @@ impl __Schema {
         }
 
         let name_arg_result: Result<gson::Value, String> =
-            read_argument("name", field, query_field, variables);
+            read_argument("name", field, query_field, variables, variable_definitions);
         let name_arg: Option<String> = match name_arg_result {
             // This builder (too) is overloaded and the arg is not present in all uses
             Err(_) => None,
@@ -2053,6 +2154,7 @@ impl __Schema {
                     query_field,
                     fragment_definitions,
                     variables,
+                    variable_definitions,
                 )
                 .map(Some)
             }
@@ -2066,6 +2168,7 @@ impl __Schema {
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
+        variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__TypeBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -2112,6 +2215,7 @@ impl __Schema {
                                             selection_field,
                                             fragment_definitions,
                                             variables,
+                                            variable_definitions,
                                         )?;
                                         f_builders.push(f_builder)
                                     }
@@ -2132,6 +2236,7 @@ impl __Schema {
                                             selection_field,
                                             fragment_definitions,
                                             variables,
+                                            variable_definitions,
                                         )?;
                                         f_builders.push(f_builder)
                                     }
@@ -2149,6 +2254,7 @@ impl __Schema {
                                             selection_field,
                                             fragment_definitions,
                                             variables,
+                                            variable_definitions,
                                         )?;
                                         interface_builders.push(interface_builder);
                                     }
@@ -2188,6 +2294,7 @@ impl __Schema {
                                         selection_field,
                                         fragment_definitions,
                                         variables,
+                                        variable_definitions,
                                     )?;
 
                                     type_builders.push(type_builder);
@@ -2211,6 +2318,7 @@ impl __Schema {
                                         selection_field,
                                         fragment_definitions,
                                         variables,
+                                        variable_definitions,
                                     )?)
                                 }
                                 __Type::NonNull(non_null_type) => {
@@ -2220,6 +2328,7 @@ impl __Schema {
                                         selection_field,
                                         fragment_definitions,
                                         variables,
+                                        variable_definitions,
                                     )?)
                                 }
                                 _ => None,
@@ -2253,6 +2362,7 @@ impl __Schema {
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
+        variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__DirectiveBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -2283,6 +2393,7 @@ impl __Schema {
                             selection_field,
                             fragment_definitions,
                             variables,
+                            variable_definitions,
                         )?;
                         builders.push(builder)
                     }
@@ -2320,6 +2431,7 @@ impl __Schema {
         query_field: &graphql_parser::query::Field<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
+        variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__SchemaBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str>,
@@ -2364,6 +2476,7 @@ impl __Schema {
                                                 fragment_definitions,
                                                 t.name(),
                                                 variables,
+                                                variable_definitions,
                                             )
                                             .map(|x| x.unwrap())
                                         })
@@ -2378,6 +2491,7 @@ impl __Schema {
                                         fragment_definitions,
                                         Some("Query".to_string()),
                                         variables,
+                                        variable_definitions,
                                     )?;
                                     __SchemaField::QueryType(builder.unwrap())
                                 }
@@ -2388,6 +2502,7 @@ impl __Schema {
                                         fragment_definitions,
                                         Some("Mutation".to_string()),
                                         variables,
+                                        variable_definitions,
                                     )?;
                                     __SchemaField::MutationType(builder)
                                 }
@@ -2402,6 +2517,7 @@ impl __Schema {
                                                 selection_field,
                                                 fragment_definitions,
                                                 variables,
+                                                variable_definitions,
                                             )
                                         })
                                         .collect::<Result<Vec<_>, _>>()?;
