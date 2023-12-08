@@ -941,6 +941,7 @@ pub struct FunctionBuilder {
 #[derive(Clone, Debug)]
 pub enum FunctionSelection {
     ScalarSelf,
+    Array, // To suport non-scalars this will require an inner type
     Connection(ConnectionBuilder),
     Node(NodeBuilder),
 }
@@ -1583,6 +1584,7 @@ where
                         NodeSQLType::Function(func) => {
                             let function_selection = match &f.type_() {
                                 __Type::Scalar(_) => FunctionSelection::ScalarSelf,
+                                __Type::List(_) => FunctionSelection::Array,
                                 __Type::Node(_) => {
                                     let node_builder = to_node_builder(
                                         f,
@@ -2195,11 +2197,12 @@ impl __Schema {
                             None => __TypeField::PossibleTypes(None),
                         },
                         "ofType" => {
-                            let field_type = if let __Type::FuncCallResponse(func_call_resp_type) = type_ {
-                                func_call_resp_type.return_type.deref()
-                            } else {
-                                type_
-                            };
+                            let field_type =
+                                if let __Type::FuncCallResponse(func_call_resp_type) = type_ {
+                                    func_call_resp_type.return_type.deref()
+                                } else {
+                                    type_
+                                };
                             let unwrapped_type_builder = match field_type {
                                 __Type::List(list_type) => {
                                     let inner_type: __Type = (*(list_type.type_)).clone();

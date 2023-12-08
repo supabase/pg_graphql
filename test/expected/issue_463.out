@@ -1,0 +1,97 @@
+begin;
+    create table foo(
+        id int primary key
+    );
+    insert into foo (id) values (1);
+    create or replace function bar(foo)
+        returns int[]
+        language sql
+        stable
+    as $$
+        select array[1, 2, 3]::int[];
+    $$;
+    select graphql.resolve($$
+        query {
+            fooCollection {
+                edges {
+                    node {
+                        id
+                        bar
+                    }
+                }
+            }
+        }
+        $$
+    );
+                                     resolve                                     
+---------------------------------------------------------------------------------
+ {"data": {"fooCollection": {"edges": [{"node": {"id": 1, "bar": [1, 2, 3]}}]}}}
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Foo") {
+            kind
+            fields {
+                name
+                type {
+                  kind
+                  name
+                  ofType {
+                    kind
+                    name
+                  }
+                }
+            }
+          }
+        }
+        $$)
+    );
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": {                                +
+         "__type": {                          +
+             "kind": "OBJECT",                +
+             "fields": [                      +
+                 {                            +
+                     "name": "nodeId",        +
+                     "type": {                +
+                         "kind": "NON_NULL",  +
+                         "name": null,        +
+                         "ofType": {          +
+                             "kind": "SCALAR",+
+                             "name": "ID"     +
+                         }                    +
+                     }                        +
+                 },                           +
+                 {                            +
+                     "name": "id",            +
+                     "type": {                +
+                         "kind": "NON_NULL",  +
+                         "name": null,        +
+                         "ofType": {          +
+                             "kind": "SCALAR",+
+                             "name": "Int"    +
+                         }                    +
+                     }                        +
+                 },                           +
+                 {                            +
+                     "name": "bar",           +
+                     "type": {                +
+                         "kind": "LIST",      +
+                         "name": null,        +
+                         "ofType": {          +
+                             "kind": "SCALAR",+
+                             "name": "Int"    +
+                         }                    +
+                     }                        +
+                 }                            +
+             ]                                +
+         }                                    +
+     }                                        +
+ }
+(1 row)
+
+    rollback;

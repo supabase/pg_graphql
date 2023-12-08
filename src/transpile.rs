@@ -1471,6 +1471,13 @@ impl FunctionBuilder {
                 quote_ident(&self.table.schema),
                 quote_ident(&self.table.name)
             ),
+            FunctionSelection::Array => format!(
+                // Current implementation will not support enums or record types correctly
+                // however, those functions are filtered out upstream
+                "{schema_name}.{function_name}({block_name}::{}.{})",
+                quote_ident(&self.table.schema),
+                quote_ident(&self.table.name)
+            ),
             FunctionSelection::Node(node_builder) => {
                 let func_block_name = rand_block_name();
                 let object_clause = node_builder.to_sql(&func_block_name, param_context)?;
