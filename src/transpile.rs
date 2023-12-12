@@ -5,7 +5,7 @@ use itertools::Itertools;
 use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
 use pgrx::spi::SpiClient;
-use pgrx::*;
+use pgrx::{direct_function_call, JsonB};
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
 use std::collections::HashSet;
