@@ -14,7 +14,7 @@ where
         .unwrap_or_else(|| query_field.name.as_ref().to_string())
 }
 
-pub fn merge_fields<'a, 'b, T, I>(
+pub fn merge_fields<'a, T, I>(
     target_fields: &mut Vec<Field<'a, T>>,
     next_fields: I,
 ) -> Result<(), String>
@@ -108,8 +108,8 @@ where
 }
 
 /// Combines @skip and @include
-pub fn selection_is_skipped<'a, 'b, T>(
-    query_selection: &'b Selection<'a, T>,
+pub fn selection_is_skipped<'a, T>(
+    query_selection: &Selection<'a, T>,
     variables: &serde_json::Value,
 ) -> Result<bool, String>
 where

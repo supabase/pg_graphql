@@ -108,7 +108,7 @@ where
     }
 }
 
-fn resolve_query<'a, 'b, T>(
+fn resolve_query<'a, T>(
     query: Query<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -127,7 +127,7 @@ where
     )
 }
 
-fn resolve_selection_set<'a, 'b, T>(
+fn resolve_selection_set<'a, T>(
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -315,7 +315,7 @@ where
     }
 }
 
-fn resolve_mutation<'a, 'b, T>(
+fn resolve_mutation<'a, T>(
     query: Mutation<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -334,7 +334,7 @@ where
     )
 }
 
-fn resolve_mutation_selection_set<'a, 'b, T>(
+fn resolve_mutation_selection_set<'a, T>(
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
