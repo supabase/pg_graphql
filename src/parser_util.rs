@@ -39,61 +39,11 @@ where
     // TODO check if fields can be merged
 
     take_mut::take(matching_field, |matching_field| {
-        let mut merged_field = field;
-        merge_selection_sets(&mut merged_field.selection_set, matching_field.selection_set);
-        merged_field
+        let mut field = field;
+        // Subfields will be normalized and properly merged on a later pass.
+        field.selection_set.items.extend(matching_field.selection_set.items);
+        field
     });
-}
-
-pub fn merge_selection_sets<'a, T>(target_set: &mut SelectionSet<'a, T>, set: SelectionSet<'a, T>)
-where
-    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
-{
-    for selection in set.items {
-        merge_selection_set(target_set, selection);
-    }
-}
-
-pub fn merge_selection_set<'a, T>(target_set: &mut SelectionSet<'a, T>, selection: Selection<'a, T>)
-where
-    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
-{
-    match selection {
-        Selection::Field(field) => { // duplicate fields need to be merged
-            let Some(matching_field) = target_set.items
-                .iter_mut()
-                .filter_map(|target| {
-                    match target {
-                        Selection::Field(target) => Some(target),
-                        _ => None,
-                    }
-                })
-                .find(|target| alias_or_name(target) == alias_or_name(&field))
-            else {
-                target_set.items.push(Selection::Field(field));
-                return;
-            };
-
-            // TODO check if fields can be merged
-
-            take_mut::take(matching_field, |matching_field| {
-                let mut merged_field = field;
-                merge_selection_sets(&mut merged_field.selection_set, matching_field.selection_set);
-                merged_field
-            })
-        },
-        Selection::FragmentSpread(frag) => { // duplicate fragments can be ignored
-            if !target_set.items.iter().any(|target| match target {
-                Selection::FragmentSpread(target) => target.fragment_name == frag.fragment_name,
-                _ => false
-            }) {
-                target_set.items.push(Selection::FragmentSpread(frag));
-            }
-        },
-        Selection::InlineFragment(_infrag) => { // inline fragments can't be merged
-            todo!()
-        }
-    }
 }
 
 pub fn normalize_selection_set<'a, T>(
@@ -105,15 +55,15 @@ pub fn normalize_selection_set<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    let mut selections: Vec<Field<'a, T>> = vec![];
+    let mut normalized_fields: Vec<Field<'a, T>> = vec![];
 
     for selection in &selection_set.items {
         match normalize_selection(selection, fragment_definitions, type_name, variables) {
-            Ok(fields) => merge_fields(&mut selections, fields),
+            Ok(fields) => merge_fields(&mut normalized_fields, fields),
             Err(err) => return Err(err),
         }
     }
-    Ok(selections)
+    Ok(normalized_fields)
 }
 
 /// Combines @skip and @include
@@ -220,15 +170,15 @@ pub fn normalize_selection<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    let mut selections: Vec<Field<'a, T>> = vec![];
+    let mut normalized_fields: Vec<Field<'a, T>> = vec![];
 
     if selection_is_skipped(query_selection, variables)? {
-        return Ok(selections);
+        return Ok(normalized_fields);
     }
 
     match query_selection {
         Selection::Field(field) => {
-            merge_field(&mut selections, field.clone());
+            merge_field(&mut normalized_fields, field.clone());
         }
         Selection::FragmentSpread(fragment_spread) => {
             let frag_name = &fragment_spread.fragment_name;
@@ -261,7 +211,7 @@ where
                 variables,
             );
             match frag_fields {
-                Ok(fields) => merge_fields(&mut selections, fields),
+                Ok(fields) => merge_fields(&mut normalized_fields, fields),
                 Err(err) => return Err(err),
             };
         }
@@ -280,12 +230,12 @@ where
                     type_name,
                     variables,
                 )?;
-                merge_fields(&mut selections, infrag_fields);
+                merge_fields(&mut normalized_fields, infrag_fields);
             }
         }
     }
 
-    Ok(selections)
+    Ok(normalized_fields)
 }
 
 pub fn to_gson<'a, T>(
