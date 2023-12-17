@@ -14,17 +14,24 @@ where
         .unwrap_or_else(|| query_field.name.as_ref().to_string())
 }
 
-pub fn merge_fields<'a, 'b, T, I>(target_fields: &mut Vec<Field<'a, T>>, next_fields: I)
+pub fn merge_fields<'a, 'b, T, I>(
+    target_fields: &mut Vec<Field<'a, T>>,
+    next_fields: I,
+) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     I: IntoIterator<Item = Field<'a, T>>,
 {
     for field in next_fields {
-        merge_field(target_fields, field)
+        merge_field(target_fields, field)?
     }
+    Ok(())
 }
 
-pub fn merge_field<'a, T>(target_fields: &mut Vec<Field<'a, T>>, field: Field<'a, T>)
+pub fn merge_field<'a, T>(
+    target_fields: &mut Vec<Field<'a, T>>,
+    field: Field<'a, T>,
+) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
@@ -33,17 +40,51 @@ where
         .find(|target| alias_or_name(target) == alias_or_name(&field))
     else {
         target_fields.push(field);
-        return;
+        return Ok(());
     };
 
-    // TODO check if fields can be merged
+    can_fields_merge(&matching_field, &field)?;
 
     take_mut::take(matching_field, |matching_field| {
         let mut field = field;
         // Subfields will be normalized and properly merged on a later pass.
-        field.selection_set.items.extend(matching_field.selection_set.items);
+        field
+            .selection_set
+            .items
+            .extend(matching_field.selection_set.items);
         field
     });
+
+    Ok(())
+}
+
+pub fn can_fields_merge<'a, T>(field_a: &Field<'a, T>, field_b: &Field<'a, T>) -> Result<(), String>
+where
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
+{
+    // TODO check if fields have compatible data shapes
+
+    for (arg_a_name, arg_a_value) in field_a.arguments.iter() {
+        let arg_b_value = field_b.arguments.iter().find_map(|(name, value)| {
+            if name == arg_a_name {
+                Some(value)
+            } else {
+                None
+            }
+        });
+        let args_match = match arg_b_value {
+            None => false,
+            Some(arg_b_value) => arg_b_value == arg_a_value,
+        };
+        if !args_match {
+            return Err(format!(
+                "Fields \"{}\" conflict because they have differing arguments",
+                alias_or_name(field_a),
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 pub fn normalize_selection_set<'a, T>(
@@ -59,7 +100,7 @@ where
 
     for selection in &selection_set.items {
         match normalize_selection(selection, fragment_definitions, type_name, variables) {
-            Ok(fields) => merge_fields(&mut normalized_fields, fields),
+            Ok(fields) => merge_fields(&mut normalized_fields, fields)?,
             Err(err) => return Err(err),
         }
     }
@@ -178,7 +219,7 @@ where
 
     match query_selection {
         Selection::Field(field) => {
-            merge_field(&mut normalized_fields, field.clone());
+            merge_field(&mut normalized_fields, field.clone())?;
         }
         Selection::FragmentSpread(fragment_spread) => {
             let frag_name = &fragment_spread.fragment_name;
@@ -211,7 +252,7 @@ where
                 variables,
             );
             match frag_fields {
-                Ok(fields) => merge_fields(&mut normalized_fields, fields),
+                Ok(fields) => merge_fields(&mut normalized_fields, fields)?,
                 Err(err) => return Err(err),
             };
         }
@@ -230,7 +271,7 @@ where
                     type_name,
                     variables,
                 )?;
-                merge_fields(&mut normalized_fields, infrag_fields);
+                merge_fields(&mut normalized_fields, infrag_fields)?;
             }
         }
     }
