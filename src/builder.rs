@@ -51,7 +51,7 @@ fn read_argument<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<gson::Value, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug,
 {
     let input_value: __InputValue = match field.get_arg(arg_name) {
         Some(arg) => arg,
@@ -81,7 +81,7 @@ fn read_argument_at_most<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<i64, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug,
 {
     let at_most: gson::Value = read_argument(
         "atMost",
@@ -155,7 +155,7 @@ fn read_argument_node_id<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<NodeIdInstance, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug,
 {
     // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
     let node_id_base64_encoded_json_string: gson::Value = read_argument(
@@ -176,7 +176,7 @@ fn read_argument_objects<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Vec<InsertRowBuilder>, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug,
 {
     // [{"name": "bob", "email": "a@b.com"}, {..}]
     let validated: gson::Value = read_argument(
@@ -253,7 +253,7 @@ pub fn to_insert_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<InsertBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_
@@ -284,12 +284,12 @@ where
                     None => return Err("unknown field in insert".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => InsertSelection::AffectedCount {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
                                 f,
-                                selection_field,
+                                &selection_field,
                                 fragment_definitions,
                                 variables,
                                 &[],
@@ -298,7 +298,7 @@ where
                             InsertSelection::Records(node_builder?)
                         }
                         "__typename" => InsertSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             typename: xtype.name().unwrap(),
                         },
                         _ => return Err("unexpected field type on insert response".to_string()),
@@ -356,7 +356,7 @@ fn read_argument_set<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<SetBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug,
 {
     let validated: gson::Value =
         read_argument("set", field, query_field, variables, variable_definitions)?;
@@ -412,7 +412,7 @@ pub fn to_update_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<UpdateBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_
@@ -447,12 +447,12 @@ where
                     None => return Err("unknown field in update".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => UpdateSelection::AffectedCount {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
                                 f,
-                                selection_field,
+                                &selection_field,
                                 fragment_definitions,
                                 variables,
                                 &[],
@@ -461,7 +461,7 @@ where
                             UpdateSelection::Records(node_builder?)
                         }
                         "__typename" => UpdateSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             typename: xtype.name().unwrap(),
                         },
                         _ => return Err("unexpected field type on update response".to_string()),
@@ -515,7 +515,7 @@ pub fn to_delete_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<DeleteBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_
@@ -548,12 +548,12 @@ where
                     None => return Err("unknown field in delete".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => DeleteSelection::AffectedCount {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
                                 f,
-                                selection_field,
+                                &selection_field,
                                 fragment_definitions,
                                 variables,
                                 &[],
@@ -562,7 +562,7 @@ where
                             DeleteSelection::Records(node_builder?)
                         }
                         "__typename" => DeleteSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             typename: xtype.name().unwrap(),
                         },
                         _ => return Err("unexpected field type on delete response".to_string()),
@@ -622,7 +622,7 @@ pub fn to_function_call_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FunctionCallBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let alias = alias_or_name(query_field);
@@ -699,7 +699,7 @@ fn read_func_call_args<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FuncCallArgsBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let inflected_to_sql_args = func_call_resp_type.inflected_to_sql_args();
     let mut args = vec![];
@@ -1001,7 +1001,7 @@ fn restrict_allowed_arguments<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
 ) -> Result<(), String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let extra_keys: Vec<&str> = query_field
         .arguments
@@ -1024,7 +1024,7 @@ fn read_argument_filter<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FilterBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let validated: gson::Value = read_argument(
         "filter",
@@ -1174,7 +1174,7 @@ fn read_argument_order_by<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<OrderByBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     // [{"id": "DescNullsLast"}]
     let validated: gson::Value = read_argument(
@@ -1266,7 +1266,7 @@ fn read_argument_cursor<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Option<Cursor>, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let validated: gson::Value = read_argument(
         arg_name,
@@ -1302,7 +1302,7 @@ pub fn to_connection_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<ConnectionBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let type_ = type_.return_type();
@@ -1396,24 +1396,24 @@ where
                     Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
                         __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
                             f,
-                            selection_field,
+                            &selection_field,
                             fragment_definitions,
                             variables,
                             variable_definitions,
                         )?),
                         __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
                             f,
-                            selection_field,
+                            &selection_field,
                             fragment_definitions,
                             variables,
                         )?),
 
                         _ => match f.name().as_ref() {
                             "totalCount" => ConnectionSelection::TotalCount {
-                                alias: alias_or_name(selection_field),
+                                alias: alias_or_name(&selection_field),
                             },
                             "__typename" => ConnectionSelection::Typename {
-                                alias: alias_or_name(selection_field),
+                                alias: alias_or_name(&selection_field),
                                 typename: xtype.name().unwrap(),
                             },
                             _ => return Err("unexpected field type on connection".to_string()),
@@ -1451,7 +1451,7 @@ fn to_page_info_builder<'a, T>(
     variables: &serde_json::Value,
 ) -> Result<PageInfoBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_.name().ok_or(format!(
@@ -1477,19 +1477,19 @@ where
                     None => return Err("unknown field in pageInfo".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "startCursor" => PageInfoSelection::StartCursor {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "endCursor" => PageInfoSelection::EndCursor {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "hasPreviousPage" => PageInfoSelection::HasPreviousPage {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "hasNextPage" => PageInfoSelection::HasNextPage {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                         },
                         "__typename" => PageInfoSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             typename: xtype.name().unwrap(),
                         },
                         _ => return Err("unexpected field type on pageInfo".to_string()),
@@ -1513,7 +1513,7 @@ fn to_edge_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<EdgeBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_.name().ok_or(format!(
@@ -1541,7 +1541,7 @@ where
                         __Type::Node(_) => {
                             let node_builder = to_node_builder(
                                 f,
-                                selection_field,
+                                &selection_field,
                                 fragment_definitions,
                                 variables,
                                 &[],
@@ -1551,10 +1551,10 @@ where
                         }
                         _ => match f.name().as_ref() {
                             "cursor" => EdgeSelection::Cursor {
-                                alias: alias_or_name(selection_field),
+                                alias: alias_or_name(&selection_field),
                             },
                             "__typename" => EdgeSelection::Typename {
-                                alias: alias_or_name(selection_field),
+                                alias: alias_or_name(&selection_field),
                                 typename: xtype.name().unwrap(),
                             },
                             _ => return Err("unexpected field type on edge".to_string()),
@@ -1580,7 +1580,7 @@ pub fn to_node_builder<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<NodeBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let type_ = field.type_().unmodified_type();
 
@@ -1664,7 +1664,7 @@ where
                 ))
             }
             Some(f) => {
-                let alias = alias_or_name(selection_field);
+                let alias = alias_or_name(&selection_field);
 
                 let node_selection = match &f.sql_type {
                     Some(node_sql_type) => match node_sql_type {
@@ -1679,7 +1679,7 @@ where
                                 __Type::Node(_) => {
                                     let node_builder = to_node_builder(
                                         f,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         variables,
                                         &[],
@@ -1691,7 +1691,7 @@ where
                                 __Type::Connection(_) => {
                                     let connection_builder = to_connection_builder(
                                         f,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         variables,
                                         &[], // TODO need ref to fkey here
@@ -1719,14 +1719,14 @@ where
                     },
                     _ => match f.name().as_ref() {
                         "__typename" => NodeSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             typename: xtype.name().unwrap(),
                         },
                         _ => match f.type_().unmodified_type() {
                             __Type::Connection(_) => {
                                 let con_builder = to_connection_builder(
                                     f,
-                                    selection_field,
+                                    &selection_field,
                                     fragment_definitions,
                                     variables,
                                     &[],
@@ -1737,7 +1737,7 @@ where
                             __Type::Node(_) => {
                                 let node_builder = to_node_builder(
                                     f,
-                                    selection_field,
+                                    &selection_field,
                                     fragment_definitions,
                                     variables,
                                     &[],
@@ -1923,7 +1923,7 @@ impl __Schema {
         variables: &serde_json::Value,
     ) -> Result<__EnumValueBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -1943,7 +1943,7 @@ impl __Schema {
                 "isDeprecated" => __EnumValueField::IsDeprecated,
                 "deprecationReason" => __EnumValueField::DeprecationReason,
                 "__typename" => __EnumValueField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: alias_or_name(&selection_field),
                     typename: enum_value.name(),
                 },
                 _ => {
@@ -1955,7 +1955,7 @@ impl __Schema {
             };
 
             builder_fields.push(__EnumValueSelection {
-                alias: alias_or_name(selection_field),
+                alias: alias_or_name(&selection_field),
                 selection: __enum_value_field,
             });
         }
@@ -1975,7 +1975,7 @@ impl __Schema {
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__InputValueBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -1997,7 +1997,7 @@ impl __Schema {
 
                     let t_builder = self.to_type_builder_from_type(
                         &t,
-                        selection_field,
+                        &selection_field,
                         fragment_definitions,
                         variables,
                         variable_definitions,
@@ -2008,7 +2008,7 @@ impl __Schema {
                 "isDeprecated" => __InputValueField::IsDeprecated,
                 "deprecationReason" => __InputValueField::DeprecationReason,
                 "__typename" => __InputValueField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: alias_or_name(&selection_field),
                     typename: input_value.name(),
                 },
                 _ => {
@@ -2020,7 +2020,7 @@ impl __Schema {
             };
 
             builder_fields.push(__InputValueSelection {
-                alias: alias_or_name(selection_field),
+                alias: alias_or_name(&selection_field),
                 selection: __input_value_field,
             });
         }
@@ -2040,7 +2040,7 @@ impl __Schema {
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__FieldBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -2064,7 +2064,7 @@ impl __Schema {
                     for arg in args {
                         let f_builder = self.to_input_value_builder(
                             &arg,
-                            selection_field,
+                            &selection_field,
                             fragment_definitions,
                             variables,
                             variable_definitions,
@@ -2078,7 +2078,7 @@ impl __Schema {
 
                     let t_builder = self.to_type_builder_from_type(
                         &t,
-                        selection_field,
+                        &selection_field,
                         fragment_definitions,
                         variables,
                         variable_definitions,
@@ -2088,14 +2088,14 @@ impl __Schema {
                 "isDeprecated" => __FieldField::IsDeprecated,
                 "deprecationReason" => __FieldField::DeprecationReason,
                 "__typename" => __FieldField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: alias_or_name(&selection_field),
                     typename: field.name(),
                 },
                 _ => return Err(format!("unknown field in __Field {}", type_field_name)),
             };
 
             builder_fields.push(__FieldSelection {
-                alias: alias_or_name(selection_field),
+                alias: alias_or_name(&selection_field),
                 selection: __field_field,
             });
         }
@@ -2116,7 +2116,7 @@ impl __Schema {
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<Option<__TypeBuilder>, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         if field.type_.unmodified_type() != __Type::__Type(__TypeType {}) {
             return Err("can not build query for non-__type type".to_string());
@@ -2171,7 +2171,7 @@ impl __Schema {
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__TypeBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         let field_map = field_map(&__Type::__Type(__TypeType {}));
 
@@ -2190,7 +2190,7 @@ impl __Schema {
             match field_map.get(type_field_name) {
                 None => return Err(format!("unknown field on __Type: {}", type_field_name)),
                 Some(f) => builder_fields.push(__TypeSelection {
-                    alias: alias_or_name(selection_field),
+                    alias: alias_or_name(&selection_field),
                     selection: match f.name().as_str() {
                         "kind" => __TypeField::Kind,
                         "name" => __TypeField::Name,
@@ -2212,7 +2212,7 @@ impl __Schema {
 
                                         let f_builder = self.to_field_builder(
                                             &vec_field,
-                                            selection_field,
+                                            &selection_field,
                                             fragment_definitions,
                                             variables,
                                             variable_definitions,
@@ -2233,7 +2233,7 @@ impl __Schema {
                                     for vec_field in vec_fields {
                                         let f_builder = self.to_input_value_builder(
                                             &vec_field,
-                                            selection_field,
+                                            &selection_field,
                                             fragment_definitions,
                                             variables,
                                             variable_definitions,
@@ -2251,7 +2251,7 @@ impl __Schema {
                                     for interface in &interfaces {
                                         let interface_builder = self.to_type_builder_from_type(
                                             interface,
-                                            selection_field,
+                                            &selection_field,
                                             fragment_definitions,
                                             variables,
                                             variable_definitions,
@@ -2273,7 +2273,7 @@ impl __Schema {
                                     for enum_value in &enum_values {
                                         let f_builder = self.to_enum_value_builder(
                                             enum_value,
-                                            selection_field,
+                                            &selection_field,
                                             fragment_definitions,
                                             variables,
                                         )?;
@@ -2291,7 +2291,7 @@ impl __Schema {
                                 for ty in &types {
                                     let type_builder = self.to_type_builder_from_type(
                                         ty,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         variables,
                                         variable_definitions,
@@ -2315,7 +2315,7 @@ impl __Schema {
                                     let inner_type: __Type = (*(list_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
                                         &inner_type,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         variables,
                                         variable_definitions,
@@ -2325,7 +2325,7 @@ impl __Schema {
                                     let inner_type = (*(non_null_type.type_)).clone();
                                     Some(self.to_type_builder_from_type(
                                         &inner_type,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         variables,
                                         variable_definitions,
@@ -2336,7 +2336,7 @@ impl __Schema {
                             __TypeField::OfType(unwrapped_type_builder)
                         }
                         "__typename" => __TypeField::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             typename: type_.name(),
                         },
                         _ => {
@@ -2365,7 +2365,7 @@ impl __Schema {
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__DirectiveBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -2390,7 +2390,7 @@ impl __Schema {
                     for arg in args {
                         let builder = self.to_input_value_builder(
                             arg,
-                            selection_field,
+                            &selection_field,
                             fragment_definitions,
                             variables,
                             variable_definitions,
@@ -2401,7 +2401,7 @@ impl __Schema {
                 }
                 "isRepeatable" => __DirectiveField::IsRepeatable,
                 "__typename" => __DirectiveField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: alias_or_name(&selection_field),
                     typename: __Directive::TYPE.to_string(),
                 },
                 _ => {
@@ -2414,7 +2414,7 @@ impl __Schema {
             };
 
             builder_fields.push(__DirectiveSelection {
-                alias: alias_or_name(selection_field),
+                alias: alias_or_name(&selection_field),
                 selection: directive_field,
             });
         }
@@ -2434,7 +2434,7 @@ impl __Schema {
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__SchemaBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     {
         let type_ = field.type_.unmodified_type();
         let type_name = type_
@@ -2459,7 +2459,7 @@ impl __Schema {
                     match field_map.get(field_name) {
                         None => return Err(format!("unknown field in __Schema: {}", field_name)),
                         Some(f) => builder_fields.push(__SchemaSelection {
-                            alias: alias_or_name(selection_field),
+                            alias: alias_or_name(&selection_field),
                             selection: match f.name().as_str() {
                                 "types" => {
                                     let builders = self
@@ -2472,7 +2472,7 @@ impl __Schema {
                                         .map(|t| {
                                             self.to_type_builder(
                                                 f,
-                                                selection_field,
+                                                &selection_field,
                                                 fragment_definitions,
                                                 t.name(),
                                                 variables,
@@ -2487,7 +2487,7 @@ impl __Schema {
                                 "queryType" => {
                                     let builder = self.to_type_builder(
                                         f,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         Some("Query".to_string()),
                                         variables,
@@ -2498,7 +2498,7 @@ impl __Schema {
                                 "mutationType" => {
                                     let builder = self.to_type_builder(
                                         f,
-                                        selection_field,
+                                        &selection_field,
                                         fragment_definitions,
                                         Some("Mutation".to_string()),
                                         variables,
@@ -2514,7 +2514,7 @@ impl __Schema {
                                         .map(|directive| {
                                             self.to_directive_builder(
                                                 directive,
-                                                selection_field,
+                                                &selection_field,
                                                 fragment_definitions,
                                                 variables,
                                                 variable_definitions,
@@ -2524,7 +2524,7 @@ impl __Schema {
                                     __SchemaField::Directives(builders)
                                 }
                                 "__typename" => __SchemaField::Typename {
-                                    alias: alias_or_name(selection_field),
+                                    alias: alias_or_name(&selection_field),
                                     typename: field.name(),
                                 },
                                 _ => {

@@ -14,21 +14,102 @@ where
         .unwrap_or_else(|| query_field.name.as_ref().to_string())
 }
 
-pub fn normalize_selection_set<'a, 'b, T>(
-    selection_set: &'b SelectionSet<'a, T>,
-    fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
+pub fn merge_fields<'a, 'b, T, I>(target_fields: &mut Vec<Field<'a, T>>, next_fields: I)
+where
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
+    I: IntoIterator<Item = Field<'a, T>>,
+{
+    for field in next_fields {
+        merge_field(target_fields, field)
+    }
+}
+
+pub fn merge_field<'a, T>(target_fields: &mut Vec<Field<'a, T>>, field: Field<'a, T>)
+where
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
+{
+    let Some(matching_field) = target_fields
+        .iter_mut()
+        .find(|target| alias_or_name(target) == alias_or_name(&field))
+    else {
+        target_fields.push(field);
+        return;
+    };
+
+    // TODO check if fields can be merged
+
+    take_mut::take(matching_field, |matching_field| {
+        let mut merged_field = field;
+        merge_selection_sets(&mut merged_field.selection_set, matching_field.selection_set);
+        merged_field
+    });
+}
+
+pub fn merge_selection_sets<'a, T>(target_set: &mut SelectionSet<'a, T>, set: SelectionSet<'a, T>)
+where
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
+{
+    for selection in set.items {
+        merge_selection_set(target_set, selection);
+    }
+}
+
+pub fn merge_selection_set<'a, T>(target_set: &mut SelectionSet<'a, T>, selection: Selection<'a, T>)
+where
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
+{
+    match selection {
+        Selection::Field(field) => { // duplicate fields need to be merged
+            let Some(matching_field) = target_set.items
+                .iter_mut()
+                .filter_map(|target| {
+                    match target {
+                        Selection::Field(target) => Some(target),
+                        _ => None,
+                    }
+                })
+                .find(|target| alias_or_name(target) == alias_or_name(&field))
+            else {
+                target_set.items.push(Selection::Field(field));
+                return;
+            };
+
+            // TODO check if fields can be merged
+
+            take_mut::take(matching_field, |matching_field| {
+                let mut merged_field = field;
+                merge_selection_sets(&mut merged_field.selection_set, matching_field.selection_set);
+                merged_field
+            })
+        },
+        Selection::FragmentSpread(frag) => { // duplicate fragments can be ignored
+            if !target_set.items.iter().any(|target| match target {
+                Selection::FragmentSpread(target) => target.fragment_name == frag.fragment_name,
+                _ => false
+            }) {
+                target_set.items.push(Selection::FragmentSpread(frag));
+            }
+        },
+        Selection::InlineFragment(_infrag) => { // inline fragments can't be merged
+            todo!()
+        }
+    }
+}
+
+pub fn normalize_selection_set<'a, T>(
+    selection_set: &SelectionSet<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
-) -> Result<Vec<&'b Field<'a, T>>, String>
+) -> Result<Vec<Field<'a, T>>, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    let mut selections: Vec<&'b Field<'a, T>> = vec![];
+    let mut selections: Vec<Field<'a, T>> = vec![];
 
     for selection in &selection_set.items {
-        let sel = selection;
-        match normalize_selection(sel, fragment_definitions, type_name, variables) {
-            Ok(sels) => selections.extend(sels),
+        match normalize_selection(selection, fragment_definitions, type_name, variables) {
+            Ok(fields) => merge_fields(&mut selections, fields),
             Err(err) => return Err(err),
         }
     }
@@ -41,7 +122,7 @@ pub fn selection_is_skipped<'a, 'b, T>(
     variables: &serde_json::Value,
 ) -> Result<bool, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug,
 {
     let directives = match query_selection {
         Selection::Field(x) => &x.directives,
@@ -130,16 +211,16 @@ where
 }
 
 /// Normalizes literal selections, fragment spreads, and inline fragments
-pub fn normalize_selection<'a, 'b, T>(
-    query_selection: &'b Selection<'a, T>,
-    fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
+pub fn normalize_selection<'a, T>(
+    query_selection: &Selection<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
-) -> Result<Vec<&'b Field<'a, T>>, String>
+) -> Result<Vec<Field<'a, T>>, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    let mut selections: Vec<&Field<'a, T>> = vec![];
+    let mut selections: Vec<Field<'a, T>> = vec![];
 
     if selection_is_skipped(query_selection, variables)? {
         return Ok(selections);
@@ -147,7 +228,7 @@ where
 
     match query_selection {
         Selection::Field(field) => {
-            selections.push(field);
+            merge_field(&mut selections, field.clone());
         }
         Selection::FragmentSpread(fragment_spread) => {
             let frag_name = &fragment_spread.fragment_name;
@@ -173,14 +254,14 @@ where
             };
 
             // TODO handle directives?
-            let frag_selections = normalize_selection_set(
+            let frag_fields = normalize_selection_set(
                 &frag_def.selection_set,
                 fragment_definitions,
                 type_name,
                 variables,
             );
-            match frag_selections {
-                Ok(sels) => selections.extend(sels.iter()),
+            match frag_fields {
+                Ok(fields) => merge_fields(&mut selections, fields),
                 Err(err) => return Err(err),
             };
         }
@@ -193,13 +274,13 @@ where
             };
 
             if inline_fragment_applies {
-                let infrag_selections = normalize_selection_set(
+                let infrag_fields = normalize_selection_set(
                     &inline_fragment.selection_set,
                     fragment_definitions,
                     type_name,
                     variables,
                 )?;
-                selections.extend(infrag_selections.iter());
+                merge_fields(&mut selections, infrag_fields);
             }
         }
     }
@@ -213,7 +294,7 @@ pub fn to_gson<'a, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<gson::Value, String>
 where
-    T: Text<'a> + AsRef<str>,
+    T: Text<'a> + AsRef<str> + std::fmt::Debug,
 {
     let result = match graphql_value {
         Value::Null => gson::Value::Null,
