@@ -26,6 +26,7 @@ regex = "1"
 base64 = "0.13"
 lazy_static = "1"
 bimap = { version = "0.6.3", features = ["serde"] }
+take_mut = "0.2.2"
 
 [dev-dependencies]
 pgrx-tests = "=0.11.2"
