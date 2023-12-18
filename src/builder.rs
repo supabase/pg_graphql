@@ -277,6 +277,7 @@ where
                 fragment_definitions,
                 &type_name,
                 variables,
+                &field.type_,
             )?;
 
             for selection_field in selection_fields {
@@ -440,6 +441,7 @@ where
                 fragment_definitions,
                 &type_name,
                 variables,
+                &field.type_,
             )?;
 
             for selection_field in selection_fields {
@@ -541,6 +543,7 @@ where
                 fragment_definitions,
                 &type_name,
                 variables,
+                &field.type_,
             )?;
 
             for selection_field in selection_fields {
@@ -1388,6 +1391,7 @@ where
                 fragment_definitions,
                 &type_name,
                 variables,
+                &field.type_,
             )?;
 
             for selection_field in selection_fields {
@@ -1470,6 +1474,7 @@ where
                 fragment_definitions,
                 &type_name,
                 variables,
+                &field.type_,
             )?;
 
             for selection_field in selection_fields {
@@ -1532,6 +1537,7 @@ where
                 fragment_definitions,
                 &type_name,
                 variables,
+                &field.type_,
             )?;
 
             for selection_field in selection_fields {
@@ -1652,6 +1658,7 @@ where
         fragment_definitions,
         &type_name,
         variables,
+        &field.type_,
     )?;
 
     for selection_field in selection_fields {
@@ -1930,6 +1937,9 @@ impl __Schema {
             fragment_definitions,
             &"__EnumValue".to_string(),
             variables,
+            &__Type::Query(QueryType {
+                schema: Arc::new(self.clone()),
+            }),
         )?;
 
         let mut builder_fields = vec![];
@@ -1982,6 +1992,9 @@ impl __Schema {
             fragment_definitions,
             &"__InputValue".to_string(),
             variables,
+            &__Type::Query(QueryType {
+                schema: Arc::new(self.clone()),
+            }),
         )?;
 
         let mut builder_fields = vec![];
@@ -2047,6 +2060,7 @@ impl __Schema {
             fragment_definitions,
             &"__Field".to_string(),
             variables,
+            &field.type_,
         )?;
 
         let mut builder_fields = vec![];
@@ -2180,6 +2194,9 @@ impl __Schema {
             fragment_definitions,
             &"__Type".to_string(),
             variables,
+            &__Type::Query(QueryType {
+                schema: Arc::new(self.clone()),
+            }),
         )?;
 
         let mut builder_fields = vec![];
@@ -2372,6 +2389,9 @@ impl __Schema {
             fragment_definitions,
             &__Directive::TYPE.to_string(),
             variables,
+            &__Type::Query(QueryType {
+                schema: Arc::new(self.clone()),
+            }),
         )?;
 
         let mut builder_fields = vec![];
@@ -2451,6 +2471,7 @@ impl __Schema {
                     fragment_definitions,
                     &type_name,
                     variables,
+                    &field.type_,
                 )?;
 
                 for selection_field in selection_fields {

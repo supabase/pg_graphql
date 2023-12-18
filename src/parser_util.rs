@@ -1,4 +1,4 @@
-use crate::graphql::{EnumSource, __InputValue, __Type, ___Type};
+use crate::graphql::*;
 use crate::gson;
 use graphql_parser::query::*;
 use std::collections::HashMap;
@@ -17,13 +17,15 @@ where
 pub fn merge_fields<'a, T, I>(
     target_fields: &mut Vec<Field<'a, T>>,
     next_fields: I,
+    type_name: &str,
+    field_map: &HashMap<String, __Field>,
 ) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
     I: IntoIterator<Item = Field<'a, T>>,
 {
     for field in next_fields {
-        merge_field(target_fields, field)?
+        merge_field(target_fields, field, type_name, field_map)?
     }
     Ok(())
 }
@@ -31,6 +33,8 @@ where
 pub fn merge_field<'a, T>(
     target_fields: &mut Vec<Field<'a, T>>,
     field: Field<'a, T>,
+    type_name: &str,
+    field_map: &HashMap<String, __Field>,
 ) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
@@ -43,7 +47,7 @@ where
         return Ok(());
     };
 
-    can_fields_merge(&matching_field, &field)?;
+    can_fields_merge(&matching_field, &field, type_name, field_map)?;
 
     take_mut::take(matching_field, |matching_field| {
         let mut field = field;
@@ -58,11 +62,36 @@ where
     Ok(())
 }
 
-pub fn can_fields_merge<'a, T>(field_a: &Field<'a, T>, field_b: &Field<'a, T>) -> Result<(), String>
+pub fn can_fields_merge<'a, T>(
+    field_a: &Field<'a, T>,
+    field_b: &Field<'a, T>,
+    type_name: &str,
+    field_map: &HashMap<String, __Field>,
+) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     // TODO check if fields have compatible data shapes
+    let Some(field_type_a) = field_map.get(field_a.name.as_ref()) else {
+        return Err(format!(
+            "Unknown field '{}' on type '{}'",
+            field_a.name.as_ref(),
+            &type_name
+        ));
+    };
+    let Some(field_type_b) = field_map.get(field_b.name.as_ref()) else {
+        return Err(format!(
+            "Unknown field '{}' on type '{}'",
+            field_b.name.as_ref(),
+            &type_name
+        ));
+    };
+    if field_type_a.type_ != field_type_b.type_ {
+        return Err(format!(
+            "Fields \"{}\" conflict because they have differing types",
+            alias_or_name(field_a),
+        ));
+    }
 
     for (arg_a_name, arg_a_value) in field_a.arguments.iter() {
         let arg_b_value = field_b.arguments.iter().find_map(|(name, value)| {
@@ -92,15 +121,24 @@ pub fn normalize_selection_set<'a, T>(
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
+    field_type: &__Type,
 ) -> Result<Vec<Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let mut normalized_fields: Vec<Field<'a, T>> = vec![];
 
+    let field_map = field_map(&field_type.unmodified_type());
+
     for selection in &selection_set.items {
-        match normalize_selection(selection, fragment_definitions, type_name, variables) {
-            Ok(fields) => merge_fields(&mut normalized_fields, fields)?,
+        match normalize_selection(
+            selection,
+            fragment_definitions,
+            type_name,
+            variables,
+            field_type,
+        ) {
+            Ok(fields) => merge_fields(&mut normalized_fields, fields, type_name, &field_map)?,
             Err(err) => return Err(err),
         }
     }
@@ -207,6 +245,7 @@ pub fn normalize_selection<'a, T>(
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
+    field_type: &__Type,           // for field merging shape check
 ) -> Result<Vec<Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
@@ -217,9 +256,11 @@ where
         return Ok(normalized_fields);
     }
 
+    let field_map = field_map(&field_type.unmodified_type());
+
     match query_selection {
         Selection::Field(field) => {
-            merge_field(&mut normalized_fields, field.clone())?;
+            merge_field(&mut normalized_fields, field.clone(), type_name, &field_map)?;
         }
         Selection::FragmentSpread(fragment_spread) => {
             let frag_name = &fragment_spread.fragment_name;
@@ -250,9 +291,10 @@ where
                 fragment_definitions,
                 type_name,
                 variables,
+                field_type,
             );
             match frag_fields {
-                Ok(fields) => merge_fields(&mut normalized_fields, fields)?,
+                Ok(fields) => merge_fields(&mut normalized_fields, fields, type_name, &field_map)?,
                 Err(err) => return Err(err),
             };
         }
@@ -270,8 +312,9 @@ where
                     fragment_definitions,
                     type_name,
                     variables,
+                    field_type,
                 )?;
-                merge_fields(&mut normalized_fields, infrag_fields)?;
+                merge_fields(&mut normalized_fields, infrag_fields, type_name, &field_map)?;
             }
         }
     }
@@ -346,7 +389,6 @@ where
 }
 
 pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gson::Value, String> {
-    use crate::graphql::Scalar;
     use crate::gson::Number as GsonNumber;
     use crate::gson::Value as GsonValue;
 
@@ -555,7 +597,6 @@ pub fn validate_arg_from_input_object(
     input_type: &__Type,
     value: &gson::Value,
 ) -> Result<gson::Value, String> {
-    use crate::graphql::__TypeKind;
     use crate::gson::Value as GsonValue;
 
     let input_type_name = input_type.name().unwrap_or_default();

@@ -147,6 +147,7 @@ where
         &fragment_definitions,
         &query_type.name().unwrap(),
         variables,
+        &query_type,
     ) {
         Ok(selections) => selections,
         Err(err) => {
@@ -365,6 +366,7 @@ where
         &fragment_definitions,
         &mutation_type.name().unwrap(),
         variables,
+        &mutation_type,
     ) {
         Ok(selections) => selections,
         Err(err) => {
