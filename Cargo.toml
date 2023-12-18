@@ -22,7 +22,6 @@ itertools = "0.10.3"
 cached = "0.34.0"
 rand = "0.8"
 uuid = "1"
-regex = "1"
 base64 = "0.13"
 lazy_static = "1"
 bimap = { version = "0.6.3", features = ["serde"] }

@@ -2,19 +2,15 @@ use crate::sql_types::*;
 use cached::proc_macro::cached;
 use cached::SizedCache;
 use itertools::Itertools;
-use lazy_static::lazy_static;
-use regex::Regex;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 use std::sync::Arc;
 
-lazy_static! {
-    static ref GRAPHQL_NAME_RE: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
-}
-
 fn is_valid_graphql_name(name: &str) -> bool {
-    GRAPHQL_NAME_RE.is_match(name)
+    !name.is_empty()
+        && name.starts_with(|c: char| c == '_' || c.is_ascii_alphabetic())
+        && name.chars().all(|c| c == '_' || c.is_ascii_alphanumeric())
 }
 
 fn to_base_type_name(name: &str, name_override: &Option<String>, inflect_names: bool) -> String {
