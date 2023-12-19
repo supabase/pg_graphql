@@ -71,47 +71,112 @@ pub fn can_fields_merge<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    // TODO check if fields have compatible data shapes
-    let Some(field_type_a) = field_map.get(field_a.name.as_ref()) else {
+    let Some(_field_a) = field_map.get(field_a.name.as_ref()) else {
         return Err(format!(
             "Unknown field '{}' on type '{}'",
             field_a.name.as_ref(),
             &type_name
         ));
     };
-    let Some(field_type_b) = field_map.get(field_b.name.as_ref()) else {
+    let Some(_field_b) = field_map.get(field_b.name.as_ref()) else {
         return Err(format!(
             "Unknown field '{}' on type '{}'",
             field_b.name.as_ref(),
             &type_name
         ));
     };
-    if field_type_a.type_ != field_type_b.type_ {
+
+    has_same_type_shape(
+        &alias_or_name(field_a),
+        type_name,
+        &_field_a.type_,
+        &_field_b.type_,
+    )?;
+    
+    if field_a.name != field_b.name {
         return Err(format!(
-            "Fields \"{}\" conflict because they have differing types",
+            "Fields '{}' conflict because '{}' and '{}' are different fields",
             alias_or_name(field_a),
+            field_a.name.as_ref(),
+            field_b.name.as_ref(),
         ));
     }
-
+    
     for (arg_a_name, arg_a_value) in field_a.arguments.iter() {
-        let arg_b_value = field_b.arguments.iter().find_map(|(name, value)| {
+        let arg_b_value = field_b.arguments.iter().find_map(|(name, value)|
             if name == arg_a_name {
                 Some(value)
             } else {
                 None
-            }
-        });
+            });
         let args_match = match arg_b_value {
             None => false,
             Some(arg_b_value) => arg_b_value == arg_a_value,
         };
         if !args_match {
             return Err(format!(
-                "Fields \"{}\" conflict because they have differing arguments",
+                "Fields '{}' conflict because they have differing arguments",
                 alias_or_name(field_a),
             ));
         }
     }
+    
+    Ok(())
+}
+
+pub fn has_same_type_shape(
+    field_name: &str,
+    type_name: &str,
+    type_a: &__Type,
+    type_b: &__Type,
+) -> Result<(), String> {
+    let mut type_a = type_a;
+    let mut type_b = type_b;
+
+    if matches!(type_a, __Type::NonNull(_)) || matches!(type_b, __Type::NonNull(_)) {
+        if let (__Type::NonNull(nullable_type_a), __Type::NonNull(nullable_type_b)) =
+            (type_a, type_b)
+        {
+            type_a = nullable_type_a.type_.as_ref();
+            type_b = nullable_type_b.type_.as_ref();
+        } else {
+            return Err(format!(
+                "Fields '{}' conflict because only one is non nullable",
+                field_name,
+            ));
+        }
+    }
+
+    if matches!(type_a, __Type::List(_)) || matches!(type_b, __Type::List(_)) {
+        if let (__Type::List(list_type_a), __Type::List(list_type_b)) = (type_a, type_b) {
+            type_a = list_type_a.type_.as_ref();
+            type_b = list_type_b.type_.as_ref();
+        } else {
+            return Err(format!(
+                "Fields '{}' conflict because only one is a list type",
+                field_name,
+            ));
+        }
+
+        return has_same_type_shape(field_name, type_name, type_a, type_b);
+    }
+
+    if matches!(type_a, __Type::Enum(_))
+        || matches!(type_b, __Type::Enum(_))
+        || matches!(type_a, __Type::Scalar(_))
+        || matches!(type_b, __Type::Scalar(_))
+    {
+        return if type_a == type_b {
+            Ok(())
+        } else {
+            Err(format!(
+                "Fields '{}' conflict due to mismatched types",
+                field_name,
+            ))
+        };
+    }
+    
+    // TODO handle composite types?
 
     Ok(())
 }
