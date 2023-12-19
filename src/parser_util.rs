@@ -1,7 +1,7 @@
 use crate::graphql::*;
 use crate::gson;
-use graphql_parser::Pos;
 use graphql_parser::query::*;
+use graphql_parser::Pos;
 use std::collections::HashMap;
 
 pub fn alias_or_name<'a, T>(query_field: &graphql_parser::query::Field<'a, T>) -> String
@@ -55,10 +55,8 @@ where
 
         field.position = field.position.min(matching_field.position);
 
-        field.selection_set.span = min_encapsulating_span(
-            field.selection_set.span,
-            matching_field.selection_set.span,
-        );
+        field.selection_set.span =
+            min_encapsulating_span(field.selection_set.span, matching_field.selection_set.span);
 
         // Subfields will be normalized and properly merged on a later pass.
         field
@@ -102,7 +100,7 @@ where
         &_field_a.type_,
         &_field_b.type_,
     )?;
-    
+
     if field_a.name != field_b.name {
         return Err(format!(
             "Fields '{}' conflict because '{}' and '{}' are different fields",
@@ -111,14 +109,15 @@ where
             field_b.name.as_ref(),
         ));
     }
-    
+
     for (arg_a_name, arg_a_value) in field_a.arguments.iter() {
-        let arg_b_value = field_b.arguments.iter().find_map(|(name, value)|
+        let arg_b_value = field_b.arguments.iter().find_map(|(name, value)| {
             if name == arg_a_name {
                 Some(value)
             } else {
                 None
-            });
+            }
+        });
         let args_match = match arg_b_value {
             None => false,
             Some(arg_b_value) => arg_b_value == arg_a_value,
@@ -130,7 +129,7 @@ where
             ));
         }
     }
-    
+
     Ok(())
 }
 
@@ -185,7 +184,7 @@ pub fn has_same_type_shape(
             ))
         };
     }
-    
+
     // TODO handle composite types?
 
     // Subfield type shapes will be checked on a later pass.
