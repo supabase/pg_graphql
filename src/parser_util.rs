@@ -1,5 +1,6 @@
 use crate::graphql::*;
 use crate::gson;
+use graphql_parser::Pos;
 use graphql_parser::query::*;
 use std::collections::HashMap;
 
@@ -51,11 +52,20 @@ where
 
     take_mut::take(matching_field, |matching_field| {
         let mut field = field;
+
+        field.position = field.position.min(matching_field.position);
+
+        field.selection_set.span = min_encapsulating_span(
+            field.selection_set.span,
+            matching_field.selection_set.span,
+        );
+
         // Subfields will be normalized and properly merged on a later pass.
         field
             .selection_set
             .items
             .extend(matching_field.selection_set.items);
+
         field
     });
 
@@ -178,7 +188,12 @@ pub fn has_same_type_shape(
     
     // TODO handle composite types?
 
+    // Subfield type shapes will be checked on a later pass.
     Ok(())
+}
+
+pub fn min_encapsulating_span(a: (Pos, Pos), b: (Pos, Pos)) -> (Pos, Pos) {
+    (a.0.min(b.0), a.1.max(b.1))
 }
 
 pub fn normalize_selection_set<'a, T>(
