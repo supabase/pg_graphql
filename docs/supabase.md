@@ -27,7 +27,7 @@ For user authentication, pass an `Authorization` header e.g.
 ```
     -H 'Authorization: Bearer <JWT>'
 ```
-See the [auth docs](https://supabase.com/docs/guides/auth/auth-email) to understand how to sign-up/sign-in users to your application and retrieve a JWT. The [apollo](usage_with_apollo.md) and [relay](usage_with_relay.md) guides also include complete examples of using Supabase Auth with GraphQL.
+See the [auth docs](https://supabase.com/docs/guides/auth/auth-email) to understand how to sign-up/sign-in users to your application and retrieve a JWT. The [apollo](usage_with_apollo.md) and [relay](usage_with_relay.md) guides also include complete examples of using Supabase Auth with GraphQL. Supabase Auth works with [row level security (RLS)](https://supabase.com/docs/guides/auth/row-level-security) allowing you to control which users can access tables/rows.
 
 The fastest way to get started with GraphQL on Supabase is using the [GraphQL IDE (GraphiQL) built directly into Supabase Studio](#supabase-studio).
 
