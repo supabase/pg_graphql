@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#clients" class="md-skip">
+        <a href="#quickstart" class="md-skip">
           Skip to content
         </a>
       
@@ -404,6 +404,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    Quickstart
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#clients" class="md-nav__link">
     Clients
   </a>
@@ -647,6 +654,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    Quickstart
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#clients" class="md-nav__link">
     Clients
   </a>
@@ -794,6 +808,22 @@
 </ul>
 <p>All requests resolve in a single round-trip leading to fast response times and high throughput.</p>
 <p>If you haven't created a Supabase project, do that <a href="https://database.new">here</a> so you can follow along with the guide.</p>
+<h2 id="quickstart">Quickstart</h2>
+<p><code>https://&lt;PROJECT_REF&gt;.supabase.co/graphql/v1</code> is your project's GraphQL API endpoint. See <a href="#project-reference-project_ref">PROJECT_REF</a> for instructions on finding your project's reference. Note that the url does not allow a trailing <code>/</code>.</p>
+<p>To access the API you MUST provide your project's <a href="#api-key-api_key">API key</a> as a header in every request. For example see line 2 of the cURL request below.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://&lt;PROJECT_REF&gt;.supabase.co/graphql/v1<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-H<span class="w"> </span><span class="s1">&#39;apiKey: &lt;API_KEY&gt;&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data-raw<span class="w"> </span><span class="s1">&#39;{&quot;query&quot;: &quot;{ accountCollection(first: 1) { edges { node { id } } } }&quot;, &quot;variables&quot;: {}}&#39;</span>
+</code></pre></div></td></tr></table></div>
+<p>For user authentication, pass an <code>Authorization</code> header e.g.
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>    -H &#39;Authorization: Bearer &lt;JWT&gt;&#39;
+</code></pre></div></td></tr></table></div>
+See the <a href="https://supabase.com/docs/guides/auth/auth-email">auth docs</a> to understand how to sign-up/sign-in users to your application and retrieve a JWT. The <a href="../usage_with_apollo/">apollo</a> and <a href="../usage_with_relay/">relay</a> guides also include complete examples of using Supabase Auth with GraphQL. Supabase Auth works with <a href="https://supabase.com/docs/guides/auth/row-level-security">row level security (RLS)</a> allowing you to control which users can access tables/rows.</p>
+<p>The fastest way to get started with GraphQL on Supabase is using the <a href="#supabase-studio">GraphQL IDE (GraphiQL) built directly into Supabase Studio</a>.</p>
 <h2 id="clients">Clients</h2>
 <p>If you're new to GraphQL or Supabase, we strongly recommend starting with Supabase GraphQL by following the <a href="#supabase-studio">Supabase Studio guide</a>.</p>
 <p>For more experienced users, or when you're ready to productionize your application, access the API using <a href="#supabase-js">supabase-js</a>, <a href="#connecting-graphiql">GraphiQL</a>, or any HTTP client, for example <a href="#curl">cURL</a>.</p>

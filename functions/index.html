@@ -627,7 +627,7 @@
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
-  <span class="k">addNums</span><span class="p">(</span><span class="k">a</span><span class="p">:</span> <span class="k">Int</span>, <span class="k">b</span><span class="p">:</span> <span class="k">Int</span><span class="p">):</span> <span class="k">Int</span>
+  <span class="k">addNums</span><span class="p">(</span><span class="k">a</span><span class="p">:</span> <span class="k">Int</span><span class="p">!</span>, <span class="k">b</span><span class="p">:</span> <span class="k">Int</span><span class="p">!):</span> <span class="k">Int</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -682,7 +682,7 @@
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
-  <span class="k">addAccount</span><span class="p">(</span>email: <span class="k">String</span><span class="p">):</span> <span class="k">Int</span>
+  <span class="k">addAccount</span><span class="p">(</span>email: <span class="k">String</span><span class="p">!):</span> <span class="k">Int</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -710,7 +710,7 @@
 </div>
 <h2 id="supported-return-types">Supported Return Types</h2>
 <p>Built-in GraphQL scalar types <code>Int</code>, <code>Float</code>, <code>String</code>, <code>Boolean</code> and <a href="../api/#custom-scalars">custom scalar types</a> are supported as function arguments and return types. Function types returning a table or view are supported as well. Such functions implement the <a href="../api/#node">Node interface</a>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:4"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><input id="__tabbed_3_4" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Function</label><label for="__tabbed_3_2">MutationType</label><label for="__tabbed_3_3">Query</label><label for="__tabbed_3_4">Response</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:4"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><input id="__tabbed_3_4" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Function</label><label for="__tabbed_3_2">QueryType</label><label for="__tabbed_3_3">Query</label><label for="__tabbed_3_4">Response</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -747,8 +747,8 @@
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
-  <span class="k">addAccount</span><span class="p">(</span>email: <span class="k">String</span><span class="p">):</span> <span class="k">Int</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
+  <span class="k">accountById</span><span class="p">(</span>email: <span class="k">String</span><span class="p">!):</span> <span class="k">Account</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -820,7 +820,7 @@
 <span class="w">    </span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;bat@x.com&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">),</span>
 <span class="w">    </span><span class="p">(</span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">);</span>
 
-<span class="k">create</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">returns_account_with_all_null_columns</span><span class="p">()</span>
+<span class="k">create</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="ss">&quot;returnsAccountWithAllNullColumns&quot;</span><span class="p">()</span>
 <span class="w">    </span><span class="k">returns</span><span class="w"> </span><span class="n">account</span><span class="w"> </span><span class="k">language</span><span class="w"> </span><span class="k">sql</span><span class="w"> </span><span class="k">stable</span>
 <span class="k">as</span><span class="w"> </span><span class="err">$$</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">email</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">account</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">;</span><span class="w"> </span><span class="err">$$</span><span class="p">;</span>
 </code></pre></div></td></tr></table></div>
@@ -919,7 +919,7 @@
 <span class="normal">22</span>
 <span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
   <span class="k">accountsByEmail</span><span class="p">(</span>
-    emailToSearch: <span class="k">String</span>
+    emailToSearch: <span class="k">String</span><span class="p">!</span>
 
     <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
     first: <span class="k">Int</span>
@@ -1000,9 +1000,160 @@
 <p class="admonition-title">Note</p>
 <p>A set returning function with any of its argument names clashing with argument names of a collection (<code>first</code>, <code>last</code>, <code>before</code>, <code>after</code>, <code>filter</code>, or <code>orderBy</code>) will not be exposed.</p>
 </div>
+<p>Functions accepting or returning arrays of non-composite types are also supported. In the following example, the <code>ids</code> array is used to filter rows from the <code>Account</code> table:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:4"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><input id="__tabbed_6_4" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Function</label><label for="__tabbed_6_2">QueryType</label><label for="__tabbed_6_3">Query</label><label for="__tabbed_6_4">Response</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span>
+<span class="w">  </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span>
+<span class="w">  </span><span class="n">email</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="p">);</span>
+
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="p">(</span><span class="n">email</span><span class="p">)</span>
+<span class="k">values</span>
+<span class="w">  </span><span class="p">(</span><span class="s1">&#39;a@example.com&#39;</span><span class="p">),</span>
+<span class="w">  </span><span class="p">(</span><span class="s1">&#39;b@example.com&#39;</span><span class="p">),</span>
+<span class="w">  </span><span class="p">(</span><span class="s1">&#39;c@example.com&#39;</span><span class="p">);</span>
+
+<span class="k">create</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="ss">&quot;accountsByIds&quot;</span><span class="p">(</span><span class="ss">&quot;ids&quot;</span><span class="w"> </span><span class="nb">int</span><span class="p">[])</span>
+<span class="w">  </span><span class="k">returns</span><span class="w"> </span><span class="k">setof</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span>
+<span class="w">  </span><span class="k">stable</span>
+<span class="w">  </span><span class="k">language</span><span class="w"> </span><span class="k">sql</span>
+<span class="k">as</span><span class="w"> </span><span class="err">$$</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">email</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="ss">&quot;Account&quot;</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">any</span><span class="p">(</span><span class="n">ids</span><span class="p">);</span><span class="w"> </span><span class="err">$$</span><span class="p">;</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
+  <span class="k">accountsByIds</span><span class="p">(</span>
+    ids: <span class="k">Int</span><span class="p">[]!</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
+    first: <span class="k">Int</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span>
+    last: <span class="k">Int</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span>
+    before: <span class="k">Cursor</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span>
+    after: <span class="k">Cursor</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span>
+    filter: <span class="k">AccountFilter</span>
+
+    <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
+    orderBy: <span class="p">[</span><span class="k">AccountOrderBy</span><span class="p">!]</span>
+  <span class="p">):</span> <span class="k">AccountConnection</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">query</span> <span class="p">{</span>
+  <span class="k">accountsByIds</span><span class="p">(</span>ids: <span class="p">[</span><span class="mi">1</span>, <span class="mi">2</span><span class="p">])</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">email</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;accountsByIds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a@example.com&quot;</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;b@example.com&quot;</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
 <h2 id="default-arguments">Default Arguments</h2>
 <p>Functions with default arguments can have their default arguments omitted.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:4"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><input id="__tabbed_6_4" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Function</label><label for="__tabbed_6_2">QueryType</label><label for="__tabbed_6_3">Query</label><label for="__tabbed_6_4">Response</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:4"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><input id="__tabbed_7_4" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Function</label><label for="__tabbed_7_2">QueryType</label><label for="__tabbed_7_3">Query</label><label for="__tabbed_7_4">Response</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
@@ -1049,13 +1200,13 @@
 <h2 id="limitations">Limitations</h2>
 <p>The following features are not yet supported. Any function using these features is not exposed in the API:</p>
 <ul>
-<li>Functions that return a record type</li>
 <li>Functions that accept a table's tuple type</li>
 <li>Overloaded functions</li>
 <li>Functions with a nameless argument</li>
 <li>Functions returning void</li>
 <li>Variadic functions</li>
-<li>Function that accept or return an array type</li>
+<li>Functions that accept or return an array of composite type</li>
+<li>Functions that accept or return an enum type or an array of enum type</li>
 </ul>
 
 
