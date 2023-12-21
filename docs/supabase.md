@@ -10,6 +10,28 @@ All requests resolve in a single round-trip leading to fast response times and h
 
 If you haven't created a Supabase project, do that [here](https://database.new) so you can follow along with the guide.
 
+## Quickstart
+
+`https://<PROJECT_REF>.supabase.co/graphql/v1` is your project's GraphQL API endpoint. See [PROJECT_REF](#project-reference-project_ref) for instructions on finding your project's reference. Note that the url does not allow a trailing `/`.
+
+To access the API you MUST provide your project's [API key](#api-key-api_key) as a header in every request. For example see line 2 of the cURL request below.
+
+```sh
+curl -X POST https://<PROJECT_REF>.supabase.co/graphql/v1 \
+    -H 'apiKey: <API_KEY>' \
+    -H 'Content-Type: application/json' \
+    --data-raw '{"query": "{ accountCollection(first: 1) { edges { node { id } } } }", "variables": {}}'
+```
+
+For user authentication, pass an `Authorization` header e.g.
+```
+    -H 'Authorization: Bearer <JWT>'
+```
+See the [auth docs](https://supabase.com/docs/guides/auth/auth-email) to understand how to sign-up/sign-in users to your application and retrieve a JWT. The [apollo](usage_with_apollo.md) and [relay](usage_with_relay.md) guides also include complete examples of using Supabase Auth with GraphQL. Supabase Auth works with [row level security (RLS)](https://supabase.com/docs/guides/auth/row-level-security) allowing you to control which users can access tables/rows.
+
+The fastest way to get started with GraphQL on Supabase is using the [GraphQL IDE (GraphiQL) built directly into Supabase Studio](#supabase-studio).
+
+
 ## Clients
 
 If you're new to GraphQL or Supabase, we strongly recommend starting with Supabase GraphQL by following the [Supabase Studio guide](#supabase-studio).
