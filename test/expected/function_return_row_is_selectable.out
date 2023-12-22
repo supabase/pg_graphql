@@ -108,23 +108,20 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                   
---------------------------------------------------
- {                                               +
-     "data": {                                   +
-         "__schema": {                           +
-             "queryType": {                      +
-                 "fields": [                     +
-                     {                           +
-                         "name": "node"          +
-                     },                          +
-                     {                           +
-                         "name": "returnsAccount"+
-                     }                           +
-                 ]                               +
-             }                                   +
-         }                                       +
-     }                                           +
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "__schema": {                 +
+             "queryType": {            +
+                 "fields": [           +
+                     {                 +
+                         "name": "node"+
+                     }                 +
+                 ]                     +
+             }                         +
+         }                             +
+     }                                 +
  }
 (1 row)
 
