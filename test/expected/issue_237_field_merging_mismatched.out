@@ -32,15 +32,15 @@ begin;
         }
       $$)
     );
-                                     jsonb_pretty                                      
----------------------------------------------------------------------------------------
- {                                                                                    +
-     "data": null,                                                                    +
-     "errors": [                                                                      +
-         {                                                                            +
-             "message": "Fields 'a' conflict because 'b' and 'a' are different fields"+
-         }                                                                            +
-     ]                                                                                +
+                                               jsonb_pretty                                               
+----------------------------------------------------------------------------------------------------------
+ {                                                                                                       +
+     "data": null,                                                                                       +
+     "errors": [                                                                                         +
+         {                                                                                               +
+             "message": "Fields 'a' on type 'BlogPost' conflict because 'b' and 'a' are different fields"+
+         }                                                                                               +
+     ]                                                                                                   +
  }
 (1 row)
 
@@ -67,14 +67,14 @@ begin;
         }
       $$)
     );
-                                            jsonb_pretty                                             
------------------------------------------------------------------------------------------------------
- {                                                                                                  +
-     "errors": [                                                                                    +
-         {                                                                                          +
-             "message": "Fields 'blogPostCollection' conflict because they have differing arguments"+
-         }                                                                                          +
-     ]                                                                                              +
+                                                    jsonb_pretty                                                     
+---------------------------------------------------------------------------------------------------------------------
+ {                                                                                                                  +
+     "errors": [                                                                                                    +
+         {                                                                                                          +
+             "message": "Fields 'blogPostCollection' on type 'Query' conflict because they have differing arguments"+
+         }                                                                                                          +
+     ]                                                                                                              +
  }
 (1 row)
 
@@ -95,15 +95,15 @@ begin;
         }
       $$)
     );
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Fields 'a' conflict because only one is a list type"+
-         }                                                                   +
-     ]                                                                       +
+                                               jsonb_pretty                                                
+-----------------------------------------------------------------------------------------------------------
+ {                                                                                                        +
+     "data": null,                                                                                        +
+     "errors": [                                                                                          +
+         {                                                                                                +
+             "message": "Fields 'a' on type 'BlogPostConnection' conflict because only one is a list type"+
+         }                                                                                                +
+     ]                                                                                                    +
  }
 (1 row)
 
