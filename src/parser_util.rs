@@ -48,7 +48,7 @@ where
         target_fields.push(field);
         return Ok(());
     };
-
+    
     can_fields_merge(&matching_field, &field, type_name, field_map)?;
     
     field.position = field.position.min(matching_field.position);
@@ -80,14 +80,14 @@ where
         return Err(format!(
             "Unknown field '{}' on type '{}'",
             field_a.name.as_ref(),
-            &type_name
+            type_name
         ));
     };
     let Some(_field_b) = field_map.get(field_b.name.as_ref()) else {
         return Err(format!(
             "Unknown field '{}' on type '{}'",
             field_b.name.as_ref(),
-            &type_name
+            type_name
         ));
     };
 
@@ -100,8 +100,9 @@ where
 
     if field_a.name != field_b.name {
         return Err(format!(
-            "Fields '{}' conflict because '{}' and '{}' are different fields",
+            "Fields '{}' on type '{}' conflict because '{}' and '{}' are different fields",
             alias_or_name(field_a),
+            type_name,
             field_a.name.as_ref(),
             field_b.name.as_ref(),
         ));
@@ -121,8 +122,9 @@ where
         };
         if !args_match {
             return Err(format!(
-                "Fields '{}' conflict because they have differing arguments",
+                "Fields '{}' on type '{}' conflict because they have differing arguments",
                 alias_or_name(field_a),
+                type_name,
             ));
         }
     }
@@ -147,8 +149,9 @@ pub fn has_same_type_shape(
             type_b = nullable_type_b.type_.as_ref();
         } else {
             return Err(format!(
-                "Fields '{}' conflict because only one is non nullable",
+                "Fields '{}' on type '{}' conflict because only one is non nullable",
                 field_name,
+                type_name,
             ));
         }
     }
@@ -159,8 +162,9 @@ pub fn has_same_type_shape(
             type_b = list_type_b.type_.as_ref();
         } else {
             return Err(format!(
-                "Fields '{}' conflict because only one is a list type",
+                "Fields '{}' on type '{}' conflict because only one is a list type",
                 field_name,
+                type_name,
             ));
         }
 
@@ -176,8 +180,9 @@ pub fn has_same_type_shape(
             Ok(())
         } else {
             Err(format!(
-                "Fields '{}' conflict due to mismatched types",
+                "Fields '{}' on type '{}' conflict due to mismatched types",
                 field_name,
+                type_name,
             ))
         };
     }
