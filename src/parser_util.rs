@@ -33,39 +33,36 @@ where
 
 pub fn merge_field<'a, T>(
     target_fields: &mut Vec<Field<'a, T>>,
-    field: Field<'a, T>,
+    mut field: Field<'a, T>,
     type_name: &str,
     field_map: &HashMap<String, __Field>,
 ) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    let Some(matching_field) = target_fields
-        .iter_mut()
-        .find(|target| alias_or_name(target) == alias_or_name(&field))
+    let Some((matching_idx, matching_field)) = target_fields
+        .iter()
+        .enumerate()
+        .find(|(_, target)| alias_or_name(target) == alias_or_name(&field))
     else {
         target_fields.push(field);
         return Ok(());
     };
 
     can_fields_merge(&matching_field, &field, type_name, field_map)?;
+    
+    field.position = field.position.min(matching_field.position);
 
-    take_mut::take(matching_field, |matching_field| {
-        let mut field = field;
+    field.selection_set.span =
+        min_encapsulating_span(field.selection_set.span, matching_field.selection_set.span);
 
-        field.position = field.position.min(matching_field.position);
-
-        field.selection_set.span =
-            min_encapsulating_span(field.selection_set.span, matching_field.selection_set.span);
-
-        // Subfields will be normalized and properly merged on a later pass.
-        field
-            .selection_set
-            .items
-            .extend(matching_field.selection_set.items);
-
-        field
-    });
+    // Subfields will be normalized and properly merged on a later pass.
+    field
+        .selection_set
+        .items
+        .extend(matching_field.selection_set.items.clone());
+    
+    target_fields[matching_idx] = field;
 
     Ok(())
 }
