@@ -48,9 +48,9 @@ where
         target_fields.push(field);
         return Ok(());
     };
-    
+
     can_fields_merge(&matching_field, &field, type_name, field_map)?;
-    
+
     field.position = field.position.min(matching_field.position);
 
     field.selection_set.span =
@@ -61,7 +61,7 @@ where
         .selection_set
         .items
         .extend(matching_field.selection_set.items.clone());
-    
+
     target_fields[matching_idx] = field;
 
     Ok(())
@@ -150,8 +150,7 @@ pub fn has_same_type_shape(
         } else {
             return Err(format!(
                 "Fields '{}' on type '{}' conflict because only one is non nullable",
-                field_name,
-                type_name,
+                field_name, type_name,
             ));
         }
     }
@@ -163,8 +162,7 @@ pub fn has_same_type_shape(
         } else {
             return Err(format!(
                 "Fields '{}' on type '{}' conflict because only one is a list type",
-                field_name,
-                type_name,
+                field_name, type_name,
             ));
         }
 
@@ -181,8 +179,7 @@ pub fn has_same_type_shape(
         } else {
             Err(format!(
                 "Fields '{}' on type '{}' conflict due to mismatched types",
-                field_name,
-                type_name,
+                field_name, type_name,
             ))
         };
     }
