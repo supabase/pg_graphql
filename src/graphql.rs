@@ -1284,8 +1284,18 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
                                 return None;
                             }
                         }
-
                         gql_args.extend(connection_args);
+                    }
+
+                    // If the return type is a table type, it must be selectable
+                    if !match &return_type {
+                        __Type::Node(table_type) => table_type.table.permissions.is_selectable,
+                        __Type::Connection(table_type) => {
+                            table_type.table.permissions.is_selectable
+                        }
+                        _ => true,
+                    } {
+                        return None;
                     }
 
                     Some(__Field {
