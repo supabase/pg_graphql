@@ -259,8 +259,7 @@ where
                         variable_definitions
                             .iter()
                             .find(|var_def| var_def.name.as_ref() == var_name.as_ref())
-                            .map(|x| x.default_value.as_ref())
-                            .flatten();
+                            .and_then(|x| x.default_value.as_ref());
 
                     match variable_default {
                         Some(x) => to_gson(x, variables, variable_definitions)?,
