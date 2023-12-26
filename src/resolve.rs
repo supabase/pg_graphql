@@ -1,9 +1,12 @@
+use std::collections::HashSet;
+
 use crate::builder::*;
 use crate::graphql::*;
 use crate::omit::*;
 use crate::parser_util::*;
 use crate::sql_types::get_one_readonly;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
+use graphql_parser::query::Selection;
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, SelectionSet,
     Text, VariableDefinition,
@@ -80,6 +83,18 @@ where
             // Or only 1 operation, and requested operation_name is None
             || (operation_names.len() == 1 && operation_name.is_none() ))
         .map(|x| x.0);
+
+    for fd in &fragment_defs {
+        match detect_fragment_cycles(fd, &mut HashSet::new(), &fragment_defs) {
+            Ok(()) => {}
+            Err(message) => {
+                return GraphQLResponse {
+                    data: Omit::Omitted,
+                    errors: Omit::Present(vec![ErrorMessage { message }]),
+                }
+            }
+        }
+    }
 
     match maybe_op {
         None => GraphQLResponse {
@@ -497,4 +512,64 @@ where
             ereport!(ERROR, PgSqlErrorCode::ERRCODE_INTERNAL_ERROR, err);
         }
     }
+}
+
+fn detect_fragment_cycles<'a, 'b, T>(
+    fragment_definition: &'b FragmentDefinition<'a, T>,
+    visited: &mut HashSet<&'b str>,
+    fragment_definitions: &'b [FragmentDefinition<'a, T>],
+) -> Result<(), String>
+where
+    T: Text<'a>,
+{
+    if visited.contains(fragment_definition.name.as_ref()) {
+        return Err("Found a cycle between fragments".to_string());
+    } else {
+        visited.insert(fragment_definition.name.as_ref());
+    }
+    detect_fragment_cycles_in_selection_set(
+        &fragment_definition.selection_set,
+        visited,
+        fragment_definitions,
+    )?;
+
+    visited.remove(fragment_definition.name.as_ref());
+    Ok(())
+}
+
+fn detect_fragment_cycles_in_selection_set<'a, 'b, T>(
+    selection_set: &'b SelectionSet<'a, T>,
+    visited: &mut HashSet<&'b str>,
+    fragment_definitions: &'b [FragmentDefinition<'a, T>],
+) -> Result<(), String>
+where
+    T: Text<'a>,
+{
+    for selection in &selection_set.items {
+        match selection {
+            Selection::Field(field) => {
+                detect_fragment_cycles_in_selection_set(
+                    &field.selection_set,
+                    visited,
+                    fragment_definitions,
+                )?;
+            }
+            Selection::FragmentSpread(fragment_spread) => {
+                for fd in fragment_definitions {
+                    if fd.name == fragment_spread.fragment_name {
+                        detect_fragment_cycles(fd, visited, fragment_definitions)?;
+                        break;
+                    }
+                }
+            }
+            Selection::InlineFragment(inline_fragment) => {
+                detect_fragment_cycles_in_selection_set(
+                    &inline_fragment.selection_set,
+                    visited,
+                    fragment_definitions,
+                )?;
+            }
+        }
+    }
+    Ok(())
 }
