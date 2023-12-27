@@ -107,6 +107,7 @@ begin;
     }
     $$);
 
+    -- test that a recursion limit of 50 is good enough for most queries
     select graphql.resolve($$
     {
         blogCollection {
