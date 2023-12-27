@@ -111,6 +111,62 @@ begin;
  {"errors": [{"message": "Found a cycle between fragments"}]}
 (1 row)
 
+    select graphql.resolve($$
+    {
+        blogCollection {
+            edges {
+                node {
+                    ... blogFragment
+                }
+            }
+        }
+    }
+
+    fragment blogFragment on Blog {
+        owner {
+            blogCollection {
+                edges {
+                    node {
+                        ... blogFragment
+                    }
+                }
+            }
+        }
+    }
+    $$);
+                           resolve                            
+--------------------------------------------------------------
+ {"errors": [{"message": "Found a cycle between fragments"}]}
+(1 row)
+
+    select graphql.resolve($$
+    {
+        blogCollection {
+            edges {
+                node {
+                    id
+                }
+            }
+        }
+    }
+
+    fragment blogFragment on Blog {
+        owner {
+            blogCollection {
+                edges {
+                    node {
+                        ... blogFragment
+                    }
+                }
+            }
+        }
+    }
+    $$);
+                           resolve                            
+--------------------------------------------------------------
+ {"errors": [{"message": "Found a cycle between fragments"}]}
+(1 row)
+
     -- test that a recursion limit of 50 is good enough for most queries
     select graphql.resolve($$
     {

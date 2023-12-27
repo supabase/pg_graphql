@@ -107,6 +107,54 @@ begin;
     }
     $$);
 
+    select graphql.resolve($$
+    {
+        blogCollection {
+            edges {
+                node {
+                    ... blogFragment
+                }
+            }
+        }
+    }
+
+    fragment blogFragment on Blog {
+        owner {
+            blogCollection {
+                edges {
+                    node {
+                        ... blogFragment
+                    }
+                }
+            }
+        }
+    }
+    $$);
+
+    select graphql.resolve($$
+    {
+        blogCollection {
+            edges {
+                node {
+                    id
+                }
+            }
+        }
+    }
+
+    fragment blogFragment on Blog {
+        owner {
+            blogCollection {
+                edges {
+                    node {
+                        ... blogFragment
+                    }
+                }
+            }
+        }
+    }
+    $$);
+
     -- test that a recursion limit of 50 is good enough for most queries
     select graphql.resolve($$
     {
