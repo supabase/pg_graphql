@@ -85,7 +85,7 @@ where
         .map(|x| x.0);
 
     for fd in &fragment_defs {
-        match detect_fragment_cycles(fd, &mut HashSet::new(), &fragment_defs) {
+        match detect_fragment_cycles(fd, &mut HashSet::new(), &fragment_defs, 1) {
             Ok(()) => {}
             Err(message) => {
                 return GraphQLResponse {
@@ -516,14 +516,22 @@ where
     }
 }
 
+const STACK_DEPTH_LIMIT: u32 = 50;
+
 fn detect_fragment_cycles<'a, 'b, T>(
     fragment_definition: &'b FragmentDefinition<'a, T>,
     visited: &mut HashSet<&'b str>,
     fragment_definitions: &'b [FragmentDefinition<'a, T>],
+    stack_depth: u32,
 ) -> Result<(), String>
 where
     T: Text<'a>,
 {
+    if stack_depth > STACK_DEPTH_LIMIT {
+        return Err(format!(
+            "Fragment cycle depth is greater than {STACK_DEPTH_LIMIT}"
+        ));
+    }
     if visited.contains(fragment_definition.name.as_ref()) {
         return Err("Found a cycle between fragments".to_string());
     } else {
@@ -533,6 +541,7 @@ where
         &fragment_definition.selection_set,
         visited,
         fragment_definitions,
+        stack_depth + 1,
     )?;
 
     visited.remove(fragment_definition.name.as_ref());
@@ -543,10 +552,16 @@ fn detect_fragment_cycles_in_selection_set<'a, 'b, T>(
     selection_set: &'b SelectionSet<'a, T>,
     visited: &mut HashSet<&'b str>,
     fragment_definitions: &'b [FragmentDefinition<'a, T>],
+    stack_depth: u32,
 ) -> Result<(), String>
 where
     T: Text<'a>,
 {
+    if stack_depth > STACK_DEPTH_LIMIT {
+        return Err(format!(
+            "Fragment cycle depth is greater than {STACK_DEPTH_LIMIT}"
+        ));
+    }
     for selection in &selection_set.items {
         match selection {
             Selection::Field(field) => {
@@ -554,12 +569,13 @@ where
                     &field.selection_set,
                     visited,
                     fragment_definitions,
+                    stack_depth + 1,
                 )?;
             }
             Selection::FragmentSpread(fragment_spread) => {
                 for fd in fragment_definitions {
                     if fd.name == fragment_spread.fragment_name {
-                        detect_fragment_cycles(fd, visited, fragment_definitions)?;
+                        detect_fragment_cycles(fd, visited, fragment_definitions, stack_depth + 1)?;
                         break;
                     }
                 }
@@ -569,6 +585,7 @@ where
                     &inline_fragment.selection_set,
                     visited,
                     fragment_definitions,
+                    stack_depth + 1,
                 )?;
             }
         }

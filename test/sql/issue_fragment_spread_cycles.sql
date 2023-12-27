@@ -36,12 +36,12 @@ begin;
     }
     $$);
 
+    -- example from dockerfile
     create table account(
         id serial primary key,
         email varchar(255) not null,
         created_at timestamp not null
     );
-
 
     create table blog(
         id serial primary key,
@@ -51,9 +51,7 @@ begin;
         created_at timestamp not null
     );
 
-
     create type blog_post_status as enum ('PENDING', 'RELEASED');
-
 
     create table blog_post(
         id uuid not null default gen_random_uuid() primary key,
@@ -64,8 +62,6 @@ begin;
         created_at timestamp not null
     );
 
-
-    -- 5 Accounts
     insert into public.account(email, created_at)
     values
         ('aardvark@x.com', now()),
@@ -80,7 +76,6 @@ begin;
         ((select id from account where email ilike 'a%'), 'A: Blog 2', 'a desc2', now()),
         ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', now()),
         ((select id from account where email ilike 'b%'), 'B: Blog 3', 'b desc1', now());
-
 
     comment on schema public is '@graphql({"inflect_names": true})';
 
@@ -106,6 +101,70 @@ begin;
             edges {
                 node {
                     ... blogFragment
+                }
+            }
+        }
+    }
+    $$);
+
+    select graphql.resolve($$
+    {
+        blogCollection {
+            edges {
+                node {
+                    ... blogFragment
+                }
+            }
+        }
+    }
+
+    fragment blogFragment on Blog {
+        owner {
+            blogCollection {
+                edges {
+                    node {
+                        owner {
+                            blogCollection {
+                                edges {
+                                    node {
+                                        owner {
+                                            blogCollection {
+                                                edges {
+                                                    node {
+                                                        owner {
+                                                            blogCollection {
+                                                                edges {
+                                                                    node {
+                                                                        owner {
+                                                                            blogCollection {
+                                                                                edges {
+                                                                                    node {
+                                                                                        owner {
+                                                                                            blogCollection {
+                                                                                                edges {
+                                                                                                    node {
+                                                                                                        id
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
