@@ -22,7 +22,7 @@ pub fn resolve_inner<'a, T>(
     schema: &__Schema,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     match variables {
         serde_json::Value::Object(_) => (),
@@ -123,14 +123,14 @@ where
     }
 }
 
-fn resolve_query<'a, 'b, T>(
+fn resolve_query<'a, T>(
     query: Query<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_selection_set(
@@ -142,7 +142,7 @@ where
     )
 }
 
-fn resolve_selection_set<'a, 'b, T>(
+fn resolve_selection_set<'a, T>(
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -150,7 +150,7 @@ fn resolve_selection_set<'a, 'b, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     use crate::graphql::*;
 
@@ -162,6 +162,7 @@ where
         &fragment_definitions,
         &query_type.name().unwrap(),
         variables,
+        &query_type,
     ) {
         Ok(selections) => selections,
         Err(err) => {
@@ -330,14 +331,14 @@ where
     }
 }
 
-fn resolve_mutation<'a, 'b, T>(
+fn resolve_mutation<'a, T>(
     query: Mutation<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_mutation_selection_set(
@@ -349,7 +350,7 @@ where
     )
 }
 
-fn resolve_mutation_selection_set<'a, 'b, T>(
+fn resolve_mutation_selection_set<'a, T>(
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -357,7 +358,7 @@ fn resolve_mutation_selection_set<'a, 'b, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     use crate::graphql::*;
 
@@ -380,6 +381,7 @@ where
         &fragment_definitions,
         &mutation_type.name().unwrap(),
         variables,
+        &mutation_type,
     ) {
         Ok(selections) => selections,
         Err(err) => {

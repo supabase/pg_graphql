@@ -249,8 +249,7 @@ impl<'a> ArgsIterator<'a> {
         debug_assert!(num_default_args <= num_total_args);
         let start_idx = num_total_args - num_default_args;
         for i in start_idx..num_total_args {
-            defaults[i] =
-                Self::sql_to_graphql_default(default_strs[i - start_idx], arg_types[i])
+            defaults[i] = Self::sql_to_graphql_default(default_strs[i - start_idx], arg_types[i])
         }
 
         defaults
