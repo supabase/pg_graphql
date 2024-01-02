@@ -49,7 +49,7 @@ where
         return Ok(());
     };
 
-    can_fields_merge(&matching_field, &field, type_name, field_map)?;
+    can_fields_merge(matching_field, &field, type_name, field_map)?;
 
     field.position = field.position.min(matching_field.position);
 
