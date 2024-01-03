@@ -2601,7 +2601,7 @@ begin;
 
     rollback to savepoint a;
     create table account(
-        id int,
+        id int primary key,
         email varchar(255),
         name text null
     );
@@ -2620,8 +2620,8 @@ begin;
     insert into account(id, email, name)
     values
         (1, 'aardvark@x.com', 'aardvark'),--all columns non-null
-        (2, 'bat@x.com', null),--mixed: some null, some non-null
-        (null, null, null);--all columns null
+        (2, 'bat@x.com', null);--mixed: some null, some non-null
+        --(null, null, null);--all columns null
     -- comment on table account is e'@graphql({"totalCount": {"enabled": true}})';
     select jsonb_pretty(graphql.resolve($$
         query {

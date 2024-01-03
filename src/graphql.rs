@@ -1289,9 +1289,11 @@ fn function_fields(schema: &Arc<__Schema>, volatilities: &[FunctionVolatility]) 
 
                     // If the return type is a table type, it must be selectable
                     if !match &return_type {
-                        __Type::Node(table_type) => table_type.table.permissions.is_selectable,
+                        __Type::Node(table_type) => {
+                            schema.graphql_table_select_types_are_valid(&table_type.table)
+                        }
                         __Type::Connection(table_type) => {
-                            table_type.table.permissions.is_selectable
+                            schema.graphql_table_select_types_are_valid(&table_type.table)
                         }
                         _ => true,
                     } {

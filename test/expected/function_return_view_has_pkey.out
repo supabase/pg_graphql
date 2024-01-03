@@ -1,0 +1,122 @@
+begin;
+    create view account as
+    select
+      1 as foo,
+      2 as bar;
+    create function returns_account()
+        returns account language sql stable
+    as $$ select foo, bar from account; $$;
+    -- Account should not be visible because the view has no primary key
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            __typename
+          }
+        }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
+
+    -- returnsAccount should also not be visible because account has no primary key
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  fields {
+                    name
+                  }
+                }
+              }
+            }
+        $$)
+    );
+              jsonb_pretty              
+----------------------------------------
+ {                                     +
+     "data": {                         +
+         "__schema": {                 +
+             "queryType": {            +
+                 "fields": [           +
+                     {                 +
+                         "name": "node"+
+                     }                 +
+                 ]                     +
+             }                         +
+         }                             +
+     }                                 +
+ }
+(1 row)
+
+    comment on view account is e'
+    @graphql({
+        "primary_key_columns": ["foo"]
+    })';
+    -- Account should be visible because the view is selectable and has a primary key
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          __type(name: "Account") {
+            __typename
+          }
+        }
+        $$)
+    );
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "__type": {                +
+             "__typename": "Account"+
+         }                          +
+     }                              +
+ }
+(1 row)
+
+    -- returnsAccount should also be visible because account has a primary key and is selectable
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  fields {
+                    name
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                    jsonb_pretty                     
+-----------------------------------------------------
+ {                                                  +
+     "data": {                                      +
+         "__schema": {                              +
+             "queryType": {                         +
+                 "fields": [                        +
+                     {                              +
+                         "name": "accountCollection"+
+                     },                             +
+                     {                              +
+                         "name": "node"             +
+                     },                             +
+                     {                              +
+                         "name": "returnsAccount"   +
+                     }                              +
+                 ]                                  +
+             }                                      +
+         }                                          +
+     }                                              +
+ }
+(1 row)
+
+    
+rollback;
