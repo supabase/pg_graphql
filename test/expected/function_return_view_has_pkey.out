@@ -118,5 +118,4 @@ begin;
  }
 (1 row)
 
-    
 rollback;
