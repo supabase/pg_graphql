@@ -1,6 +1,6 @@
 [package]
 name = "pg_graphql"
-version = "1.4.3"
+version = "1.4.4"
 edition = "2021"
 
 [lib]

@@ -59,5 +59,9 @@
 - bugfix: default value of a string type argument in a UDF was wrapped in single quotes
 - feature: add support for array types in UDFs
 - bugfix: fix crash when there are cycles in fragments
+- bugfix: function returning an inaccessible table's type no longer breaks introspection
+
+## 1.4.4
+- bugfix: function returning a noncompliant view's type no longer breaks introspection
 
 ## master
