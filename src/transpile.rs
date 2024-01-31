@@ -463,7 +463,8 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
             select
                 case
                     when total.total_count > {at_most} then graphql.exception($a$update impacts too many records$a$)::jsonb
-                    else req.res
+
+
                 end
             from
                 total
@@ -971,6 +972,7 @@ impl ConnectionBuilder {
         };
 
         let limit = self.limit_clause();
+        let offset = self.offset.unwrap_or(0);
 
         // initialized assuming forwards pagination
         let mut has_next_page_query = format!(
@@ -987,6 +989,7 @@ impl ConnectionBuilder {
                 order by
                     {order_by_clause}
                 limit ({limit} + 1)
+                offset ({offset})
             )
             select count(*) > {limit} from page_plus_1
         "
@@ -1038,6 +1041,8 @@ impl ConnectionBuilder {
                         {order_by_clause_records}
                     limit
                         {limit}
+                    offset
+                        {offset}
                 ),
                 __total_count(___total_count) as (
                     select

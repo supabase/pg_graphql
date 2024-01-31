@@ -1051,6 +1051,15 @@ impl ConnectionType {
                 sql_type: None,
             },
             __InputValue {
+                name_: "offset".to_string(),
+                type_: __Type::Scalar(Scalar::Int),
+                description: Some(
+                    "Query values in the collection after the provided cursor".to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
                 name_: "filter".to_string(),
                 type_: __Type::FilterEntity(FilterEntityType {
                     table: Arc::clone(&self.table),
