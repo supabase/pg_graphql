@@ -464,8 +464,6 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
                 case
                     when total.total_count > {at_most} then graphql.exception($a$update impacts too many records$a$)::jsonb
                     else req.res
-
-
                 end
             from
                 total
