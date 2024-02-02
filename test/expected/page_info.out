@@ -525,7 +525,7 @@ begin;
         graphql.resolve($$
         {
           accountCollection(
-            first: 2,
+            first: 1,
             offset: 1,
             after: "Wzdd" # id = 7
         ) {
@@ -545,33 +545,27 @@ begin;
         }
         $$)
     );
-               jsonb_pretty               
-------------------------------------------
- {                                       +
-     "data": {                           +
-         "accountCollection": {          +
-             "edges": [                  +
-                 {                       +
-                     "node": {           +
-                         "id": 9         +
-                     },                  +
-                     "cursor": "Wzld"    +
-                 },                      +
-                 {                       +
-                     "node": {           +
-                         "id": 10        +
-                     },                  +
-                     "cursor": "WzEwXQ=="+
-                 }                       +
-             ],                          +
-             "pageInfo": {               +
-                 "endCursor": "WzEwXQ==",+
-                 "hasNextPage": false,   +
-                 "startCursor": "Wzld",  +
-                 "hasPreviousPage": true +
-             }                           +
-         }                               +
-     }                                   +
+              jsonb_pretty               
+-----------------------------------------
+ {                                      +
+     "data": {                          +
+         "accountCollection": {         +
+             "edges": [                 +
+                 {                      +
+                     "node": {          +
+                         "id": 9        +
+                     },                 +
+                     "cursor": "Wzld"   +
+                 }                      +
+             ],                         +
+             "pageInfo": {              +
+                 "endCursor": "Wzld",   +
+                 "hasNextPage": true,   +
+                 "startCursor": "Wzld", +
+                 "hasPreviousPage": true+
+             }                          +
+         }                              +
+     }                                  +
  }
 (1 row)
 

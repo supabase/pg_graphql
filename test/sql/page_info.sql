@@ -211,7 +211,7 @@ begin;
         graphql.resolve($$
         {
           accountCollection(
-            first: 2,
+            first: 1,
             offset: 1,
             after: "Wzdd" # id = 7
         ) {
