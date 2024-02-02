@@ -1054,7 +1054,7 @@ impl ConnectionType {
                 name_: "offset".to_string(),
                 type_: __Type::Scalar(Scalar::Int),
                 description: Some(
-                    "Query values in the collection after the provided cursor".to_string(),
+                    "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.".to_string(),
                 ),
                 default_value: None,
                 sql_type: None,
