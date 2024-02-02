@@ -1398,6 +1398,9 @@ where
                 return Err("\"first\" may only be used with \"after\"".to_string());
             } else if last.is_some() && after.is_some() {
                 return Err("\"last\" may only be used with \"before\"".to_string());
+            } else if offset.is_some() && (last.is_some() || before.is_some()) {
+                // Only support forward pagination with offset
+                return Err("\"offset\" may only be used with \"first\" and \"after\"".to_string());
             }
 
             let filter: FilterBuilder =

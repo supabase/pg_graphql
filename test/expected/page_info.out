@@ -416,4 +416,271 @@ begin;
  }
 (1 row)
 
+    -- OFFSET ARG
+    -- Only supported for forward pagination
+    -- hasPreviousPage is false, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(first: 2, offset: 0) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "accountCollection": {          +
+             "edges": [                  +
+                 {                       +
+                     "node": {           +
+                         "id": 1         +
+                     },                  +
+                     "cursor": "WzFd"    +
+                 },                      +
+                 {                       +
+                     "node": {           +
+                         "id": 2         +
+                     },                  +
+                     "cursor": "WzJd"    +
+                 }                       +
+             ],                          +
+             "pageInfo": {               +
+                 "endCursor": "WzJd",    +
+                 "hasNextPage": true,    +
+                 "startCursor": "WzFd",  +
+                 "hasPreviousPage": false+
+             }                           +
+         }                               +
+     }                                   +
+ }
+(1 row)
+
+    -- hasPreviousPage is true, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(first: 2, offset: 1) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+              jsonb_pretty               
+-----------------------------------------
+ {                                      +
+     "data": {                          +
+         "accountCollection": {         +
+             "edges": [                 +
+                 {                      +
+                     "node": {          +
+                         "id": 2        +
+                     },                 +
+                     "cursor": "WzJd"   +
+                 },                     +
+                 {                      +
+                     "node": {          +
+                         "id": 3        +
+                     },                 +
+                     "cursor": "WzNd"   +
+                 }                      +
+             ],                         +
+             "pageInfo": {              +
+                 "endCursor": "WzNd",   +
+                 "hasNextPage": true,   +
+                 "startCursor": "WzJd", +
+                 "hasPreviousPage": true+
+             }                          +
+         }                              +
+     }                                  +
+ }
+(1 row)
+
+    -- hasPreviousPage is true, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            first: 2,
+            offset: 1,
+            after: "Wzdd" # id = 7
+        ) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+               jsonb_pretty               
+------------------------------------------
+ {                                       +
+     "data": {                           +
+         "accountCollection": {          +
+             "edges": [                  +
+                 {                       +
+                     "node": {           +
+                         "id": 9         +
+                     },                  +
+                     "cursor": "Wzld"    +
+                 },                      +
+                 {                       +
+                     "node": {           +
+                         "id": 10        +
+                     },                  +
+                     "cursor": "WzEwXQ=="+
+                 }                       +
+             ],                          +
+             "pageInfo": {               +
+                 "endCursor": "WzEwXQ==",+
+                 "hasNextPage": false,   +
+                 "startCursor": "Wzld",  +
+                 "hasPreviousPage": true +
+             }                           +
+         }                               +
+     }                                   +
+ }
+(1 row)
+
+    -- hasPreviousPage is true, hasNextPage is false
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            first: 2,
+            offset: 2,
+            after: "Wzdd" # id = 7
+        ) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "accountCollection": {            +
+             "edges": [                    +
+                 {                         +
+                     "node": {             +
+                         "id": 10          +
+                     },                    +
+                     "cursor": "WzEwXQ=="  +
+                 }                         +
+             ],                            +
+             "pageInfo": {                 +
+                 "endCursor": "WzEwXQ==",  +
+                 "hasNextPage": false,     +
+                 "startCursor": "WzEwXQ==",+
+                 "hasPreviousPage": true   +
+             }                             +
+         }                                 +
+     }                                     +
+ }
+(1 row)
+
+    -- Error States
+    -- Offset doesn't work with "last"
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            last: 2,
+            offset: 2,
+        ) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+                                   jsonb_pretty                                    
+-----------------------------------------------------------------------------------
+ {                                                                                +
+     "data": null,                                                                +
+     "errors": [                                                                  +
+         {                                                                        +
+             "message": "\"offset\" may only be used with \"first\" and \"after\""+
+         }                                                                        +
+     ]                                                                            +
+ }
+(1 row)
+
+    -- Offset doesn't work with "before"
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            last: 2,
+            offset: 2,
+        ) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+                                   jsonb_pretty                                    
+-----------------------------------------------------------------------------------
+ {                                                                                +
+     "data": null,                                                                +
+     "errors": [                                                                  +
+         {                                                                        +
+             "message": "\"offset\" may only be used with \"first\" and \"after\""+
+         }                                                                        +
+     ]                                                                            +
+ }
+(1 row)
+
 rollback;

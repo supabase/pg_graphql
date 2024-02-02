@@ -2079,6 +2079,14 @@ begin;
                                  }                                              +
                              },                                                 +
                              {                                                  +
+                                 "name": "offset",                              +
+                                 "type": {                                      +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Int",                             +
+                                     "ofType": null                             +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
                                  "name": "filter",                              +
                                  "type": {                                      +
                                      "kind": "INPUT_OBJECT",                    +
@@ -2195,6 +2203,14 @@ begin;
                                  "type": {                                      +
                                      "kind": "SCALAR",                          +
                                      "name": "Cursor",                          +
+                                     "ofType": null                             +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
+                                 "name": "offset",                              +
+                                 "type": {                                      +
+                                     "kind": "SCALAR",                          +
+                                     "name": "Int",                             +
                                      "ofType": null                             +
                                  }                                              +
                              },                                                 +
