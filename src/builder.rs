@@ -743,6 +743,7 @@ pub struct ConnectionBuilder {
     pub last: Option<u64>,
     pub before: Option<Cursor>,
     pub after: Option<Cursor>,
+    pub offset: Option<u64>,
     pub filter: FilterBuilder,
     pub order_by: OrderByBuilder,
 
@@ -1318,7 +1319,9 @@ where
     match &type_ {
         __Type::Connection(xtype) => {
             // Raise for disallowed arguments
-            let mut allowed_args = vec!["first", "last", "before", "after", "filter", "orderBy"];
+            let mut allowed_args = vec![
+                "first", "last", "before", "after", "offset", "filter", "orderBy",
+            ];
             allowed_args.extend(extra_allowed_args);
             restrict_allowed_arguments(&allowed_args, query_field)?;
 
@@ -1346,6 +1349,24 @@ where
                 gson::Value::Number(gson::Number::Integer(n)) => Some(n as u64),
                 _ => {
                     return Err("Internal Error: failed to parse validated last".to_string());
+                }
+            };
+
+            let offset: gson::Value = read_argument(
+                "offset",
+                field,
+                query_field,
+                variables,
+                variable_definitions,
+            )?;
+            let offset: Option<u64> = match offset {
+                gson::Value::Absent | gson::Value::Null => None,
+                gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
+                    return Err("`offset` must be an unsigned integer".to_string())
+                }
+                gson::Value::Number(gson::Number::Integer(n)) => Some(n as u64),
+                _ => {
+                    return Err("Internal Error: failed to parse validated offset".to_string());
                 }
             };
 
@@ -1377,6 +1398,9 @@ where
                 return Err("\"first\" may only be used with \"after\"".to_string());
             } else if last.is_some() && after.is_some() {
                 return Err("\"last\" may only be used with \"before\"".to_string());
+            } else if offset.is_some() && (last.is_some() || before.is_some()) {
+                // Only support forward pagination with offset
+                return Err("\"offset\" may only be used with \"first\" and \"after\"".to_string());
             }
 
             let filter: FilterBuilder =
@@ -1434,6 +1458,7 @@ where
                 first,
                 last,
                 before,
+                offset,
                 after,
                 filter,
                 order_by,

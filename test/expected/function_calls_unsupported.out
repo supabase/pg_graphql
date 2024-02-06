@@ -337,6 +337,12 @@ begin;
                                  }                                              +
                              },                                                 +
                              {                                                  +
+                                 "name": "offset",                              +
+                                 "type": {                                      +
+                                     "name": "Int"                              +
+                                 }                                              +
+                             },                                                 +
+                             {                                                  +
                                  "name": "filter",                              +
                                  "type": {                                      +
                                      "name": "AccountFilter"                    +

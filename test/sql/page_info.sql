@@ -158,4 +158,143 @@ begin;
         $$)
     );
 
+    -- OFFSET ARG
+    -- Only supported for forward pagination
+
+
+    -- hasPreviousPage is false, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(first: 2, offset: 0) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+    -- hasPreviousPage is true, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(first: 2, offset: 1) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+    -- hasPreviousPage is true, hasNextPage is true
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            first: 1,
+            offset: 1,
+            after: "Wzdd" # id = 7
+        ) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+    -- hasPreviousPage is true, hasNextPage is false
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            first: 2,
+            offset: 2,
+            after: "Wzdd" # id = 7
+        ) {
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+
+    -- Error States
+
+    -- Offset doesn't work with "last"
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            last: 2,
+            offset: 2,
+        ) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
+    -- Offset doesn't work with "before"
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+          accountCollection(
+            last: 2,
+            offset: 2,
+        ) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+        $$)
+    );
+
 rollback;

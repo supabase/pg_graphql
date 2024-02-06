@@ -133,6 +133,11 @@ create table "Blog"(
         """Query values in the collection after the provided cursor"""
         after: Cursor
 
+        """
+        Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+        """
+        offset: Int
+
         """Filters to apply to the results set when querying from the collection"""
         filter: BlogFilter
 
@@ -263,6 +268,8 @@ Connections wrap a result set with some additional metadata.
 
 
 #### Pagination
+
+##### Keyset Pagination
 
 Paginating forwards and backwards through collections is handled using the `first`, `last`, `before`, and `after` parameters, following the [relay spec](https://relay.dev/graphql/connections.htm#).
 
@@ -436,6 +443,57 @@ once the collection has been fully enumerated, `data.blogConnection.pageInfo.has
 
 To paginate backwards through a collection, repeat the process substituting `first` -> `last`, `after` -> `before`, `hasNextPage` -> `hasPreviousPage`
 
+##### Offset Pagination
+
+In addition to keyset pagination, collections may also be paged using `first` and `offset`, which operates like SQL's `limit` and `offset` to skip `offset` number of records in the results.
+
+!!! note
+
+    `offset` based pagination becomes inefficient the `offset` value increases. For this reason, prefer cursor based pagination where possible.
+
+
+=== "Query"
+
+    ```graphql
+    {
+      blogCollection(
+        first: 2,
+        offset: 2
+      ) {
+      ...truncated...
+    }
+    ```
+
+=== "Page 2"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 3
+              },
+              "cursor": "WzNd"
+            },
+            {
+              "node": {
+                "id": 4
+              },
+              "cursor": "WzRd"
+            }
+          ],
+          "pageInfo": {
+            "startCursor": "WzNd",
+            "endCursor": "WzRd",
+            "hasNextPage": false,
+            "hasPreviousPage": true
+          }
+        }
+      }
+    }
+    ```
 
 #### Filtering
 
@@ -1692,6 +1750,11 @@ create table "BlogPost"(
 
         """Query values in the collection after the provided cursor"""
         after: Cursor
+
+        """
+        Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+        """
+        offset: Int
 
         """Filters to apply to the results set when querying from the collection"""
         filter: BlogPostFilter
