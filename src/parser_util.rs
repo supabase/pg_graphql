@@ -577,54 +577,56 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                 Scalar::Opaque => value.clone(),
             }
         }
-        __Type::Enum(enum_) => match value {
-            GsonValue::Absent => value.clone(),
-            GsonValue::Null => value.clone(),
-            GsonValue::String(user_input_string) => {
-                let matches_enum_value = enum_
-                    .enum_values(true)
-                    .into_iter()
-                    .flatten()
-                    .find(|x| x.name().as_str() == user_input_string);
-                match matches_enum_value {
-                    Some(_) => {
-                        match &enum_.enum_ {
-                            EnumSource::Enum(e) => e
-                                .directives
-                                .mappings
-                                .as_ref()
-                                // Use mappings if available and mapped
-                                .and_then(|mappings| mappings.get_by_right(user_input_string))
-                                .map(|val| GsonValue::String(val.clone()))
-                                .unwrap_or_else(|| value.clone()),
-                            EnumSource::FilterIs => value.clone(),
+        __Type::Enum(enum_) => {
+            let enum_name = enum_.name().expect("enum type should have a name");
+            match value {
+                GsonValue::Absent => value.clone(),
+                GsonValue::Null => value.clone(),
+                GsonValue::String(user_input_string) => {
+                    let matches_enum_value = enum_
+                        .enum_values(true)
+                        .into_iter()
+                        .flatten()
+                        .find(|x| x.name().as_str() == user_input_string);
+                    match matches_enum_value {
+                        Some(_) => {
+                            match &enum_.enum_ {
+                                EnumSource::Enum(e) => e
+                                    .directives
+                                    .mappings
+                                    .as_ref()
+                                    // Use mappings if available and mapped
+                                    .and_then(|mappings| mappings.get_by_right(user_input_string))
+                                    .map(|val| GsonValue::String(val.clone()))
+                                    .unwrap_or_else(|| value.clone()),
+                                EnumSource::FilterIs => value.clone(),
+                            }
                         }
-                    }
-                    None => {
-                        return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
+                        None => return Err(format!("Invalid input for {} type", enum_name)),
                     }
                 }
+                _ => return Err(format!("Invalid input for {} type", enum_name)),
             }
-            _ => return Err(format!("Invalid input for {} type", enum_.name().unwrap())),
-        },
-        __Type::OrderBy(enum_) => match value {
-            GsonValue::Absent => value.clone(),
-            GsonValue::Null => value.clone(),
-            GsonValue::String(user_input_string) => {
-                let matches_enum_value = enum_
-                    .enum_values(true)
-                    .into_iter()
-                    .flatten()
-                    .find(|x| x.name().as_str() == user_input_string);
-                match matches_enum_value {
-                    Some(_) => value.clone(),
-                    None => {
-                        return Err(format!("Invalid input for {} type", enum_.name().unwrap()))
+        }
+        __Type::OrderBy(enum_) => {
+            let enum_name = enum_.name().expect("order by type should have a name");
+            match value {
+                GsonValue::Absent => value.clone(),
+                GsonValue::Null => value.clone(),
+                GsonValue::String(user_input_string) => {
+                    let matches_enum_value = enum_
+                        .enum_values(true)
+                        .into_iter()
+                        .flatten()
+                        .find(|x| x.name().as_str() == user_input_string);
+                    match matches_enum_value {
+                        Some(_) => value.clone(),
+                        None => return Err(format!("Invalid input for {} type", enum_name)),
                     }
                 }
+                _ => return Err(format!("Invalid input for {} type", enum_name)),
             }
-            _ => return Err(format!("Invalid input for {} type", enum_.name().unwrap())),
-        },
+        }
         __Type::List(list_type) => {
             let inner_type: __Type = *list_type.type_.clone();
             match value {

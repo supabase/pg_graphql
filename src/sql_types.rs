@@ -756,8 +756,12 @@ pub(crate) fn get_one_readonly<A: FromDatum + IntoDatum>(
 
 pub fn load_sql_config() -> Config {
     let query = include_str!("../sql/load_sql_config.sql");
-    let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query).unwrap().unwrap().0;
-    let config: Config = serde_json::from_value(sql_result).unwrap();
+    let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query)
+        .expect("failed to read sql config")
+        .expect("sql config is missing")
+        .0;
+    let config: Config =
+        serde_json::from_value(sql_result).expect("failed to convert sql config into json");
     config
 }
 
@@ -776,7 +780,10 @@ pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
 pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
-    let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query).unwrap().unwrap().0;
+    let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query)
+        .expect("failed to read sql context")
+        .expect("sql context is missing")
+        .0;
     let context: Result<Context, serde_json::Error> = serde_json::from_value(sql_result);
 
     /// This pass cross-reference types with its details

@@ -157,10 +157,11 @@ where
     let query_type = schema_type.query_type();
     let map = field_map(&query_type);
 
+    let query_type_name = query_type.name().expect("query type should have a name");
     let selections = match normalize_selection_set(
         &selection_set,
         &fragment_definitions,
-        &query_type.name().unwrap(),
+        &query_type_name,
         variables,
         &query_type,
     ) {
@@ -196,8 +197,7 @@ where
                         res_errors.push(ErrorMessage {
                             message: format!(
                                 "Unknown field {:?} on type {}",
-                                selection.name,
-                                query_type.name().unwrap()
+                                selection.name, query_type_name
                             ),
                         });
                     }
@@ -376,10 +376,13 @@ where
 
     let map = field_map(&mutation_type);
 
+    let mutation_type_name = mutation_type
+        .name()
+        .expect("mutation type should have a name");
     let selections = match normalize_selection_set(
         &selection_set,
         &fragment_definitions,
-        &mutation_type.name().unwrap(),
+        &mutation_type_name,
         variables,
         &mutation_type,
     ) {
@@ -409,8 +412,7 @@ where
                     conn = match maybe_field_def {
                         None => Err(format!(
                             "Unknown field {:?} on type {}",
-                            selection.name,
-                            mutation_type.name().unwrap()
+                            selection.name, mutation_type_name
                         ))?,
                         Some(field_def) => match field_def.type_.unmodified_type() {
                             __Type::InsertResponse(_) => {
