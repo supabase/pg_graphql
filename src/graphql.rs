@@ -133,7 +133,10 @@ impl __Schema {
             column_names = &fkey.referenced_table_meta.column_names;
         }
 
-        let table: &Arc<Table> = self.context.get_table_by_oid(table_ref.oid).unwrap();
+        let table: &Arc<Table> = self
+            .context
+            .get_table_by_oid(table_ref.oid)
+            .expect("failed to get table by oid");
 
         let is_inflection_on = self.inflect_names(table.schema_oid);
 
@@ -1123,6 +1126,15 @@ pub struct FilterTypeType {
     pub schema: Arc<__Schema>,
 }
 
+impl FilterTypeType {
+    fn entity_name(&self) -> String {
+        match &self.entity {
+            FilterableType::Scalar(s) => s.name().expect("scalar name should exist"),
+            FilterableType::Enum(e) => e.name().expect("enum type name should exist"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct FilterEntityType {
     pub table: Arc<Table>,
@@ -1340,7 +1352,11 @@ fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputVal
                     if matches!(t.category, TypeCategory::Pseudo) {
                         None
                     } else {
-                        Some((t, arg_name.unwrap(), arg_default))
+                        Some((
+                            t,
+                            arg_name.expect("function arg name should exist"),
+                            arg_default,
+                        ))
                     }
                 }
                 None => None,
@@ -1713,7 +1729,7 @@ impl ___Type for NodeInterfaceType {
     }
 
     fn possible_types(&self) -> Option<Vec<__Type>> {
-        let node_interface_name = self.name().unwrap();
+        let node_interface_name = self.name().expect("node interface type name should exist");
 
         let mut possible_types = vec![];
 
@@ -1723,8 +1739,10 @@ impl ___Type for NodeInterfaceType {
             .sorted_by(|a, b| a.name().cmp(&b.name()))
         {
             let type_interfaces: Vec<__Type> = type_.interfaces().unwrap_or(vec![]);
-            let interface_names: Vec<String> =
-                type_interfaces.iter().map(|x| x.name().unwrap()).collect();
+            let interface_names: Vec<String> = type_interfaces
+                .iter()
+                .map(|x| x.name().expect("type interface name should exist"))
+                .collect();
             if interface_names.contains(&node_interface_name) {
                 possible_types.push(type_)
             }
@@ -2076,7 +2094,7 @@ impl ___Type for NodeType {
             if foreign_table.is_none() {
                 continue;
             }
-            let foreign_table = foreign_table.unwrap();
+            let foreign_table = foreign_table.expect("foreign table should exist");
             if !self
                 .schema
                 .graphql_table_select_types_are_valid(foreign_table)
@@ -2125,7 +2143,7 @@ impl ___Type for NodeType {
             if foreign_table.is_none() {
                 continue;
             }
-            let foreign_table = foreign_table.unwrap();
+            let foreign_table = foreign_table.expect("foreign table should exist");
             if !self
                 .schema
                 .graphql_table_select_types_are_valid(foreign_table)
@@ -3354,10 +3372,7 @@ impl ___Type for FilterTypeType {
     }
 
     fn name(&self) -> Option<String> {
-        match &self.entity {
-            FilterableType::Scalar(s) => Some(format!("{}Filter", s.name().unwrap())),
-            FilterableType::Enum(e) => Some(format!("{}Filter", e.name().unwrap())),
-        }
+        Some(format!("{}Filter", self.entity_name()))
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
@@ -3367,10 +3382,7 @@ impl ___Type for FilterTypeType {
     fn description(&self) -> Option<String> {
         Some(format!(
             "Boolean expression comparing fields on type \"{}\"",
-            match &self.entity {
-                FilterableType::Scalar(s) => s.name().unwrap(),
-                FilterableType::Enum(e) => e.name().unwrap(),
-            }
+            self.entity_name()
         ))
     }
 
@@ -3853,7 +3865,7 @@ pub struct __Schema {
 #[cached(
     type = "SizedCache<String, HashMap<String, __Type>>",
     create = "{ SizedCache::with_size(200) }",
-    convert = r#"{ serde_json::ser::to_string(&schema.context.config).unwrap() }"#,
+    convert = r#"{ serde_json::ser::to_string(&schema.context.config).expect("schema config should be a string") }"#,
     sync_writes = true
 )]
 pub fn type_map(schema: &__Schema) -> HashMap<String, __Type> {
@@ -3861,7 +3873,7 @@ pub fn type_map(schema: &__Schema) -> HashMap<String, __Type> {
         .types()
         .into_iter()
         .filter(|x| x.name().is_some())
-        .map(|x| (x.name().unwrap(), x))
+        .map(|x| (x.name().expect("type should have a name"), x))
         .collect();
     tmap
 }

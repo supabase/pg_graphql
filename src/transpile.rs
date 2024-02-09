@@ -12,11 +12,17 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 pub fn quote_ident(ident: &str) -> String {
-    unsafe { direct_function_call::<String>(pg_sys::quote_ident, &[ident.into_datum()]).unwrap() }
+    unsafe {
+        direct_function_call::<String>(pg_sys::quote_ident, &[ident.into_datum()])
+            .expect("failed to quote ident")
+    }
 }
 
 pub fn quote_literal(ident: &str) -> String {
-    unsafe { direct_function_call::<String>(pg_sys::quote_literal, &[ident.into_datum()]).unwrap() }
+    unsafe {
+        direct_function_call::<String>(pg_sys::quote_literal, &[ident.into_datum()])
+            .expect("failed to quote literal")
+    }
 }
 
 pub fn rand_block_name() -> String {
@@ -1305,10 +1311,10 @@ impl QueryEntrypoint for NodeBuilder {
         let quoted_table = quote_ident(&self.table.name);
         let object_clause = self.to_sql(&quoted_block_name, param_context)?;
 
-        if self.node_id.is_none() {
-            return Err("Expected nodeId argument missing".to_string());
-        }
-        let node_id = self.node_id.as_ref().unwrap();
+        let node_id = self
+            .node_id
+            .as_ref()
+            .ok_or("Expected nodeId argument missing")?;
 
         let node_id_clause = node_id.to_sql(&quoted_block_name, &self.table, param_context)?;
 

@@ -64,4 +64,8 @@
 ## 1.4.4
 - bugfix: function returning a noncompliant view's type no longer breaks introspection
 
+## 1.5.0
+- feature: `first`/`offset` based pagination
+- feature: improved descriptions for all internal error states
+
 ## master
