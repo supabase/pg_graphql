@@ -66,6 +66,6 @@
 
 ## 1.5.0
 - feature: `first`/`offset` based pagination
-
+- feature: improved descriptions for all internal error states
 
 ## master
