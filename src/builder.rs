@@ -122,14 +122,20 @@ fn parse_node_id(encoded: gson::Value) -> Result<NodeIdInstance, String> {
             }
 
             let mut x_arr_iter = x_arr.into_iter();
-            let schema_name = match x_arr_iter.next().unwrap() {
+            let schema_name = match x_arr_iter
+                .next()
+                .expect("failed to get schema name from nodeId argument")
+            {
                 serde_json::Value::String(s) => s,
                 _ => {
                     return Err("Invalid value passed to nodeId argument. Error 6".to_string());
                 }
             };
 
-            let table_name = match x_arr_iter.next().unwrap() {
+            let table_name = match x_arr_iter
+                .next()
+                .expect("failed to get table name from nodeId argument")
+            {
                 serde_json::Value::String(s) => s,
                 _ => {
                     return Err("Invalid value passed to nodeId argument. Error 7".to_string());
@@ -188,11 +194,15 @@ where
     )?;
 
     // [<Table>OrderBy!]
-    let insert_type: InsertInputType =
-        match field.get_arg("objects").unwrap().type_().unmodified_type() {
-            __Type::InsertInput(insert_type) => insert_type,
-            _ => return Err("Could not locate Insert Entity type".to_string()),
-        };
+    let insert_type: InsertInputType = match field
+        .get_arg("objects")
+        .expect("failed to get `objects` argument")
+        .type_()
+        .unmodified_type()
+    {
+        __Type::InsertInput(insert_type) => insert_type,
+        _ => return Err("Could not locate Insert Entity type".to_string()),
+    };
 
     let mut objects: Vec<InsertRowBuilder> = vec![];
 
@@ -300,7 +310,9 @@ where
                         }
                         "__typename" => InsertSelection::Typename {
                             alias: alias_or_name(&selection_field),
-                            typename: xtype.name().unwrap(),
+                            typename: xtype
+                                .name()
+                                .expect("insert response type should have a name"),
                         },
                         _ => return Err("unexpected field type on insert response".to_string()),
                     }),
@@ -362,7 +374,11 @@ where
     let validated: gson::Value =
         read_argument("set", field, query_field, variables, variable_definitions)?;
 
-    let update_type: UpdateInputType = match field.get_arg("set").unwrap().type_().unmodified_type()
+    let update_type: UpdateInputType = match field
+        .get_arg("set")
+        .expect("failed to get `set` argument")
+        .type_()
+        .unmodified_type()
     {
         __Type::UpdateInput(type_) => type_,
         _ => return Err("Could not locate update entity type".to_string()),
@@ -464,7 +480,9 @@ where
                         }
                         "__typename" => UpdateSelection::Typename {
                             alias: alias_or_name(&selection_field),
-                            typename: xtype.name().unwrap(),
+                            typename: xtype
+                                .name()
+                                .expect("update response type should have a name"),
                         },
                         _ => return Err("unexpected field type on update response".to_string()),
                     }),
@@ -566,7 +584,9 @@ where
                         }
                         "__typename" => DeleteSelection::Typename {
                             alias: alias_or_name(&selection_field),
-                            typename: xtype.name().unwrap(),
+                            typename: xtype
+                                .name()
+                                .expect("delete response type should have a name"),
                         },
                         _ => return Err("unexpected field type on delete response".to_string()),
                     }),
@@ -1038,7 +1058,11 @@ where
         variable_definitions,
     )?;
 
-    let filter_type = field.get_arg("filter").unwrap().type_().unmodified_type();
+    let filter_type = field
+        .get_arg("filter")
+        .expect("failed to get filter argument")
+        .type_()
+        .unmodified_type();
     if !matches!(filter_type, __Type::FilterEntity(_)) {
         return Err("Could not locate Filter Entity type".to_string());
     }
@@ -1190,11 +1214,15 @@ where
     )?;
 
     // [<Table>OrderBy!]
-    let order_type: OrderByEntityType =
-        match field.get_arg("orderBy").unwrap().type_().unmodified_type() {
-            __Type::OrderByEntity(order_entity) => order_entity,
-            _ => return Err("Could not locate OrderBy Entity type".to_string()),
-        };
+    let order_type: OrderByEntityType = match field
+        .get_arg("orderBy")
+        .expect("failed to get orderBy argument")
+        .type_()
+        .unmodified_type()
+    {
+        __Type::OrderByEntity(order_entity) => order_entity,
+        _ => return Err("Could not locate OrderBy Entity type".to_string()),
+    };
 
     let mut orders = vec![];
 
@@ -1279,7 +1307,12 @@ where
         variables,
         variable_definitions,
     )?;
-    let _: Scalar = match field.get_arg(arg_name).unwrap().type_().unmodified_type() {
+    let _: Scalar = match field
+        .get_arg(arg_name)
+        .unwrap_or_else(|| panic!("failed to get {arg_name} argument"))
+        .type_()
+        .unmodified_type()
+    {
         __Type::Scalar(x) => x,
         _ => return Err(format!("Could not argument {}", arg_name)),
     };
@@ -1442,7 +1475,7 @@ where
                             },
                             "__typename" => ConnectionSelection::Typename {
                                 alias: alias_or_name(&selection_field),
-                                typename: xtype.name().unwrap(),
+                                typename: xtype.name().expect("connection type should have a name"),
                             },
                             _ => return Err("unexpected field type on connection".to_string()),
                         },
@@ -1520,7 +1553,7 @@ where
                         },
                         "__typename" => PageInfoSelection::Typename {
                             alias: alias_or_name(&selection_field),
-                            typename: xtype.name().unwrap(),
+                            typename: xtype.name().expect("page info type should have a name"),
                         },
                         _ => return Err("unexpected field type on pageInfo".to_string()),
                     }),
@@ -1586,7 +1619,7 @@ where
                             },
                             "__typename" => EdgeSelection::Typename {
                                 alias: alias_or_name(&selection_field),
-                                typename: xtype.name().unwrap(),
+                                typename: xtype.name().expect("edge type should have a name"),
                             },
                             _ => return Err("unexpected field type on edge".to_string()),
                         },
@@ -1752,7 +1785,7 @@ where
                     _ => match f.name().as_ref() {
                         "__typename" => NodeSelection::Typename {
                             alias: alias_or_name(&selection_field),
-                            typename: xtype.name().unwrap(),
+                            typename: xtype.name().expect("node type should have a name"),
                         },
                         _ => match f.type_().unmodified_type() {
                             __Type::Connection(_) => {
@@ -2177,10 +2210,7 @@ impl __Schema {
         if name_arg.is_some() {
             type_name = name_arg;
         }
-        if type_name.is_none() {
-            return Err("no name found for __type".to_string());
-        }
-        let type_name = type_name.unwrap();
+        let type_name = type_name.ok_or("no name found for __type".to_string())?;
 
         let type_map = type_map(self);
         let requested_type: Option<&__Type> = type_map.get(&type_name);
@@ -2504,83 +2534,91 @@ impl __Schema {
 
                     match field_map.get(field_name) {
                         None => return Err(format!("unknown field in __Schema: {}", field_name)),
-                        Some(f) => builder_fields.push(__SchemaSelection {
-                            alias: alias_or_name(&selection_field),
-                            selection: match f.name().as_str() {
-                                "types" => {
-                                    let builders = self
-                                        .types()
-                                        .iter()
-                                        // Filter out intropsection meta-types
-                                        //.filter(|x| {
-                                        // !x.name().unwrap_or("".to_string()).starts_with("__")
-                                        //})
-                                        .map(|t| {
-                                            self.to_type_builder(
-                                                f,
-                                                &selection_field,
-                                                fragment_definitions,
-                                                t.name(),
-                                                variables,
-                                                variable_definitions,
-                                            )
-                                            .map(|x| x.unwrap())
-                                        })
-                                        // from Vec<Result> to Result<Vec>
-                                        .collect::<Result<Vec<_>, _>>()?;
-                                    __SchemaField::Types(builders)
-                                }
-                                "queryType" => {
-                                    let builder = self.to_type_builder(
-                                        f,
-                                        &selection_field,
-                                        fragment_definitions,
-                                        Some("Query".to_string()),
-                                        variables,
-                                        variable_definitions,
-                                    )?;
-                                    __SchemaField::QueryType(builder.unwrap())
-                                }
-                                "mutationType" => {
-                                    let builder = self.to_type_builder(
-                                        f,
-                                        &selection_field,
-                                        fragment_definitions,
-                                        Some("Mutation".to_string()),
-                                        variables,
-                                        variable_definitions,
-                                    )?;
-                                    __SchemaField::MutationType(builder)
-                                }
-                                "subscriptionType" => __SchemaField::SubscriptionType(None),
-                                "directives" => {
-                                    let builders = self
-                                        .directives()
-                                        .iter()
-                                        .map(|directive| {
-                                            self.to_directive_builder(
-                                                directive,
-                                                &selection_field,
-                                                fragment_definitions,
-                                                variables,
-                                                variable_definitions,
-                                            )
-                                        })
-                                        .collect::<Result<Vec<_>, _>>()?;
-                                    __SchemaField::Directives(builders)
-                                }
-                                "__typename" => __SchemaField::Typename {
-                                    alias: alias_or_name(&selection_field),
-                                    typename: field.name(),
+                        Some(f) => {
+                            builder_fields.push(__SchemaSelection {
+                                alias: alias_or_name(&selection_field),
+                                selection: match f.name().as_str() {
+                                    "types" => {
+                                        let builders = self
+                                            .types()
+                                            .iter()
+                                            // Filter out intropsection meta-types
+                                            //.filter(|x| {
+                                            // !x.name().unwrap_or("".to_string()).starts_with("__")
+                                            //})
+                                            .map(|t| {
+                                                self.to_type_builder(
+                                                    f,
+                                                    &selection_field,
+                                                    fragment_definitions,
+                                                    t.name(),
+                                                    variables,
+                                                    variable_definitions,
+                                                )
+                                                .map(|x| {
+                                                    x.expect(
+                                                        "type builder should exist for types field",
+                                                    )
+                                                })
+                                            })
+                                            // from Vec<Result> to Result<Vec>
+                                            .collect::<Result<Vec<_>, _>>()?;
+                                        __SchemaField::Types(builders)
+                                    }
+                                    "queryType" => {
+                                        let builder = self.to_type_builder(
+                                            f,
+                                            &selection_field,
+                                            fragment_definitions,
+                                            Some("Query".to_string()),
+                                            variables,
+                                            variable_definitions,
+                                        )?;
+                                        __SchemaField::QueryType(builder.expect(
+                                            "type builder should exist for queryType field",
+                                        ))
+                                    }
+                                    "mutationType" => {
+                                        let builder = self.to_type_builder(
+                                            f,
+                                            &selection_field,
+                                            fragment_definitions,
+                                            Some("Mutation".to_string()),
+                                            variables,
+                                            variable_definitions,
+                                        )?;
+                                        __SchemaField::MutationType(builder)
+                                    }
+                                    "subscriptionType" => __SchemaField::SubscriptionType(None),
+                                    "directives" => {
+                                        let builders = self
+                                            .directives()
+                                            .iter()
+                                            .map(|directive| {
+                                                self.to_directive_builder(
+                                                    directive,
+                                                    &selection_field,
+                                                    fragment_definitions,
+                                                    variables,
+                                                    variable_definitions,
+                                                )
+                                            })
+                                            .collect::<Result<Vec<_>, _>>()?;
+                                        __SchemaField::Directives(builders)
+                                    }
+                                    "__typename" => __SchemaField::Typename {
+                                        alias: alias_or_name(&selection_field),
+                                        typename: field.name(),
+                                    },
+                                    _ => {
+                                        return Err(format!(
+                                            "unexpected field {} type on __Schema",
+                                            field_name
+                                        ))
+                                    }
                                 },
-                                _ => {
-                                    return Err(format!(
-                                        "unexpected field {} type on __Schema",
-                                        field_name
-                                    ))
-                                }
-                            },
-                        }),
+                            })
+                        }
                     }
                 }
 
