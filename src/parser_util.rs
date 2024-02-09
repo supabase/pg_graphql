@@ -609,7 +609,7 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
             }
         }
         __Type::OrderBy(enum_) => {
-            let enum_name = enum_.name().expect("order byt type should have a name");
+            let enum_name = enum_.name().expect("order by type should have a name");
             match value {
                 GsonValue::Absent => value.clone(),
                 GsonValue::Null => value.clone(),
