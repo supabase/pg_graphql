@@ -1,21 +1,36 @@
 with search_path_oids(schema_oid) as (
     select y::regnamespace::oid from unnest(current_schemas(false)) x(y)
 ),
-schemas_(oid, name) as (
+
+schemas_with_privilege(oid, name) as (
+    -- Schema segregated multi-tenant environments need a shortcut to
+    -- exclude schemas without USAGE permission so context reload can ignore
+    -- irreleavnt tenants
+    -- https://github.com/supabase/pg_graphql/pull/480
     select
-        pn.oid::int, pn.nspname::text
+        pn.oid::int,
+        pn.nspname::text
     from
         pg_namespace pn
-        -- filter to current schemas only
-        join search_path_oids cur_schemas(oid)
-            on pn.oid = cur_schemas.oid
     where
         pg_catalog.has_schema_privilege(
             current_user,
             pn.oid,
             'USAGE'
         )
+),
+
+schemas_(oid, name) as (
+    select
+        pn.oid,
+        pn.name
+    from
+        schemas_with_privilege pn
+        -- filter to current schemas only
+        join search_path_oids cur_schemas(oid)
+            on pn.oid = cur_schemas.oid
 )
+
 select
     jsonb_build_object(
         'config', jsonb_build_object(
@@ -54,6 +69,8 @@ select
                         pg_enum pe
                     join pg_type pt
                         on pt.oid = pe.enumtypid
+                    join schemas_with_privilege swp
+                        on pt.typnamespace = swp.oid
                     group by
                         pt.oid
                 )
@@ -93,6 +110,8 @@ select
                     )
                 from
                     pg_type pt
+                    join schemas_with_privilege swp
+                        on pt.typnamespace = swp.oid
                     left join pg_class tabs
                         on pt.typrelid = tabs.oid
             ),
@@ -111,6 +130,8 @@ select
                     pg_type pt
                     join pg_class tabs
                         on pt.typrelid = tabs.oid
+                    join schemas_with_privilege swp
+                        on pt.typnamespace = swp.oid
                 where
                     pt.typcategory = 'C'
                     and tabs.relkind = 'c'
@@ -198,6 +219,8 @@ select
                     )
                 from
                     schemas_ pn
+                    join schemas_with_privilege swp
+                        on pn.oid = swp.oid
             ),
             jsonb_build_object()
         ),
@@ -419,5 +442,4 @@ select
             ),
             jsonb_build_array()
         )
-
     )
