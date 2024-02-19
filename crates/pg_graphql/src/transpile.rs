@@ -9,7 +9,7 @@ use crate::builder::{
     __SchemaBuilder, __SchemaField, __TypeBuilder, __TypeField,
 };
 use crate::graphql::{FilterOp, ___Field, ___Type};
-use crate::params::{BinderBuilder, ParamBinder};
+use crate::params::{BinderBuilder, ParamBinder, Params};
 use crate::pg_client::PgClient;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
@@ -20,6 +20,8 @@ use std::{cmp, collections::HashSet, sync::Arc};
 pub struct PgrxPgClient;
 
 impl PgClient for PgrxPgClient {
+    type Args = Params;
+
     fn quote_ident(&self, ident: &str) -> String {
         unsafe {
             direct_function_call::<String>(pg_sys::quote_ident, &[ident.into_datum()])
@@ -31,6 +33,27 @@ impl PgClient for PgrxPgClient {
         unsafe {
             direct_function_call::<String>(pg_sys::quote_literal, &[ident.into_datum()])
                 .expect("failed to quote literal")
+        }
+    }
+
+    fn execute_query<P: ParamBinder>(
+        sql: &str,
+        args: Self::Args,
+    ) -> Result<serde_json::Value, String> {
+        let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
+            let val = c.select(sql, Some(1), Some(args))?;
+            // Get a value from the query
+            if val.is_empty() {
+                Ok(None)
+            } else {
+                val.first().get::<pgrx::JsonB>(1)
+            }
+        });
+
+        match spi_result {
+            Ok(Some(jsonb)) => Ok(jsonb.0),
+            Ok(None) => Ok(serde_json::Value::Null),
+            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
         }
     }
 }
@@ -48,7 +71,13 @@ pub fn rand_block_name<C: PgClient>(client: &C) -> String {
     )
 }
 
-pub trait MutationEntrypoint<'conn, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> {
+pub trait MutationEntrypoint<
+    'conn,
+    C: PgClient<Args = P::Args>,
+    B: BinderBuilder<Binder = P>,
+    P: ParamBinder,
+>
+{
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String>;
 
     fn execute(
@@ -57,7 +86,6 @@ pub trait MutationEntrypoint<'conn, C: PgClient, B: BinderBuilder<Binder = P>, P
         binder_builder: &B,
         mut conn: SpiClient<'conn>,
     ) -> Result<(serde_json::Value, SpiClient<'conn>), String> {
-        // let mut param_context = ParamContext { params: vec![] };
         let mut param_context = binder_builder.create_param_binder();
         let sql = &self.to_sql_entrypoint(client, &mut param_context);
         let sql = match sql {
@@ -68,7 +96,7 @@ pub trait MutationEntrypoint<'conn, C: PgClient, B: BinderBuilder<Binder = P>, P
         };
 
         let res_q = conn
-            .update(sql, None, Some(param_context.params))
+            .update(sql, None, Some(param_context.params()))
             .map_err(|_| "Internal Error: Failed to execute transpiled query".to_string())?;
 
         let res: pgrx::JsonB = match res_q.first().get::<JsonB>(1) {
@@ -85,11 +113,11 @@ pub trait MutationEntrypoint<'conn, C: PgClient, B: BinderBuilder<Binder = P>, P
     }
 }
 
-pub trait QueryEntrypoint<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> {
+pub trait QueryEntrypoint<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+{
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String>;
 
     fn execute(&self, client: &C, binder_builder: &B) -> Result<serde_json::Value, String> {
-        // let mut param_context = ParamContext { params: vec![] };
         let mut param_context = binder_builder.create_param_binder();
         let sql = &self.to_sql_entrypoint(client, &mut param_context);
         let sql = match sql {
@@ -99,21 +127,7 @@ pub trait QueryEntrypoint<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBin
             }
         };
 
-        let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
-            let val = c.select(sql, Some(1), Some(param_context.params))?;
-            // Get a value from the query
-            if val.is_empty() {
-                Ok(None)
-            } else {
-                val.first().get::<pgrx::JsonB>(1)
-            }
-        });
-
-        match spi_result {
-            Ok(Some(jsonb)) => Ok(jsonb.0),
-            Ok(None) => Ok(serde_json::Value::Null),
-            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
-        }
+        C::execute_query::<P>(sql, param_context.params())
     }
 }
 
@@ -278,8 +292,8 @@ impl Table {
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
-    for InsertBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    MutationEntrypoint<'_, C, B, P> for InsertBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
@@ -444,8 +458,8 @@ impl DeleteSelection {
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
-    for UpdateBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    MutationEntrypoint<'_, C, B, P> for UpdateBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
@@ -530,8 +544,8 @@ impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoi
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
-    for DeleteBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    MutationEntrypoint<'_, C, B, P> for DeleteBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
@@ -647,16 +661,16 @@ impl FunctionCallBuilder {
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
-    for FunctionCallBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    MutationEntrypoint<'_, C, B, P> for FunctionCallBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         self.to_sql(client, param_context)
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> QueryEntrypoint<C, B, P>
-    for FunctionCallBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    QueryEntrypoint<C, B, P> for FunctionCallBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         self.to_sql(client, param_context)
@@ -1106,8 +1120,8 @@ impl ConnectionBuilder {
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> QueryEntrypoint<C, B, P>
-    for ConnectionBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    QueryEntrypoint<C, B, P> for ConnectionBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         self.to_sql(client, None, param_context, None, None)
@@ -1354,8 +1368,8 @@ impl NodeBuilder {
     }
 }
 
-impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> QueryEntrypoint<C, B, P>
-    for NodeBuilder
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+    QueryEntrypoint<C, B, P> for NodeBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);

@@ -20,17 +20,28 @@ impl BinderBuilder for ParamContextBuilder {
 }
 
 pub trait ParamBinder {
+    type Args;
+
     fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String>;
+    fn params(self) -> Self::Args;
 }
 
 impl ParamBinder for ParamContext {
+    type Args = Params;
+
     fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String> {
         self.clause_for(value, type_name)
     }
+
+    fn params(self) -> Self::Args {
+        self.params
+    }
 }
 
+pub type Params = Vec<(PgOid, Option<pg_sys::Datum>)>;
+
 pub struct ParamContext {
-    pub params: Vec<(PgOid, Option<pg_sys::Datum>)>,
+    pub params: Params,
 }
 
 impl ParamContext {

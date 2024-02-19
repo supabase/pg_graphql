@@ -23,7 +23,13 @@ use itertools::Itertools;
 use serde_json::{json, Value};
 
 #[allow(non_snake_case)]
-pub fn resolve_inner<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
+pub fn resolve_inner<
+    'a,
+    T,
+    C: PgClient<Args = P::Args>,
+    B: BinderBuilder<Binder = P>,
+    P: ParamBinder,
+>(
     client: &C,
     binder_builder: &B,
     document: Document<'a, T>,
@@ -151,7 +157,7 @@ where
     }
 }
 
-fn resolve_query<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
+fn resolve_query<'a, T, C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>(
     client: &C,
     binder_builder: &B,
     query: Query<'a, T>,
@@ -174,7 +180,13 @@ where
     )
 }
 
-fn resolve_selection_set<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
+fn resolve_selection_set<
+    'a,
+    T,
+    C: PgClient<Args = P::Args>,
+    B: BinderBuilder<Binder = P>,
+    P: ParamBinder,
+>(
     client: &C,
     binder_builder: &B,
     selection_set: SelectionSet<'a, T>,
@@ -375,7 +387,13 @@ where
     }
 }
 
-fn resolve_mutation<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
+fn resolve_mutation<
+    'a,
+    T,
+    C: PgClient<Args = P::Args>,
+    B: BinderBuilder<Binder = P>,
+    P: ParamBinder,
+>(
     client: &C,
     binder_builder: &B,
     query: Mutation<'a, T>,
@@ -401,7 +419,7 @@ where
 fn resolve_mutation_selection_set<
     'a,
     T,
-    C: PgClient,
+    C: PgClient<Args = P::Args>,
     B: BinderBuilder<Binder = P>,
     P: ParamBinder,
 >(
