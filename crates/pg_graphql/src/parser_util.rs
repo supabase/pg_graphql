@@ -1,8 +1,16 @@
-use crate::graphql::*;
 use graphql_engine::gson;
 use graphql_parser::query::*;
 use graphql_parser::Pos;
 use std::collections::HashMap;
+
+use crate::EnumSource;
+use crate::Scalar;
+use crate::__Field;
+use crate::__InputValue;
+use crate::__Type;
+use crate::__TypeKind;
+use crate::___Type;
+use crate::field_map;
 
 pub fn alias_or_name<'a, T>(query_field: &graphql_parser::query::Field<'a, T>) -> String
 where

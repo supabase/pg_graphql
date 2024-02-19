@@ -5,10 +5,10 @@ use crate::builder::{
     to_node_builder, to_update_builder, FunctionCallBuilder,
 };
 use crate::context::get_one_readonly;
-use crate::graphql::*;
-use crate::parser_util::*;
+use crate::parser_util::{alias_or_name, normalize_selection_set};
 use crate::pg_client::PgClient;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
+use crate::{ErrorMessage, GraphQLResponse, __Schema, __Type, ___Field, ___Type, field_map};
 use graphql_engine::omit::Omit;
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, Selection,
@@ -164,8 +164,6 @@ fn resolve_selection_set<'a, T, C: PgClient>(
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    use crate::graphql::*;
-
     let query_type = schema_type.query_type();
     let map = field_map(&query_type);
 
@@ -373,8 +371,6 @@ fn resolve_mutation_selection_set<'a, T, C: PgClient>(
 where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
-    use crate::graphql::*;
-
     let mutation_type = match schema_type.mutation_type() {
         Some(mut_type) => mut_type,
         None => {

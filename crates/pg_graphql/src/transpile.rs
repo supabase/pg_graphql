@@ -8,9 +8,9 @@ use crate::builder::{
     __EnumValueField, __FieldBuilder, __FieldField, __InputValueBuilder, __InputValueField,
     __SchemaBuilder, __SchemaField, __TypeBuilder, __TypeField,
 };
-use crate::graphql::*;
 use crate::pg_client::PgClient;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
+use crate::{FilterOp, ___Field, ___Type};
 use itertools::Itertools;
 use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
