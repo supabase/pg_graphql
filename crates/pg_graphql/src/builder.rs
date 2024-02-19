@@ -1,11 +1,10 @@
 use graphql_engine::gson;
-use graphql_parser::query::{FragmentDefinition, VariableDefinition};
-use graphql_parser::schema::Text;
+use graphql_parser::{
+    query::{FragmentDefinition, VariableDefinition},
+    schema::Text,
+};
 use serde::Serialize;
-use std::collections::HashMap;
-use std::ops::Deref;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{collections::HashMap, ops::Deref, str::FromStr, sync::Arc};
 
 use crate::graphql::{
     FilterOp, ForeignKeyReversible, FuncCallResponseType, InsertInputType, NodeSQLType, NodeType,

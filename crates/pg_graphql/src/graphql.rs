@@ -3,13 +3,14 @@ use crate::sql_types::{
     Column, Context, Enum, ForeignKey, ForeignKeyTableInfo, Function, FunctionVolatility, Table,
     Type, TypeCategory,
 };
-use cached::proc_macro::cached;
-use cached::SizedCache;
+use cached::{proc_macro::cached, SizedCache};
 use itertools::Itertools;
 use serde::Serialize;
-use std::collections::{HashMap, HashSet};
-use std::ops::Deref;
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Deref,
+    sync::Arc,
+};
 
 fn is_valid_graphql_name(name: &str) -> bool {
     !name.is_empty()

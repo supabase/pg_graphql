@@ -1,12 +1,12 @@
 use crate::sql_types::{Config, Context, Function, TypeCategory, TypeDetails};
-use cached::proc_macro::cached;
-use cached::SizedCache;
+use cached::{proc_macro::cached, SizedCache};
 use pgrx::{FromDatum, IntoDatum, JsonB, Spi};
-use std::cmp::Ordering;
-use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::sync::Arc;
+use std::{
+    cmp::Ordering,
+    collections::{hash_map::DefaultHasher, HashMap},
+    hash::{Hash, Hasher},
+    sync::Arc,
+};
 
 /// This method is similar to `Spi::get_one` with the only difference
 /// being that it calls `client.select` instead of `client.update`.

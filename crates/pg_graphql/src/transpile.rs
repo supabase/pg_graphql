@@ -12,14 +12,9 @@ use crate::graphql::{FilterOp, ___Field, ___Type};
 use crate::pg_client::PgClient;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
-use pgrx::pg_sys::PgBuiltInOids;
-use pgrx::prelude::*;
-use pgrx::spi::SpiClient;
-use pgrx::{direct_function_call, JsonB};
+use pgrx::{direct_function_call, prelude::*, spi::SpiClient, JsonB};
 use serde::ser::{Serialize, SerializeMap, Serializer};
-use std::cmp;
-use std::collections::HashSet;
-use std::sync::Arc;
+use std::{cmp, collections::HashSet, sync::Arc};
 
 pub struct PgrxPgClient;
 

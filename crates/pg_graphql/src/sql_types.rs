@@ -1,9 +1,11 @@
 use bimap::BiBTreeMap;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    hash::{Hash, Hasher},
+    sync::Arc,
+};
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ColumnPermissions {
