@@ -3846,7 +3846,7 @@ pub struct ErrorMessage {
     pub message: String,
 }
 
-use super::omit::Omit;
+use graphql_engine::omit::Omit;
 
 #[derive(Serialize)]
 pub struct GraphQLResponse {

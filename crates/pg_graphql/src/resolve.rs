@@ -2,10 +2,10 @@ use std::collections::HashSet;
 
 use crate::builder::*;
 use crate::graphql::*;
-use crate::omit::*;
 use crate::parser_util::*;
 use crate::sql_types::get_one_readonly;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
+use graphql_engine::omit::*;
 use graphql_parser::query::Selection;
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, SelectionSet,

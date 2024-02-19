@@ -1,5 +1,5 @@
 use crate::graphql::*;
-use crate::omit::Omit;
+use graphql_engine::omit::Omit;
 use graphql_parser::query::parse_query;
 use pgrx::*;
 use resolve::resolve_inner;
@@ -7,7 +7,6 @@ use serde_json::json;
 
 mod builder;
 mod graphql;
-mod omit;
 mod parser_util;
 mod resolve;
 mod sql_types;
