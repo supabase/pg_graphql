@@ -1,7 +1,7 @@
 use crate::graphql::*;
 use graphql_engine::omit::Omit;
 use graphql_parser::query::parse_query;
-use pgrx::*;
+use pgrx::{default, extension_sql_file, pg_extern, pg_module_magic, JsonB};
 use resolve::resolve_inner;
 use serde_json::json;
 use transpile::PgrxPgClient;
@@ -77,7 +77,7 @@ fn resolve(
 }
 
 #[cfg(any(test, feature = "pg_test"))]
-#[pg_schema]
+#[pgrx::pg_schema]
 mod tests {}
 
 #[cfg(test)]
