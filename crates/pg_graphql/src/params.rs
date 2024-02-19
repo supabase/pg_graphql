@@ -1,5 +1,34 @@
 use pgrx::{prelude::pg_sys, IntoDatum, PgBuiltInOids, PgOid};
 
+pub trait BinderBuilder
+where
+    Self::Binder: ParamBinder,
+{
+    type Binder;
+
+    fn create_param_binder(&self) -> Self::Binder;
+}
+
+pub struct ParamContextBuilder;
+
+impl BinderBuilder for ParamContextBuilder {
+    type Binder = ParamContext;
+
+    fn create_param_binder(&self) -> ParamContext {
+        ParamContext { params: vec![] }
+    }
+}
+
+pub trait ParamBinder {
+    fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String>;
+}
+
+impl ParamBinder for ParamContext {
+    fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String> {
+        self.clause_for(value, type_name)
+    }
+}
+
 pub struct ParamContext {
     pub params: Vec<(PgOid, Option<pg_sys::Datum>)>,
 }

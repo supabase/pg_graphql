@@ -9,7 +9,7 @@ use crate::builder::{
     __SchemaBuilder, __SchemaField, __TypeBuilder, __TypeField,
 };
 use crate::graphql::{FilterOp, ___Field, ___Type};
-use crate::params::ParamContext;
+use crate::params::{BinderBuilder, ParamBinder};
 use crate::pg_client::PgClient;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
@@ -48,19 +48,17 @@ pub fn rand_block_name<C: PgClient>(client: &C) -> String {
     )
 }
 
-pub trait MutationEntrypoint<'conn, C: PgClient> {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String>;
+pub trait MutationEntrypoint<'conn, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> {
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String>;
 
     fn execute(
         &self,
         client: &C,
+        binder_builder: &B,
         mut conn: SpiClient<'conn>,
     ) -> Result<(serde_json::Value, SpiClient<'conn>), String> {
-        let mut param_context = ParamContext { params: vec![] };
+        // let mut param_context = ParamContext { params: vec![] };
+        let mut param_context = binder_builder.create_param_binder();
         let sql = &self.to_sql_entrypoint(client, &mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
@@ -87,15 +85,12 @@ pub trait MutationEntrypoint<'conn, C: PgClient> {
     }
 }
 
-pub trait QueryEntrypoint<C: PgClient> {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String>;
+pub trait QueryEntrypoint<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> {
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String>;
 
-    fn execute(&self, client: &C) -> Result<serde_json::Value, String> {
-        let mut param_context = ParamContext { params: vec![] };
+    fn execute(&self, client: &C, binder_builder: &B) -> Result<serde_json::Value, String> {
+        // let mut param_context = ParamContext { params: vec![] };
+        let mut param_context = binder_builder.create_param_binder();
         let sql = &self.to_sql_entrypoint(client, &mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
@@ -166,13 +161,13 @@ impl Table {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    fn to_pagination_clause<C: PgClient>(
+    fn to_pagination_clause<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         cursor: &Cursor,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
         allow_equality: bool,
     ) -> Result<String, String> {
         // When paginating, allowe_equality should be false because we don't want to
@@ -283,12 +278,10 @@ impl Table {
     }
 }
 
-impl<C: PgClient> MutationEntrypoint<'_, C> for InsertBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
+    for InsertBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
         let quoted_schema = client.quote_ident(&self.table.schema);
         let quoted_table = client.quote_ident(&self.table.name);
@@ -361,11 +354,11 @@ impl<C: PgClient> MutationEntrypoint<'_, C> for InsertBuilder {
 }
 
 impl InsertSelection {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let r = match self {
             Self::AffectedCount { alias } => {
@@ -391,11 +384,11 @@ impl InsertSelection {
 }
 
 impl UpdateSelection {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let r = match self {
             Self::AffectedCount { alias } => {
@@ -421,11 +414,11 @@ impl UpdateSelection {
 }
 
 impl DeleteSelection {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let r = match self {
             Self::AffectedCount { alias } => {
@@ -451,12 +444,10 @@ impl DeleteSelection {
     }
 }
 
-impl<C: PgClient> MutationEntrypoint<'_, C> for UpdateBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
+    for UpdateBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
         let quoted_schema = client.quote_ident(&self.table.schema);
         let quoted_table = client.quote_ident(&self.table.name);
@@ -539,12 +530,10 @@ impl<C: PgClient> MutationEntrypoint<'_, C> for UpdateBuilder {
     }
 }
 
-impl<C: PgClient> MutationEntrypoint<'_, C> for DeleteBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
+    for DeleteBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
         let quoted_schema = client.quote_ident(&self.table.schema);
         let quoted_table = client.quote_ident(&self.table.name);
@@ -606,10 +595,10 @@ impl<C: PgClient> MutationEntrypoint<'_, C> for DeleteBuilder {
 }
 
 impl FunctionCallBuilder {
-    fn to_sql<C: PgClient>(
+    fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let mut arg_clauses = vec![];
         for (arg, arg_value) in &self.args_builder.args {
@@ -658,22 +647,18 @@ impl FunctionCallBuilder {
     }
 }
 
-impl<C: PgClient> MutationEntrypoint<'_, C> for FunctionCallBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> MutationEntrypoint<'_, C, B, P>
+    for FunctionCallBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         self.to_sql(client, param_context)
     }
 }
 
-impl<C: PgClient> QueryEntrypoint<C> for FunctionCallBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> QueryEntrypoint<C, B, P>
+    for FunctionCallBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         self.to_sql(client, param_context)
     }
 }
@@ -698,12 +683,12 @@ impl OrderByBuilder {
 }
 
 impl FilterBuilderElem {
-    fn to_sql<C: PgClient>(
+    fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         match self {
             Self::Column { column, op, value } => {
@@ -775,12 +760,12 @@ impl FilterBuilderElem {
 }
 
 impl CompoundFilterBuilder {
-    fn to_sql<C: PgClient>(
+    fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         Ok(match self {
             CompoundFilterBuilder::And(elements) => {
@@ -808,12 +793,12 @@ impl CompoundFilterBuilder {
 }
 
 impl FilterBuilder {
-    fn to_where_clause<C: PgClient>(
+    fn to_where_clause<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let mut frags = vec!["true".to_string()];
 
@@ -889,11 +874,11 @@ impl ConnectionBuilder {
         }
     }
 
-    fn object_clause<C: PgClient>(
+    fn object_clause<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         quoted_block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
@@ -946,11 +931,11 @@ impl ConnectionBuilder {
         }
     }
 
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         quoted_parent_block_name: Option<&str>,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
         from_func: Option<FromFunction>,
         from_clause: Option<String>,
     ) -> Result<String, String> {
@@ -1121,12 +1106,10 @@ impl ConnectionBuilder {
     }
 }
 
-impl<C: PgClient> QueryEntrypoint<C> for ConnectionBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> QueryEntrypoint<C, B, P>
+    for ConnectionBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         self.to_sql(client, None, param_context, None, None)
     }
 }
@@ -1201,13 +1184,13 @@ impl PageInfoSelection {
 }
 
 impl ConnectionSelection {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         Ok(match self {
             Self::Edge(x) => {
@@ -1242,13 +1225,13 @@ impl ConnectionSelection {
 }
 
 impl EdgeBuilder {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
@@ -1272,13 +1255,13 @@ impl EdgeBuilder {
 }
 
 impl EdgeSelection {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         Ok(match self {
             Self::Cursor { alias } => {
@@ -1302,11 +1285,11 @@ impl EdgeSelection {
 }
 
 impl NodeBuilder {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
@@ -1326,11 +1309,11 @@ impl NodeBuilder {
         Ok(frags.join(" || ").to_string())
     }
 
-    pub fn to_relation_sql<C: PgClient>(
+    pub fn to_relation_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         parent_block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
         let quoted_schema = client.quote_ident(&self.table.schema);
@@ -1371,12 +1354,10 @@ impl NodeBuilder {
     }
 }
 
-impl<C: PgClient> QueryEntrypoint<C> for NodeBuilder {
-    fn to_sql_entrypoint(
-        &self,
-        client: &C,
-        param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+impl<C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder> QueryEntrypoint<C, B, P>
+    for NodeBuilder
+{
+    fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
         let quoted_block_name = rand_block_name(client);
         let quoted_schema = client.quote_ident(&self.table.schema);
         let quoted_table = client.quote_ident(&self.table.name);
@@ -1405,11 +1386,11 @@ impl<C: PgClient> QueryEntrypoint<C> for NodeBuilder {
 }
 
 impl NodeIdInstance {
-    pub fn to_sql(
+    pub fn to_sql<P: ParamBinder>(
         &self,
         block_name: &str,
         table: &Table,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         // TODO: abstract this logical check into builder. It is not related to
         // transpiling and should not be in this module
@@ -1443,11 +1424,11 @@ fn apply_suffix_casts(type_oid: u32) -> String {
 }
 
 impl NodeSelection {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         Ok(match self {
             // TODO need to provide alias when called from node builder.
@@ -1543,11 +1524,11 @@ impl NodeIdBuilder {
 }
 
 impl FunctionBuilder {
-    pub fn to_sql<C: PgClient>(
+    pub fn to_sql<C: PgClient, P: ParamBinder>(
         &self,
         client: &C,
         block_name: &str,
-        param_context: &mut ParamContext,
+        param_context: &mut P,
     ) -> Result<String, String> {
         let schema_name = client.quote_ident(&self.function.schema_name);
         let function_name = client.quote_ident(&self.function.name);

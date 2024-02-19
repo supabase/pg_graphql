@@ -2,9 +2,11 @@ use std::collections::HashSet;
 
 use crate::builder::{
     to_connection_builder, to_delete_builder, to_function_call_builder, to_insert_builder,
-    to_node_builder, to_update_builder, FunctionCallBuilder,
+    to_node_builder, to_update_builder, ConnectionBuilder, DeleteBuilder, FunctionCallBuilder,
+    InsertBuilder, NodeBuilder, UpdateBuilder,
 };
 use crate::context::get_one_readonly;
+use crate::params::{BinderBuilder, ParamBinder};
 use crate::parser_util::{alias_or_name, normalize_selection_set};
 use crate::pg_client::PgClient;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
@@ -21,8 +23,9 @@ use itertools::Itertools;
 use serde_json::{json, Value};
 
 #[allow(non_snake_case)]
-pub fn resolve_inner<'a, T, C: PgClient>(
+pub fn resolve_inner<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
     client: &C,
+    binder_builder: &B,
     document: Document<'a, T>,
     variables: &Value,
     operation_name: &Option<String>,
@@ -111,20 +114,33 @@ where
             }]),
         },
         Some(op) => match op {
-            OperationDefinition::Query(query) => {
-                resolve_query(client, query, schema, variables, fragment_defs)
-            }
-            OperationDefinition::SelectionSet(selection_set) => resolve_selection_set(
+            OperationDefinition::Query(query) => resolve_query::<T, C, B, P>(
                 client,
-                selection_set,
+                binder_builder,
+                query,
                 schema,
                 variables,
                 fragment_defs,
-                &vec![],
             ),
-            OperationDefinition::Mutation(mutation) => {
-                resolve_mutation(client, mutation, schema, variables, fragment_defs)
+            OperationDefinition::SelectionSet(selection_set) => {
+                resolve_selection_set::<T, C, B, P>(
+                    client,
+                    binder_builder,
+                    selection_set,
+                    schema,
+                    variables,
+                    fragment_defs,
+                    &vec![],
+                )
             }
+            OperationDefinition::Mutation(mutation) => resolve_mutation::<T, C, B, P>(
+                client,
+                binder_builder,
+                mutation,
+                schema,
+                variables,
+                fragment_defs,
+            ),
             OperationDefinition::Subscription(_) => GraphQLResponse {
                 data: Omit::Omitted,
                 errors: Omit::Present(vec![ErrorMessage {
@@ -135,8 +151,9 @@ where
     }
 }
 
-fn resolve_query<'a, T, C: PgClient>(
+fn resolve_query<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
     client: &C,
+    binder_builder: &B,
     query: Query<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -146,8 +163,9 @@ where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let variable_definitions = &query.variable_definitions;
-    resolve_selection_set(
+    resolve_selection_set::<T, C, B, P>(
         client,
+        binder_builder,
         query.selection_set,
         schema_type,
         variables,
@@ -156,8 +174,9 @@ where
     )
 }
 
-fn resolve_selection_set<'a, T, C: PgClient>(
+fn resolve_selection_set<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
     client: &C,
+    binder_builder: &B,
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -226,12 +245,18 @@ where
                             );
 
                             match connection_builder {
-                                Ok(builder) => match builder.execute(client) {
-                                    Ok(d) => {
-                                        res_data[alias_or_name(selection)] = d;
+                                Ok(builder) => {
+                                    match <ConnectionBuilder as QueryEntrypoint<C, B, P>>::execute(
+                                        &builder,
+                                        client,
+                                        binder_builder,
+                                    ) {
+                                        Ok(d) => {
+                                            res_data[alias_or_name(selection)] = d;
+                                        }
+                                        Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                     }
-                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
-                                },
+                                }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
@@ -246,12 +271,18 @@ where
                             );
 
                             match node_builder {
-                                Ok(builder) => match builder.execute(client) {
-                                    Ok(d) => {
-                                        res_data[alias_or_name(selection)] = d;
+                                Ok(builder) => {
+                                    match <NodeBuilder as QueryEntrypoint<C, B, P>>::execute(
+                                        &builder,
+                                        client,
+                                        binder_builder,
+                                    ) {
+                                        Ok(d) => {
+                                            res_data[alias_or_name(selection)] = d;
+                                        }
+                                        Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                     }
-                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
-                                },
+                                }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
@@ -313,8 +344,10 @@ where
                                 match function_call_builder {
                                     Ok(builder) => match <FunctionCallBuilder as QueryEntrypoint<
                                         C,
+                                        B,
+                                        P,
                                     >>::execute(
-                                        &builder, client
+                                        &builder, client, binder_builder
                                     ) {
                                         Ok(d) => {
                                             res_data[alias_or_name(selection)] = d;
@@ -342,8 +375,9 @@ where
     }
 }
 
-fn resolve_mutation<'a, T, C: PgClient>(
+fn resolve_mutation<'a, T, C: PgClient, B: BinderBuilder<Binder = P>, P: ParamBinder>(
     client: &C,
+    binder_builder: &B,
     query: Mutation<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -353,8 +387,9 @@ where
     T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
 {
     let variable_definitions = &query.variable_definitions;
-    resolve_mutation_selection_set(
+    resolve_mutation_selection_set::<T, C, B, P>(
         client,
+        binder_builder,
         query.selection_set,
         schema_type,
         variables,
@@ -363,8 +398,15 @@ where
     )
 }
 
-fn resolve_mutation_selection_set<'a, T, C: PgClient>(
+fn resolve_mutation_selection_set<
+    'a,
+    T,
+    C: PgClient,
+    B: BinderBuilder<Binder = P>,
+    P: ParamBinder,
+>(
     client: &C,
+    binder_builder: &B,
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -441,7 +483,13 @@ where
                                     }
                                 };
 
-                                let (d, conn) = builder.execute(client, conn)?;
+                                let (d, conn) =
+                                    <InsertBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
+                                        &builder,
+                                        client,
+                                        binder_builder,
+                                        conn,
+                                    )?;
 
                                 res_data[alias_or_name(selection)] = d;
                                 conn
@@ -460,7 +508,13 @@ where
                                     }
                                 };
 
-                                let (d, conn) = builder.execute(client, conn)?;
+                                let (d, conn) =
+                                    <UpdateBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
+                                        &builder,
+                                        client,
+                                        binder_builder,
+                                        conn,
+                                    )?;
                                 res_data[alias_or_name(selection)] = d;
                                 conn
                             }
@@ -478,7 +532,13 @@ where
                                     }
                                 };
 
-                                let (d, conn) = builder.execute(client, conn)?;
+                                let (d, conn) =
+                                    <DeleteBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
+                                        &builder,
+                                        client,
+                                        binder_builder,
+                                        conn,
+                                    )?;
                                 res_data[alias_or_name(selection)] = d;
                                 conn
                             }
@@ -502,10 +562,13 @@ where
                                         }
                                     };
 
-                                    let (d, conn) =
-                                        <FunctionCallBuilder as MutationEntrypoint<C>>::execute(
-                                            &builder, client, conn,
-                                        )?;
+                                    let (d, conn) = <FunctionCallBuilder as MutationEntrypoint<
+                                        C,
+                                        B,
+                                        P,
+                                    >>::execute(
+                                        &builder, client, binder_builder, conn
+                                    )?;
                                     res_data[alias_or_name(selection)] = d;
                                     conn
                                 }
