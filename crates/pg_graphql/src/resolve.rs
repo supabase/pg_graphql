@@ -4,6 +4,7 @@ use crate::builder::*;
 use crate::context::get_one_readonly;
 use crate::graphql::*;
 use crate::parser_util::*;
+use crate::pg_client::PgClient;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_engine::omit::*;
 use graphql_parser::query::Selection;
@@ -15,7 +16,8 @@ use itertools::Itertools;
 use serde_json::{json, Value};
 
 #[allow(non_snake_case)]
-pub fn resolve_inner<'a, T>(
+pub fn resolve_inner<'a, T, C: PgClient>(
+    client: &C,
     document: Document<'a, T>,
     variables: &Value,
     operation_name: &Option<String>,
@@ -105,13 +107,18 @@ where
         },
         Some(op) => match op {
             OperationDefinition::Query(query) => {
-                resolve_query(query, schema, variables, fragment_defs)
+                resolve_query(client, query, schema, variables, fragment_defs)
             }
-            OperationDefinition::SelectionSet(selection_set) => {
-                resolve_selection_set(selection_set, schema, variables, fragment_defs, &vec![])
-            }
+            OperationDefinition::SelectionSet(selection_set) => resolve_selection_set(
+                client,
+                selection_set,
+                schema,
+                variables,
+                fragment_defs,
+                &vec![],
+            ),
             OperationDefinition::Mutation(mutation) => {
-                resolve_mutation(mutation, schema, variables, fragment_defs)
+                resolve_mutation(client, mutation, schema, variables, fragment_defs)
             }
             OperationDefinition::Subscription(_) => GraphQLResponse {
                 data: Omit::Omitted,
@@ -123,7 +130,8 @@ where
     }
 }
 
-fn resolve_query<'a, T>(
+fn resolve_query<'a, T, C: PgClient>(
+    client: &C,
     query: Query<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -134,6 +142,7 @@ where
 {
     let variable_definitions = &query.variable_definitions;
     resolve_selection_set(
+        client,
         query.selection_set,
         schema_type,
         variables,
@@ -142,7 +151,8 @@ where
     )
 }
 
-fn resolve_selection_set<'a, T>(
+fn resolve_selection_set<'a, T, C: PgClient>(
+    client: &C,
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -213,7 +223,7 @@ where
                             );
 
                             match connection_builder {
-                                Ok(builder) => match builder.execute() {
+                                Ok(builder) => match builder.execute(client) {
                                     Ok(d) => {
                                         res_data[alias_or_name(selection)] = d;
                                     }
@@ -233,7 +243,7 @@ where
                             );
 
                             match node_builder {
-                                Ok(builder) => match builder.execute() {
+                                Ok(builder) => match builder.execute(client) {
                                     Ok(d) => {
                                         res_data[alias_or_name(selection)] = d;
                                     }
@@ -298,18 +308,16 @@ where
                                 );
 
                                 match function_call_builder {
-                                    Ok(builder) => {
-                                        match <FunctionCallBuilder as QueryEntrypoint>::execute(
-                                            &builder,
-                                        ) {
-                                            Ok(d) => {
-                                                res_data[alias_or_name(selection)] = d;
-                                            }
-                                            Err(msg) => {
-                                                res_errors.push(ErrorMessage { message: msg })
-                                            }
+                                    Ok(builder) => match <FunctionCallBuilder as QueryEntrypoint<
+                                        C,
+                                    >>::execute(
+                                        &builder, client
+                                    ) {
+                                        Ok(d) => {
+                                            res_data[alias_or_name(selection)] = d;
                                         }
-                                    }
+                                        Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                    },
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 }
                             }
@@ -331,7 +339,8 @@ where
     }
 }
 
-fn resolve_mutation<'a, T>(
+fn resolve_mutation<'a, T, C: PgClient>(
+    client: &C,
     query: Mutation<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -342,6 +351,7 @@ where
 {
     let variable_definitions = &query.variable_definitions;
     resolve_mutation_selection_set(
+        client,
         query.selection_set,
         schema_type,
         variables,
@@ -350,7 +360,8 @@ where
     )
 }
 
-fn resolve_mutation_selection_set<'a, T>(
+fn resolve_mutation_selection_set<'a, T, C: PgClient>(
+    client: &C,
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -429,7 +440,7 @@ where
                                     }
                                 };
 
-                                let (d, conn) = builder.execute(conn)?;
+                                let (d, conn) = builder.execute(client, conn)?;
 
                                 res_data[alias_or_name(selection)] = d;
                                 conn
@@ -448,7 +459,7 @@ where
                                     }
                                 };
 
-                                let (d, conn) = builder.execute(conn)?;
+                                let (d, conn) = builder.execute(client, conn)?;
                                 res_data[alias_or_name(selection)] = d;
                                 conn
                             }
@@ -466,7 +477,7 @@ where
                                     }
                                 };
 
-                                let (d, conn) = builder.execute(conn)?;
+                                let (d, conn) = builder.execute(client, conn)?;
                                 res_data[alias_or_name(selection)] = d;
                                 conn
                             }
@@ -491,8 +502,8 @@ where
                                     };
 
                                     let (d, conn) =
-                                        <FunctionCallBuilder as MutationEntrypoint>::execute(
-                                            &builder, conn,
+                                        <FunctionCallBuilder as MutationEntrypoint<C>>::execute(
+                                            &builder, client, conn,
                                         )?;
                                     res_data[alias_or_name(selection)] = d;
                                     conn

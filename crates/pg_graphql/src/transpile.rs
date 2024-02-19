@@ -1,5 +1,6 @@
 use crate::builder::*;
 use crate::graphql::*;
+use crate::pg_client::PgClient;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
 use pgrx::pg_sys::PgBuiltInOids;
@@ -11,24 +12,28 @@ use std::cmp;
 use std::collections::HashSet;
 use std::sync::Arc;
 
-pub fn quote_ident(ident: &str) -> String {
-    unsafe {
-        direct_function_call::<String>(pg_sys::quote_ident, &[ident.into_datum()])
-            .expect("failed to quote ident")
+pub struct PgrxPgClient;
+
+impl PgClient for PgrxPgClient {
+    fn quote_ident(&self, ident: &str) -> String {
+        unsafe {
+            direct_function_call::<String>(pg_sys::quote_ident, &[ident.into_datum()])
+                .expect("failed to quote ident")
+        }
+    }
+
+    fn quote_literal(&self, ident: &str) -> String {
+        unsafe {
+            direct_function_call::<String>(pg_sys::quote_literal, &[ident.into_datum()])
+                .expect("failed to quote literal")
+        }
     }
 }
 
-pub fn quote_literal(ident: &str) -> String {
-    unsafe {
-        direct_function_call::<String>(pg_sys::quote_literal, &[ident.into_datum()])
-            .expect("failed to quote literal")
-    }
-}
-
-pub fn rand_block_name() -> String {
+pub fn rand_block_name<C: PgClient>(client: &C) -> String {
     use rand::distributions::Alphanumeric;
     use rand::{thread_rng, Rng};
-    quote_ident(
+    client.quote_ident(
         &thread_rng()
             .sample_iter(&Alphanumeric)
             .take(7)
@@ -38,15 +43,20 @@ pub fn rand_block_name() -> String {
     )
 }
 
-pub trait MutationEntrypoint<'conn> {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
+pub trait MutationEntrypoint<'conn, C: PgClient> {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String>;
 
     fn execute(
         &self,
+        client: &C,
         mut conn: SpiClient<'conn>,
     ) -> Result<(serde_json::Value, SpiClient<'conn>), String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql_entrypoint(&mut param_context);
+        let sql = &self.to_sql_entrypoint(client, &mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
@@ -72,12 +82,16 @@ pub trait MutationEntrypoint<'conn> {
     }
 }
 
-pub trait QueryEntrypoint {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
+pub trait QueryEntrypoint<C: PgClient> {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String>;
 
-    fn execute(&self) -> Result<serde_json::Value, String> {
+    fn execute(&self, client: &C) -> Result<serde_json::Value, String> {
         let mut param_context = ParamContext { params: vec![] };
-        let sql = &self.to_sql_entrypoint(&mut param_context);
+        let sql = &self.to_sql_entrypoint(client, &mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
@@ -104,34 +118,39 @@ pub trait QueryEntrypoint {
 }
 
 impl Table {
-    fn to_selectable_columns_clause(&self) -> String {
+    fn to_selectable_columns_clause<C: PgClient>(&self, client: &C) -> String {
         self.columns
             .iter()
             .filter(|x| x.permissions.is_selectable)
-            .map(|x| quote_ident(&x.name))
+            .map(|x| client.quote_ident(&x.name))
             .collect::<Vec<String>>()
             .join(", ")
     }
 
     /// a priamry key tuple clause selects the columns of the primary key as a composite record
     /// that is useful in "has_previous_page" by letting us compare records on a known unique key
-    fn to_primary_key_tuple_clause(&self, block_name: &str) -> String {
+    fn to_primary_key_tuple_clause<C: PgClient>(&self, client: &C, block_name: &str) -> String {
         let pkey_cols: Vec<&Arc<Column>> = self.primary_key_columns();
 
         let pkey_frags: Vec<String> = pkey_cols
             .iter()
-            .map(|x| format!("{block_name}.{}", quote_ident(&x.name)))
+            .map(|x| format!("{block_name}.{}", client.quote_ident(&x.name)))
             .collect();
 
         format!("({})", pkey_frags.join(","))
     }
 
-    fn to_cursor_clause(&self, block_name: &str, order_by: &OrderByBuilder) -> String {
+    fn to_cursor_clause<C: PgClient>(
+        &self,
+        client: &C,
+        block_name: &str,
+        order_by: &OrderByBuilder,
+    ) -> String {
         let frags: Vec<String> = order_by
             .elems
             .iter()
             .map(|x| {
-                let quoted_col_name = quote_ident(&x.column.name);
+                let quoted_col_name = client.quote_ident(&x.column.name);
                 format!("to_jsonb({block_name}.{quoted_col_name})")
             })
             .collect();
@@ -142,8 +161,9 @@ impl Table {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    fn to_pagination_clause(
+    fn to_pagination_clause<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         cursor: &Cursor,
@@ -178,13 +198,14 @@ impl Table {
         let order_elem = next_order_by.elems.remove(0);
 
         let column = order_elem.column;
-        let quoted_col = quote_ident(&column.name);
+        let quoted_col = client.quote_ident(&column.name);
 
         let val = cursor_elem.value;
 
         let val_clause = param_context.clause_for(&val, &column.type_name)?;
 
         let recurse_clause = self.to_pagination_clause(
+            client,
             block_name,
             &next_order_by,
             &next_cursor,
@@ -206,8 +227,9 @@ impl Table {
         )"))
     }
 
-    fn to_join_clause(
+    fn to_join_clause<C: PgClient>(
         &self,
+        client: &C,
         fkey: &ForeignKey,
         reverse_reference: bool,
         quoted_block_name: &str,
@@ -237,10 +259,13 @@ impl Table {
             let quoted_parent_literal_col = format!(
                 "{}.{}",
                 quoted_parent_block_name,
-                quote_ident(parent_col_name)
+                client.quote_ident(parent_col_name)
             );
-            let quoted_local_literal_col =
-                format!("{}.{}", quoted_block_name, quote_ident(local_col_name));
+            let quoted_local_literal_col = format!(
+                "{}.{}",
+                quoted_block_name,
+                client.quote_ident(local_col_name)
+            );
 
             let equality_clause = format!(
                 "{} = {}",
@@ -253,19 +278,23 @@ impl Table {
     }
 }
 
-impl MutationEntrypoint<'_> for InsertBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(&self.table.schema);
-        let quoted_table = quote_ident(&self.table.name);
+impl<C: PgClient> MutationEntrypoint<'_, C> for InsertBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let quoted_block_name = rand_block_name(client);
+        let quoted_schema = client.quote_ident(&self.table.schema);
+        let quoted_table = client.quote_ident(&self.table.name);
 
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&quoted_block_name, param_context))
+            .map(|x| x.to_sql(client, &quoted_block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let selectable_columns_clause = self.table.to_selectable_columns_clause();
+        let selectable_columns_clause = self.table.to_selectable_columns_clause(client);
 
         let select_clause = frags.join(", ");
 
@@ -283,7 +312,7 @@ impl MutationEntrypoint<'_> for InsertBuilder {
         // Order matters. This must be in the same order as `referenced_columns`
         let referenced_columns_clause: String = referenced_columns
             .iter()
-            .map(|c| quote_ident(&c.name))
+            .map(|c| client.quote_ident(&c.name))
             .collect::<Vec<String>>()
             .join(", ");
 
@@ -327,24 +356,29 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 }
 
 impl InsertSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         let r = match self {
             Self::AffectedCount { alias } => {
-                format!("{}, count(*)", quote_literal(alias))
+                format!("{}, count(*)", client.quote_literal(alias))
             }
             Self::Records(x) => {
                 format!(
                     "{}, coalesce(jsonb_agg({}), jsonb_build_array())",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, param_context)?
+                    client.quote_literal(&x.alias),
+                    x.to_sql(client, block_name, param_context)?
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         };
         Ok(r)
@@ -352,24 +386,29 @@ impl InsertSelection {
 }
 
 impl UpdateSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         let r = match self {
             Self::AffectedCount { alias } => {
-                format!("{}, count(*)", quote_literal(alias))
+                format!("{}, count(*)", client.quote_literal(alias))
             }
             Self::Records(x) => {
                 format!(
                     "{}, coalesce(jsonb_agg({}), jsonb_build_array())",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, param_context)?
+                    client.quote_literal(&x.alias),
+                    x.to_sql(client, block_name, param_context)?
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         };
         Ok(r)
@@ -377,24 +416,29 @@ impl UpdateSelection {
 }
 
 impl DeleteSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         let r = match self {
             Self::AffectedCount { alias } => {
-                format!("{}, count(*)", quote_literal(alias))
+                format!("{}, count(*)", client.quote_literal(alias))
             }
             Self::Records(x) => {
                 format!(
                     "{}, coalesce(jsonb_agg({}), jsonb_build_array())",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, param_context)?
+                    client.quote_literal(&x.alias),
+                    x.to_sql(client, block_name, param_context)?
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         };
 
@@ -402,16 +446,20 @@ impl DeleteSelection {
     }
 }
 
-impl MutationEntrypoint<'_> for UpdateBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(&self.table.schema);
-        let quoted_table = quote_ident(&self.table.name);
+impl<C: PgClient> MutationEntrypoint<'_, C> for UpdateBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let quoted_block_name = rand_block_name(client);
+        let quoted_schema = client.quote_ident(&self.table.schema);
+        let quoted_table = client.quote_ident(&self.table.name);
 
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&quoted_block_name, param_context))
+            .map(|x| x.to_sql(client, &quoted_block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let select_clause = frags.join(", ");
@@ -419,7 +467,7 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
         let set_clause: String = {
             let mut set_clause_frags = vec![];
             for (column_name, val) in &self.set.set {
-                let quoted_column = quote_ident(column_name);
+                let quoted_column = client.quote_ident(column_name);
 
                 let column: &Column = self
                     .table
@@ -436,11 +484,11 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
             set_clause_frags.join(", ")
         };
 
-        let selectable_columns_clause = self.table.to_selectable_columns_clause();
+        let selectable_columns_clause = self.table.to_selectable_columns_clause(client);
 
         let where_clause =
             self.filter
-                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
+                .to_where_clause(client, &quoted_block_name, &self.table, param_context)?;
 
         let at_most = self.at_most;
 
@@ -486,24 +534,28 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
     }
 }
 
-impl MutationEntrypoint<'_> for DeleteBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(&self.table.schema);
-        let quoted_table = quote_ident(&self.table.name);
+impl<C: PgClient> MutationEntrypoint<'_, C> for DeleteBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let quoted_block_name = rand_block_name(client);
+        let quoted_schema = client.quote_ident(&self.table.schema);
+        let quoted_table = client.quote_ident(&self.table.name);
 
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&quoted_block_name, param_context))
+            .map(|x| x.to_sql(client, &quoted_block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let select_clause = frags.join(", ");
         let where_clause =
             self.filter
-                .to_where_clause(&quoted_block_name, &self.table, param_context)?;
+                .to_where_clause(client, &quoted_block_name, &self.table, param_context)?;
 
-        let selectable_columns_clause = self.table.to_selectable_columns_clause();
+        let selectable_columns_clause = self.table.to_selectable_columns_clause(client);
 
         let at_most = self.at_most;
 
@@ -549,21 +601,26 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
 }
 
 impl FunctionCallBuilder {
-    fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql<C: PgClient>(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
         let mut arg_clauses = vec![];
         for (arg, arg_value) in &self.args_builder.args {
             if let Some(arg) = arg {
                 let arg_clause = param_context.clause_for(arg_value, &arg.type_name)?;
-                let named_arg_clause = format!("{} => {}", quote_ident(&arg.name), arg_clause);
+                let named_arg_clause =
+                    format!("{} => {}", client.quote_ident(&arg.name), arg_clause);
                 arg_clauses.push(named_arg_clause);
             }
         }
 
         let args_clause = format!("({})", arg_clauses.join(", "));
 
-        let block_name = &rand_block_name();
-        let func_schema = quote_ident(&self.function.schema_name);
-        let func_name = quote_ident(&self.function.name);
+        let block_name = &rand_block_name(client);
+        let func_schema = client.quote_ident(&self.function.schema_name);
+        let func_name = client.quote_ident(&self.function.name);
 
         let query = match &self.return_type_builder {
             FuncCallReturnTypeBuilder::Scalar | FuncCallReturnTypeBuilder::List => {
@@ -571,7 +628,7 @@ impl FunctionCallBuilder {
                 format!("select to_jsonb({func_schema}.{func_name}{args_clause}{type_adjustment_clause}) {block_name};")
             }
             FuncCallReturnTypeBuilder::Node(node_builder) => {
-                let select_clause = node_builder.to_sql(block_name, param_context)?;
+                let select_clause = node_builder.to_sql(client, block_name, param_context)?;
                 let select_clause = if select_clause.is_empty() {
                     "jsonb_build_object()".to_string()
                 } else {
@@ -582,6 +639,7 @@ impl FunctionCallBuilder {
             FuncCallReturnTypeBuilder::Connection(connection_builder) => {
                 let from_clause = format!("{func_schema}.{func_name}{args_clause}");
                 let select_clause = connection_builder.to_sql(
+                    client,
                     Some(block_name),
                     param_context,
                     None,
@@ -595,24 +653,32 @@ impl FunctionCallBuilder {
     }
 }
 
-impl MutationEntrypoint<'_> for FunctionCallBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(param_context)
+impl<C: PgClient> MutationEntrypoint<'_, C> for FunctionCallBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        self.to_sql(client, param_context)
     }
 }
 
-impl QueryEntrypoint for FunctionCallBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(param_context)
+impl<C: PgClient> QueryEntrypoint<C> for FunctionCallBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        self.to_sql(client, param_context)
     }
 }
 
 impl OrderByBuilder {
-    fn to_order_by_clause(&self, block_name: &str) -> String {
+    fn to_order_by_clause<C: PgClient>(&self, client: &C, block_name: &str) -> String {
         let mut frags = vec![];
 
         for elem in &self.elems {
-            let quoted_column_name = quote_ident(&elem.column.name);
+            let quoted_column_name = client.quote_ident(&elem.column.name);
             let direction_clause = match elem.direction {
                 OrderDirection::AscNullsFirst => "asc nulls first",
                 OrderDirection::AscNullsLast => "asc nulls last",
@@ -678,8 +744,9 @@ impl ParamContext {
 }
 
 impl FilterBuilderElem {
-    fn to_sql(
+    fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
@@ -690,7 +757,7 @@ impl FilterBuilderElem {
                     FilterOp::Is => {
                         format!(
                             "{block_name}.{} {}",
-                            quote_ident(&column.name),
+                            client.quote_ident(&column.name),
                             match value {
                                 serde_json::Value::String(x) => {
                                     match x.as_str() {
@@ -721,7 +788,7 @@ impl FilterBuilderElem {
 
                         format!(
                             "{block_name}.{} {} {}",
-                            quote_ident(&column.name),
+                            client.quote_ident(&column.name),
                             match op {
                                 FilterOp::Equal => "=",
                                 FilterOp::NotEqual => "<>",
@@ -747,15 +814,16 @@ impl FilterBuilderElem {
             }
             Self::NodeId(node_id) => node_id.to_sql(block_name, table, param_context),
             FilterBuilderElem::Compound(compound_builder) => {
-                compound_builder.to_sql(block_name, table, param_context)
+                compound_builder.to_sql(client, block_name, table, param_context)
             }
         }
     }
 }
 
 impl CompoundFilterBuilder {
-    fn to_sql(
+    fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
@@ -764,27 +832,31 @@ impl CompoundFilterBuilder {
             CompoundFilterBuilder::And(elements) => {
                 let bool_expressions = elements
                     .iter()
-                    .map(|e| e.to_sql(block_name, table, param_context))
+                    .map(|e| e.to_sql(client, block_name, table, param_context))
                     .collect::<Result<Vec<_>, _>>()?;
                 format!("({})", bool_expressions.join(" and "))
             }
             CompoundFilterBuilder::Or(elements) => {
                 let bool_expressions = elements
                     .iter()
-                    .map(|e| e.to_sql(block_name, table, param_context))
+                    .map(|e| e.to_sql(client, block_name, table, param_context))
                     .collect::<Result<Vec<_>, _>>()?;
                 format!("({})", bool_expressions.join(" or "))
             }
             CompoundFilterBuilder::Not(elem) => {
-                format!("not({})", elem.to_sql(block_name, table, param_context)?)
+                format!(
+                    "not({})",
+                    elem.to_sql(client, block_name, table, param_context)?
+                )
             }
         })
     }
 }
 
 impl FilterBuilder {
-    fn to_where_clause(
+    fn to_where_clause<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
@@ -792,7 +864,7 @@ impl FilterBuilder {
         let mut frags = vec!["true".to_string()];
 
         for elem in &self.elems {
-            let frag = elem.to_sql(block_name, table, param_context)?;
+            let frag = elem.to_sql(client, block_name, table, param_context)?;
             frags.push(frag);
         }
         Ok(frags.join(" and "))
@@ -841,8 +913,9 @@ impl ConnectionBuilder {
         self.last.is_some() || self.before.is_some()
     }
 
-    fn to_join_clause(
+    fn to_join_clause<C: PgClient>(
         &self,
+        client: &C,
         quoted_block_name: &str,
         quoted_parent_block_name: &Option<&str>,
     ) -> Result<String, String> {
@@ -851,6 +924,7 @@ impl ConnectionBuilder {
                 let quoted_parent_block_name = quoted_parent_block_name
                     .ok_or("Internal Error: Parent block name is required when fkey_ix is set")?;
                 self.source.table.to_join_clause(
+                    client,
                     &fkey.fkey,
                     fkey.reverse_reference,
                     quoted_block_name,
@@ -861,8 +935,9 @@ impl ConnectionBuilder {
         }
     }
 
-    fn object_clause(
+    fn object_clause<C: PgClient>(
         &self,
+        client: &C,
         quoted_block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
@@ -871,6 +946,7 @@ impl ConnectionBuilder {
             .iter()
             .map(|x| {
                 x.to_sql(
+                    client,
                     quoted_block_name,
                     &self.order_by,
                     &self.source.table,
@@ -892,17 +968,22 @@ impl ConnectionBuilder {
 
     //TODO:Revisit if from_clause is the best name
     #[allow(clippy::wrong_self_convention)]
-    fn from_clause(&self, quoted_block_name: &str, function: &Option<FromFunction>) -> String {
-        let quoted_schema = quote_ident(&self.source.table.schema);
-        let quoted_table = quote_ident(&self.source.table.name);
+    fn from_clause<C: PgClient>(
+        &self,
+        client: &C,
+        quoted_block_name: &str,
+        function: &Option<FromFunction>,
+    ) -> String {
+        let quoted_schema = client.quote_ident(&self.source.table.schema);
+        let quoted_table = client.quote_ident(&self.source.table.name);
 
         match function {
             Some(from_function) => {
-                let quoted_func_schema = quote_ident(&from_function.function.schema_name);
-                let quoted_func = quote_ident(&from_function.function.name);
+                let quoted_func_schema = client.quote_ident(&from_function.function.schema_name);
+                let quoted_func = client.quote_ident(&from_function.function.name);
                 let input_block_name = &from_function.input_block_name;
-                let quoted_input_schema = quote_ident(&from_function.input_table.schema);
-                let quoted_input_table = quote_ident(&from_function.input_table.name);
+                let quoted_input_schema = client.quote_ident(&from_function.input_table.schema);
+                let quoted_input_table = client.quote_ident(&from_function.input_table.name);
                 format!("{quoted_func_schema}.{quoted_func}({input_block_name}::{quoted_input_schema}.{quoted_input_table}) {quoted_block_name}")
             }
             None => {
@@ -911,29 +992,33 @@ impl ConnectionBuilder {
         }
     }
 
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         quoted_parent_block_name: Option<&str>,
         param_context: &mut ParamContext,
         from_func: Option<FromFunction>,
         from_clause: Option<String>,
     ) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
+        let quoted_block_name = rand_block_name(client);
 
         let from_clause = match from_clause {
             Some(from_clause) => format!("{from_clause} {quoted_block_name}"),
-            None => self.from_clause(&quoted_block_name, &from_func),
+            None => self.from_clause(client, &quoted_block_name, &from_func),
         };
 
-        let where_clause =
-            self.filter
-                .to_where_clause(&quoted_block_name, &self.source.table, param_context)?;
+        let where_clause = self.filter.to_where_clause(
+            client,
+            &quoted_block_name,
+            &self.source.table,
+            param_context,
+        )?;
 
-        let order_by_clause = self.order_by.to_order_by_clause(&quoted_block_name);
+        let order_by_clause = self.order_by.to_order_by_clause(client, &quoted_block_name);
         let order_by_clause_reversed = self
             .order_by
             .reverse()
-            .to_order_by_clause(&quoted_block_name);
+            .to_order_by_clause(client, &quoted_block_name);
 
         let order_by_clause_records = match self.is_reverse_pagination() {
             true => &order_by_clause_reversed,
@@ -944,20 +1029,23 @@ impl ConnectionBuilder {
         let requested_next_page = self.requested_next_page();
         let requested_previous_page = self.requested_previous_page();
 
-        let join_clause = self.to_join_clause(&quoted_block_name, &quoted_parent_block_name)?;
+        let join_clause =
+            self.to_join_clause(client, &quoted_block_name, &quoted_parent_block_name)?;
 
         let cursor = &self.before.clone().or_else(|| self.after.clone());
 
-        let object_clause = self.object_clause(&quoted_block_name, param_context)?;
+        let object_clause = self.object_clause(client, &quoted_block_name, param_context)?;
 
-        let selectable_columns_clause = self.source.table.to_selectable_columns_clause();
+        let selectable_columns_clause = self.source.table.to_selectable_columns_clause(client);
 
         let pkey_tuple_clause_from_block = self
             .source
             .table
-            .to_primary_key_tuple_clause(&quoted_block_name);
-        let pkey_tuple_clause_from_records =
-            self.source.table.to_primary_key_tuple_clause("__records");
+            .to_primary_key_tuple_clause(client, &quoted_block_name);
+        let pkey_tuple_clause_from_records = self
+            .source
+            .table
+            .to_primary_key_tuple_clause(client, "__records");
 
         let pagination_clause = {
             let order_by = match self.is_reverse_pagination() {
@@ -966,6 +1054,7 @@ impl ConnectionBuilder {
             };
             match cursor {
                 Some(cursor) => self.source.table.to_pagination_clause(
+                    client,
                     &quoted_block_name,
                     &order_by,
                     cursor,
@@ -1078,15 +1167,20 @@ impl ConnectionBuilder {
     }
 }
 
-impl QueryEntrypoint for ConnectionBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        self.to_sql(None, param_context, None, None)
+impl<C: PgClient> QueryEntrypoint<C> for ConnectionBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        self.to_sql(client, None, param_context, None, None)
     }
 }
 
 impl PageInfoBuilder {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         _block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
@@ -1094,7 +1188,7 @@ impl PageInfoBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(_block_name, order_by, table))
+            .map(|x| x.to_sql(client, _block_name, order_by, table))
             .collect::<Result<Vec<_>, _>>()?;
 
         let x = frags.join(", ");
@@ -1104,52 +1198,58 @@ impl PageInfoBuilder {
 }
 
 impl PageInfoSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
     ) -> Result<String, String> {
-        let order_by_clause = order_by.to_order_by_clause(block_name);
-        let order_by_clause_reversed = order_by.reverse().to_order_by_clause(block_name);
+        let order_by_clause = order_by.to_order_by_clause(client, block_name);
+        let order_by_clause_reversed = order_by.reverse().to_order_by_clause(client, block_name);
 
-        let cursor_clause = table.to_cursor_clause(block_name, order_by);
+        let cursor_clause = table.to_cursor_clause(client, block_name, order_by);
 
         Ok(match self {
             Self::StartCursor { alias } => {
                 format!(
                     "{}, (array_agg({cursor_clause} order by {order_by_clause}))[1]",
-                    quote_literal(alias)
+                    client.quote_literal(alias)
                 )
             }
             Self::EndCursor { alias } => {
                 format!(
                     "{}, (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1]",
-                    quote_literal(alias)
+                    client.quote_literal(alias)
                 )
             }
             Self::HasNextPage { alias } => {
                 format!(
                     "{}, coalesce(bool_and(__has_next_page.___has_next_page), false)",
-                    quote_literal(alias)
+                    client.quote_literal(alias)
                 )
             }
             Self::HasPreviousPage { alias } => {
                 format!(
                     "{}, coalesce(bool_and(__has_previous_page.___has_previous_page), false)",
-                    quote_literal(alias)
+                    client.quote_literal(alias)
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         })
     }
 }
 
 impl ConnectionSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
@@ -1159,33 +1259,38 @@ impl ConnectionSelection {
             Self::Edge(x) => {
                 format!(
                     "{}, {}",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, order_by, table, param_context)?
+                    client.quote_literal(&x.alias),
+                    x.to_sql(client, block_name, order_by, table, param_context)?
                 )
             }
             Self::PageInfo(x) => {
                 format!(
                     "{}, {}",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, order_by, table)?
+                    client.quote_literal(&x.alias),
+                    x.to_sql(client, block_name, order_by, table)?
                 )
             }
             Self::TotalCount { alias } => {
                 format!(
                     "{}, coalesce(min(__total_count.___total_count), 0)",
-                    quote_literal(alias)
+                    client.quote_literal(alias)
                 )
             }
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         })
     }
 }
 
 impl EdgeBuilder {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
@@ -1194,11 +1299,11 @@ impl EdgeBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(block_name, order_by, table, param_context))
+            .map(|x| x.to_sql(client, block_name, order_by, table, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let x = frags.join(", ");
-        let order_by_clause = order_by.to_order_by_clause(block_name);
+        let order_by_clause = order_by.to_order_by_clause(client, block_name);
 
         Ok(format!(
             "coalesce(
@@ -1213,8 +1318,9 @@ impl EdgeBuilder {
 }
 
 impl EdgeSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
@@ -1222,31 +1328,36 @@ impl EdgeSelection {
     ) -> Result<String, String> {
         Ok(match self {
             Self::Cursor { alias } => {
-                let cursor_clause = table.to_cursor_clause(block_name, order_by);
-                format!("{}, {cursor_clause}", quote_literal(alias))
+                let cursor_clause = table.to_cursor_clause(client, block_name, order_by);
+                format!("{}, {cursor_clause}", client.quote_literal(alias))
             }
             Self::Node(builder) => format!(
                 "{}, {}",
-                quote_literal(&builder.alias),
-                builder.to_sql(block_name, param_context)?
+                client.quote_literal(&builder.alias),
+                builder.to_sql(client, block_name, param_context)?
             ),
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         })
     }
 }
 
 impl NodeBuilder {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(block_name, param_context))
+            .map(|x| x.to_sql(client, block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         const MAX_ARGS_IN_JSONB_BUILD_OBJECT: usize = 100; //jsonb_build_object has a limit of 100 arguments
@@ -1261,14 +1372,15 @@ impl NodeBuilder {
         Ok(frags.join(" || ").to_string())
     }
 
-    pub fn to_relation_sql(
+    pub fn to_relation_sql<C: PgClient>(
         &self,
+        client: &C,
         parent_block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(&self.table.schema);
-        let quoted_table = quote_ident(&self.table.name);
+        let quoted_block_name = rand_block_name(client);
+        let quoted_schema = client.quote_ident(&self.table.schema);
+        let quoted_table = client.quote_ident(&self.table.name);
 
         let fkey = self.fkey.as_ref().ok_or("Internal Error: relation key")?;
         let reverse_reference = self
@@ -1278,12 +1390,13 @@ impl NodeBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| x.to_sql(&quoted_block_name, param_context))
+            .map(|x| x.to_sql(client, &quoted_block_name, param_context))
             .collect::<Result<Vec<_>, _>>()?;
 
         let object_clause = frags.join(", ");
 
         let join_clause = self.table.to_join_clause(
+            client,
             fkey,
             reverse_reference,
             &quoted_block_name,
@@ -1304,12 +1417,16 @@ impl NodeBuilder {
     }
 }
 
-impl QueryEntrypoint for NodeBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
-        let quoted_block_name = rand_block_name();
-        let quoted_schema = quote_ident(&self.table.schema);
-        let quoted_table = quote_ident(&self.table.name);
-        let object_clause = self.to_sql(&quoted_block_name, param_context)?;
+impl<C: PgClient> QueryEntrypoint<C> for NodeBuilder {
+    fn to_sql_entrypoint(
+        &self,
+        client: &C,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let quoted_block_name = rand_block_name(client);
+        let quoted_schema = client.quote_ident(&self.table.schema);
+        let quoted_table = client.quote_ident(&self.table.name);
+        let object_clause = self.to_sql(client, &quoted_block_name, param_context)?;
 
         let node_id = self
             .node_id
@@ -1372,8 +1489,9 @@ fn apply_suffix_casts(type_oid: u32) -> String {
 }
 
 impl NodeSelection {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
@@ -1381,21 +1499,21 @@ impl NodeSelection {
             // TODO need to provide alias when called from node builder.
             Self::Connection(builder) => format!(
                 "{}, {}",
-                quote_literal(&builder.alias),
-                builder.to_sql(Some(block_name), param_context, None, None)?
+                client.quote_literal(&builder.alias),
+                builder.to_sql(client, Some(block_name), param_context, None, None)?
             ),
             Self::Node(builder) => format!(
                 "{}, {}",
-                quote_literal(&builder.alias),
-                builder.to_relation_sql(block_name, param_context)?
+                client.quote_literal(&builder.alias),
+                builder.to_relation_sql(client, block_name, param_context)?
             ),
             Self::Column(builder) => {
                 let type_adjustment_clause = apply_suffix_casts(builder.column.type_oid);
 
                 format!(
                     "{}, {}{}",
-                    quote_literal(&builder.alias),
-                    builder.to_sql(block_name)?,
+                    client.quote_literal(&builder.alias),
+                    builder.to_sql(client, block_name)?,
                     type_adjustment_clause
                 )
             }
@@ -1403,26 +1521,30 @@ impl NodeSelection {
                 let type_adjustment_clause = apply_suffix_casts(builder.function.type_oid);
                 format!(
                     "{}, {}{}",
-                    quote_literal(&builder.alias),
-                    builder.to_sql(block_name, param_context)?,
+                    client.quote_literal(&builder.alias),
+                    builder.to_sql(client, block_name, param_context)?,
                     type_adjustment_clause
                 )
             }
             Self::NodeId(builder) => format!(
                 "{}, {}",
-                quote_literal(&builder.alias),
-                builder.to_sql(block_name)?
+                client.quote_literal(&builder.alias),
+                builder.to_sql(client, block_name)?
             ),
             Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
+                format!(
+                    "{}, {}",
+                    client.quote_literal(alias),
+                    client.quote_literal(typename)
+                )
             }
         })
     }
 }
 
 impl ColumnBuilder {
-    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
-        let col = format!("{}.{}", &block_name, quote_ident(&self.column.name));
+    pub fn to_sql<C: PgClient>(&self, client: &C, block_name: &str) -> Result<String, String> {
+        let col = format!("{}.{}", &block_name, client.quote_ident(&self.column.name));
         let maybe_enum = self.column.type_.as_ref().and_then(|t| match t.details {
             Some(TypeDetails::Enum(ref enum_)) => Some(enum_),
             _ => None,
@@ -1435,8 +1557,8 @@ impl ColumnBuilder {
                         .map(|(k, v)| {
                             format!(
                                 "when {col} = {} then {}",
-                                quote_literal(k),
-                                quote_literal(v)
+                                client.quote_literal(k),
+                                client.quote_literal(v)
                             )
                         })
                         .join(" ");
@@ -1451,15 +1573,15 @@ impl ColumnBuilder {
 }
 
 impl NodeIdBuilder {
-    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+    pub fn to_sql<C: PgClient>(&self, client: &C, block_name: &str) -> Result<String, String> {
         let column_selects: Vec<String> = self
             .columns
             .iter()
             .map(|col| format!("{}.{}", block_name, col.name))
             .collect();
         let column_clause = column_selects.join(", ");
-        let schema_name = quote_literal(&self.schema_name);
-        let table_name = quote_literal(&self.table_name);
+        let schema_name = client.quote_literal(&self.schema_name);
+        let table_name = client.quote_literal(&self.table_name);
         Ok(format!(
             "translate(encode(convert_to(jsonb_build_array({schema_name}, {table_name}, {column_clause})::text, 'utf-8'), 'base64'), E'\n', '')"
         ))
@@ -1467,35 +1589,36 @@ impl NodeIdBuilder {
 }
 
 impl FunctionBuilder {
-    pub fn to_sql(
+    pub fn to_sql<C: PgClient>(
         &self,
+        client: &C,
         block_name: &str,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
-        let schema_name = quote_ident(&self.function.schema_name);
-        let function_name = quote_ident(&self.function.name);
+        let schema_name = client.quote_ident(&self.function.schema_name);
+        let function_name = client.quote_ident(&self.function.name);
 
         let sql_frag = match &self.selection {
             FunctionSelection::ScalarSelf => format!(
                 "{schema_name}.{function_name}({block_name}::{}.{})",
-                quote_ident(&self.table.schema),
-                quote_ident(&self.table.name)
+                client.quote_ident(&self.table.schema),
+                client.quote_ident(&self.table.name)
             ),
             FunctionSelection::Array => format!(
                 // Current implementation will not support enums or record types correctly
                 // however, those functions are filtered out upstream
                 "{schema_name}.{function_name}({block_name}::{}.{})",
-                quote_ident(&self.table.schema),
-                quote_ident(&self.table.name)
+                client.quote_ident(&self.table.schema),
+                client.quote_ident(&self.table.name)
             ),
             FunctionSelection::Node(node_builder) => {
-                let func_block_name = rand_block_name();
-                let object_clause = node_builder.to_sql(&func_block_name, param_context)?;
+                let func_block_name = rand_block_name(client);
+                let object_clause = node_builder.to_sql(client, &func_block_name, param_context)?;
 
                 let from_clause = format!(
                     "{schema_name}.{function_name}({block_name}::{}.{})",
-                    quote_ident(&self.table.schema),
-                    quote_ident(&self.table.name)
+                    client.quote_ident(&self.table.schema),
+                    client.quote_ident(&self.table.name)
                 );
                 format!(
                     "
@@ -1511,6 +1634,7 @@ impl FunctionBuilder {
                 )
             }
             FunctionSelection::Connection(connection_builder) => connection_builder.to_sql(
+                client,
                 None,
                 param_context,
                 Some(FromFunction {
@@ -1746,13 +1870,15 @@ mod tests {
 
     #[pg_test]
     fn test_quote_ident() {
-        let res = quote_ident("hello world");
+        let client = PgrxPgClient;
+        let res = client.quote_ident("hello world");
         assert_eq!(res, r#""hello world""#);
     }
 
     #[pg_test]
     fn test_quote_literal() {
-        let res = quote_ident("hel'lo world");
+        let client = PgrxPgClient;
+        let res = client.quote_ident("hel'lo world");
         assert_eq!(res, r#""hel'lo world""#);
     }
 }

@@ -4,11 +4,13 @@ use graphql_parser::query::parse_query;
 use pgrx::*;
 use resolve::resolve_inner;
 use serde_json::json;
+use transpile::PgrxPgClient;
 
 mod builder;
 mod context;
 mod graphql;
 mod parser_util;
+mod pg_client;
 mod resolve;
 mod sql_types;
 mod transpile;
@@ -51,7 +53,14 @@ fn resolve(
                 Ok(context) => {
                     let graphql_schema = __Schema { context };
                     let variables = variables.map_or(json!({}), |v| v.0);
-                    resolve_inner(query_ast, &variables, &operationName, &graphql_schema)
+                    let client = PgrxPgClient;
+                    resolve_inner(
+                        &client,
+                        query_ast,
+                        &variables,
+                        &operationName,
+                        &graphql_schema,
+                    )
                 }
                 Err(err) => GraphQLResponse {
                     data: Omit::Omitted,
