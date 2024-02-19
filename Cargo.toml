@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/pg_graphql"]
+members = ["crates/pg_graphql", "crates/graphql_engine"]
 
 [profile.dev]
 panic = "unwind"

@@ -1,7 +1,7 @@
 use crate::graphql::*;
-use crate::gson;
 use crate::parser_util::*;
 use crate::sql_types::*;
+use graphql_engine::gson;
 use graphql_parser::query::*;
 use serde::Serialize;
 use std::collections::HashMap;

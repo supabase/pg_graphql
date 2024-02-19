@@ -1,5 +1,5 @@
 use crate::graphql::*;
-use crate::gson;
+use graphql_engine::gson;
 use graphql_parser::query::*;
 use graphql_parser::Pos;
 use std::collections::HashMap;
@@ -466,8 +466,8 @@ where
 }
 
 pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gson::Value, String> {
-    use crate::gson::Number as GsonNumber;
-    use crate::gson::Value as GsonValue;
+    use graphql_engine::gson::Number as GsonNumber;
+    use graphql_engine::gson::Value as GsonValue;
 
     let res: GsonValue = match type_ {
         __Type::Scalar(scalar) => {
@@ -676,7 +676,7 @@ pub fn validate_arg_from_input_object(
     input_type: &__Type,
     value: &gson::Value,
 ) -> Result<gson::Value, String> {
-    use crate::gson::Value as GsonValue;
+    use graphql_engine::gson::Value as GsonValue;
 
     let input_type_name = input_type.name().unwrap_or_default();
 

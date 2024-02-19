@@ -18,7 +18,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub(crate) fn is_absent(&self) -> bool {
+    pub fn is_absent(&self) -> bool {
         matches!(self, Value::Absent)
     }
 }

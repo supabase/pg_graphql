@@ -14,6 +14,7 @@ pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
 pg_test = []
 
 [dependencies]
+graphql_engine = { version = "0.1.0", path = "../graphql_engine" }
 pgrx = "=0.11.2"
 graphql-parser = "0.4"
 serde = { version = "1.0", features = ["rc"] }

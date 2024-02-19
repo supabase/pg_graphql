@@ -673,6 +673,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "graphql_engine"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1034,6 +1042,7 @@ dependencies = [
  "bimap",
  "cached",
  "graphql-parser",
+ "graphql_engine",
  "itertools",
  "lazy_static",
  "pgrx",
