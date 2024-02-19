@@ -1,3 +1,13 @@
 [workspace]
 resolver = "2"
 members = ["crates/pg_graphql"]
+
+[profile.dev]
+panic = "unwind"
+lto = "thin"
+
+[profile.release]
+panic = "unwind"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
