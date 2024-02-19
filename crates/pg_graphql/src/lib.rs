@@ -9,6 +9,7 @@ use transpile::PgrxPgClient;
 mod builder;
 mod context;
 mod graphql;
+mod params;
 mod parser_util;
 mod pg_client;
 mod resolve;
