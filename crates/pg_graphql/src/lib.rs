@@ -1,4 +1,4 @@
-use crate::graphql::*;
+use graphql::{ErrorMessage, GraphQLResponse, __Schema};
 use graphql_engine::omit::Omit;
 use graphql_parser::query::parse_query;
 use pgrx::{default, extension_sql_file, pg_extern, pg_module_magic, JsonB};

@@ -8,7 +8,10 @@ use crate::context::get_one_readonly;
 use crate::parser_util::{alias_or_name, normalize_selection_set};
 use crate::pg_client::PgClient;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
-use crate::{ErrorMessage, GraphQLResponse, __Schema, __Type, ___Field, ___Type, field_map};
+use crate::{
+    ErrorMessage, GraphQLResponse, __Schema,
+    graphql::{__Type, ___Field, ___Type, field_map},
+};
 use graphql_engine::omit::Omit;
 use graphql_parser::query::{
     Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, Selection,

@@ -1,23 +1,16 @@
 use graphql_engine::gson;
-use graphql_parser::query::Field;
-use graphql_parser::query::FragmentDefinition;
-use graphql_parser::query::Selection;
-use graphql_parser::query::SelectionSet;
-use graphql_parser::query::TypeCondition;
-use graphql_parser::query::VariableDefinition;
-use graphql_parser::schema::Text;
-use graphql_parser::schema::Value;
-use graphql_parser::Pos;
+use graphql_parser::{
+    query::{
+        Field, FragmentDefinition, Selection, SelectionSet, TypeCondition, VariableDefinition,
+    },
+    schema::{Text, Value},
+    Pos,
+};
 use std::collections::HashMap;
 
-use crate::EnumSource;
-use crate::Scalar;
-use crate::__Field;
-use crate::__InputValue;
-use crate::__Type;
-use crate::__TypeKind;
-use crate::___Type;
-use crate::field_map;
+use crate::graphql::{
+    EnumSource, Scalar, __Field, __InputValue, __Type, __TypeKind, ___Type, field_map,
+};
 
 pub fn alias_or_name<'a, T>(query_field: &graphql_parser::query::Field<'a, T>) -> String
 where

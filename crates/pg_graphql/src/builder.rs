@@ -7,14 +7,14 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::parser_util::{alias_or_name, normalize_selection_set, to_gson, validate_arg_from_type};
-use crate::sql_types::{Column, ForeignKey, Function, Table};
-use crate::{
+use crate::graphql::{
     FilterOp, ForeignKeyReversible, FuncCallResponseType, InsertInputType, NodeSQLType, NodeType,
     OrderByEntityType, QueryType, Scalar, UpdateInputType, __Directive, __EnumValue, __Field,
     __InputValue, __Schema, __Type, __TypeType, ___Field, ___Type, field_map, input_field_map,
     type_map, AND_FILTER_NAME, NOT_FILTER_NAME, OR_FILTER_NAME,
 };
+use crate::parser_util::{alias_or_name, normalize_selection_set, to_gson, validate_arg_from_type};
+use crate::sql_types::{Column, ForeignKey, Function, Table};
 
 #[derive(Clone, Debug)]
 pub struct InsertBuilder {
