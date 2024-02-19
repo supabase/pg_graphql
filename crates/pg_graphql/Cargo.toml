@@ -1,0 +1,40 @@
+[package]
+name = "pg_graphql"
+version = "1.5.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["pg15"]
+pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
+pg15 = ["pgrx/pg15", "pgrx-tests/pg15"]
+pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
+pg_test = []
+
+[dependencies]
+pgrx = "=0.11.2"
+graphql-parser = "0.4"
+serde = { version = "1.0", features = ["rc"] }
+serde_json = "1.0"
+itertools = "0.10.3"
+cached = { version = "0.46.0", default-features = false, features = ["proc_macro"] }
+rand = "0.8"
+uuid = "1"
+base64 = "0.13"
+lazy_static = "1"
+bimap = { version = "0.6.3", features = ["serde"] }
+
+[dev-dependencies]
+pgrx-tests = "=0.11.2"
+
+[profile.dev]
+panic = "unwind"
+lto = "thin"
+
+[profile.release]
+panic = "unwind"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
