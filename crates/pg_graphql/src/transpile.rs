@@ -1,4 +1,13 @@
-use crate::builder::*;
+use crate::builder::{
+    ColumnBuilder, CompoundFilterBuilder, ConnectionBuilder, ConnectionSelection, Cursor,
+    DeleteBuilder, DeleteSelection, EdgeBuilder, EdgeSelection, FilterBuilder, FilterBuilderElem,
+    FuncCallReturnTypeBuilder, FunctionBuilder, FunctionCallBuilder, FunctionSelection,
+    InsertBuilder, InsertElemValue, InsertSelection, NodeBuilder, NodeIdBuilder, NodeIdInstance,
+    NodeSelection, OrderByBuilder, OrderDirection, PageInfoBuilder, PageInfoSelection,
+    UpdateBuilder, UpdateSelection, __DirectiveBuilder, __DirectiveField, __EnumValueBuilder,
+    __EnumValueField, __FieldBuilder, __FieldField, __InputValueBuilder, __InputValueField,
+    __SchemaBuilder, __SchemaField, __TypeBuilder, __TypeField,
+};
 use crate::graphql::*;
 use crate::pg_client::PgClient;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
@@ -1866,7 +1875,9 @@ impl Serialize for __EnumValueBuilder {
 #[cfg(any(test, feature = "pg_test"))]
 #[pgrx::pg_schema]
 mod tests {
-    use crate::transpile::*;
+    use crate::pg_client::PgClient;
+    use crate::transpile::PgrxPgClient;
+    use pgrx::pg_test;
 
     #[pg_test]
     fn test_quote_ident() {
