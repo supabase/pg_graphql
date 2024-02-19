@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
 use crate::builder::*;
+use crate::context::get_one_readonly;
 use crate::graphql::*;
 use crate::parser_util::*;
-use crate::sql_types::get_one_readonly;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_engine::omit::*;
 use graphql_parser::query::Selection;

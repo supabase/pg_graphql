@@ -6,6 +6,7 @@ use resolve::resolve_inner;
 use serde_json::json;
 
 mod builder;
+mod context;
 mod graphql;
 mod parser_util;
 mod resolve;
@@ -43,8 +44,8 @@ fn resolve(
             }
         }
         Ok(query_ast) => {
-            let sql_config = sql_types::load_sql_config();
-            let context = sql_types::load_sql_context(&sql_config);
+            let sql_config = context::load_sql_config();
+            let context = context::load_sql_context(&sql_config);
 
             match context {
                 Ok(context) => {

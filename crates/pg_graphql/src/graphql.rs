@@ -1,3 +1,4 @@
+use crate::context::calculate_hash;
 use crate::sql_types::*;
 use cached::proc_macro::cached;
 use cached::SizedCache;
