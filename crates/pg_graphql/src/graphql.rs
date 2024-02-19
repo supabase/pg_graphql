@@ -1,5 +1,8 @@
 use crate::context::calculate_hash;
-use crate::sql_types::*;
+use crate::sql_types::{
+    Column, Context, Enum, ForeignKey, ForeignKeyTableInfo, Function, FunctionVolatility, Table,
+    Type, TypeCategory,
+};
 use cached::proc_macro::cached;
 use cached::SizedCache;
 use itertools::Itertools;

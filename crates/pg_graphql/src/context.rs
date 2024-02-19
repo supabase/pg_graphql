@@ -1,7 +1,7 @@
 use crate::sql_types::{Config, Context, Function, TypeCategory, TypeDetails};
 use cached::proc_macro::cached;
 use cached::SizedCache;
-use pgrx::*;
+use pgrx::{FromDatum, IntoDatum, JsonB, Spi};
 use std::cmp::Ordering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
