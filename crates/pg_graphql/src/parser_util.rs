@@ -1,5 +1,12 @@
 use graphql_engine::gson;
-use graphql_parser::query::*;
+use graphql_parser::query::Field;
+use graphql_parser::query::FragmentDefinition;
+use graphql_parser::query::Selection;
+use graphql_parser::query::SelectionSet;
+use graphql_parser::query::TypeCondition;
+use graphql_parser::query::VariableDefinition;
+use graphql_parser::schema::Text;
+use graphql_parser::schema::Value;
 use graphql_parser::Pos;
 use std::collections::HashMap;
 
