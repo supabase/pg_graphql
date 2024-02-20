@@ -2,7 +2,7 @@ use graphql::{ErrorMessage, GraphQLResponse, __Schema};
 use graphql_engine::omit::Omit;
 use graphql_parser::query::parse_query;
 use params::{ParamContext, ParamContextBuilder};
-use pgrx::{default, extension_sql_file, pg_extern, pg_module_magic, JsonB};
+use pgrx::{default, extension_sql_file, pg_extern, pg_module_magic, JsonB, Spi};
 use resolve::resolve_inner;
 use serde_json::json;
 use transpile::PgrxPgClient;
@@ -57,14 +57,17 @@ fn resolve(
                     let variables = variables.map_or(json!({}), |v| v.0);
                     let client = PgrxPgClient;
                     let binder_builder = ParamContextBuilder;
-                    resolve_inner::<&str, PgrxPgClient, ParamContextBuilder, ParamContext>(
-                        &client,
-                        &binder_builder,
-                        query_ast,
-                        &variables,
-                        &operationName,
-                        &graphql_schema,
-                    )
+                    Spi::connect(|mut conn| {
+                        resolve_inner::<&str, PgrxPgClient, ParamContextBuilder, ParamContext>(
+                            &client,
+                            &binder_builder,
+                            conn,
+                            query_ast,
+                            &variables,
+                            &operationName,
+                            &graphql_schema,
+                        )
+                    })
                 }
                 Err(err) => GraphQLResponse {
                     data: Omit::Omitted,

@@ -34,6 +34,7 @@ pub fn resolve_inner<
 >(
     client: &C,
     binder_builder: &B,
+    conn: SpiClient,
     document: Document<'a, T>,
     variables: &Value,
     operation_name: &Option<String>,
@@ -144,6 +145,7 @@ where
             OperationDefinition::Mutation(mutation) => resolve_mutation::<T, C, B, P>(
                 client,
                 binder_builder,
+                conn,
                 mutation,
                 schema,
                 variables,
@@ -398,6 +400,7 @@ fn resolve_mutation<
 >(
     client: &C,
     binder_builder: &B,
+    conn: SpiClient<'_>,
     query: Mutation<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -410,6 +413,7 @@ where
     resolve_mutation_selection_set::<T, C, B, P>(
         client,
         binder_builder,
+        conn,
         query.selection_set,
         schema_type,
         variables,
@@ -427,6 +431,7 @@ fn resolve_mutation_selection_set<
 >(
     client: &C,
     binder_builder: &B,
+    conn: SpiClient<'_>,
     selection_set: SelectionSet<'a, T>,
     schema_type: &__Schema,
     variables: &Value,
@@ -473,19 +478,19 @@ where
 
     use pgrx::prelude::*;
 
-    let spi_result: Result<serde_json::Value, String> = Spi::connect(|mut conn| {
-        execute_mutation_query::<T, C, B, P>(
-            client,
-            binder_builder,
-            conn,
-            &selections,
-            variables,
-            fragment_definitions,
-            variable_definitions,
-            &map,
-            &mutation_type,
-        )
-    });
+    // let spi_result: Result<serde_json::Value, String> = Spi::connect(|mut conn| {
+    let spi_result = execute_mutation_query::<T, C, B, P>(
+        client,
+        binder_builder,
+        conn,
+        &selections,
+        variables,
+        fragment_definitions,
+        variable_definitions,
+        &map,
+        &mutation_type,
+    );
+    // });
 
     match spi_result {
         Ok(data) => GraphQLResponse {
