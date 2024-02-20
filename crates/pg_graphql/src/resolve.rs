@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::builder::{
     to_connection_builder, to_delete_builder, to_function_call_builder, to_insert_builder,
@@ -6,6 +6,7 @@ use crate::builder::{
     InsertBuilder, NodeBuilder, UpdateBuilder,
 };
 use crate::context::get_one_readonly;
+use crate::graphql::__Field;
 use crate::params::{BinderBuilder, ParamBinder};
 use crate::parser_util::{alias_or_name, normalize_selection_set};
 use crate::pg_client::PgClient;
@@ -16,10 +17,11 @@ use crate::{
 };
 use graphql_engine::omit::Omit;
 use graphql_parser::query::{
-    Definition, Document, FragmentDefinition, Mutation, OperationDefinition, Query, Selection,
-    SelectionSet, Text, VariableDefinition,
+    Definition, Document, Field, FragmentDefinition, Mutation, OperationDefinition, Query,
+    Selection, SelectionSet, Text, VariableDefinition,
 };
 use itertools::Itertools;
+use pgrx::spi::SpiClient;
 use serde_json::{json, Value};
 
 #[allow(non_snake_case)]
@@ -472,132 +474,17 @@ where
     use pgrx::prelude::*;
 
     let spi_result: Result<serde_json::Value, String> = Spi::connect(|mut conn| {
-        let res_data: serde_json::Value = match selections[..] {
-            [] => Err("Selection set must not be empty".to_string())?,
-            _ => {
-                let mut res_data = json!({});
-                // Key name to prepared statement name
-
-                for selection in selections.iter() {
-                    let maybe_field_def = map.get(selection.name.as_ref());
-
-                    conn = match maybe_field_def {
-                        None => Err(format!(
-                            "Unknown field {:?} on type {}",
-                            selection.name, mutation_type_name
-                        ))?,
-                        Some(field_def) => match field_def.type_.unmodified_type() {
-                            __Type::InsertResponse(_) => {
-                                let builder = match to_insert_builder(
-                                    field_def,
-                                    selection,
-                                    &fragment_definitions,
-                                    variables,
-                                    variable_definitions,
-                                ) {
-                                    Ok(builder) => builder,
-                                    Err(err) => {
-                                        return Err(err);
-                                    }
-                                };
-
-                                let (d, conn) =
-                                    <InsertBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
-                                        &builder,
-                                        client,
-                                        binder_builder,
-                                        conn,
-                                    )?;
-
-                                res_data[alias_or_name(selection)] = d;
-                                conn
-                            }
-                            __Type::UpdateResponse(_) => {
-                                let builder = match to_update_builder(
-                                    field_def,
-                                    selection,
-                                    &fragment_definitions,
-                                    variables,
-                                    variable_definitions,
-                                ) {
-                                    Ok(builder) => builder,
-                                    Err(err) => {
-                                        return Err(err);
-                                    }
-                                };
-
-                                let (d, conn) =
-                                    <UpdateBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
-                                        &builder,
-                                        client,
-                                        binder_builder,
-                                        conn,
-                                    )?;
-                                res_data[alias_or_name(selection)] = d;
-                                conn
-                            }
-                            __Type::DeleteResponse(_) => {
-                                let builder = match to_delete_builder(
-                                    field_def,
-                                    selection,
-                                    &fragment_definitions,
-                                    variables,
-                                    variable_definitions,
-                                ) {
-                                    Ok(builder) => builder,
-                                    Err(err) => {
-                                        return Err(err);
-                                    }
-                                };
-
-                                let (d, conn) =
-                                    <DeleteBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
-                                        &builder,
-                                        client,
-                                        binder_builder,
-                                        conn,
-                                    )?;
-                                res_data[alias_or_name(selection)] = d;
-                                conn
-                            }
-                            _ => match field_def.name().as_ref() {
-                                "__typename" => {
-                                    res_data[alias_or_name(selection)] =
-                                        serde_json::json!(mutation_type.name());
-                                    conn
-                                }
-                                _ => {
-                                    let builder = match to_function_call_builder(
-                                        field_def,
-                                        selection,
-                                        &fragment_definitions,
-                                        variables,
-                                        variable_definitions,
-                                    ) {
-                                        Ok(builder) => builder,
-                                        Err(err) => {
-                                            return Err(err);
-                                        }
-                                    };
-
-                                    let (d, conn) = <FunctionCallBuilder as MutationEntrypoint<
-                                        C,
-                                        B,
-                                        P,
-                                    >>::execute(
-                                        &builder, client, binder_builder, conn
-                                    )?;
-                                    res_data[alias_or_name(selection)] = d;
-                                    conn
-                                }
-                            },
-                        },
-                    }
-                }
-                res_data
-            }
-        };
-        Ok(res_data)
+        execute_mutation_query::<T, C, B, P>(
+            client,
+            binder_builder,
+            conn,
+            &selections,
+            variables,
+            fragment_definitions,
+            variable_definitions,
+            &map,
+            &mutation_type,
+        )
     });
 
     match spi_result {
@@ -609,6 +496,157 @@ where
             ereport!(ERROR, PgSqlErrorCode::ERRCODE_INTERNAL_ERROR, err);
         }
     }
+}
+
+fn execute_mutation_query<
+    'a,
+    T,
+    C: PgClient<Args = P::Args>,
+    B: BinderBuilder<Binder = P>,
+    P: ParamBinder,
+>(
+    client: &C,
+    binder_builder: &B,
+    mut conn: SpiClient,
+    selections: &[Field<'a, T>],
+    variables: &Value,
+    fragment_definitions: Vec<FragmentDefinition<'a, T>>,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
+    map: &HashMap<String, __Field>,
+    mutation_type: &__Type,
+) -> Result<Value, String>
+where
+    T: Text<'a> + Eq + AsRef<str> + std::fmt::Debug + Clone,
+{
+    let mutation_type_name = mutation_type
+        .name()
+        .expect("mutation type should have a name");
+    let res_data: serde_json::Value = match selections[..] {
+        [] => Err("Selection set must not be empty".to_string())?,
+        _ => {
+            let mut res_data = json!({});
+            // Key name to prepared statement name
+
+            for selection in selections.iter() {
+                let maybe_field_def = map.get(selection.name.as_ref());
+
+                conn = match maybe_field_def {
+                    None => Err(format!(
+                        "Unknown field {:?} on type {}",
+                        selection.name, mutation_type_name
+                    ))?,
+                    Some(field_def) => match field_def.type_.unmodified_type() {
+                        __Type::InsertResponse(_) => {
+                            let builder = match to_insert_builder(
+                                field_def,
+                                selection,
+                                &fragment_definitions,
+                                variables,
+                                variable_definitions,
+                            ) {
+                                Ok(builder) => builder,
+                                Err(err) => {
+                                    return Err(err);
+                                }
+                            };
+
+                            let (d, conn) =
+                                <InsertBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
+                                    &builder,
+                                    client,
+                                    binder_builder,
+                                    conn,
+                                )?;
+
+                            res_data[alias_or_name(selection)] = d;
+                            conn
+                        }
+                        __Type::UpdateResponse(_) => {
+                            let builder = match to_update_builder(
+                                field_def,
+                                selection,
+                                &fragment_definitions,
+                                variables,
+                                variable_definitions,
+                            ) {
+                                Ok(builder) => builder,
+                                Err(err) => {
+                                    return Err(err);
+                                }
+                            };
+
+                            let (d, conn) =
+                                <UpdateBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
+                                    &builder,
+                                    client,
+                                    binder_builder,
+                                    conn,
+                                )?;
+                            res_data[alias_or_name(selection)] = d;
+                            conn
+                        }
+                        __Type::DeleteResponse(_) => {
+                            let builder = match to_delete_builder(
+                                field_def,
+                                selection,
+                                &fragment_definitions,
+                                variables,
+                                variable_definitions,
+                            ) {
+                                Ok(builder) => builder,
+                                Err(err) => {
+                                    return Err(err);
+                                }
+                            };
+
+                            let (d, conn) =
+                                <DeleteBuilder as MutationEntrypoint<'_, C, B, P>>::execute(
+                                    &builder,
+                                    client,
+                                    binder_builder,
+                                    conn,
+                                )?;
+                            res_data[alias_or_name(selection)] = d;
+                            conn
+                        }
+                        _ => match field_def.name().as_ref() {
+                            "__typename" => {
+                                res_data[alias_or_name(selection)] =
+                                    serde_json::json!(mutation_type.name());
+                                conn
+                            }
+                            _ => {
+                                let builder = match to_function_call_builder(
+                                    field_def,
+                                    selection,
+                                    &fragment_definitions,
+                                    variables,
+                                    variable_definitions,
+                                ) {
+                                    Ok(builder) => builder,
+                                    Err(err) => {
+                                        return Err(err);
+                                    }
+                                };
+
+                                let (d, conn) = <FunctionCallBuilder as MutationEntrypoint<
+                                    C,
+                                    B,
+                                    P,
+                                >>::execute(
+                                    &builder, client, binder_builder, conn
+                                )?;
+                                res_data[alias_or_name(selection)] = d;
+                                conn
+                            }
+                        },
+                    },
+                }
+            }
+            res_data
+        }
+    };
+    Ok(res_data)
 }
 
 const STACK_DEPTH_LIMIT: u32 = 50;
