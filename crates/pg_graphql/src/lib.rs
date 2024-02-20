@@ -57,7 +57,7 @@ fn resolve(
                     let variables = variables.map_or(json!({}), |v| v.0);
                     let client = PgrxPgClient;
                     let binder_builder = ParamContextBuilder;
-                    Spi::connect(|mut conn| {
+                    Spi::connect(|conn| {
                         resolve_inner::<&str, PgrxPgClient, ParamContextBuilder, ParamContext>(
                             &client,
                             &binder_builder,

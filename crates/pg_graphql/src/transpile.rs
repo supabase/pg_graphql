@@ -75,7 +75,7 @@ pub trait MutationEntrypoint<
     'conn,
     C: PgClient<Args = P::Args>,
     B: BinderBuilder<Binder = P>,
-    P: ParamBinder,
+    P: ParamBinder<Args = Params>,
 >
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String>;
@@ -292,7 +292,7 @@ impl Table {
     }
 }
 
-impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder<Args = Params>>
     MutationEntrypoint<'_, C, B, P> for InsertBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
@@ -458,7 +458,7 @@ impl DeleteSelection {
     }
 }
 
-impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder<Args = Params>>
     MutationEntrypoint<'_, C, B, P> for UpdateBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
@@ -544,7 +544,7 @@ impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
     }
 }
 
-impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder<Args = Params>>
     MutationEntrypoint<'_, C, B, P> for DeleteBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {
@@ -661,7 +661,7 @@ impl FunctionCallBuilder {
     }
 }
 
-impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder>
+impl<C: PgClient<Args = P::Args>, B: BinderBuilder<Binder = P>, P: ParamBinder<Args = Params>>
     MutationEntrypoint<'_, C, B, P> for FunctionCallBuilder
 {
     fn to_sql_entrypoint(&self, client: &C, param_context: &mut P) -> Result<String, String> {

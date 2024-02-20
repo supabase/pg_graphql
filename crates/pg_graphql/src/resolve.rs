@@ -7,7 +7,7 @@ use crate::builder::{
 };
 use crate::context::get_one_readonly;
 use crate::graphql::__Field;
-use crate::params::{BinderBuilder, ParamBinder};
+use crate::params::{BinderBuilder, ParamBinder, Params};
 use crate::parser_util::{alias_or_name, normalize_selection_set};
 use crate::pg_client::PgClient;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
@@ -30,7 +30,7 @@ pub fn resolve_inner<
     T,
     C: PgClient<Args = P::Args>,
     B: BinderBuilder<Binder = P>,
-    P: ParamBinder,
+    P: ParamBinder<Args = Params>,
 >(
     client: &C,
     binder_builder: &B,
@@ -396,7 +396,7 @@ fn resolve_mutation<
     T,
     C: PgClient<Args = P::Args>,
     B: BinderBuilder<Binder = P>,
-    P: ParamBinder,
+    P: ParamBinder<Args = Params>,
 >(
     client: &C,
     binder_builder: &B,
@@ -427,7 +427,7 @@ fn resolve_mutation_selection_set<
     T,
     C: PgClient<Args = P::Args>,
     B: BinderBuilder<Binder = P>,
-    P: ParamBinder,
+    P: ParamBinder<Args = Params>,
 >(
     client: &C,
     binder_builder: &B,
@@ -508,7 +508,7 @@ fn execute_mutation_query<
     T,
     C: PgClient<Args = P::Args>,
     B: BinderBuilder<Binder = P>,
-    P: ParamBinder,
+    P: ParamBinder<Args = Params>,
 >(
     client: &C,
     binder_builder: &B,
