@@ -6,9 +6,10 @@ use resolve::resolve_inner;
 use serde_json::json;
 
 mod builder;
+pub mod expand;
 mod graphql;
 mod gson;
-mod merge_fields;
+pub mod merge_fields;
 mod omit;
 mod parser_util;
 mod resolve;
