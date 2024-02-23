@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use graphql_parser::query::{
-    Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection, SelectionSet, Text,
-    TypeCondition,
+    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection, SelectionSet,
+    Text, TypeCondition, Value,
 };
 use itertools::Itertools;
 
@@ -12,23 +12,33 @@ use crate::{__Field, __Type, ___Type, field_map};
 pub enum ExpansionError {
     FragmentNotFound(String),
     FieldNotFound(String, String),
+    MissingVariableValue(String),
 }
 
-/// Recursively expands a vec of selections into a linear list
-/// of fields at each level, including inlining fields from fragment
-/// spreads and inline fragments.
+/// Recursively expands a vec of selections into a vec of
+/// fields at each level, including inlining fields from
+/// fragment spreads and inline fragments. Also skips fields
+/// and fragments which have a @skip(if: true) or
+/// @include(if: false) directive
 pub fn expand<'a, 'b, T>(
     parent_field_type: &__Type,
     selections: Vec<Selection<'a, T>>,
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
 ) -> Result<Vec<Field<'a, T>>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {
-    let parent_field_type = parent_field_type.unmodified_type();
     let mut fields = vec![];
+
+    let parent_field_type = parent_field_type.unmodified_type();
     let field_to_type = field_map(&parent_field_type);
+
     for selection in selections {
+        if should_skip(&selection, variables)? {
+            continue;
+        }
+
         match selection {
             Selection::Field(field) => {
                 let field = expand_field(
@@ -36,6 +46,7 @@ where
                     field,
                     &field_to_type,
                     fragment_definitions,
+                    variables,
                 )?;
                 fields.push(field);
             }
@@ -44,6 +55,7 @@ where
                     &parent_field_type,
                     fragment_spread,
                     fragment_definitions,
+                    variables,
                 )?;
                 for fragment_field in fragment_fields {
                     fields.push(fragment_field);
@@ -54,6 +66,7 @@ where
                     &parent_field_type,
                     inline_fragment,
                     fragment_definitions,
+                    variables,
                 )?;
                 for fragment_field in fragment_fields {
                     fields.push(fragment_field);
@@ -69,6 +82,7 @@ fn expand_field<'a, T>(
     mut field: Field<'a, T>,
     field_to_type: &HashMap<String, __Field>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
 ) -> Result<Field<'a, T>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
@@ -83,6 +97,7 @@ where
         &field_type.type_,
         field.selection_set.items,
         fragment_definitions,
+        variables,
     )?;
     let children = children
         .drain(..)
@@ -100,6 +115,7 @@ fn expand_fragment_spread<'a, T>(
     parent_field_type: &__Type,
     fragment_spread: FragmentSpread<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
 ) -> Result<Vec<Field<'a, T>>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
@@ -116,6 +132,7 @@ where
         parent_field_type,
         fragment_definition.selection_set.items.clone(),
         fragment_definitions,
+        variables,
     )?;
     Ok(fragment_fields)
 }
@@ -124,6 +141,7 @@ fn expand_inline_fragment<'a, T>(
     parent_field_type: &__Type,
     inline_fragment: InlineFragment<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
 ) -> Result<Vec<Field<'a, T>>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
@@ -142,6 +160,7 @@ where
             parent_field_type,
             inline_fragment.selection_set.items.clone(),
             fragment_definitions,
+            variables,
         )?
     } else {
         vec![]
@@ -171,4 +190,82 @@ where
             "Fragment `{:?}` on type `{}` not found",
             fragment_name, type_name
         )))
+}
+
+fn should_skip<'a, 'b, T>(
+    selection: &Selection<'a, T>,
+    variables: &serde_json::Value,
+) -> Result<bool, ExpansionError>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let directives = match selection {
+        Selection::Field(field) => &field.directives,
+        Selection::FragmentSpread(fragment_spread) => &fragment_spread.directives,
+        Selection::InlineFragment(inline_fragment) => &inline_fragment.directives,
+    };
+
+    let skip = evaluate_if_argument(directives, "skip", variables)?.unwrap_or(false);
+    let include = evaluate_if_argument(directives, "include", variables)?.unwrap_or(true);
+    Ok(skip || !include)
+}
+
+fn evaluate_if_argument<'a, 'b, T>(
+    directives: &'b [Directive<'a, T>],
+    directive_name: &str,
+    variables: &serde_json::Value,
+) -> Result<Option<bool>, ExpansionError>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    let directive = match get_directive(directives, directive_name) {
+        Some(directive) => directive,
+        None => {
+            return Ok(None);
+        }
+    };
+    let val = match get_argument(&directive.arguments, "if") {
+        Some(val) => val,
+        None => {
+            return Ok(None);
+        }
+    };
+    Ok(match val {
+        Value::Boolean(val) => Some(*val),
+        Value::Variable(var_name) => {
+            let var =
+                variables
+                    .get(var_name.as_ref())
+                    .ok_or(ExpansionError::MissingVariableValue(
+                        var_name.as_ref().to_string(),
+                    ))?;
+            var.as_bool()
+        }
+        _ => None,
+    })
+}
+
+fn get_directive<'a, 'b, T>(
+    directives: &'b [Directive<'a, T>],
+    directive_name: &str,
+) -> Option<&'b Directive<'a, T>>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    directives
+        .iter()
+        .find(|d| d.name.as_ref() == directive_name)
+}
+
+fn get_argument<'a, 'b, T>(
+    arguments: &'b [(T::Value, Value<'a, T>)],
+    argument_name: &str,
+) -> Option<&'b Value<'a, T>>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    arguments
+        .iter()
+        .find(|(name, _)| name.as_ref() == argument_name)
+        .map(|(_, val)| val)
 }
