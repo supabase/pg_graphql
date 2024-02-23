@@ -93,7 +93,6 @@ where
 {
     let field_type = field_to_type.get(field.name.as_ref()).ok_or({
         let parent_type_name = parent_field_type
-            .unmodified_type()
             .name()
             .expect("Field: parent field type is either non-null or list type");
         ExpansionError::FieldNotFound(field.name.as_ref().to_string(), parent_type_name)
