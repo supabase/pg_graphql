@@ -2528,7 +2528,7 @@ impl __Schema {
                                             .map(|t| {
                                                 self.to_type_builder(
                                                     f,
-                                                    &selection_field,
+                                                    selection_field,
                                                     fragment_definitions,
                                                     t.name(),
                                                     variables,
@@ -2547,7 +2547,7 @@ impl __Schema {
                                     "queryType" => {
                                         let builder = self.to_type_builder(
                                             f,
-                                            &selection_field,
+                                            selection_field,
                                             fragment_definitions,
                                             Some("Query".to_string()),
                                             variables,
@@ -2560,7 +2560,7 @@ impl __Schema {
                                     "mutationType" => {
                                         let builder = self.to_type_builder(
                                             f,
-                                            &selection_field,
+                                            selection_field,
                                             fragment_definitions,
                                             Some("Mutation".to_string()),
                                             variables,
@@ -2576,7 +2576,7 @@ impl __Schema {
                                             .map(|directive| {
                                                 self.to_directive_builder(
                                                     directive,
-                                                    &selection_field,
+                                                    selection_field,
                                                     fragment_definitions,
                                                     variables,
                                                     variable_definitions,

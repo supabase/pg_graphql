@@ -9,7 +9,7 @@ pub struct Field {
 
 impl Field {
     pub fn response_key(&self) -> &str {
-        &self.alias.as_ref().unwrap_or(&self.name)
+        self.alias.as_ref().unwrap_or(&self.name)
     }
 }
 

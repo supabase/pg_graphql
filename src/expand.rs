@@ -116,7 +116,7 @@ where
 }
 
 fn get_fragment_definition<'a, 'b, T>(
-    fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
+    fragment_definitions: &'b [FragmentDefinition<'a, T>],
     fragment_name: T::Value,
     type_name: &str,
 ) -> Result<&'b FragmentDefinition<'a, T>, ExpansionError>
