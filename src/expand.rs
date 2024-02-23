@@ -7,6 +7,7 @@ use itertools::Itertools;
 
 use crate::{__Field, __Type, ___Type, field_map};
 
+#[derive(Debug)]
 pub enum ExpansionError {
     FragmentNotFound(String),
     FieldNotFound(String, String),
@@ -23,13 +24,14 @@ pub fn expand<'a, 'b, T>(
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {
+    let parent_field_type = parent_field_type.unmodified_type();
     let mut fields = vec![];
-    let field_to_type = field_map(parent_field_type);
+    let field_to_type = field_map(&parent_field_type);
     for selection in selections {
         match selection {
             Selection::Field(field) => {
                 let field = expand_field(
-                    parent_field_type,
+                    &parent_field_type,
                     field,
                     &field_to_type,
                     fragment_definitions,
@@ -39,7 +41,7 @@ where
             Selection::FragmentSpread(fragment_spread) => {
                 let parent_type_name = parent_field_type
                     .name()
-                    .expect("parent field type is either non-null or list type");
+                    .expect("FragmentSpread: parent field type is either non-null or list type");
                 let fragment_definition = get_fragment_definition(
                     fragment_definitions,
                     fragment_spread.fragment_name,
@@ -57,7 +59,7 @@ where
             Selection::InlineFragment(inline_fragment) => {
                 let parent_type_name = parent_field_type
                     .name()
-                    .expect("parent field type is either non-null or list type");
+                    .expect("InlineFragment: parent field type is either non-null or list type");
                 let inline_fragment_applies: bool = match &inline_fragment.type_condition {
                     Some(infrag) => match infrag {
                         TypeCondition::On(infrag_name) => infrag_name.as_ref() == parent_type_name,
@@ -91,8 +93,9 @@ where
 {
     let field_type = field_to_type.get(field.name.as_ref()).ok_or({
         let parent_type_name = parent_field_type
+            .unmodified_type()
             .name()
-            .expect("parent field type is either non-null or list type");
+            .expect("Field: parent field type is either non-null or list type");
         ExpansionError::FieldNotFound(field.name.as_ref().to_string(), parent_type_name)
     })?;
     let mut children = expand(
