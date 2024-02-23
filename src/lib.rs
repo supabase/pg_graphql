@@ -8,6 +8,7 @@ use serde_json::json;
 mod builder;
 mod graphql;
 mod gson;
+mod merge_fields;
 mod omit;
 mod parser_util;
 mod resolve;
