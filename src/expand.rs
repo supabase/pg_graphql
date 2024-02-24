@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use graphql_parser::query::{
-    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection, SelectionSet,
-    Text, TypeCondition, Value,
+    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection, Text,
+    TypeCondition, Value,
 };
-use itertools::Itertools;
 
 use crate::{__Field, __Type, ___Type, field_map};
 
@@ -13,6 +12,24 @@ pub enum ExpansionError {
     FragmentNotFound(String),
     FieldNotFound(String, String),
     MissingVariableValue(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExpandedField<'a, T: Text<'a>> {
+    pub alias: Option<T::Value>,
+    pub name: T::Value,
+    pub arguments: Vec<(T::Value, Value<'a, T>)>,
+    pub directives: Vec<Directive<'a, T>>,
+    pub children: Vec<ExpandedField<'a, T>>,
+}
+
+impl<'a, 'b, T> ExpandedField<'a, T>
+where
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone,
+{
+    pub fn response_key(&self) -> String {
+        (self.alias.as_ref().unwrap_or(&self.name)).to_string()
+    }
 }
 
 /// Recursively expands a vec of selections into a vec of
@@ -25,7 +42,7 @@ pub fn expand<'a, 'b, T>(
     selections: Vec<Selection<'a, T>>,
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
-) -> Result<Vec<Field<'a, T>>, ExpansionError>
+) -> Result<Vec<ExpandedField<'a, T>>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {
@@ -77,13 +94,32 @@ where
     Ok(fields)
 }
 
+fn to_expanded_field<'a, T>(
+    alias: Option<T::Value>,
+    name: T::Value,
+    arguments: Vec<(T::Value, Value<'a, T>)>,
+    directives: Vec<Directive<'a, T>>,
+    children: Vec<ExpandedField<'a, T>>,
+) -> ExpandedField<'a, T>
+where
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+{
+    ExpandedField {
+        alias,
+        name,
+        arguments,
+        directives,
+        children,
+    }
+}
+
 fn expand_field<'a, T>(
     parent_field_type: &__Type,
-    mut field: Field<'a, T>,
+    field: Field<'a, T>,
     field_to_type: &HashMap<String, __Field>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
-) -> Result<Field<'a, T>, ExpansionError>
+) -> Result<ExpandedField<'a, T>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {
@@ -93,22 +129,22 @@ where
             .expect("Field: parent field type is either non-null or list type");
         ExpansionError::FieldNotFound(field.name.as_ref().to_string(), parent_type_name)
     })?;
-    let mut children = expand(
+    let Field {
+        position: _,
+        alias,
+        name,
+        arguments,
+        directives,
+        selection_set,
+    } = field;
+    let children = expand(
         &field_type.type_,
-        field.selection_set.items,
+        selection_set.items,
         fragment_definitions,
         variables,
     )?;
-    let children = children
-        .drain(..)
-        .map(|child| Selection::Field(child))
-        .collect_vec();
-    let selection_set = SelectionSet {
-        span: field.selection_set.span,
-        items: children,
-    };
-    field.selection_set = selection_set;
-    Ok(field)
+    let expanded_field = to_expanded_field(alias, name, arguments, directives, children);
+    Ok(expanded_field)
 }
 
 fn expand_fragment_spread<'a, T>(
@@ -116,7 +152,7 @@ fn expand_fragment_spread<'a, T>(
     fragment_spread: FragmentSpread<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
-) -> Result<Vec<Field<'a, T>>, ExpansionError>
+) -> Result<Vec<ExpandedField<'a, T>>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {
@@ -142,7 +178,7 @@ fn expand_inline_fragment<'a, T>(
     inline_fragment: InlineFragment<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
-) -> Result<Vec<Field<'a, T>>, ExpansionError>
+) -> Result<Vec<ExpandedField<'a, T>>, ExpansionError>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {

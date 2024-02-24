@@ -1,7 +1,10 @@
 use std::collections::HashSet;
+use std::fmt::Debug;
 
 use crate::builder::*;
+use crate::expand::expand;
 use crate::graphql::*;
+use crate::merge_fields::merge_fields;
 use crate::omit::*;
 use crate::parser_util::*;
 use crate::sql_types::get_one_readonly;
@@ -12,17 +15,18 @@ use graphql_parser::query::{
     Text, VariableDefinition,
 };
 use itertools::Itertools;
+use pgrx::notice;
 use serde_json::{json, Value};
 
 #[allow(non_snake_case)]
-pub fn resolve_inner<'a, T>(
+pub fn resolve_inner<'a, 'b, T>(
     document: Document<'a, T>,
     variables: &Value,
     operation_name: &Option<String>,
     schema: &__Schema,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone + Debug,
 {
     match variables {
         serde_json::Value::Object(_) => (),
@@ -50,8 +54,8 @@ where
     let operation_names: Vec<Option<String>> = operation_defs
         .iter()
         .map(|def| match def {
-            OperationDefinition::Query(q) => q.name.as_ref().map(|x| x.as_ref().to_string()),
-            OperationDefinition::Mutation(m) => m.name.as_ref().map(|x| x.as_ref().to_string()),
+            OperationDefinition::Query(q) => q.name.as_ref().map(|x| x.to_string()),
+            OperationDefinition::Mutation(m) => m.name.as_ref().map(|x| x.to_string()),
             _ => None,
         })
         .collect();
@@ -130,7 +134,7 @@ fn resolve_query<'a, 'b, T>(
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone + Debug,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_selection_set(
@@ -150,12 +154,24 @@ fn resolve_selection_set<'a, 'b, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone + Debug,
 {
     use crate::graphql::*;
 
     let query_type = schema_type.query_type();
     let map = field_map(&query_type);
+
+    let expanded_fields = expand(
+        &query_type,
+        selection_set.items.clone(),
+        &fragment_definitions,
+        variables,
+    )
+    .expect("expand failed");
+
+    let merged_fields = merge_fields(expanded_fields).expect("merge failed");
+
+    notice!("MERGED FIELDS: {merged_fields:#?}");
 
     let query_type_name = query_type.name().expect("query type should have a name");
     let selections = match normalize_selection_set(
@@ -189,7 +205,7 @@ where
             // selection = graphql_parser::query::Field
             for selection in selections.iter() {
                 // accountCollection. Top level selections on the query type
-                let maybe_field_def = map.get(selection.name.as_ref());
+                let maybe_field_def = map.get(selection.name);
 
                 match maybe_field_def {
                     None => {
@@ -337,7 +353,7 @@ fn resolve_mutation<'a, 'b, T>(
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone + Debug,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_mutation_selection_set(
@@ -357,7 +373,7 @@ fn resolve_mutation_selection_set<'a, 'b, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone + Debug,
 {
     use crate::graphql::*;
 
@@ -374,6 +390,18 @@ where
     };
 
     let map = field_map(&mutation_type);
+
+    let expanded_fields = expand(
+        &mutation_type,
+        selection_set.items.clone(),
+        &fragment_definitions,
+        variables,
+    )
+    .expect("expand failed");
+
+    let merged_fields = merge_fields(expanded_fields).expect("merge failed");
+
+    notice!("MERGED FIELDS: {merged_fields:#?}");
 
     let mutation_type_name = mutation_type
         .name()
@@ -405,7 +433,7 @@ where
                 // Key name to prepared statement name
 
                 for selection in selections.iter() {
-                    let maybe_field_def = map.get(selection.name.as_ref());
+                    let maybe_field_def = map.get(selection.name);
 
                     conn = match maybe_field_def {
                         None => Err(format!(
