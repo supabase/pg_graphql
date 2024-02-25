@@ -23,15 +23,14 @@ begin;
             }
         }
     $$));
-                              jsonb_pretty                              
-------------------------------------------------------------------------
- {                                                                     +
-     "data": null,                                                     +
-     "errors": [                                                       +
-         {                                                             +
-             "message": "Unknown field \"returnsRecord\" on type Query"+
-         }                                                             +
-     ]                                                                 +
+                               jsonb_pretty                               
+--------------------------------------------------------------------------
+ {                                                                       +
+     "errors": [                                                         +
+         {                                                               +
+             "message": "Field `returnsRecord` not found on type `Query`"+
+         }                                                               +
+     ]                                                                   +
  }
 (1 row)
 
@@ -48,15 +47,14 @@ begin;
             acceptsTableTupleType
         }
     $$));
-                                  jsonb_pretty                                  
---------------------------------------------------------------------------------
- {                                                                             +
-     "data": null,                                                             +
-     "errors": [                                                               +
-         {                                                                     +
-             "message": "Unknown field \"acceptsTableTupleType\" on type Query"+
-         }                                                                     +
-     ]                                                                         +
+                                   jsonb_pretty                                   
+----------------------------------------------------------------------------------
+ {                                                                               +
+     "errors": [                                                                 +
+         {                                                                       +
+             "message": "Field `acceptsTableTupleType` not found on type `Query`"+
+         }                                                                       +
+     ]                                                                           +
  }
 (1 row)
 
@@ -75,15 +73,14 @@ begin;
             anOverloadedFunction
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"anOverloadedFunction\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `anOverloadedFunction` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 
@@ -92,15 +89,14 @@ begin;
             anOverloadedFunction (a: 1)
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"anOverloadedFunction\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `anOverloadedFunction` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 
@@ -109,15 +105,14 @@ begin;
             anOverloadedFunction (a: "some text")
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"anOverloadedFunction\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `anOverloadedFunction` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 
@@ -130,15 +125,14 @@ begin;
             noArgName
         }
     $$));
-                            jsonb_pretty                            
---------------------------------------------------------------------
- {                                                                 +
-     "data": null,                                                 +
-     "errors": [                                                   +
-         {                                                         +
-             "message": "Unknown field \"noArgName\" on type Query"+
-         }                                                         +
-     ]                                                             +
+                             jsonb_pretty                             
+----------------------------------------------------------------------
+ {                                                                   +
+     "errors": [                                                     +
+         {                                                           +
+             "message": "Field `noArgName` not found on type `Query`"+
+         }                                                           +
+     ]                                                               +
  }
 (1 row)
 
@@ -151,15 +145,14 @@ begin;
             variadicFunc
         }
     $$));
-                             jsonb_pretty                              
------------------------------------------------------------------------
- {                                                                    +
-     "data": null,                                                    +
-     "errors": [                                                      +
-         {                                                            +
-             "message": "Unknown field \"variadicFunc\" on type Query"+
-         }                                                            +
-     ]                                                                +
+                              jsonb_pretty                               
+-------------------------------------------------------------------------
+ {                                                                      +
+     "errors": [                                                        +
+         {                                                              +
+             "message": "Field `variadicFunc` not found on type `Query`"+
+         }                                                              +
+     ]                                                                  +
  }
 (1 row)
 
@@ -172,15 +165,14 @@ begin;
             voidReturningFunc
         }
     $$));
-                                jsonb_pretty                                
-----------------------------------------------------------------------------
- {                                                                         +
-     "data": null,                                                         +
-     "errors": [                                                           +
-         {                                                                 +
-             "message": "Unknown field \"voidReturningFunc\" on type Query"+
-         }                                                                 +
-     ]                                                                     +
+                                 jsonb_pretty                                 
+------------------------------------------------------------------------------
+ {                                                                           +
+     "errors": [                                                             +
+         {                                                                   +
+             "message": "Field `voidReturningFunc` not found on type `Query`"+
+         }                                                                   +
+     ]                                                                       +
  }
 (1 row)
 
@@ -202,15 +194,14 @@ begin;
             returnsBook
         }
     $$));
-                             jsonb_pretty                             
-----------------------------------------------------------------------
- {                                                                   +
-     "data": null,                                                   +
-     "errors": [                                                     +
-         {                                                           +
-             "message": "Unknown field \"returnsBook\" on type Query"+
-         }                                                           +
-     ]                                                               +
+                              jsonb_pretty                              
+------------------------------------------------------------------------
+ {                                                                     +
+     "errors": [                                                       +
+         {                                                             +
+             "message": "Field `returnsBook` not found on type `Query`"+
+         }                                                             +
+     ]                                                                 +
  }
 (1 row)
 
@@ -228,15 +219,14 @@ begin;
             badInputArg
         }
     $$));
-                             jsonb_pretty                             
-----------------------------------------------------------------------
- {                                                                   +
-     "data": null,                                                   +
-     "errors": [                                                     +
-         {                                                           +
-             "message": "Unknown field \"badInputArg\" on type Query"+
-         }                                                           +
-     ]                                                               +
+                              jsonb_pretty                              
+------------------------------------------------------------------------
+ {                                                                     +
+     "errors": [                                                       +
+         {                                                             +
+             "message": "Field `badInputArg` not found on type `Query`"+
+         }                                                             +
+     ]                                                                 +
  }
 (1 row)
 
@@ -251,15 +241,14 @@ begin;
             returnAlgorithm
         }
     $$));
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": null,                                                          +
-     "errors": [                                                            +
-         {                                                                  +
-             "message": "Unknown field \"returnAlgorithm\" on type Mutation"+
-         }                                                                  +
-     ]                                                                      +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Field `returnAlgorithm` not found on type `Mutation`"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -271,15 +260,14 @@ begin;
             acceptAlgorithm(e: "AEAD_IETF")
         }
     $$));
-                               jsonb_pretty                               
---------------------------------------------------------------------------
- {                                                                       +
-     "data": null,                                                       +
-     "errors": [                                                         +
-         {                                                               +
-             "message": "Unknown field \"acceptAlgorithm\" on type Query"+
-         }                                                               +
-     ]                                                                   +
+                                jsonb_pretty                                
+----------------------------------------------------------------------------
+ {                                                                         +
+     "errors": [                                                           +
+         {                                                                 +
+             "message": "Field `acceptAlgorithm` not found on type `Query`"+
+         }                                                                 +
+     ]                                                                     +
  }
 (1 row)
 

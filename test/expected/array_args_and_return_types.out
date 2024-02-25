@@ -1358,15 +1358,14 @@ begin;
             getSmallintArrayItem(arr: [1, 2, 3], i: 1)
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"getSmallintArrayItem\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `getSmallintArrayItem` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 
@@ -1378,15 +1377,14 @@ begin;
             getIntArrayItem(arr: [1, 2, 3], i: 2)
         }
     $$));
-                               jsonb_pretty                               
---------------------------------------------------------------------------
- {                                                                       +
-     "data": null,                                                       +
-     "errors": [                                                         +
-         {                                                               +
-             "message": "Unknown field \"getIntArrayItem\" on type Query"+
-         }                                                               +
-     ]                                                                   +
+                                jsonb_pretty                                
+----------------------------------------------------------------------------
+ {                                                                         +
+     "errors": [                                                           +
+         {                                                                 +
+             "message": "Field `getIntArrayItem` not found on type `Query`"+
+         }                                                                 +
+     ]                                                                     +
  }
 (1 row)
 
@@ -1398,15 +1396,14 @@ begin;
             getBigintArrayItem(arr: ["1", "2", "3"], i: 3)
         }
     $$));
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": null,                                                          +
-     "errors": [                                                            +
-         {                                                                  +
-             "message": "Unknown field \"getBigintArrayItem\" on type Query"+
-         }                                                                  +
-     ]                                                                      +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Field `getBigintArrayItem` not found on type `Query`"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -1418,15 +1415,14 @@ begin;
             getRealArrayItem(arr: [1.1, 2.2, 3.3], i: 1)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getRealArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getRealArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1438,15 +1434,14 @@ begin;
             getDoubleArrayItem(arr: [1.1, 2.2, 3.3], i: 2)
         }
     $$));
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": null,                                                          +
-     "errors": [                                                            +
-         {                                                                  +
-             "message": "Unknown field \"getDoubleArrayItem\" on type Query"+
-         }                                                                  +
-     ]                                                                      +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Field `getDoubleArrayItem` not found on type `Query`"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -1458,15 +1453,14 @@ begin;
             getNumericArrayItem(arr: ["1.1", "2.2", "3.3"], i: 3)
         }
     $$));
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Unknown field \"getNumericArrayItem\" on type Query"+
-         }                                                                   +
-     ]                                                                       +
+                                  jsonb_pretty                                  
+--------------------------------------------------------------------------------
+ {                                                                             +
+     "errors": [                                                               +
+         {                                                                     +
+             "message": "Field `getNumericArrayItem` not found on type `Query`"+
+         }                                                                     +
+     ]                                                                         +
  }
 (1 row)
 
@@ -1478,15 +1472,14 @@ begin;
             getBoolArrayItem(arr: [true, false], i: 1)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getBoolArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getBoolArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1498,15 +1491,14 @@ begin;
             getUuidArrayItem(arr: ["e8dc3a9a-2c72-11ee-b094-776acede6790", "d3ef3a8c-2c72-11ee-b094-776acede7221"], i: 2)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getUuidArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getUuidArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1518,15 +1510,14 @@ begin;
             getTextArrayItem(arr: ["hello", "world"], i: 1)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getTextArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getTextArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1538,15 +1529,14 @@ begin;
             getJsonArrayItem(arr: ["{\"hello\": \"world\"}", "{\"bye\": \"world\"}"], i: 2)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getJsonArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getJsonArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1558,15 +1548,14 @@ begin;
             getJsonbArrayItem(arr: ["{\"hello\": \"world\"}", "{\"bye\": \"world\"}"], i: 1)
         }
     $$));
-                                jsonb_pretty                                
-----------------------------------------------------------------------------
- {                                                                         +
-     "data": null,                                                         +
-     "errors": [                                                           +
-         {                                                                 +
-             "message": "Unknown field \"getJsonbArrayItem\" on type Query"+
-         }                                                                 +
-     ]                                                                     +
+                                 jsonb_pretty                                 
+------------------------------------------------------------------------------
+ {                                                                           +
+     "errors": [                                                             +
+         {                                                                   +
+             "message": "Field `getJsonbArrayItem` not found on type `Query`"+
+         }                                                                   +
+     ]                                                                       +
  }
 (1 row)
 
@@ -1578,15 +1567,14 @@ begin;
             getDateArrayItem(arr: ["2023-11-22", "2023-11-23", "2023-11-24"], i: 3)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getDateArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getDateArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1598,15 +1586,14 @@ begin;
             getTimeArrayItem(arr: ["5:05", "5:06", "5:07"], i: 1)
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"getTimeArrayItem\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `getTimeArrayItem` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1618,15 +1605,14 @@ begin;
             getTimestampArrayItem(arr: ["2023-07-28 12:39:05", "2023-08-28 12:39:05", "2023-09-28 12:39:05"], i: 2)
         }
     $$));
-                                  jsonb_pretty                                  
---------------------------------------------------------------------------------
- {                                                                             +
-     "data": null,                                                             +
-     "errors": [                                                               +
-         {                                                                     +
-             "message": "Unknown field \"getTimestampArrayItem\" on type Query"+
-         }                                                                     +
-     ]                                                                         +
+                                   jsonb_pretty                                   
+----------------------------------------------------------------------------------
+ {                                                                               +
+     "errors": [                                                                 +
+         {                                                                       +
+             "message": "Field `getTimestampArrayItem` not found on type `Query`"+
+         }                                                                       +
+     ]                                                                           +
  }
 (1 row)
 
@@ -1639,15 +1625,14 @@ begin;
             returnsSmallintArray
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"returnsSmallintArray\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `returnsSmallintArray` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 
@@ -1659,15 +1644,14 @@ begin;
             returnsIntArray
         }
     $$));
-                               jsonb_pretty                               
---------------------------------------------------------------------------
- {                                                                       +
-     "data": null,                                                       +
-     "errors": [                                                         +
-         {                                                               +
-             "message": "Unknown field \"returnsIntArray\" on type Query"+
-         }                                                               +
-     ]                                                                   +
+                                jsonb_pretty                                
+----------------------------------------------------------------------------
+ {                                                                         +
+     "errors": [                                                           +
+         {                                                                 +
+             "message": "Field `returnsIntArray` not found on type `Query`"+
+         }                                                                 +
+     ]                                                                     +
  }
 (1 row)
 
@@ -1679,15 +1663,14 @@ begin;
             returnsBigintArray
         }
     $$));
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": null,                                                          +
-     "errors": [                                                            +
-         {                                                                  +
-             "message": "Unknown field \"returnsBigintArray\" on type Query"+
-         }                                                                  +
-     ]                                                                      +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Field `returnsBigintArray` not found on type `Query`"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -1699,15 +1682,14 @@ begin;
             returnsRealArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsRealArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsRealArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1719,15 +1701,14 @@ begin;
             returnsDoubleArray
         }
     $$));
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": null,                                                          +
-     "errors": [                                                            +
-         {                                                                  +
-             "message": "Unknown field \"returnsDoubleArray\" on type Query"+
-         }                                                                  +
-     ]                                                                      +
+                                 jsonb_pretty                                  
+-------------------------------------------------------------------------------
+ {                                                                            +
+     "errors": [                                                              +
+         {                                                                    +
+             "message": "Field `returnsDoubleArray` not found on type `Query`"+
+         }                                                                    +
+     ]                                                                        +
  }
 (1 row)
 
@@ -1739,15 +1720,14 @@ begin;
             returnsNumericArray
         }
     $$));
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Unknown field \"returnsNumericArray\" on type Query"+
-         }                                                                   +
-     ]                                                                       +
+                                  jsonb_pretty                                  
+--------------------------------------------------------------------------------
+ {                                                                             +
+     "errors": [                                                               +
+         {                                                                     +
+             "message": "Field `returnsNumericArray` not found on type `Query`"+
+         }                                                                     +
+     ]                                                                         +
  }
 (1 row)
 
@@ -1759,15 +1739,14 @@ begin;
             returnsBoolArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsBoolArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsBoolArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1779,15 +1758,14 @@ begin;
             returnsUuidArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsUuidArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsUuidArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1799,15 +1777,14 @@ begin;
             returnsTextArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsTextArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsTextArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1819,15 +1796,14 @@ begin;
             returnsJsonArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsJsonArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsJsonArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1839,15 +1815,14 @@ begin;
             returnsJsonbArray
         }
     $$));
-                                jsonb_pretty                                
-----------------------------------------------------------------------------
- {                                                                         +
-     "data": null,                                                         +
-     "errors": [                                                           +
-         {                                                                 +
-             "message": "Unknown field \"returnsJsonbArray\" on type Query"+
-         }                                                                 +
-     ]                                                                     +
+                                 jsonb_pretty                                 
+------------------------------------------------------------------------------
+ {                                                                           +
+     "errors": [                                                             +
+         {                                                                   +
+             "message": "Field `returnsJsonbArray` not found on type `Query`"+
+         }                                                                   +
+     ]                                                                       +
  }
 (1 row)
 
@@ -1859,15 +1834,14 @@ begin;
             returnsDateArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsDateArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsDateArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1879,15 +1853,14 @@ begin;
             returnsTimeArray
         }
     $$));
-                               jsonb_pretty                                
----------------------------------------------------------------------------
- {                                                                        +
-     "data": null,                                                        +
-     "errors": [                                                          +
-         {                                                                +
-             "message": "Unknown field \"returnsTimeArray\" on type Query"+
-         }                                                                +
-     ]                                                                    +
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "errors": [                                                            +
+         {                                                                  +
+             "message": "Field `returnsTimeArray` not found on type `Query`"+
+         }                                                                  +
+     ]                                                                      +
  }
 (1 row)
 
@@ -1899,15 +1872,14 @@ begin;
             returnsTimestampArray
         }
     $$));
-                                  jsonb_pretty                                  
---------------------------------------------------------------------------------
- {                                                                             +
-     "data": null,                                                             +
-     "errors": [                                                               +
-         {                                                                     +
-             "message": "Unknown field \"returnsTimestampArray\" on type Query"+
-         }                                                                     +
-     ]                                                                         +
+                                   jsonb_pretty                                   
+----------------------------------------------------------------------------------
+ {                                                                               +
+     "errors": [                                                                 +
+         {                                                                       +
+             "message": "Field `returnsTimestampArray` not found on type `Query`"+
+         }                                                                       +
+     ]                                                                           +
  }
 (1 row)
 
@@ -2742,15 +2714,14 @@ begin;
             }
         }
     $$));
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Unknown field \"returnsAccountArray\" on type Query"+
-         }                                                                   +
-     ]                                                                       +
+                                  jsonb_pretty                                  
+--------------------------------------------------------------------------------
+ {                                                                             +
+     "errors": [                                                               +
+         {                                                                     +
+             "message": "Field `returnsAccountArray` not found on type `Query`"+
+         }                                                                     +
+     ]                                                                         +
  }
 (1 row)
 
@@ -2765,15 +2736,14 @@ begin;
             returnAlgorithmArray
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"returnAlgorithmArray\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `returnAlgorithmArray` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 
@@ -2785,15 +2755,14 @@ begin;
             acceptAlgorithmArray(e: ["AEAD_IETF"])
         }
     $$));
-                                 jsonb_pretty                                  
--------------------------------------------------------------------------------
- {                                                                            +
-     "data": null,                                                            +
-     "errors": [                                                              +
-         {                                                                    +
-             "message": "Unknown field \"acceptAlgorithmArray\" on type Query"+
-         }                                                                    +
-     ]                                                                        +
+                                  jsonb_pretty                                   
+---------------------------------------------------------------------------------
+ {                                                                              +
+     "errors": [                                                                +
+         {                                                                      +
+             "message": "Field `acceptAlgorithmArray` not found on type `Query`"+
+         }                                                                      +
+     ]                                                                          +
  }
 (1 row)
 

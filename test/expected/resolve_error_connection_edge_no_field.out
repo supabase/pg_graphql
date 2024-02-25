@@ -12,9 +12,9 @@ begin;
       }
     }
     $$);
-                                resolve                                 
-------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "unknown field in connection"}]}
+                                        resolve                                        
+---------------------------------------------------------------------------------------
+ {"errors": [{"message": "Field `totalCount` not found on type `AccountConnection`"}]}
 (1 row)
 
 rollback;

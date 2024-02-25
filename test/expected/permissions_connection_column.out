@@ -70,9 +70,9 @@ begin;
         }
         $$
     );
-                                            resolve                                             
-------------------------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "Unknown field 'encryptedPassword' on type 'Account'"}]}
+                                      resolve                                       
+------------------------------------------------------------------------------------
+ {"errors": [{"message": "Field `encryptedPassword` not found on type `Account`"}]}
 (1 row)
 
 rollback;

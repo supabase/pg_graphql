@@ -1,12 +1,33 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use graphql_parser::query::Text;
 
 use crate::expand::ExpandedField;
 
+#[derive(Debug)]
+pub enum MergeFieldsError {
+    DifferentFields(String, String),
+}
+
+impl Display for MergeFieldsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message())
+    }
+}
+
+impl MergeFieldsError {
+    fn message(&self) -> String {
+        match self {
+            MergeFieldsError::DifferentFields(field_a, field_b) => {
+                format!("Fields {field_a} and {field_b} are different")
+            }
+        }
+    }
+}
+
 pub fn merge_fields<'a, 'b, T>(
     fields: Vec<ExpandedField<'a, T>>,
-) -> Result<Vec<ExpandedField<'a, T>>, String>
+) -> Result<Vec<ExpandedField<'a, T>>, MergeFieldsError>
 where
     T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone,
 {
@@ -16,9 +37,9 @@ where
         match merged.get_mut(&response_key) {
             Some(existing_field) => {
                 if current_field.name != existing_field.name {
-                    return Err(format!(
-                        "Field {} and {} are different",
-                        current_field.name, existing_field.name
+                    return Err(MergeFieldsError::DifferentFields(
+                        current_field.name.to_string(),
+                        existing_field.name.to_string(),
                     ));
                 }
                 let existing_field = merged

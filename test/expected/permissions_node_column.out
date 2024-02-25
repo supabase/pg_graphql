@@ -142,15 +142,14 @@ begin;
             }
         $$)
     );
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Unknown field 'encryptedPassword' on type 'Account'"+
-         }                                                                   +
-     ]                                                                       +
+                                  jsonb_pretty                                  
+--------------------------------------------------------------------------------
+ {                                                                             +
+     "errors": [                                                               +
+         {                                                                     +
+             "message": "Field `encryptedPassword` not found on type `Account`"+
+         }                                                                     +
+     ]                                                                         +
  }
 (1 row)
 

@@ -159,35 +159,36 @@ where
     let query_type = schema_type.query_type();
     let map = field_map(&query_type);
 
-    let expanded_fields = expand(
+    let expanded_fields = match expand(
         &query_type,
         selection_set.items.clone(),
         &fragment_definitions,
         variables,
-    )
-    .expect("expand failed");
+    ) {
+        Ok(fields) => fields,
+        Err(e) => {
+            return GraphQLResponse {
+                data: Omit::Omitted,
+                errors: Omit::Present(vec![ErrorMessage {
+                    message: e.to_string(),
+                }]),
+            }
+        }
+    };
 
-    let selections = merge_fields(expanded_fields).expect("merge failed");
-
-    // notice!("MERGED FIELDS: {merged_fields:#?}");
+    let selections = match merge_fields(expanded_fields) {
+        Ok(fields) => fields,
+        Err(e) => {
+            return GraphQLResponse {
+                data: Omit::Omitted,
+                errors: Omit::Present(vec![ErrorMessage {
+                    message: e.to_string(),
+                }]),
+            }
+        }
+    };
 
     let query_type_name = query_type.name().expect("query type should have a name");
-    // let selections = match normalize_selection_set(
-    //     &selection_set,
-    //     &fragment_definitions,
-    //     &query_type_name,
-    //     variables,
-    // ) {
-    //     Ok(selections) => selections,
-    //     Err(err) => {
-    //         return GraphQLResponse {
-    //             data: Omit::Omitted,
-    //             errors: Omit::Present(vec![ErrorMessage {
-    //                 message: err.to_string(),
-    //             }]),
-    //         }
-    //     }
-    // };
 
     match selections[..] {
         [] => GraphQLResponse {
@@ -391,37 +392,38 @@ where
 
     let map = field_map(&mutation_type);
 
-    let expanded_fields = expand(
+    let expanded_fields = match expand(
         &mutation_type,
         selection_set.items.clone(),
         &fragment_definitions,
         variables,
-    )
-    .expect("expand failed");
+    ) {
+        Ok(fields) => fields,
+        Err(e) => {
+            return GraphQLResponse {
+                data: Omit::Omitted,
+                errors: Omit::Present(vec![ErrorMessage {
+                    message: e.to_string(),
+                }]),
+            }
+        }
+    };
 
-    let selections = merge_fields(expanded_fields).expect("merge failed");
-
-    // notice!("MERGED FIELDS: {merged_fields:#?}");
+    let selections = match merge_fields(expanded_fields) {
+        Ok(fields) => fields,
+        Err(e) => {
+            return GraphQLResponse {
+                data: Omit::Omitted,
+                errors: Omit::Present(vec![ErrorMessage {
+                    message: e.to_string(),
+                }]),
+            }
+        }
+    };
 
     let mutation_type_name = mutation_type
         .name()
         .expect("mutation type should have a name");
-    // let selections = match normalize_selection_set(
-    //     &selection_set,
-    //     &fragment_definitions,
-    //     &mutation_type_name,
-    //     variables,
-    // ) {
-    //     Ok(selections) => selections,
-    //     Err(err) => {
-    //         return GraphQLResponse {
-    //             data: Omit::Omitted,
-    //             errors: Omit::Present(vec![ErrorMessage {
-    //                 message: err.to_string(),
-    //             }]),
-    //         }
-    //     }
-    // };
 
     use pgrx::prelude::*;
 

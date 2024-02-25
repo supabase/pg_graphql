@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection, Text,
@@ -12,6 +12,28 @@ pub enum ExpansionError {
     FragmentNotFound(String),
     FieldNotFound(String, String),
     MissingVariableValue(String),
+}
+
+impl Display for ExpansionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message())
+    }
+}
+
+impl ExpansionError {
+    fn message(&self) -> String {
+        match self {
+            ExpansionError::FragmentNotFound(fragment) => {
+                format!("Fragment `{fragment}` not found")
+            }
+            ExpansionError::FieldNotFound(field, typ) => {
+                format!("Field `{field}` not found on type `{typ}`")
+            }
+            ExpansionError::MissingVariableValue(variable) => {
+                format!("Variable `{variable}` must have a value")
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -155,15 +155,14 @@ begin;
           '{}'
         )
     );
-                               jsonb_pretty                               
---------------------------------------------------------------------------
- {                                                                       +
-     "data": null,                                                       +
-     "errors": [                                                         +
-         {                                                               +
-             "message": "Value for \"if\" in @skip directive is required"+
-         }                                                               +
-     ]                                                                   +
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Variable `should_skip` must have a value"+
+         }                                                        +
+     ]                                                            +
  }
 (1 row)
 
@@ -315,15 +314,14 @@ begin;
           '{}'
         )
     );
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": null,                                                          +
-     "errors": [                                                            +
-         {                                                                  +
-             "message": "Value for \"if\" in @include directive is required"+
-         }                                                                  +
-     ]                                                                      +
+                             jsonb_pretty                             
+----------------------------------------------------------------------
+ {                                                                   +
+     "errors": [                                                     +
+         {                                                           +
+             "message": "Variable `should_include` must have a value"+
+         }                                                           +
+     ]                                                               +
  }
 (1 row)
 

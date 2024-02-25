@@ -124,15 +124,14 @@ begin;
             { getOne }
         $$)
     );
-                          jsonb_pretty                           
------------------------------------------------------------------
- {                                                              +
-     "data": null,                                              +
-     "errors": [                                                +
-         {                                                      +
-             "message": "Unknown field \"getOne\" on type Query"+
-         }                                                      +
-     ]                                                          +
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Field `getOne` not found on type `Query`"+
+         }                                                        +
+     ]                                                            +
  }
 (1 row)
 

@@ -1890,15 +1890,14 @@ begin;
             }
         }
     $$));
-                              jsonb_pretty                              
-------------------------------------------------------------------------
- {                                                                     +
-     "data": null,                                                     +
-     "errors": [                                                       +
-         {                                                             +
-             "message": "Unknown field \"argNamedFirst\" on type Query"+
-         }                                                             +
-     ]                                                                 +
+                               jsonb_pretty                               
+--------------------------------------------------------------------------
+ {                                                                       +
+     "errors": [                                                         +
+         {                                                               +
+             "message": "Field `argNamedFirst` not found on type `Query`"+
+         }                                                               +
+     ]                                                                   +
  }
 (1 row)
 
@@ -1912,15 +1911,14 @@ begin;
             }
         }
     $$));
-                             jsonb_pretty                              
------------------------------------------------------------------------
- {                                                                    +
-     "data": null,                                                    +
-     "errors": [                                                      +
-         {                                                            +
-             "message": "Unknown field \"argNamedLast\" on type Query"+
-         }                                                            +
-     ]                                                                +
+                              jsonb_pretty                               
+-------------------------------------------------------------------------
+ {                                                                      +
+     "errors": [                                                        +
+         {                                                              +
+             "message": "Field `argNamedLast` not found on type `Query`"+
+         }                                                              +
+     ]                                                                  +
  }
 (1 row)
 
@@ -1934,15 +1932,14 @@ begin;
             }
         }
     $$));
-                              jsonb_pretty                               
--------------------------------------------------------------------------
- {                                                                      +
-     "data": null,                                                      +
-     "errors": [                                                        +
-         {                                                              +
-             "message": "Unknown field \"argNamedBefore\" on type Query"+
-         }                                                              +
-     ]                                                                  +
+                               jsonb_pretty                                
+---------------------------------------------------------------------------
+ {                                                                        +
+     "errors": [                                                          +
+         {                                                                +
+             "message": "Field `argNamedBefore` not found on type `Query`"+
+         }                                                                +
+     ]                                                                    +
  }
 (1 row)
 
@@ -1956,15 +1953,14 @@ begin;
             }
         }
     $$));
-                              jsonb_pretty                              
-------------------------------------------------------------------------
- {                                                                     +
-     "data": null,                                                     +
-     "errors": [                                                       +
-         {                                                             +
-             "message": "Unknown field \"argNamedAfter\" on type Query"+
-         }                                                             +
-     ]                                                                 +
+                               jsonb_pretty                               
+--------------------------------------------------------------------------
+ {                                                                       +
+     "errors": [                                                         +
+         {                                                               +
+             "message": "Field `argNamedAfter` not found on type `Query`"+
+         }                                                               +
+     ]                                                                   +
  }
 (1 row)
 
@@ -1978,15 +1974,14 @@ begin;
             }
         }
     $$));
-                              jsonb_pretty                               
--------------------------------------------------------------------------
- {                                                                      +
-     "data": null,                                                      +
-     "errors": [                                                        +
-         {                                                              +
-             "message": "Unknown field \"argNamedFilter\" on type Query"+
-         }                                                              +
-     ]                                                                  +
+                               jsonb_pretty                                
+---------------------------------------------------------------------------
+ {                                                                        +
+     "errors": [                                                          +
+         {                                                                +
+             "message": "Field `argNamedFilter` not found on type `Query`"+
+         }                                                                +
+     ]                                                                    +
  }
 (1 row)
 
@@ -2000,15 +1995,14 @@ begin;
             }
         }
     $$));
-                               jsonb_pretty                               
---------------------------------------------------------------------------
- {                                                                       +
-     "data": null,                                                       +
-     "errors": [                                                         +
-         {                                                               +
-             "message": "Unknown field \"argNamedOrderBy\" on type Query"+
-         }                                                               +
-     ]                                                                   +
+                                jsonb_pretty                                
+----------------------------------------------------------------------------
+ {                                                                         +
+     "errors": [                                                           +
+         {                                                                 +
+             "message": "Field `argNamedOrderBy` not found on type `Query`"+
+         }                                                                 +
+     ]                                                                     +
  }
 (1 row)
 
@@ -2586,15 +2580,14 @@ begin;
             returnsTrigger
         }
     $$));
-                              jsonb_pretty                               
--------------------------------------------------------------------------
- {                                                                      +
-     "data": null,                                                      +
-     "errors": [                                                        +
-         {                                                              +
-             "message": "Unknown field \"returnsTrigger\" on type Query"+
-         }                                                              +
-     ]                                                                  +
+                               jsonb_pretty                                
+---------------------------------------------------------------------------
+ {                                                                        +
+     "errors": [                                                          +
+         {                                                                +
+             "message": "Field `returnsTrigger` not found on type `Query`"+
+         }                                                                +
+     ]                                                                    +
  }
 (1 row)
 
@@ -2603,15 +2596,14 @@ begin;
             returnsEventTrigger
         }
     $$));
-                                 jsonb_pretty                                 
-------------------------------------------------------------------------------
- {                                                                           +
-     "data": null,                                                           +
-     "errors": [                                                             +
-         {                                                                   +
-             "message": "Unknown field \"returnsEventTrigger\" on type Query"+
-         }                                                                   +
-     ]                                                                       +
+                                  jsonb_pretty                                  
+--------------------------------------------------------------------------------
+ {                                                                             +
+     "errors": [                                                               +
+         {                                                                     +
+             "message": "Field `returnsEventTrigger` not found on type `Query`"+
+         }                                                                     +
+     ]                                                                         +
  }
 (1 row)
 
