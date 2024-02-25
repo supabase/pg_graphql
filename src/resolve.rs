@@ -22,7 +22,7 @@ pub fn resolve_inner<'a, T>(
     schema: &__Schema,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
 {
     match variables {
         serde_json::Value::Object(_) => (),
@@ -130,7 +130,7 @@ fn resolve_query<'a, 'b, T>(
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_selection_set(
@@ -150,7 +150,7 @@ fn resolve_selection_set<'a, 'b, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
 {
     use crate::graphql::*;
 
@@ -337,7 +337,7 @@ fn resolve_mutation<'a, 'b, T>(
     fragment_definitions: Vec<FragmentDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_mutation_selection_set(
@@ -357,7 +357,7 @@ fn resolve_mutation_selection_set<'a, 'b, T>(
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> GraphQLResponse
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
 {
     use crate::graphql::*;
 
