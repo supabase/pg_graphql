@@ -22,9 +22,8 @@ where
                 }
                 if !same_arguments(&current_field.arguments, &existing_field.arguments) {
                     return Err(format!(
-                        "Fields `{}` and `{}` are have different arguments",
+                        "Two fields named `{}` have different arguments",
                         current_field.name.as_ref(),
-                        existing_field.name.as_ref(),
                     ));
                 }
                 existing_field
