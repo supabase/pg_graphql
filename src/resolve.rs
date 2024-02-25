@@ -228,7 +228,7 @@ where
                             match connection_builder {
                                 Ok(builder) => match builder.execute() {
                                     Ok(d) => {
-                                        res_data[selection.response_key()] = d;
+                                        res_data[selection.alias_or_name()] = d;
                                     }
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 },
@@ -248,7 +248,7 @@ where
                             match node_builder {
                                 Ok(builder) => match builder.execute() {
                                     Ok(d) => {
-                                        res_data[selection.response_key()] = d;
+                                        res_data[selection.alias_or_name()] = d;
                                     }
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 },
@@ -267,7 +267,8 @@ where
 
                             match __type_builder {
                                 Ok(builder) => {
-                                    res_data[selection.response_key()] = serde_json::json!(builder);
+                                    res_data[selection.alias_or_name()] =
+                                        serde_json::json!(builder);
                                 }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
@@ -283,14 +284,15 @@ where
 
                             match __schema_builder {
                                 Ok(builder) => {
-                                    res_data[selection.response_key()] = serde_json::json!(builder);
+                                    res_data[selection.alias_or_name()] =
+                                        serde_json::json!(builder);
                                 }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
                         _ => match field_def.name().as_ref() {
                             "__typename" => {
-                                res_data[selection.response_key()] =
+                                res_data[selection.alias_or_name()] =
                                     serde_json::json!(query_type.name())
                             }
                             "heartbeat" => {
@@ -299,7 +301,7 @@ where
                                         .expect("Internal error: queries should not fail")
                                         .expect("Internal Error: queries should not return null");
                                 let now_json = now_jsonb.0;
-                                res_data[selection.response_key()] = now_json;
+                                res_data[selection.alias_or_name()] = now_json;
                             }
                             _ => {
                                 let function_call_builder = to_function_call_builder(
@@ -316,7 +318,7 @@ where
                                             &builder,
                                         ) {
                                             Ok(d) => {
-                                                res_data[selection.response_key()] = d;
+                                                res_data[selection.alias_or_name()] = d;
                                             }
                                             Err(msg) => {
                                                 res_errors.push(ErrorMessage { message: msg })
@@ -455,7 +457,7 @@ where
 
                                 let (d, conn) = builder.execute(conn)?;
 
-                                res_data[selection.response_key()] = d;
+                                res_data[selection.alias_or_name()] = d;
                                 conn
                             }
                             __Type::UpdateResponse(_) => {
@@ -473,7 +475,7 @@ where
                                 };
 
                                 let (d, conn) = builder.execute(conn)?;
-                                res_data[selection.response_key()] = d;
+                                res_data[selection.alias_or_name()] = d;
                                 conn
                             }
                             __Type::DeleteResponse(_) => {
@@ -491,12 +493,12 @@ where
                                 };
 
                                 let (d, conn) = builder.execute(conn)?;
-                                res_data[selection.response_key()] = d;
+                                res_data[selection.alias_or_name()] = d;
                                 conn
                             }
                             _ => match field_def.name().as_ref() {
                                 "__typename" => {
-                                    res_data[selection.response_key()] =
+                                    res_data[selection.alias_or_name()] =
                                         serde_json::json!(mutation_type.name());
                                     conn
                                 }
@@ -518,7 +520,7 @@ where
                                         <FunctionCallBuilder as MutationEntrypoint>::execute(
                                             &builder, conn,
                                         )?;
-                                    res_data[selection.response_key()] = d;
+                                    res_data[selection.alias_or_name()] = d;
                                     conn
                                 }
                             },

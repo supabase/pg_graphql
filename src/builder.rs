@@ -252,7 +252,7 @@ where
 {
     let type_ = field.type_().unmodified_type();
     let field_map = field_map(&type_);
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match &type_ {
         __Type::InsertResponse(xtype) => {
@@ -275,7 +275,7 @@ where
                     None => return Err("unknown field in insert".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => InsertSelection::AffectedCount {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
@@ -289,7 +289,7 @@ where
                             InsertSelection::Records(node_builder?)
                         }
                         "__typename" => InsertSelection::Typename {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                             typename: xtype
                                 .name()
                                 .expect("insert response type should have a name"),
@@ -413,7 +413,7 @@ where
 {
     let type_ = field.type_().unmodified_type();
     let field_map = field_map(&type_);
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match &type_ {
         __Type::UpdateResponse(xtype) => {
@@ -448,7 +448,7 @@ where
                     None => return Err("unknown field in update".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => UpdateSelection::AffectedCount {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
@@ -462,7 +462,7 @@ where
                             UpdateSelection::Records(node_builder?)
                         }
                         "__typename" => UpdateSelection::Typename {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                             typename: xtype
                                 .name()
                                 .expect("update response type should have a name"),
@@ -522,7 +522,7 @@ where
 {
     let type_ = field.type_().unmodified_type();
     let field_map = field_map(&type_);
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match &type_ {
         __Type::DeleteResponse(xtype) => {
@@ -551,7 +551,7 @@ where
                     None => return Err("unknown field in delete".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => DeleteSelection::AffectedCount {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
@@ -565,7 +565,7 @@ where
                             DeleteSelection::Records(node_builder?)
                         }
                         "__typename" => DeleteSelection::Typename {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                             typename: xtype
                                 .name()
                                 .expect("delete response type should have a name"),
@@ -630,7 +630,7 @@ where
     T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match &type_ {
         __Type::FuncCallResponse(func_call_resp_type) => {
@@ -1310,7 +1310,7 @@ where
     let type_ = field.type_().unmodified_type();
     let type_ = type_.return_type();
     let field_map = field_map(type_);
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match &type_ {
         __Type::Connection(xtype) => {
@@ -1448,10 +1448,10 @@ where
 
                         _ => match f.name().as_ref() {
                             "totalCount" => ConnectionSelection::TotalCount {
-                                alias: selection_field.response_key(),
+                                alias: selection_field.alias_or_name(),
                             },
                             "__typename" => ConnectionSelection::Typename {
-                                alias: selection_field.response_key(),
+                                alias: selection_field.alias_or_name(),
                                 typename: xtype.name().expect("connection type should have a name"),
                             },
                             _ => return Err("unexpected field type on connection".to_string()),
@@ -1492,7 +1492,7 @@ where
 {
     let type_ = field.type_().unmodified_type();
     let field_map = field_map(&type_);
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match type_ {
         __Type::PageInfo(xtype) => {
@@ -1505,19 +1505,19 @@ where
                     None => return Err("unknown field in pageInfo".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "startCursor" => PageInfoSelection::StartCursor {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "endCursor" => PageInfoSelection::EndCursor {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "hasPreviousPage" => PageInfoSelection::HasPreviousPage {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "hasNextPage" => PageInfoSelection::HasNextPage {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                         },
                         "__typename" => PageInfoSelection::Typename {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                             typename: xtype.name().expect("page info type should have a name"),
                         },
                         _ => return Err("unexpected field type on pageInfo".to_string()),
@@ -1545,7 +1545,7 @@ where
 {
     let type_ = field.type_().unmodified_type();
     let field_map = field_map(&type_);
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     match type_ {
         __Type::Edge(xtype) => {
@@ -1570,10 +1570,10 @@ where
                         }
                         _ => match f.name().as_ref() {
                             "cursor" => EdgeSelection::Cursor {
-                                alias: selection_field.response_key(),
+                                alias: selection_field.alias_or_name(),
                             },
                             "__typename" => EdgeSelection::Typename {
-                                alias: selection_field.response_key(),
+                                alias: selection_field.alias_or_name(),
                                 typename: xtype.name().expect("edge type should have a name"),
                             },
                             _ => return Err("unexpected field type on edge".to_string()),
@@ -1603,7 +1603,7 @@ where
 {
     let type_ = field.type_().unmodified_type();
 
-    let alias = query_field.response_key();
+    let alias = query_field.alias_or_name();
 
     let xtype: NodeType = match type_.return_type() {
         __Type::Node(xtype) => {
@@ -1681,7 +1681,7 @@ where
                 ))
             }
             Some(f) => {
-                let alias = selection_field.response_key();
+                let alias = selection_field.alias_or_name();
 
                 let node_selection = match &f.sql_type {
                     Some(node_sql_type) => match node_sql_type {
@@ -1736,7 +1736,7 @@ where
                     },
                     _ => match f.name().as_ref() {
                         "__typename" => NodeSelection::Typename {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                             typename: xtype.name().expect("node type should have a name"),
                         },
                         _ => match f.type_().unmodified_type() {
@@ -1953,7 +1953,7 @@ impl __Schema {
                 "isDeprecated" => __EnumValueField::IsDeprecated,
                 "deprecationReason" => __EnumValueField::DeprecationReason,
                 "__typename" => __EnumValueField::Typename {
-                    alias: selection_field.response_key(),
+                    alias: selection_field.alias_or_name(),
                     typename: enum_value.name(),
                 },
                 _ => {
@@ -1965,7 +1965,7 @@ impl __Schema {
             };
 
             builder_fields.push(__EnumValueSelection {
-                alias: selection_field.response_key(),
+                alias: selection_field.alias_or_name(),
                 selection: __enum_value_field,
             });
         }
@@ -2013,7 +2013,7 @@ impl __Schema {
                 "isDeprecated" => __InputValueField::IsDeprecated,
                 "deprecationReason" => __InputValueField::DeprecationReason,
                 "__typename" => __InputValueField::Typename {
-                    alias: selection_field.response_key(),
+                    alias: selection_field.alias_or_name(),
                     typename: input_value.name(),
                 },
                 _ => {
@@ -2025,7 +2025,7 @@ impl __Schema {
             };
 
             builder_fields.push(__InputValueSelection {
-                alias: selection_field.response_key(),
+                alias: selection_field.alias_or_name(),
                 selection: __input_value_field,
             });
         }
@@ -2088,14 +2088,14 @@ impl __Schema {
                 "isDeprecated" => __FieldField::IsDeprecated,
                 "deprecationReason" => __FieldField::DeprecationReason,
                 "__typename" => __FieldField::Typename {
-                    alias: selection_field.response_key(),
+                    alias: selection_field.alias_or_name(),
                     typename: field.name(),
                 },
                 _ => return Err(format!("unknown field in __Field {}", type_field_name)),
             };
 
             builder_fields.push(__FieldSelection {
-                alias: selection_field.response_key(),
+                alias: selection_field.alias_or_name(),
                 selection: __field_field,
             });
         }
@@ -2187,7 +2187,7 @@ impl __Schema {
             match field_map.get(type_field_name) {
                 None => return Err(format!("unknown field on __Type: {}", type_field_name)),
                 Some(f) => builder_fields.push(__TypeSelection {
-                    alias: selection_field.response_key(),
+                    alias: selection_field.alias_or_name(),
                     selection: match f.name().as_str() {
                         "kind" => __TypeField::Kind,
                         "name" => __TypeField::Name,
@@ -2329,7 +2329,7 @@ impl __Schema {
                             __TypeField::OfType(unwrapped_type_builder)
                         }
                         "__typename" => __TypeField::Typename {
-                            alias: selection_field.response_key(),
+                            alias: selection_field.alias_or_name(),
                             typename: type_.name(),
                         },
                         _ => {
@@ -2389,7 +2389,7 @@ impl __Schema {
                 }
                 "isRepeatable" => __DirectiveField::IsRepeatable,
                 "__typename" => __DirectiveField::Typename {
-                    alias: selection_field.response_key(),
+                    alias: selection_field.alias_or_name(),
                     typename: __Directive::TYPE.to_string(),
                 },
                 _ => {
@@ -2402,7 +2402,7 @@ impl __Schema {
             };
 
             builder_fields.push(__DirectiveSelection {
-                alias: selection_field.response_key(),
+                alias: selection_field.alias_or_name(),
                 selection: directive_field,
             });
         }
@@ -2440,7 +2440,7 @@ impl __Schema {
                         None => return Err(format!("unknown field in __Schema: {}", field_name)),
                         Some(f) => {
                             builder_fields.push(__SchemaSelection {
-                                alias: selection_field.response_key(),
+                                alias: selection_field.alias_or_name(),
                                 selection: match f.name().as_str() {
                                     "types" => {
                                         let builders = self
@@ -2511,7 +2511,7 @@ impl __Schema {
                                         __SchemaField::Directives(builders)
                                     }
                                     "__typename" => __SchemaField::Typename {
-                                        alias: selection_field.response_key(),
+                                        alias: selection_field.alias_or_name(),
                                         typename: field.name(),
                                     },
                                     _ => {

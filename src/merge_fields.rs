@@ -12,7 +12,7 @@ where
 {
     let mut merged: HashMap<String, ExpandedField<'a, T>> = HashMap::with_capacity(fields.len());
     for current_field in fields {
-        let response_key = current_field.response_key();
+        let response_key = current_field.alias_or_name();
         match merged.get_mut(&response_key) {
             Some(existing_field) => {
                 if current_field.name != existing_field.name {

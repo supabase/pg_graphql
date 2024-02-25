@@ -27,7 +27,7 @@ impl<'a, 'b, T> ExpandedField<'a, T>
 where
     T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
-    pub fn response_key(&self) -> String {
+    pub fn alias_or_name(&self) -> String {
         (self.alias.as_ref().unwrap_or(&self.name)).to_string()
     }
 }
