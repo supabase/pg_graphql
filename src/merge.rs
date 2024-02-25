@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use graphql_parser::query::{Field, Text};
+use indexmap::IndexMap;
 
 use crate::parser_util::alias_or_name;
 
@@ -8,7 +7,7 @@ pub fn merge<'a, 'b, T>(fields: &[Field<'a, T>]) -> Result<Vec<Field<'a, T>>, St
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
 {
-    let mut merged: HashMap<String, Field<'a, T>> = HashMap::new();
+    let mut merged: IndexMap<String, Field<'a, T>> = IndexMap::new();
 
     for current_field in fields {
         let response_key = alias_or_name(current_field);
