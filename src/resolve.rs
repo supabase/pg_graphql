@@ -6,7 +6,6 @@ use crate::expand::expand;
 use crate::graphql::*;
 use crate::merge_fields::merge_fields;
 use crate::omit::*;
-use crate::parser_util::*;
 use crate::sql_types::get_one_readonly;
 use crate::transpile::{MutationEntrypoint, QueryEntrypoint};
 use graphql_parser::query::Selection;
@@ -15,7 +14,6 @@ use graphql_parser::query::{
     Text, VariableDefinition,
 };
 use itertools::Itertools;
-use pgrx::notice;
 use serde_json::{json, Value};
 
 #[allow(non_snake_case)]
@@ -169,27 +167,27 @@ where
     )
     .expect("expand failed");
 
-    let merged_fields = merge_fields(expanded_fields).expect("merge failed");
+    let selections = merge_fields(expanded_fields).expect("merge failed");
 
-    notice!("MERGED FIELDS: {merged_fields:#?}");
+    // notice!("MERGED FIELDS: {merged_fields:#?}");
 
     let query_type_name = query_type.name().expect("query type should have a name");
-    let selections = match normalize_selection_set(
-        &selection_set,
-        &fragment_definitions,
-        &query_type_name,
-        variables,
-    ) {
-        Ok(selections) => selections,
-        Err(err) => {
-            return GraphQLResponse {
-                data: Omit::Omitted,
-                errors: Omit::Present(vec![ErrorMessage {
-                    message: err.to_string(),
-                }]),
-            }
-        }
-    };
+    // let selections = match normalize_selection_set(
+    //     &selection_set,
+    //     &fragment_definitions,
+    //     &query_type_name,
+    //     variables,
+    // ) {
+    //     Ok(selections) => selections,
+    //     Err(err) => {
+    //         return GraphQLResponse {
+    //             data: Omit::Omitted,
+    //             errors: Omit::Present(vec![ErrorMessage {
+    //                 message: err.to_string(),
+    //             }]),
+    //         }
+    //     }
+    // };
 
     match selections[..] {
         [] => GraphQLResponse {
@@ -230,7 +228,7 @@ where
                             match connection_builder {
                                 Ok(builder) => match builder.execute() {
                                     Ok(d) => {
-                                        res_data[alias_or_name(selection)] = d;
+                                        res_data[selection.response_key()] = d;
                                     }
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 },
@@ -250,7 +248,7 @@ where
                             match node_builder {
                                 Ok(builder) => match builder.execute() {
                                     Ok(d) => {
-                                        res_data[alias_or_name(selection)] = d;
+                                        res_data[selection.response_key()] = d;
                                     }
                                     Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                                 },
@@ -269,7 +267,7 @@ where
 
                             match __type_builder {
                                 Ok(builder) => {
-                                    res_data[alias_or_name(selection)] = serde_json::json!(builder);
+                                    res_data[selection.response_key()] = serde_json::json!(builder);
                                 }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
@@ -285,14 +283,14 @@ where
 
                             match __schema_builder {
                                 Ok(builder) => {
-                                    res_data[alias_or_name(selection)] = serde_json::json!(builder);
+                                    res_data[selection.response_key()] = serde_json::json!(builder);
                                 }
                                 Err(msg) => res_errors.push(ErrorMessage { message: msg }),
                             }
                         }
                         _ => match field_def.name().as_ref() {
                             "__typename" => {
-                                res_data[alias_or_name(selection)] =
+                                res_data[selection.response_key()] =
                                     serde_json::json!(query_type.name())
                             }
                             "heartbeat" => {
@@ -301,7 +299,7 @@ where
                                         .expect("Internal error: queries should not fail")
                                         .expect("Internal Error: queries should not return null");
                                 let now_json = now_jsonb.0;
-                                res_data[alias_or_name(selection)] = now_json;
+                                res_data[selection.response_key()] = now_json;
                             }
                             _ => {
                                 let function_call_builder = to_function_call_builder(
@@ -318,7 +316,7 @@ where
                                             &builder,
                                         ) {
                                             Ok(d) => {
-                                                res_data[alias_or_name(selection)] = d;
+                                                res_data[selection.response_key()] = d;
                                             }
                                             Err(msg) => {
                                                 res_errors.push(ErrorMessage { message: msg })
@@ -399,29 +397,29 @@ where
     )
     .expect("expand failed");
 
-    let merged_fields = merge_fields(expanded_fields).expect("merge failed");
+    let selections = merge_fields(expanded_fields).expect("merge failed");
 
-    notice!("MERGED FIELDS: {merged_fields:#?}");
+    // notice!("MERGED FIELDS: {merged_fields:#?}");
 
     let mutation_type_name = mutation_type
         .name()
         .expect("mutation type should have a name");
-    let selections = match normalize_selection_set(
-        &selection_set,
-        &fragment_definitions,
-        &mutation_type_name,
-        variables,
-    ) {
-        Ok(selections) => selections,
-        Err(err) => {
-            return GraphQLResponse {
-                data: Omit::Omitted,
-                errors: Omit::Present(vec![ErrorMessage {
-                    message: err.to_string(),
-                }]),
-            }
-        }
-    };
+    // let selections = match normalize_selection_set(
+    //     &selection_set,
+    //     &fragment_definitions,
+    //     &mutation_type_name,
+    //     variables,
+    // ) {
+    //     Ok(selections) => selections,
+    //     Err(err) => {
+    //         return GraphQLResponse {
+    //             data: Omit::Omitted,
+    //             errors: Omit::Present(vec![ErrorMessage {
+    //                 message: err.to_string(),
+    //             }]),
+    //         }
+    //     }
+    // };
 
     use pgrx::prelude::*;
 
@@ -457,7 +455,7 @@ where
 
                                 let (d, conn) = builder.execute(conn)?;
 
-                                res_data[alias_or_name(selection)] = d;
+                                res_data[selection.response_key()] = d;
                                 conn
                             }
                             __Type::UpdateResponse(_) => {
@@ -475,7 +473,7 @@ where
                                 };
 
                                 let (d, conn) = builder.execute(conn)?;
-                                res_data[alias_or_name(selection)] = d;
+                                res_data[selection.response_key()] = d;
                                 conn
                             }
                             __Type::DeleteResponse(_) => {
@@ -493,12 +491,12 @@ where
                                 };
 
                                 let (d, conn) = builder.execute(conn)?;
-                                res_data[alias_or_name(selection)] = d;
+                                res_data[selection.response_key()] = d;
                                 conn
                             }
                             _ => match field_def.name().as_ref() {
                                 "__typename" => {
-                                    res_data[alias_or_name(selection)] =
+                                    res_data[selection.response_key()] =
                                         serde_json::json!(mutation_type.name());
                                     conn
                                 }
@@ -520,7 +518,7 @@ where
                                         <FunctionCallBuilder as MutationEntrypoint>::execute(
                                             &builder, conn,
                                         )?;
-                                    res_data[alias_or_name(selection)] = d;
+                                    res_data[selection.response_key()] = d;
                                     conn
                                 }
                             },

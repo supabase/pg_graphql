@@ -1,3 +1,4 @@
+use crate::expand::ExpandedField;
 use crate::graphql::*;
 use crate::gson;
 use crate::parser_util::*;
@@ -46,7 +47,7 @@ pub enum InsertSelection {
 fn read_argument<'a, T>(
     arg_name: &str,
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<gson::Value, String>
@@ -58,8 +59,7 @@ where
         None => return Err(format!("Internal error 1: {}", arg_name)),
     };
 
-    let user_input: Option<&graphql_parser::query::Value<'a, T>> = query_field
-        .arguments
+    let user_input: Option<&graphql_parser::query::Value<'a, T>> = arguments
         .iter()
         .filter(|(input_arg_name, _)| input_arg_name.as_ref() == arg_name)
         .map(|(_, v)| v)
@@ -76,21 +76,16 @@ where
 
 fn read_argument_at_most<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<i64, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let at_most: gson::Value = read_argument(
-        "atMost",
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )
-    .unwrap_or(gson::Value::Number(gson::Number::Integer(1)));
+    let at_most: gson::Value =
+        read_argument("atMost", field, arguments, variables, variable_definitions)
+            .unwrap_or(gson::Value::Number(gson::Number::Integer(1)));
     match at_most {
         gson::Value::Number(gson::Number::Integer(x)) => Ok(x),
         _ => Err("Internal Error: failed to parse validated atFirst".to_string()),
@@ -156,7 +151,7 @@ fn parse_node_id(encoded: gson::Value) -> Result<NodeIdInstance, String> {
 
 fn read_argument_node_id<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<NodeIdInstance, String>
@@ -164,20 +159,15 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
-    let node_id_base64_encoded_json_string: gson::Value = read_argument(
-        "nodeId",
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )?;
+    let node_id_base64_encoded_json_string: gson::Value =
+        read_argument("nodeId", field, arguments, variables, variable_definitions)?;
 
     parse_node_id(node_id_base64_encoded_json_string)
 }
 
 fn read_argument_objects<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Vec<InsertRowBuilder>, String>
@@ -185,13 +175,8 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // [{"name": "bob", "email": "a@b.com"}, {..}]
-    let validated: gson::Value = read_argument(
-        "objects",
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )?;
+    let validated: gson::Value =
+        read_argument("objects", field, arguments, variables, variable_definitions)?;
 
     // [<Table>OrderBy!]
     let insert_type: InsertInputType = match field
@@ -255,46 +240,42 @@ where
     Ok(objects)
 }
 
-pub fn to_insert_builder<'a, T>(
+pub fn to_insert_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<InsertBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let type_name = type_
-        .name()
-        .ok_or("Encountered type without name in connection builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match &type_ {
         __Type::InsertResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["objects"], query_field)?;
+            restrict_allowed_arguments(&["objects"], &query_field.arguments)?;
 
-            let objects: Vec<InsertRowBuilder> =
-                read_argument_objects(field, query_field, variables, variable_definitions)?;
+            let objects: Vec<InsertRowBuilder> = read_argument_objects(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
 
             let mut builder_fields: Vec<InsertSelection> = vec![];
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-                variables,
-            )?;
+            let selection_fields = &query_field.children;
 
             for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
+                match field_map.get(selection_field.name) {
                     None => return Err("unknown field in insert".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => InsertSelection::AffectedCount {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
@@ -308,7 +289,7 @@ where
                             InsertSelection::Records(node_builder?)
                         }
                         "__typename" => InsertSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                             typename: xtype
                                 .name()
                                 .expect("insert response type should have a name"),
@@ -363,7 +344,7 @@ pub enum UpdateSelection {
 
 fn read_argument_set<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<SetBuilder, String>
@@ -371,7 +352,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let validated: gson::Value =
-        read_argument("set", field, query_field, variables, variable_definitions)?;
+        read_argument("set", field, arguments, variables, variable_definitions)?;
 
     let update_type: UpdateInputType = match field
         .get_arg("set")
@@ -420,50 +401,54 @@ where
     Ok(SetBuilder { set })
 }
 
-pub fn to_update_builder<'a, T>(
+pub fn to_update_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<UpdateBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let type_name = type_
-        .name()
-        .ok_or("Encountered type without name in update builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match &type_ {
         __Type::UpdateResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["set", "filter", "atMost"], query_field)?;
+            restrict_allowed_arguments(&["set", "filter", "atMost"], &query_field.arguments)?;
 
-            let set: SetBuilder =
-                read_argument_set(field, query_field, variables, variable_definitions)?;
-            let filter: FilterBuilder =
-                read_argument_filter(field, query_field, variables, variable_definitions)?;
-            let at_most: i64 =
-                read_argument_at_most(field, query_field, variables, variable_definitions)?;
+            let set: SetBuilder = read_argument_set(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
+            let filter: FilterBuilder = read_argument_filter(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
+            let at_most: i64 = read_argument_at_most(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
 
             let mut builder_fields: Vec<UpdateSelection> = vec![];
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-                variables,
-            )?;
+            let selection_fields = &query_field.children;
 
             for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
+                match field_map.get(selection_field.name) {
                     None => return Err("unknown field in update".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => UpdateSelection::AffectedCount {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
@@ -477,7 +462,7 @@ where
                             UpdateSelection::Records(node_builder?)
                         }
                         "__typename" => UpdateSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                             typename: xtype
                                 .name()
                                 .expect("update response type should have a name"),
@@ -525,48 +510,48 @@ pub enum DeleteSelection {
     Typename { alias: String, typename: String },
 }
 
-pub fn to_delete_builder<'a, T>(
+pub fn to_delete_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<DeleteBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let type_name = type_
-        .name()
-        .ok_or("Encountered type without name in delete builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match &type_ {
         __Type::DeleteResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["filter", "atMost"], query_field)?;
+            restrict_allowed_arguments(&["filter", "atMost"], &query_field.arguments)?;
 
-            let filter: FilterBuilder =
-                read_argument_filter(field, query_field, variables, variable_definitions)?;
-            let at_most: i64 =
-                read_argument_at_most(field, query_field, variables, variable_definitions)?;
+            let filter: FilterBuilder = read_argument_filter(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
+            let at_most: i64 = read_argument_at_most(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
 
             let mut builder_fields: Vec<DeleteSelection> = vec![];
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-                variables,
-            )?;
+            let selection_fields = &query_field.children;
 
             for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
+                match field_map.get(selection_field.name) {
                     None => return Err("unknown field in delete".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "affectedCount" => DeleteSelection::AffectedCount {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "records" => {
                             let node_builder = to_node_builder(
@@ -580,7 +565,7 @@ where
                             DeleteSelection::Records(node_builder?)
                         }
                         "__typename" => DeleteSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                             typename: xtype
                                 .name()
                                 .expect("delete response type should have a name"),
@@ -634,27 +619,27 @@ pub struct FuncCallSqlArgName {
     pub name: String,
 }
 
-pub fn to_function_call_builder<'a, T>(
+pub fn to_function_call_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FunctionCallBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match &type_ {
         __Type::FuncCallResponse(func_call_resp_type) => {
             let args = field.args();
             let allowed_args: Vec<&str> = args.iter().map(|a| a.name_.as_str()).collect();
-            restrict_allowed_arguments(&allowed_args, query_field)?;
+            restrict_allowed_arguments(&allowed_args, &query_field.arguments)?;
             let args = read_func_call_args(
                 field,
-                query_field,
+                &query_field.arguments,
                 variables,
                 func_call_resp_type,
                 variable_definitions,
@@ -713,7 +698,7 @@ where
 
 fn read_func_call_args<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     func_call_resp_type: &FuncCallResponseType,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
@@ -727,7 +712,7 @@ where
         let arg_value = read_argument(
             &arg.name(),
             field,
-            query_field,
+            arguments,
             variables,
             variable_definitions,
         )?;
@@ -1019,13 +1004,12 @@ pub enum FunctionSelection {
 
 fn restrict_allowed_arguments<'a, T>(
     arg_names: &[&str],
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
 ) -> Result<(), String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let extra_keys: Vec<&str> = query_field
-        .arguments
+    let extra_keys: Vec<&str> = arguments
         .iter()
         .filter(|(input_arg_name, _)| !arg_names.contains(&input_arg_name.as_ref()))
         .map(|(name, _)| name.as_ref())
@@ -1040,20 +1024,15 @@ where
 /// Reads the "filter" argument
 fn read_argument_filter<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<FilterBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let validated: gson::Value = read_argument(
-        "filter",
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )?;
+    let validated: gson::Value =
+        read_argument("filter", field, arguments, variables, variable_definitions)?;
 
     let filter_type = field
         .get_arg("filter")
@@ -1194,7 +1173,7 @@ fn create_filter_builder_elem(
 /// Reads the "orderBy" argument. Auto-appends the primary key
 fn read_argument_order_by<'a, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<OrderByBuilder, String>
@@ -1202,13 +1181,8 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     // [{"id": "DescNullsLast"}]
-    let validated: gson::Value = read_argument(
-        "orderBy",
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )?;
+    let validated: gson::Value =
+        read_argument("orderBy", field, arguments, variables, variable_definitions)?;
 
     // [<Table>OrderBy!]
     let order_type: OrderByEntityType = match field
@@ -1290,20 +1264,15 @@ where
 fn read_argument_cursor<'a, T>(
     arg_name: &str,
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    arguments: &[(T::Value, Value<'a, T>)],
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Option<Cursor>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let validated: gson::Value = read_argument(
-        arg_name,
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )?;
+    let validated: gson::Value =
+        read_argument(arg_name, field, arguments, variables, variable_definitions)?;
     let _: Scalar = match field
         .get_arg(arg_name)
         .unwrap_or_else(|| panic!("failed to get {arg_name} argument"))
@@ -1327,24 +1296,21 @@ where
     }
 }
 
-pub fn to_connection_builder<'a, T>(
+pub fn to_connection_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     extra_allowed_args: &[&str],
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<ConnectionBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
     let type_ = type_.return_type();
-    let type_name = type_
-        .name()
-        .ok_or("Encountered type without name in connection builder")?;
     let field_map = field_map(type_);
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match &type_ {
         __Type::Connection(xtype) => {
@@ -1353,11 +1319,16 @@ where
                 "first", "last", "before", "after", "offset", "filter", "orderBy",
             ];
             allowed_args.extend(extra_allowed_args);
-            restrict_allowed_arguments(&allowed_args, query_field)?;
+            restrict_allowed_arguments(&allowed_args, &query_field.arguments)?;
 
             // TODO: only one of first/last, before/after provided
-            let first: gson::Value =
-                read_argument("first", field, query_field, variables, variable_definitions)?;
+            let first: gson::Value = read_argument(
+                "first",
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
             let first: Option<u64> = match first {
                 gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
@@ -1369,8 +1340,13 @@ where
                 }
             };
 
-            let last: gson::Value =
-                read_argument("last", field, query_field, variables, variable_definitions)?;
+            let last: gson::Value = read_argument(
+                "last",
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
             let last: Option<u64> = match last {
                 gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
@@ -1385,7 +1361,7 @@ where
             let offset: gson::Value = read_argument(
                 "offset",
                 field,
-                query_field,
+                &query_field.arguments,
                 variables,
                 variable_definitions,
             )?;
@@ -1412,12 +1388,17 @@ where
             let before: Option<Cursor> = read_argument_cursor(
                 "before",
                 field,
-                query_field,
+                &query_field.arguments,
                 variables,
                 variable_definitions,
             )?;
-            let after: Option<Cursor> =
-                read_argument_cursor("after", field, query_field, variables, variable_definitions)?;
+            let after: Option<Cursor> = read_argument_cursor(
+                "after",
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
 
             // Validate compatible input arguments
             if first.is_some() && last.is_some() {
@@ -1433,22 +1414,25 @@ where
                 return Err("\"offset\" may only be used with \"first\" and \"after\"".to_string());
             }
 
-            let filter: FilterBuilder =
-                read_argument_filter(field, query_field, variables, variable_definitions)?;
-            let order_by: OrderByBuilder =
-                read_argument_order_by(field, query_field, variables, variable_definitions)?;
+            let filter: FilterBuilder = read_argument_filter(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
+            let order_by: OrderByBuilder = read_argument_order_by(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
 
             let mut builder_fields: Vec<ConnectionSelection> = vec![];
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-                variables,
-            )?;
+            let selection_fields = &query_field.children;
 
             for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
+                match field_map.get(selection_field.name) {
                     None => return Err("unknown field in connection".to_string()),
                     Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
                         __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
@@ -1458,19 +1442,16 @@ where
                             variables,
                             variable_definitions,
                         )?),
-                        __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
-                            f,
-                            selection_field,
-                            fragment_definitions,
-                            variables,
-                        )?),
+                        __Type::PageInfo(_) => {
+                            ConnectionSelection::PageInfo(to_page_info_builder(f, selection_field)?)
+                        }
 
                         _ => match f.name().as_ref() {
                             "totalCount" => ConnectionSelection::TotalCount {
-                                alias: alias_or_name(selection_field),
+                                alias: selection_field.response_key(),
                             },
                             "__typename" => ConnectionSelection::Typename {
-                                alias: alias_or_name(selection_field),
+                                alias: selection_field.response_key(),
                                 typename: xtype.name().expect("connection type should have a name"),
                             },
                             _ => return Err("unexpected field type on connection".to_string()),
@@ -1502,52 +1483,41 @@ where
     }
 }
 
-fn to_page_info_builder<'a, T>(
+fn to_page_info_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
-    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
-    variables: &serde_json::Value,
+    query_field: &ExpandedField<'a, T>,
 ) -> Result<PageInfoBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let type_name = type_.name().ok_or(format!(
-        "Encountered type without name in page info builder: {:?}",
-        type_
-    ))?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match type_ {
         __Type::PageInfo(xtype) => {
             let mut builder_fields: Vec<PageInfoSelection> = vec![];
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-                variables,
-            )?;
+            let selection_fields = &query_field.children;
 
             for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
+                match field_map.get(selection_field.name) {
                     None => return Err("unknown field in pageInfo".to_string()),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
                         "startCursor" => PageInfoSelection::StartCursor {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "endCursor" => PageInfoSelection::EndCursor {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "hasPreviousPage" => PageInfoSelection::HasPreviousPage {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "hasNextPage" => PageInfoSelection::HasNextPage {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                         },
                         "__typename" => PageInfoSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                             typename: xtype.name().expect("page info type should have a name"),
                         },
                         _ => return Err("unexpected field type on pageInfo".to_string()),
@@ -1563,37 +1533,28 @@ where
     }
 }
 
-fn to_edge_builder<'a, T>(
+fn to_edge_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<EdgeBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
-    let type_name = type_.name().ok_or(format!(
-        "Encountered type without name in edge builder: {:?}",
-        type_
-    ))?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     match type_ {
         __Type::Edge(xtype) => {
             let mut builder_fields = vec![];
 
-            let selection_fields = normalize_selection_set(
-                &query_field.selection_set,
-                fragment_definitions,
-                &type_name,
-                variables,
-            )?;
+            let selection_fields = &query_field.children;
 
             for selection_field in selection_fields {
-                match field_map.get(selection_field.name.as_ref()) {
+                match field_map.get(selection_field.name) {
                     None => return Err("unknown field in edge".to_string()),
                     Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
                         __Type::Node(_) => {
@@ -1609,10 +1570,10 @@ where
                         }
                         _ => match f.name().as_ref() {
                             "cursor" => EdgeSelection::Cursor {
-                                alias: alias_or_name(selection_field),
+                                alias: selection_field.response_key(),
                             },
                             "__typename" => EdgeSelection::Typename {
-                                alias: alias_or_name(selection_field),
+                                alias: selection_field.response_key(),
                                 typename: xtype.name().expect("edge type should have a name"),
                             },
                             _ => return Err("unexpected field type on edge".to_string()),
@@ -1629,32 +1590,36 @@ where
     }
 }
 
-pub fn to_node_builder<'a, T>(
+pub fn to_node_builder<'a, 'b, T>(
     field: &__Field,
-    query_field: &graphql_parser::query::Field<'a, T>,
+    query_field: &ExpandedField<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
     extra_allowed_args: &[&str],
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<NodeBuilder, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     let type_ = field.type_().unmodified_type();
 
-    let alias = alias_or_name(query_field);
+    let alias = query_field.response_key();
 
     let xtype: NodeType = match type_.return_type() {
         __Type::Node(xtype) => {
-            restrict_allowed_arguments(extra_allowed_args, query_field)?;
+            restrict_allowed_arguments(extra_allowed_args, &query_field.arguments)?;
             xtype.clone()
         }
         __Type::NodeInterface(node_interface) => {
-            restrict_allowed_arguments(&["nodeId"], query_field)?;
+            restrict_allowed_arguments(&["nodeId"], &query_field.arguments)?;
             // The nodeId argument is only valid on the entrypoint field for Node
             // relationships to "node" e.g. within edges, do not have any arguments
-            let node_id: NodeIdInstance =
-                read_argument_node_id(field, query_field, variables, variable_definitions)?;
+            let node_id: NodeIdInstance = read_argument_node_id(
+                field,
+                &query_field.arguments,
+                variables,
+                variable_definitions,
+            )?;
 
             let possible_types: Vec<__Type> = node_interface.possible_types().unwrap_or(vec![]);
             let xtype = possible_types.iter().find_map(|x| match x {
@@ -1691,38 +1656,32 @@ where
     let mut builder_fields = vec![];
     let mut allowed_args = vec!["nodeId"];
     allowed_args.extend(extra_allowed_args);
-    restrict_allowed_arguments(&allowed_args, query_field)?;
+    restrict_allowed_arguments(&allowed_args, &query_field.arguments)?;
 
     // The nodeId argument is only valid on the entrypoint field for Node
     // relationships to "node" e.g. within edges, do not have any arguments
     let node_id: Option<NodeIdInstance> = match field.get_arg("nodeId").is_some() {
         true => Some(read_argument_node_id(
             field,
-            query_field,
+            &query_field.arguments,
             variables,
             variable_definitions,
         )?),
         false => None,
     };
 
-    let selection_fields = normalize_selection_set(
-        &query_field.selection_set,
-        fragment_definitions,
-        &type_name,
-        variables,
-    )?;
+    let selection_fields = &query_field.children;
 
     for selection_field in selection_fields {
-        match field_map.get(selection_field.name.as_ref()) {
+        match field_map.get(selection_field.name) {
             None => {
                 return Err(format!(
                     "Unknown field '{}' on type '{}'",
-                    selection_field.name.as_ref(),
-                    &type_name
+                    selection_field.name, &type_name
                 ))
             }
             Some(f) => {
-                let alias = alias_or_name(selection_field);
+                let alias = selection_field.response_key();
 
                 let node_selection = match &f.sql_type {
                     Some(node_sql_type) => match node_sql_type {
@@ -1777,7 +1736,7 @@ where
                     },
                     _ => match f.name().as_ref() {
                         "__typename" => NodeSelection::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                             typename: xtype.name().expect("node type should have a name"),
                         },
                         _ => match f.type_().unmodified_type() {
@@ -1973,22 +1932,15 @@ pub struct __SchemaBuilder {
 }
 
 impl __Schema {
-    pub fn to_enum_value_builder<'a, T>(
+    pub fn to_enum_value_builder<'a, 'b, T>(
         &self,
         enum_value: &__EnumValue,
-        query_field: &graphql_parser::query::Field<'a, T>,
-        fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
-        variables: &serde_json::Value,
+        query_field: &ExpandedField<'a, T>,
     ) -> Result<__EnumValueBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
-        let selection_fields = normalize_selection_set(
-            &query_field.selection_set,
-            fragment_definitions,
-            &"__EnumValue".to_string(),
-            variables,
-        )?;
+        let selection_fields = &query_field.children;
 
         let mut builder_fields = vec![];
 
@@ -2001,7 +1953,7 @@ impl __Schema {
                 "isDeprecated" => __EnumValueField::IsDeprecated,
                 "deprecationReason" => __EnumValueField::DeprecationReason,
                 "__typename" => __EnumValueField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: selection_field.response_key(),
                     typename: enum_value.name(),
                 },
                 _ => {
@@ -2013,7 +1965,7 @@ impl __Schema {
             };
 
             builder_fields.push(__EnumValueSelection {
-                alias: alias_or_name(selection_field),
+                alias: selection_field.response_key(),
                 selection: __enum_value_field,
             });
         }
@@ -2024,23 +1976,18 @@ impl __Schema {
         })
     }
 
-    pub fn to_input_value_builder<'a, T>(
+    pub fn to_input_value_builder<'a, 'b, T>(
         &self,
         input_value: &__InputValue,
-        query_field: &graphql_parser::query::Field<'a, T>,
+        query_field: &ExpandedField<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__InputValueBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
-        let selection_fields = normalize_selection_set(
-            &query_field.selection_set,
-            fragment_definitions,
-            &"__InputValue".to_string(),
-            variables,
-        )?;
+        let selection_fields = &query_field.children;
 
         let mut builder_fields = vec![];
 
@@ -2066,7 +2013,7 @@ impl __Schema {
                 "isDeprecated" => __InputValueField::IsDeprecated,
                 "deprecationReason" => __InputValueField::DeprecationReason,
                 "__typename" => __InputValueField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: selection_field.response_key(),
                     typename: input_value.name(),
                 },
                 _ => {
@@ -2078,7 +2025,7 @@ impl __Schema {
             };
 
             builder_fields.push(__InputValueSelection {
-                alias: alias_or_name(selection_field),
+                alias: selection_field.response_key(),
                 selection: __input_value_field,
             });
         }
@@ -2089,23 +2036,18 @@ impl __Schema {
         })
     }
 
-    pub fn to_field_builder<'a, T>(
+    pub fn to_field_builder<'a, 'b, T>(
         &self,
         field: &__Field,
-        query_field: &graphql_parser::query::Field<'a, T>,
+        query_field: &ExpandedField<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__FieldBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
-        let selection_fields = normalize_selection_set(
-            &query_field.selection_set,
-            fragment_definitions,
-            &"__Field".to_string(),
-            variables,
-        )?;
+        let selection_fields = &query_field.children;
 
         let mut builder_fields = vec![];
 
@@ -2146,14 +2088,14 @@ impl __Schema {
                 "isDeprecated" => __FieldField::IsDeprecated,
                 "deprecationReason" => __FieldField::DeprecationReason,
                 "__typename" => __FieldField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: selection_field.response_key(),
                     typename: field.name(),
                 },
                 _ => return Err(format!("unknown field in __Field {}", type_field_name)),
             };
 
             builder_fields.push(__FieldSelection {
-                alias: alias_or_name(selection_field),
+                alias: selection_field.response_key(),
                 selection: __field_field,
             });
         }
@@ -2164,24 +2106,29 @@ impl __Schema {
         })
     }
 
-    pub fn to_type_builder<'a, T>(
+    pub fn to_type_builder<'a, 'b, T>(
         &self,
         field: &__Field,
-        query_field: &graphql_parser::query::Field<'a, T>,
+        query_field: &ExpandedField<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         mut type_name: Option<String>,
         variables: &serde_json::Value,
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<Option<__TypeBuilder>, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
         if field.type_.unmodified_type() != __Type::__Type(__TypeType {}) {
             return Err("can not build query for non-__type type".to_string());
         }
 
-        let name_arg_result: Result<gson::Value, String> =
-            read_argument("name", field, query_field, variables, variable_definitions);
+        let name_arg_result: Result<gson::Value, String> = read_argument(
+            "name",
+            field,
+            &query_field.arguments,
+            variables,
+            variable_definitions,
+        );
         let name_arg: Option<String> = match name_arg_result {
             // This builder (too) is overloaded and the arg is not present in all uses
             Err(_) => None,
@@ -2217,35 +2164,30 @@ impl __Schema {
         }
     }
 
-    pub fn to_type_builder_from_type<'a, T>(
+    pub fn to_type_builder_from_type<'a, 'b, T>(
         &self,
         type_: &__Type,
-        query_field: &graphql_parser::query::Field<'a, T>,
+        query_field: &ExpandedField<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__TypeBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
         let field_map = field_map(&__Type::__Type(__TypeType {}));
 
-        let selection_fields = normalize_selection_set(
-            &query_field.selection_set,
-            fragment_definitions,
-            &"__Type".to_string(),
-            variables,
-        )?;
+        let selection_fields = &query_field.children;
 
         let mut builder_fields = vec![];
 
         for selection_field in selection_fields {
-            let type_field_name = selection_field.name.as_ref();
+            let type_field_name = selection_field.name;
             // ex: type_field_field  = 'name'
             match field_map.get(type_field_name) {
                 None => return Err(format!("unknown field on __Type: {}", type_field_name)),
                 Some(f) => builder_fields.push(__TypeSelection {
-                    alias: alias_or_name(selection_field),
+                    alias: selection_field.response_key(),
                     selection: match f.name().as_str() {
                         "kind" => __TypeField::Kind,
                         "name" => __TypeField::Name,
@@ -2326,12 +2268,8 @@ impl __Schema {
                                 Some(enum_values) => {
                                     let mut f_builders: Vec<__EnumValueBuilder> = vec![];
                                     for enum_value in &enum_values {
-                                        let f_builder = self.to_enum_value_builder(
-                                            enum_value,
-                                            selection_field,
-                                            fragment_definitions,
-                                            variables,
-                                        )?;
+                                        let f_builder = self
+                                            .to_enum_value_builder(enum_value, selection_field)?;
                                         f_builders.push(f_builder)
                                     }
                                     Some(f_builders)
@@ -2391,7 +2329,7 @@ impl __Schema {
                             __TypeField::OfType(unwrapped_type_builder)
                         }
                         "__typename" => __TypeField::Typename {
-                            alias: alias_or_name(selection_field),
+                            alias: selection_field.response_key(),
                             typename: type_.name(),
                         },
                         _ => {
@@ -2411,23 +2349,18 @@ impl __Schema {
         })
     }
 
-    pub fn to_directive_builder<'a, T>(
+    pub fn to_directive_builder<'a, 'b, T>(
         &self,
         directive: &__Directive,
-        query_field: &graphql_parser::query::Field<'a, T>,
+        query_field: &ExpandedField<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__DirectiveBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
-        let selection_fields = normalize_selection_set(
-            &query_field.selection_set,
-            fragment_definitions,
-            &__Directive::TYPE.to_string(),
-            variables,
-        )?;
+        let selection_fields = &query_field.children;
 
         let mut builder_fields = vec![];
 
@@ -2456,7 +2389,7 @@ impl __Schema {
                 }
                 "isRepeatable" => __DirectiveField::IsRepeatable,
                 "__typename" => __DirectiveField::Typename {
-                    alias: alias_or_name(selection_field),
+                    alias: selection_field.response_key(),
                     typename: __Directive::TYPE.to_string(),
                 },
                 _ => {
@@ -2469,7 +2402,7 @@ impl __Schema {
             };
 
             builder_fields.push(__DirectiveSelection {
-                alias: alias_or_name(selection_field),
+                alias: selection_field.response_key(),
                 selection: directive_field,
             });
         }
@@ -2480,42 +2413,34 @@ impl __Schema {
         })
     }
 
-    pub fn to_schema_builder<'a, T>(
+    pub fn to_schema_builder<'a, 'b, T>(
         &self,
         field: &__Field,
-        query_field: &graphql_parser::query::Field<'a, T>,
+        query_field: &ExpandedField<'a, T>,
         fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
         variables: &serde_json::Value,
         variable_definitions: &Vec<VariableDefinition<'a, T>>,
     ) -> Result<__SchemaBuilder, String>
     where
-        T: Text<'a> + Eq + AsRef<str>,
+        T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
     {
         let type_ = field.type_.unmodified_type();
-        let type_name = type_
-            .name()
-            .ok_or("Encountered type without name in schema builder")?;
         let field_map = field_map(&type_);
 
         match type_ {
             __Type::__Schema(_) => {
                 let mut builder_fields: Vec<__SchemaSelection> = vec![];
 
-                let selection_fields = normalize_selection_set(
-                    &query_field.selection_set,
-                    fragment_definitions,
-                    &type_name,
-                    variables,
-                )?;
+                let selection_fields = &query_field.children;
 
                 for selection_field in selection_fields {
-                    let field_name = selection_field.name.as_ref();
+                    let field_name = selection_field.name;
 
                     match field_map.get(field_name) {
                         None => return Err(format!("unknown field in __Schema: {}", field_name)),
                         Some(f) => {
                             builder_fields.push(__SchemaSelection {
-                                alias: alias_or_name(selection_field),
+                                alias: selection_field.response_key(),
                                 selection: match f.name().as_str() {
                                     "types" => {
                                         let builders = self
@@ -2586,7 +2511,7 @@ impl __Schema {
                                         __SchemaField::Directives(builders)
                                     }
                                     "__typename" => __SchemaField::Typename {
-                                        alias: alias_or_name(selection_field),
+                                        alias: selection_field.response_key(),
                                         typename: field.name(),
                                     },
                                     _ => {

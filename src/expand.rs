@@ -25,7 +25,7 @@ pub struct ExpandedField<'a, T: Text<'a>> {
 
 impl<'a, 'b, T> ExpandedField<'a, T>
 where
-    T: Text<'a, Value = &'b str> + Eq + AsRef<str> + Clone,
+    T: Text<'a, Value = &'b str> + Eq + AsRef<str>,
 {
     pub fn response_key(&self) -> String {
         (self.alias.as_ref().unwrap_or(&self.name)).to_string()
