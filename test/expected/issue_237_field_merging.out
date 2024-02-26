@@ -194,6 +194,72 @@ begin;
     select jsonb_pretty(graphql.resolve($$ {
         accountCollection {
             edges {
+                ... on AccountEdge {
+                    cursor
+                    cursor
+                    node {
+                        id
+                        email
+                    }
+                }
+                ... on AccountEdge {
+                    cursor
+                    cursor
+                    node {
+                        id
+                        email
+                    }
+                }
+                ... cursorsFragment
+                ... anotherCursorsFragment
+                cursor
+                cursor
+                node {
+                    id
+                    email
+                }
+            }
+        }
+    }
+    fragment cursorsFragment on AccountEdge {
+        cursor
+        cursor
+        node {
+            id
+            email
+        }
+    }
+    fragment anotherCursorsFragment on AccountEdge {
+        cursor
+        cursor
+        node {
+            id
+            email
+        }
+    }
+    $$));
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     },                           +
+                     "cursor": "WzFd"             +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection {
+            edges {
                 cursor
                 cursor
                 node {
@@ -219,7 +285,6 @@ begin;
             }
         }
     }
-
     $$));
                    jsonb_pretty                    
 ---------------------------------------------------

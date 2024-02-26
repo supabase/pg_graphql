@@ -127,6 +127,54 @@ begin;
     select jsonb_pretty(graphql.resolve($$ {
         accountCollection {
             edges {
+                ... on AccountEdge {
+                    cursor
+                    cursor
+                    node {
+                        id
+                        email
+                    }
+                }
+                ... on AccountEdge {
+                    cursor
+                    cursor
+                    node {
+                        id
+                        email
+                    }
+                }
+                ... cursorsFragment
+                ... anotherCursorsFragment
+                cursor
+                cursor
+                node {
+                    id
+                    email
+                }
+            }
+        }
+    }
+    fragment cursorsFragment on AccountEdge {
+        cursor
+        cursor
+        node {
+            id
+            email
+        }
+    }
+    fragment anotherCursorsFragment on AccountEdge {
+        cursor
+        cursor
+        node {
+            id
+            email
+        }
+    }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection {
+            edges {
                 cursor
                 cursor
                 node {
@@ -152,7 +200,6 @@ begin;
             }
         }
     }
-
     $$));
 
 rollback;
