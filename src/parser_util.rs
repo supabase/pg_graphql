@@ -32,7 +32,7 @@ where
             Err(err) => return Err(err),
         }
     }
-    let selections = merge(&selections)?;
+    let selections = merge(selections)?;
     Ok(selections)
 }
 

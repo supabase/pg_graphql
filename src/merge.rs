@@ -3,25 +3,25 @@ use indexmap::IndexMap;
 
 use crate::parser_util::alias_or_name;
 
-pub fn merge<'a, 'b, T>(fields: &[Field<'a, T>]) -> Result<Vec<Field<'a, T>>, String>
+pub fn merge<'a, 'b, T>(fields: Vec<Field<'a, T>>) -> Result<Vec<Field<'a, T>>, String>
 where
-    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T: Text<'a> + Eq + AsRef<str>,
 {
     let mut merged: IndexMap<String, Field<'a, T>> = IndexMap::new();
 
     for current_field in fields {
-        let response_key = alias_or_name(current_field);
+        let response_key = alias_or_name(&current_field);
         match merged.get_mut(&response_key) {
             Some(existing_field) => {
-                if can_merge(current_field, existing_field)? {
+                if can_merge(&current_field, existing_field)? {
                     existing_field
                         .selection_set
                         .items
-                        .extend(current_field.selection_set.items.iter().cloned());
+                        .extend(current_field.selection_set.items);
                 }
             }
             None => {
-                merged.insert(response_key, (*current_field).clone());
+                merged.insert(response_key, current_field);
             }
         }
     }
