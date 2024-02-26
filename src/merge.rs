@@ -13,23 +13,12 @@ where
         let response_key = alias_or_name(current_field);
         match merged.get_mut(&response_key) {
             Some(existing_field) => {
-                if current_field.name != existing_field.name {
-                    return Err(format!(
-                        "Fields `{}` and `{}` are different",
-                        current_field.name.as_ref(),
-                        existing_field.name.as_ref(),
-                    ));
+                if can_merge(current_field, existing_field)? {
+                    existing_field
+                        .selection_set
+                        .items
+                        .extend(current_field.selection_set.items.iter().cloned());
                 }
-                if !same_arguments(&current_field.arguments, &existing_field.arguments) {
-                    return Err(format!(
-                        "Two fields named `{}` have different arguments",
-                        current_field.name.as_ref(),
-                    ));
-                }
-                existing_field
-                    .selection_set
-                    .items
-                    .extend(current_field.selection_set.items.iter().cloned());
             }
             None => {
                 merged.insert(response_key, (*current_field).clone());
@@ -37,13 +26,30 @@ where
         }
     }
 
-    let mut fields = vec![];
-
-    for (_, field) in merged {
-        fields.push(field);
-    }
+    let fields = merged.into_iter().map(|(_, field)| field).collect();
 
     Ok(fields)
+}
+
+fn can_merge<'a, T>(field_a: &Field<'a, T>, field_b: &Field<'a, T>) -> Result<bool, String>
+where
+    T: Text<'a> + Eq + AsRef<str>,
+{
+    if field_a.name != field_b.name {
+        return Err(format!(
+            "Fields `{}` and `{}` are different",
+            field_a.name.as_ref(),
+            field_b.name.as_ref(),
+        ));
+    }
+    if !same_arguments(&field_a.arguments, &field_b.arguments) {
+        return Err(format!(
+            "Two fields named `{}` have different arguments",
+            field_a.name.as_ref(),
+        ));
+    }
+
+    Ok(true)
 }
 
 fn same_arguments<'a, 'b, T>(
@@ -51,7 +57,7 @@ fn same_arguments<'a, 'b, T>(
     arguments_b: &[(T::Value, Value<'a, T>)],
 ) -> bool
 where
-    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T: Text<'a> + Eq + AsRef<str>,
 {
     if arguments_a.len() != arguments_b.len() {
         return false;
