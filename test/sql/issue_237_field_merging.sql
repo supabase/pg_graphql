@@ -202,4 +202,37 @@ begin;
     }
     $$));
 
+    select graphql.encode('["public", "account", 1]'::jsonb);
+    select graphql.encode('["public", "blog", 1]'::jsonb);
+
+    select jsonb_pretty(graphql.resolve($$ {
+        node(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd") {
+            nodeId
+            ... on Account {
+                id
+                str: email
+            }
+            ... on Blog {
+                id
+                str: name
+            }
+        }
+    }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$ {
+        node(nodeId: "WyJwdWJsaWMiLCAiYmxvZyIsIDFd") {
+            nodeId
+            ... on Account {
+                id
+                str: email
+            }
+            ... on Blog {
+                id
+                str: name
+            }
+        }
+    }
+    $$));
+
 rollback;
