@@ -3,6 +3,13 @@ use indexmap::IndexMap;
 
 use crate::parser_util::alias_or_name;
 
+/// Merges duplicates in a vector of fields. The fields in the vector are added to a
+/// map from field name to field. If a field with the same name already exists in the
+/// map, the existing and new fields' children are combined into the existing field's
+/// children. These children will be merged later when they are normalized.
+///
+/// The map is an `IndexMap` to ensure iteration order of the fields is preserved.
+/// This prevents tests from being flaky due to field order changing between test runs.
 pub fn merge<'a, 'b, T>(fields: Vec<Field<'a, T>>) -> Result<Vec<Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str>,
