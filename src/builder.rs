@@ -5,6 +5,7 @@ use crate::sql_types::*;
 use graphql_parser::query::*;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -264,6 +265,7 @@ pub fn to_insert_builder<'a, T>(
 ) -> Result<InsertBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_
@@ -429,6 +431,7 @@ pub fn to_update_builder<'a, T>(
 ) -> Result<UpdateBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_
@@ -534,6 +537,7 @@ pub fn to_delete_builder<'a, T>(
 ) -> Result<DeleteBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_
@@ -643,6 +647,7 @@ pub fn to_function_call_builder<'a, T>(
 ) -> Result<FunctionCallBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let alias = alias_or_name(query_field);
@@ -1337,6 +1342,7 @@ pub fn to_connection_builder<'a, T>(
 ) -> Result<ConnectionBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let type_ = type_.return_type();
@@ -1510,6 +1516,7 @@ fn to_page_info_builder<'a, T>(
 ) -> Result<PageInfoBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_.name().ok_or(format!(
@@ -1572,6 +1579,7 @@ fn to_edge_builder<'a, T>(
 ) -> Result<EdgeBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
     let type_name = type_.name().ok_or(format!(
@@ -1639,6 +1647,7 @@ pub fn to_node_builder<'a, T>(
 ) -> Result<NodeBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
 
@@ -1982,6 +1991,7 @@ impl __Schema {
     ) -> Result<__EnumValueBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -2034,6 +2044,7 @@ impl __Schema {
     ) -> Result<__InputValueBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -2099,6 +2110,7 @@ impl __Schema {
     ) -> Result<__FieldBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -2175,6 +2187,7 @@ impl __Schema {
     ) -> Result<Option<__TypeBuilder>, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         if field.type_.unmodified_type() != __Type::__Type(__TypeType {}) {
             return Err("can not build query for non-__type type".to_string());
@@ -2227,6 +2240,7 @@ impl __Schema {
     ) -> Result<__TypeBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         let field_map = field_map(&__Type::__Type(__TypeType {}));
 
@@ -2421,6 +2435,7 @@ impl __Schema {
     ) -> Result<__DirectiveBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         let selection_fields = normalize_selection_set(
             &query_field.selection_set,
@@ -2490,6 +2505,7 @@ impl __Schema {
     ) -> Result<__SchemaBuilder, String>
     where
         T: Text<'a> + Eq + AsRef<str> + Clone,
+        T::Value: Hash,
     {
         let type_ = field.type_.unmodified_type();
         let type_name = type_

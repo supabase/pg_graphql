@@ -2,6 +2,7 @@ use crate::graphql::{EnumSource, __InputValue, __Type, ___Type};
 use crate::{gson, merge::merge};
 use graphql_parser::query::*;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 pub fn alias_or_name<'a, T>(query_field: &graphql_parser::query::Field<'a, T>) -> String
 where
@@ -22,6 +23,7 @@ pub fn normalize_selection_set<'a, 'b, T>(
 ) -> Result<Vec<Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let mut selections: Vec<Field<'a, T>> = vec![];
 
@@ -139,6 +141,7 @@ pub fn normalize_selection<'a, 'b, T>(
 ) -> Result<Vec<Field<'a, T>>, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let mut selections: Vec<Field<'a, T>> = vec![];
 

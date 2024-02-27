@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::hash::Hash;
 
 use crate::builder::*;
 use crate::graphql::*;
@@ -23,6 +24,7 @@ pub fn resolve_inner<'a, T>(
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     match variables {
         serde_json::Value::Object(_) => (),
@@ -131,6 +133,7 @@ fn resolve_query<'a, 'b, T>(
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_selection_set(
@@ -151,6 +154,7 @@ fn resolve_selection_set<'a, 'b, T>(
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     use crate::graphql::*;
 
@@ -338,6 +342,7 @@ fn resolve_mutation<'a, 'b, T>(
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     let variable_definitions = &query.variable_definitions;
     resolve_mutation_selection_set(
@@ -358,6 +363,7 @@ fn resolve_mutation_selection_set<'a, 'b, T>(
 ) -> GraphQLResponse
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
     use crate::graphql::*;
 
