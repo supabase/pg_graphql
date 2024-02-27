@@ -1,0 +1,374 @@
+begin;
+    -- https://github.com/supabase/pg_graphql/issues/237
+    savepoint a;
+    create table blog_post(
+        id int primary key,
+        a text,
+        b text,
+        c text,
+        d text,
+        e text,
+        f text
+    );
+    insert into public.blog_post
+    values (1, 'a', 'b', 'c', 'd', 'e', 'f');
+    select jsonb_pretty(
+      graphql.resolve($$
+        query {
+          blogPostCollection {
+            edges {
+              node {
+                a
+                ...c_query
+                ... @include(if: true) {
+                  e
+                }
+              }
+            }
+          }
+          blogPostCollection {
+            edges {
+              node {
+                b
+                ...d_query
+                ... @include(if: true) {
+                  f
+                }
+              }
+            }
+          }
+        }
+
+        fragment c_query on BlogPost {
+          c
+        }
+
+        fragment d_query on BlogPost {
+          d
+        }
+      $$)
+    );
+           jsonb_pretty            
+-----------------------------------
+ {                                +
+     "data": {                    +
+         "blogPostCollection": {  +
+             "edges": [           +
+                 {                +
+                     "node": {    +
+                         "a": "a",+
+                         "b": "b",+
+                         "c": "c",+
+                         "d": "d",+
+                         "e": "e",+
+                         "f": "f" +
+                     }            +
+                 }                +
+             ]                    +
+         }                        +
+     }                            +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    create table account(
+        id serial primary key,
+        email varchar(255) not null
+    );
+    insert into public.account(email)
+    values
+        ('aardvark@x.com');
+    create table blog(
+        id serial primary key,
+        owner_id integer not null references account(id),
+        name varchar(255) not null
+    );
+    insert into blog(owner_id, name)
+    values
+        (1, 'A: Blog 1');
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection {
+            edges {
+                node {
+                    email
+                    email
+                    id_alias: id
+                    id_alias: id
+                }
+            }
+        }
+    }$$));
+                    jsonb_pretty                    
+----------------------------------------------------
+ {                                                 +
+     "data": {                                     +
+         "accountCollection": {                    +
+             "edges": [                            +
+                 {                                 +
+                     "node": {                     +
+                         "email": "aardvark@x.com",+
+                         "id_alias": 1             +
+                     }                             +
+                 }                                 +
+             ]                                     +
+         }                                         +
+     }                                             +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection(first: 1) {
+            edges {
+                node {
+                    id
+                    email
+                }
+            }
+        }
+        accountCollection(first: 1) {
+            edges {
+                node {
+                    id
+                    email
+                }
+            }
+        }
+    }$$));
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection(first: $count) {
+            edges {
+                node {
+                    id
+                    email
+                }
+            }
+        }
+        accountCollection(first: $count) {
+            edges {
+                node {
+                    id
+                    email
+                }
+            }
+        }
+    }$$,
+    jsonb_build_object(
+        'count', 1
+    )));
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     }                            +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection {
+            edges {
+                ... on AccountEdge {
+                    cursor
+                    cursor
+                    node {
+                        id
+                        email
+                    }
+                }
+                ... on AccountEdge {
+                    cursor
+                    cursor
+                    node {
+                        id
+                        email
+                    }
+                }
+                ... cursorsFragment
+                ... anotherCursorsFragment
+                cursor
+                cursor
+                node {
+                    id
+                    email
+                }
+            }
+        }
+    }
+    fragment cursorsFragment on AccountEdge {
+        cursor
+        cursor
+        node {
+            id
+            email
+        }
+    }
+    fragment anotherCursorsFragment on AccountEdge {
+        cursor
+        cursor
+        node {
+            id
+            email
+        }
+    }
+    $$));
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     },                           +
+                     "cursor": "WzFd"             +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        accountCollection {
+            edges {
+                cursor
+                cursor
+                node {
+                    id
+                    email
+                }
+                node {
+                    id
+                    email
+                }
+            }
+            edges {
+                cursor
+                cursor
+                node {
+                    id
+                    email
+                }
+                node {
+                    id
+                    email
+                }
+            }
+        }
+    }
+    $$));
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "accountCollection": {                   +
+             "edges": [                           +
+                 {                                +
+                     "node": {                    +
+                         "id": 1,                 +
+                         "email": "aardvark@x.com"+
+                     },                           +
+                     "cursor": "WzFd"             +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
+(1 row)
+
+    select graphql.encode('["public", "account", 1]'::jsonb);
+              encode              
+----------------------------------
+ WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd
+(1 row)
+
+    select graphql.encode('["public", "blog", 1]'::jsonb);
+            encode            
+------------------------------
+ WyJwdWJsaWMiLCAiYmxvZyIsIDFd
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        node(nodeId: "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd") {
+            nodeId
+            ... on Account {
+                id
+                str: email
+            }
+            ... on Blog {
+                id
+                str: name
+            }
+        }
+    }
+    $$));
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "node": {                                       +
+             "id": 1,                                    +
+             "str": "aardvark@x.com",                    +
+             "nodeId": "WyJwdWJsaWMiLCAiYWNjb3VudCIsIDFd"+
+         }                                               +
+     }                                                   +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$ {
+        node(nodeId: "WyJwdWJsaWMiLCAiYmxvZyIsIDFd") {
+            nodeId
+            ... on Account {
+                id
+                str: email
+            }
+            ... on Blog {
+                id
+                str: name
+            }
+        }
+    }
+    $$));
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "node": {                                   +
+             "id": 1,                                +
+             "str": "A: Blog 1",                     +
+             "nodeId": "WyJwdWJsaWMiLCAiYmxvZyIsIDFd"+
+         }                                           +
+     }                                               +
+ }
+(1 row)
+
+rollback;

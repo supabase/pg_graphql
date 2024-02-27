@@ -1,7 +1,8 @@
 use crate::graphql::{EnumSource, __InputValue, __Type, ___Type};
-use crate::gson;
+use crate::{gson, merge::merge};
 use graphql_parser::query::*;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 pub fn alias_or_name<'a, T>(query_field: &graphql_parser::query::Field<'a, T>) -> String
 where
@@ -19,11 +20,12 @@ pub fn normalize_selection_set<'a, 'b, T>(
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
-) -> Result<Vec<&'b Field<'a, T>>, String>
+) -> Result<Vec<Field<'a, T>>, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
-    let mut selections: Vec<&'b Field<'a, T>> = vec![];
+    let mut selections: Vec<Field<'a, T>> = vec![];
 
     for selection in &selection_set.items {
         let sel = selection;
@@ -32,6 +34,7 @@ where
             Err(err) => return Err(err),
         }
     }
+    let selections = merge(selections)?;
     Ok(selections)
 }
 
@@ -135,11 +138,12 @@ pub fn normalize_selection<'a, 'b, T>(
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
-) -> Result<Vec<&'b Field<'a, T>>, String>
+) -> Result<Vec<Field<'a, T>>, String>
 where
-    T: Text<'a> + Eq + AsRef<str>,
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
 {
-    let mut selections: Vec<&Field<'a, T>> = vec![];
+    let mut selections: Vec<Field<'a, T>> = vec![];
 
     if selection_is_skipped(query_selection, variables)? {
         return Ok(selections);
@@ -147,7 +151,7 @@ where
 
     match query_selection {
         Selection::Field(field) => {
-            selections.push(field);
+            selections.push(field.clone());
         }
         Selection::FragmentSpread(fragment_spread) => {
             let frag_name = &fragment_spread.fragment_name;
@@ -180,7 +184,7 @@ where
                 variables,
             );
             match frag_selections {
-                Ok(sels) => selections.extend(sels.iter()),
+                Ok(sels) => selections.extend(sels),
                 Err(err) => return Err(err),
             };
         }
@@ -199,7 +203,7 @@ where
                     type_name,
                     variables,
                 )?;
-                selections.extend(infrag_selections.iter());
+                selections.extend(infrag_selections);
             }
         }
     }
