@@ -95,6 +95,8 @@ select
                     pg_type pt
                     left join pg_class tabs
                         on pt.typrelid = tabs.oid
+                    join search_path_oids spo
+                        on pt.typnamespace = spo.schema_oid or pt.typnamespace = 'pg_catalog'::regnamespace::oid
             ),
             jsonb_build_object()
         ),
@@ -111,6 +113,8 @@ select
                     pg_type pt
                     join pg_class tabs
                         on pt.typrelid = tabs.oid
+                    join search_path_oids spo
+                        on pt.typnamespace = spo.schema_oid or pt.typnamespace = 'pg_catalog'::regnamespace::oid
                 where
                     pt.typcategory = 'C'
                     and tabs.relkind = 'c'
