@@ -412,6 +412,8 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                                     .map(|val| GsonValue::String(val.clone()))
                                     .unwrap_or_else(|| value.clone()),
                                 EnumSource::FilterIs => value.clone(),
+                                // TODO(or): Do I need to check directives here?
+                                EnumSource::TableColumns(_e) => value.clone(),
                             }
                         }
                         None => return Err(format!("Invalid input for {} type", enum_name)),
