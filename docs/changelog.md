@@ -69,3 +69,4 @@
 - feature: improved descriptions for all internal error states
 
 ## master
+- bugfix: function arguments with a null default value were required instead of optional
