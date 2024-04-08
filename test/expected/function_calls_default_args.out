@@ -1,0 +1,181 @@
+begin;
+    create function func_with_null_defaults(
+        a smallint default null,
+        b integer default null,
+        c boolean default null,
+        d real default null,
+        e double precision default null,
+        f text default null,
+        g uuid default null
+    )
+        returns text language sql immutable
+    as $$ select a::text || b::text || c::text || d::text || e::text || f::text || g::text; $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcWithNullDefaults
+        }
+    $$));
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "funcWithNullDefaults": null+
+     }                               +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcWithNullDefaults(a: 1, b: 2, c: false, d: 1.1, e: 2.3, f: "f_arg", g: "8871277a-de9c-4156-b31f-5b4060001081")
+        }
+    $$));
+                                       jsonb_pretty                                       
+------------------------------------------------------------------------------------------
+ {                                                                                       +
+     "data": {                                                                           +
+         "funcWithNullDefaults": "12false1.12.3f_arg8871277a-de9c-4156-b31f-5b4060001081"+
+     }                                                                                   +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            funcWithNullDefaults(a: 1, c: false, e: 2.3, g: "8871277a-de9c-4156-b31f-5b4060001081")
+        }
+    $$));
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "funcWithNullDefaults": null+
+     }                               +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            query IntrospectionQuery {
+              __schema {
+                queryType {
+                  name
+                  fields {
+                    name
+                    args {
+                      name
+                      defaultValue
+                      type {
+                        kind
+                        name
+                        ofType {
+                            kind
+                            name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                       jsonb_pretty                        
+-----------------------------------------------------------
+ {                                                        +
+     "data": {                                            +
+         "__schema": {                                    +
+             "queryType": {                               +
+                 "name": "Query",                         +
+                 "fields": [                              +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "c",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Boolean",   +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "d",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Float",     +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "e",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Float",     +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "f",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "String",    +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "g",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "UUID",      +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             }                            +
+                         ],                               +
+                         "name": "funcWithNullDefaults"   +
+                     },                                   +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "nodeId",        +
+                                 "type": {                +
+                                     "kind": "NON_NULL",  +
+                                     "name": null,        +
+                                     "ofType": {          +
+                                         "kind": "SCALAR",+
+                                         "name": "ID"     +
+                                     }                    +
+                                 },                       +
+                                 "defaultValue": null     +
+                             }                            +
+                         ],                               +
+                         "name": "node"                   +
+                     }                                    +
+                 ]                                        +
+             }                                            +
+         }                                                +
+     }                                                    +
+ }
+(1 row)
+
+rollback;

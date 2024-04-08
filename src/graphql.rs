@@ -1373,12 +1373,24 @@ fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputVal
                 (t, arg_name, arg_default)
             })
         })
-        .map(|(arg_type, arg_name, arg_default)| __InputValue {
-            name_: schema.graphql_function_arg_name(func, arg_name),
-            type_: arg_type,
-            description: None,
-            default_value: arg_default,
-            sql_type: None,
+        .map(|(arg_type, arg_name, arg_default)| {
+            let default_value = if arg_default.is_some() {
+                let (default_value, is_null) = arg_default.unwrap();
+                if is_null {
+                    None
+                } else {
+                    Some(default_value)
+                }
+            } else {
+                None
+            };
+            __InputValue {
+                name_: schema.graphql_function_arg_name(func, arg_name),
+                type_: arg_type,
+                description: None,
+                default_value,
+                sql_type: None,
+            }
         })
         .collect()
 }
