@@ -1,4 +1,83 @@
 begin;
+    create function both_args_optional(
+        a smallint default null,
+        b integer default null
+    )
+        returns text language plpgsql immutable
+    as $$
+    begin
+
+        if a is null and b is null then
+            return 'both null';
+        end if;
+
+        if a is null then
+            return 'b = ' || b::text;
+        end if;
+
+        if b is null then
+            return 'a = ' || a::text;
+        end if;
+
+        return 'a = ' || a::text || ', b = ' || b::text;
+    end;
+    $$;
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional
+        }
+    $$));
+              jsonb_pretty               
+-----------------------------------------
+ {                                      +
+     "data": {                          +
+         "bothArgsOptional": "both null"+
+     }                                  +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional(a: 1)
+        }
+    $$));
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "bothArgsOptional": "a = 1"+
+     }                              +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional(b: 2)
+        }
+    $$));
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "bothArgsOptional": "b = 2"+
+     }                              +
+ }
+(1 row)
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional(a: 1, b: 2)
+        }
+    $$));
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "bothArgsOptional": "a = 1, b = 2"+
+     }                                     +
+ }
+(1 row)
+
     create function func_with_null_defaults(
         a smallint default null,
         b integer default null,
@@ -86,6 +165,29 @@ begin;
              "queryType": {                               +
                  "name": "Query",                         +
                  "fields": [                              +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             }                            +
+                         ],                               +
+                         "name": "bothArgsOptional"       +
+                     },                                   +
                      {                                    +
                          "args": [                        +
                              {                            +

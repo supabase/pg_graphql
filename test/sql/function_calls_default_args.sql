@@ -1,5 +1,53 @@
 begin;
 
+    create function both_args_optional(
+        a smallint default null,
+        b integer default null
+    )
+        returns text language plpgsql immutable
+    as $$
+    begin
+
+        if a is null and b is null then
+            return 'both null';
+        end if;
+
+        if a is null then
+            return 'b = ' || b::text;
+        end if;
+
+        if b is null then
+            return 'a = ' || a::text;
+        end if;
+
+        return 'a = ' || a::text || ', b = ' || b::text;
+    end;
+    $$;
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional(a: 1)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional(b: 2)
+        }
+    $$));
+
+    select jsonb_pretty(graphql.resolve($$
+        query {
+            bothArgsOptional(a: 1, b: 2)
+        }
+    $$));
+
     create function func_with_null_defaults(
         a smallint default null,
         b integer default null,
