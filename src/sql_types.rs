@@ -205,7 +205,7 @@ struct ArgsIterator<'a> {
 
 #[derive(Clone)]
 pub(crate) enum DefaultValue {
-    Value(String),
+    NonNull(String),
     Null,
 }
 
@@ -270,17 +270,17 @@ impl<'a> ArgsIterator<'a> {
             21 | 23 => trimmed
                 .parse::<i32>()
                 .ok()
-                .map(|i| DefaultValue::Value(i.to_string())),
+                .map(|i| DefaultValue::NonNull(i.to_string())),
             16 => trimmed
                 .parse::<bool>()
                 .ok()
-                .map(|i| DefaultValue::Value(i.to_string())),
+                .map(|i| DefaultValue::NonNull(i.to_string())),
             700 | 701 => trimmed
                 .parse::<f64>()
                 .ok()
-                .map(|i| DefaultValue::Value(i.to_string())),
+                .map(|i| DefaultValue::NonNull(i.to_string())),
             25 => trimmed.strip_suffix("::text").map(|i| {
-                DefaultValue::Value(format!("\"{}\"", i.trim_matches(',').trim_matches('\'')))
+                DefaultValue::NonNull(format!("\"{}\"", i.trim_matches(',').trim_matches('\'')))
             }),
             _ => None,
         }
