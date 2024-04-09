@@ -148,6 +148,18 @@ begin;
         }
     $$));
 
+    create function defaul_null_mixed_case(
+        a smallint default null,
+        b integer default NULL,
+        c integer default NuLl
+    )
+        returns text language plpgsql immutable
+    as $$
+    begin
+        return 'mixed case';
+    end;
+    $$;
+
     select jsonb_pretty(
         graphql.resolve($$
             query IntrospectionQuery {

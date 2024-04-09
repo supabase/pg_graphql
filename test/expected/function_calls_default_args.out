@@ -193,6 +193,17 @@ begin;
  }
 (1 row)
 
+    create function defaul_null_mixed_case(
+        a smallint default null,
+        b integer default NULL,
+        c integer default NuLl
+    )
+        returns text language plpgsql immutable
+    as $$
+    begin
+        return 'mixed case';
+    end;
+    $$;
     select jsonb_pretty(
         graphql.resolve($$
             query IntrospectionQuery {
@@ -249,6 +260,38 @@ begin;
                              }                            +
                          ],                               +
                          "name": "bothArgsOptional"       +
+                     },                                   +
+                     {                                    +
+                         "args": [                        +
+                             {                            +
+                                 "name": "a",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "b",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             },                           +
+                             {                            +
+                                 "name": "c",             +
+                                 "type": {                +
+                                     "kind": "SCALAR",    +
+                                     "name": "Int",       +
+                                     "ofType": null       +
+                                 },                       +
+                                 "defaultValue": null     +
+                             }                            +
+                         ],                               +
+                         "name": "defaulNullMixedCase"    +
                      },                                   +
                      {                                    +
                          "args": [                        +
