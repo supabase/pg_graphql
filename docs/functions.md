@@ -371,7 +371,7 @@ Functions accepting or returning arrays of non-composite types are also supporte
 
 ## Default Arguments
 
-Functions with default arguments can have their default arguments omitted.
+Arguments without a default value are required in the GraphQL schema, to make them optional they should have a default value.
 
 === "Function"
 
@@ -409,6 +409,66 @@ Functions with default arguments can have their default arguments omitted.
       }
     }
     ```
+
+If there is no sensible default, and you still want to make the argument optional, consider using the default value null.
+
+
+=== "Function"
+
+    ```sql
+    create function "addNums"(a int default null, b int default null)
+        returns int
+        immutable
+        language plpgsql
+    as $$
+    begin
+
+        if a is null and b is null then
+            raise exception 'a and b both can''t be null';
+        end if;
+
+        if a is null then
+            return b;
+        end if;
+
+        if b is null then
+            return a;
+        end if;
+
+        return a + b;
+    end;
+    $$;
+    ```
+
+=== "QueryType"
+
+    ```graphql
+    type Query {
+      addNums(a: Int, b: Int): Int
+    }
+    ```
+
+
+=== "Query"
+
+    ```graphql
+    query {
+      addNums(a: 42)
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "addNums": 42
+      }
+    }
+    ```
+
+Currently, null defaults are only supported as simple expressions, as shown in the previous example.
+
 
 ## Limitations
 
