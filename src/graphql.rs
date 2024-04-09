@@ -1374,11 +1374,10 @@ fn function_args(schema: &Arc<__Schema>, func: &Arc<Function>) -> Vec<__InputVal
             })
         })
         .map(|(arg_type, arg_name, arg_default)| {
-            let default_value = if let Some((default_value, is_null)) = arg_default {
-                if is_null {
-                    None
-                } else {
-                    Some(default_value)
+            let default_value = if let Some(default_value) = arg_default {
+                match default_value {
+                    DefaultValue::Value(value) => Some(value),
+                    DefaultValue::Null => None,
                 }
             } else {
                 None

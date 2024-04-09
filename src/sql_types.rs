@@ -88,7 +88,7 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn args(&self) -> impl Iterator<Item = (u32, &str, Option<&str>, Option<(String, bool)>)> {
+    pub fn args(&self) -> impl Iterator<Item = (u32, &str, Option<&str>, Option<DefaultValue>)> {
         ArgsIterator::new(
             &self.arg_types,
             &self.arg_type_names,
@@ -200,7 +200,13 @@ struct ArgsIterator<'a> {
     arg_types: &'a [u32],
     arg_type_names: &'a Vec<String>,
     arg_names: &'a Option<Vec<String>>,
-    arg_defaults: Vec<Option<(String, bool)>>,
+    arg_defaults: Vec<Option<DefaultValue>>,
+}
+
+#[derive(Clone)]
+pub(crate) enum DefaultValue {
+    Value(String),
+    Null,
 }
 
 impl<'a> ArgsIterator<'a> {
@@ -230,7 +236,7 @@ impl<'a> ArgsIterator<'a> {
         arg_defaults: &'a Option<String>,
         num_default_args: usize,
         num_total_args: usize,
-    ) -> Vec<Option<(String, bool)>> {
+    ) -> Vec<Option<DefaultValue>> {
         let mut defaults = vec![None; num_total_args];
         let Some(arg_defaults) = arg_defaults else {
             return defaults;
@@ -255,20 +261,26 @@ impl<'a> ArgsIterator<'a> {
         defaults
     }
 
-    fn sql_to_graphql_default(default_str: &str, type_oid: u32) -> Option<(String, bool)> {
+    fn sql_to_graphql_default(default_str: &str, type_oid: u32) -> Option<DefaultValue> {
         let trimmed = default_str.trim();
         if trimmed.starts_with("NULL::") {
-            return Some(("".to_string(), true));
+            return Some(DefaultValue::Null);
         }
         match type_oid {
-            21 | 23 => trimmed.parse::<i32>().ok().map(|i| (i.to_string(), false)),
-            16 => trimmed.parse::<bool>().ok().map(|i| (i.to_string(), false)),
-            700 | 701 => trimmed.parse::<f64>().ok().map(|i| (i.to_string(), false)),
+            21 | 23 => trimmed
+                .parse::<i32>()
+                .ok()
+                .map(|i| DefaultValue::Value(i.to_string())),
+            16 => trimmed
+                .parse::<bool>()
+                .ok()
+                .map(|i| DefaultValue::Value(i.to_string())),
+            700 | 701 => trimmed
+                .parse::<f64>()
+                .ok()
+                .map(|i| DefaultValue::Value(i.to_string())),
             25 => trimmed.strip_suffix("::text").map(|i| {
-                (
-                    format!("\"{}\"", i.trim_matches(',').trim_matches('\'')),
-                    false,
-                )
+                DefaultValue::Value(format!("\"{}\"", i.trim_matches(',').trim_matches('\'')))
             }),
             _ => None,
         }
@@ -280,7 +292,7 @@ lazy_static! {
 }
 
 impl<'a> Iterator for ArgsIterator<'a> {
-    type Item = (u32, &'a str, Option<&'a str>, Option<(String, bool)>);
+    type Item = (u32, &'a str, Option<&'a str>, Option<DefaultValue>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.arg_types.len() {
