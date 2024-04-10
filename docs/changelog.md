@@ -68,5 +68,12 @@
 - feature: `first`/`offset` based pagination
 - feature: improved descriptions for all internal error states
 
-## master
+## 1.5.1
+- bugfix: reimplemented field merging to resolve a performance issue on large queries
+
+## 1.5.2
+- bugfix: enabled schema based multi-tenancy via filtering SQL context on schema permissions
 - bugfix: function arguments with a null default value were required instead of optional
+
+
+## master

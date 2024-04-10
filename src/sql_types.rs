@@ -204,7 +204,7 @@ struct ArgsIterator<'a> {
 }
 
 #[derive(Clone)]
-pub(crate) enum DefaultValue {
+pub enum DefaultValue {
     NonNull(String),
     Null,
 }
