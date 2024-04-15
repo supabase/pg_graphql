@@ -8,7 +8,9 @@ begin;
 
     insert into public.users(id, email, phone)
     values
-        ('dd5add8a-7dd2-4495-bc1a-a1dfe95ef23a', 'a@b.com', '987654321');
+        ('dd5add8a-7dd2-4495-bc1a-a1dfe95ef23a', 'a@b.com', '987654321'),
+        ('12e684cc-b7c2-492e-8554-9ab3e03fa37f', null, null),
+        ('748a81bb-5f71-4dc8-88d9-efe9f03a14b8', null, '123456789');
 
     create or replace view users_with_phone as select
         id,
@@ -23,7 +25,10 @@ begin;
     );
 
     insert into public.polls(id, user_id)
-    values ('98813159-4814-42fa-911d-5cc900bd80b8', 'dd5add8a-7dd2-4495-bc1a-a1dfe95ef23a');
+    values
+      ('98813159-4814-42fa-911d-5cc900bd80b8', 'dd5add8a-7dd2-4495-bc1a-a1dfe95ef23a'),
+      ('07dc0104-3811-4a5d-8887-4018c8116e5c', '12e684cc-b7c2-492e-8554-9ab3e03fa37f'),
+      ('3bec2818-7bea-40ba-81fa-7d0ba061c3de', '748a81bb-5f71-4dc8-88d9-efe9f03a14b8');
 
     create
     or replace function author (rec polls) returns users_with_phone stable strict language sql security definer
@@ -35,20 +40,22 @@ begin;
         where u.id = $1.user_id;
     $$;
 
-    select graphql.resolve($$
-    {
-        pollsCollection {
-          edges {
-            node {
-              author {
-                id,
-                email,
-                phone
+    select jsonb_pretty(
+      graphql.resolve($$
+      {
+          pollsCollection {
+            edges {
+              node {
+                author {
+                  id,
+                  email,
+                  phone
+                }
               }
             }
           }
         }
-      }
-    $$);
+      $$)
+    );
 
 rollback;
