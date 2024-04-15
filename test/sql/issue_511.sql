@@ -10,7 +10,7 @@ begin;
     values
         ('dd5add8a-7dd2-4495-bc1a-a1dfe95ef23a', 'a@b.com', '987654321');
 
-    create or replace view users_with_phone with (security_invoker) as select
+    create or replace view users_with_phone as select
         id,
         email,
         phone
