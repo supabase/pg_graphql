@@ -1505,7 +1505,7 @@ impl FunctionBuilder {
                         from
                             {from_clause} as {func_block_name}
                         where
-                            {func_block_name} is not null
+                            not ({func_block_name} is null)
                     )
                     "
                 )
