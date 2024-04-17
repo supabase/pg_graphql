@@ -75,5 +75,7 @@
 - bugfix: enabled schema based multi-tenancy via filtering SQL context on schema permissions
 - bugfix: function arguments with a null default value were required instead of optional
 
+## 1.5.3
+- bugfix: computed field returning a composite type was always null
 
 ## master
