@@ -515,6 +515,7 @@ pub enum __Type {
     // Mutation
     Mutation(MutationType),
     InsertInput(InsertInputType),
+    InsertOnConflictInput(InsertOnConflictType),
     InsertResponse(InsertResponseType),
     UpdateInput(UpdateInputType),
     UpdateResponse(UpdateResponseType),
@@ -593,6 +594,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.kind(),
             Self::NodeInterface(x) => x.kind(),
             Self::InsertInput(x) => x.kind(),
+            Self::InsertOnConflictInput(x) => x.kind(),
             Self::InsertResponse(x) => x.kind(),
             Self::UpdateInput(x) => x.kind(),
             Self::UpdateResponse(x) => x.kind(),
@@ -628,6 +630,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.name(),
             Self::NodeInterface(x) => x.name(),
             Self::InsertInput(x) => x.name(),
+            Self::InsertOnConflictInput(x) => x.name(),
             Self::InsertResponse(x) => x.name(),
             Self::UpdateInput(x) => x.name(),
             Self::UpdateResponse(x) => x.name(),
@@ -663,6 +666,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.description(),
             Self::NodeInterface(x) => x.description(),
             Self::InsertInput(x) => x.description(),
+            Self::InsertOnConflictInput(x) => x.description(),
             Self::InsertResponse(x) => x.description(),
             Self::UpdateInput(x) => x.description(),
             Self::UpdateResponse(x) => x.description(),
@@ -699,6 +703,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.fields(_include_deprecated),
             Self::NodeInterface(x) => x.fields(_include_deprecated),
             Self::InsertInput(x) => x.fields(_include_deprecated),
+            Self::InsertOnConflictInput(x) => x.fields(_include_deprecated),
             Self::InsertResponse(x) => x.fields(_include_deprecated),
             Self::UpdateInput(x) => x.fields(_include_deprecated),
             Self::UpdateResponse(x) => x.fields(_include_deprecated),
@@ -735,6 +740,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.interfaces(),
             Self::NodeInterface(x) => x.interfaces(),
             Self::InsertInput(x) => x.interfaces(),
+            Self::InsertOnConflictInput(x) => x.interfaces(),
             Self::InsertResponse(x) => x.interfaces(),
             Self::UpdateInput(x) => x.interfaces(),
             Self::UpdateResponse(x) => x.interfaces(),
@@ -780,6 +786,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.enum_values(_include_deprecated),
             Self::NodeInterface(x) => x.enum_values(_include_deprecated),
             Self::InsertInput(x) => x.enum_values(_include_deprecated),
+            Self::InsertOnConflictInput(x) => x.enum_values(),
             Self::InsertResponse(x) => x.enum_values(_include_deprecated),
             Self::UpdateInput(x) => x.enum_values(_include_deprecated),
             Self::UpdateResponse(x) => x.enum_values(_include_deprecated),
@@ -816,6 +823,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.input_fields(),
             Self::NodeInterface(x) => x.input_fields(),
             Self::InsertInput(x) => x.input_fields(),
+            Self::InsertOnConflictInput(x) => x.input_fields(),
             Self::InsertResponse(x) => x.input_fields(),
             Self::UpdateInput(x) => x.input_fields(),
             Self::UpdateResponse(x) => x.input_fields(),
@@ -958,6 +966,12 @@ pub struct UpdateInputType {
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct InsertResponseType {
+    pub table: Arc<Table>,
+    pub schema: Arc<__Schema>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct InsertOnConflictType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
@@ -1445,14 +1459,16 @@ impl ___Type for MutationType {
                             sql_type: None,
                         },
                         __InputValue {
-                            name_: "update".to_string(),
+                            name_: "onConflict".to_string(),
                             type_: __Type::NonNull(NonNullType {
                                 type_: Box::new(__Type::List(ListType {
                                     type_: Box::new(__Type::NonNull(NonNullType {
-                                        type_: Box::new(__Type::InsertInput(InsertInputType {
-                                            table: Arc::clone(table),
-                                            schema: Arc::clone(&self.schema),
-                                        })),
+                                        type_: Box::new(__Type::InsertOnConflictInput(
+                                            InsertOnConflictType {
+                                                table: Arc::clone(table),
+                                                schema: Arc::clone(&self.schema),
+                                            },
+                                        )),
                                     })),
                                 })),
                             }),
@@ -1693,6 +1709,8 @@ impl ___Type for EnumType {
             EnumSource::TableColumns(table) => table
                 .columns
                 .iter()
+                // TODO: is this the right thing to filter on?
+                .filter(|x| x.permissions.is_selectable)
                 .map(|col| __EnumValue {
                     name: self.schema.graphql_column_field_name(col),
                     description: None,
@@ -3132,6 +3150,80 @@ impl ___Type for InsertInputType {
     }
 }
 
+impl ___Type for InsertOnConflictType {
+    fn kind(&self) -> __TypeKind {
+        __TypeKind::INPUT_OBJECT
+    }
+
+    fn name(&self) -> Option<String> {
+        Some(format!(
+            "{}OnConflictInput",
+            self.schema.graphql_table_base_type_name(&self.table)
+        ))
+    }
+
+    fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
+        None
+    }
+
+    fn input_fields(&self) -> Option<Vec<__InputValue>> {
+        Some(vec![
+            __InputValue {
+                // TODO: Create a custom type for available constraints
+                name_: "constraint".to_string(),
+                // If triggers are involved, we can't detect if a field is non-null. Default
+                // all fields to non-null and let postgres errors handle it.
+                type_: __Type::NonNull(NonNullType {
+                    type_: Box::new(__Type::List(ListType {
+                        type_: Box::new(__Type::NonNull(NonNullType {
+                            type_: Box::new(__Type::Enum(EnumType {
+                                enum_: EnumSource::TableColumns(Arc::clone(&self.table)),
+                                schema: Arc::clone(&self.schema),
+                            })),
+                        })),
+                    })),
+                }),
+                description: Some(
+                    "A unique constraint that may conflict with the inserted records".to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "updateFields".to_string(),
+                // If triggers are involved, we can't detect if a field is non-null. Default
+                // all fields to non-null and let postgres errors handle it.
+                type_: __Type::NonNull(NonNullType {
+                    type_: Box::new(__Type::List(ListType {
+                        type_: Box::new(__Type::NonNull(NonNullType {
+                            type_: Box::new(__Type::Enum(EnumType {
+                                enum_: EnumSource::TableColumns(Arc::clone(&self.table)),
+                                schema: Arc::clone(&self.schema),
+                            })),
+                        })),
+                    })),
+                }),
+                description: Some("Fields to be updated if conflict occurs".to_string()),
+                default_value: None,
+                sql_type: None,
+            },
+            __InputValue {
+                name_: "filter".to_string(),
+                type_: __Type::FilterEntity(FilterEntityType {
+                    table: Arc::clone(&self.table),
+                    schema: self.schema.clone(),
+                }),
+                description: Some(
+                    "Filters to apply to the results set when querying from the collection"
+                        .to_string(),
+                ),
+                default_value: None,
+                sql_type: None,
+            },
+        ])
+    }
+}
+
 impl ___Type for InsertResponseType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::OBJECT
@@ -4195,6 +4287,10 @@ impl __Schema {
                 // Used by on conflict
                 types_.push(__Type::Enum(EnumType {
                     enum_: EnumSource::TableColumns(Arc::clone(table)),
+                    schema: Arc::clone(&schema_rc),
+                }));
+                types_.push(__Type::InsertOnConflictType(InsertOnConflictType {
+                    table: Arc::clone(table),
                     schema: Arc::clone(&schema_rc),
                 }));
             }
