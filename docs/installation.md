@@ -1,4 +1,4 @@
-First, install [pgrx](https://github.com/tcdi/pgrx) by running `cargo install --locked cargo-pgrx@version`, where version should be compatible with the [pgrx version used by pg_graphl](https://github.com/supabase/pg_graphql/blob/master/Cargo.toml#L16)
+First, install [pgrx](https://github.com/tcdi/pgrx) by running `cargo install --locked cargo-pgrx@version`, where version should be compatible with the [pgrx version used by pg_graphql](https://github.com/supabase/pg_graphql/blob/master/Cargo.toml#L16)
 
 Then clone the repo and install using
 
