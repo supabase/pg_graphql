@@ -78,4 +78,7 @@
 ## 1.5.3
 - bugfix: computed field returning a composite type was always null
 
+## 1.5.4
+- bugfix: once a query panics, all subsequent queries return a lock poisoned error.
+
 ## master
