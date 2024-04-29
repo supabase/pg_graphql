@@ -791,8 +791,7 @@ pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
 #[cached(
     type = "SizedCache<u64, Result<Arc<Context>, String>>",
     create = "{ SizedCache::with_size(250) }",
-    convert = r#"{ calculate_hash(_config) }"#,
-    sync_writes = true
+    convert = r#"{ calculate_hash(_config) }"#
 )]
 pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
     // cache value for next query
