@@ -179,7 +179,7 @@ type Account {
 
 #### Relationship's Field
 
-Use the `"local_name"` and `"foreign_name"` JSON keys to override a a relationships inbound and outbound field names.
+Use the `"local_name"` and `"foreign_name"` JSON keys to override a relationship's inbound and outbound field names.
 
 ```sql
 create table "Account"(
