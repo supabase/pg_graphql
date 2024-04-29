@@ -544,8 +544,7 @@ pub enum __Type {
 #[cached(
     type = "SizedCache<u64, HashMap<String, __Field>>",
     create = "{ SizedCache::with_size(1000) }",
-    convert = r#"{ calculate_hash(type_) }"#,
-    sync_writes = true
+    convert = r#"{ calculate_hash(type_) }"#
 )]
 pub fn field_map(type_: &__Type) -> HashMap<String, __Field> {
     let mut hmap = HashMap::new();
@@ -570,8 +569,7 @@ pub fn field_map(type_: &__Type) -> HashMap<String, __Field> {
 #[cached(
     type = "SizedCache<u64, HashMap<String, __InputValue>>",
     create = "{ SizedCache::with_size(1000) }",
-    convert = r#"{ calculate_hash(type_) }"#,
-    sync_writes = true
+    convert = r#"{ calculate_hash(type_) }"#
 )]
 pub fn input_field_map(type_: &__Type) -> HashMap<String, __InputValue> {
     let mut hmap = HashMap::new();
@@ -3875,8 +3873,7 @@ pub struct __Schema {
 #[cached(
     type = "SizedCache<String, HashMap<String, __Type>>",
     create = "{ SizedCache::with_size(200) }",
-    convert = r#"{ serde_json::ser::to_string(&schema.context.config).expect("schema config should be a string") }"#,
-    sync_writes = true
+    convert = r#"{ serde_json::ser::to_string(&schema.context.config).expect("schema config should be a string") }"#
 )]
 pub fn type_map(schema: &__Schema) -> HashMap<String, __Type> {
     let tmap: HashMap<String, __Type> = schema
