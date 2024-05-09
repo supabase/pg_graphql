@@ -417,6 +417,7 @@ pub struct Index {
     pub column_names: Vec<String>,
     pub is_unique: bool,
     pub is_primary_key: bool,
+    pub name: String,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -544,6 +545,7 @@ impl Table {
                     column_names: column_names.clone(),
                     is_unique: true,
                     is_primary_key: true,
+                    name: "dummy".to_string(),
                 })
             }
         } else {

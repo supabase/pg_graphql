@@ -281,11 +281,14 @@ select
                                                     array[]::text[]
                                                 ),
                                                 'is_unique', pi.indisunique and pi.indpred is null,
-                                                'is_primary_key', pi.indisprimary
+                                                'is_primary_key', pi.indisprimary,
+                                                'name', pc_ix.relname
                                             )
                                         )
                                     from
                                         pg_catalog.pg_index pi
+                                        join pg_catalog.pg_class pc_ix
+                                          on pi.indexrelid = pc_ix.oid
                                     where
                                         pi.indrelid = pc.oid
                                 ),
