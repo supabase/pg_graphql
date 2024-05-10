@@ -1110,6 +1110,7 @@ pub enum EnumSource {
     Enum(Arc<Enum>),
     FilterIs,
     TableColumns(Arc<Table>),
+    OnConflictTarget(Arc<Table>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -1435,40 +1436,43 @@ impl ___Type for MutationType {
             let table_base_type_name = self.schema.graphql_table_base_type_name(table);
 
             if self.schema.graphql_table_insert_types_are_valid(table) {
+                let mut args = vec![__InputValue {
+                    name_: "objects".to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::List(ListType {
+                            type_: Box::new(__Type::NonNull(NonNullType {
+                                type_: Box::new(__Type::InsertInput(InsertInputType {
+                                    table: Arc::clone(table),
+                                    schema: Arc::clone(&self.schema),
+                                })),
+                            })),
+                        })),
+                    }),
+                    description: None,
+                    default_value: None,
+                    sql_type: None,
+                }];
+
+                if table.has_upsert_support() {
+                    args.push(__InputValue {
+                        name_: "onConflict".to_string(),
+                        type_: __Type::InsertOnConflictInput(InsertOnConflictType {
+                            table: Arc::clone(table),
+                            schema: Arc::clone(&self.schema),
+                        }),
+                        description: None,
+                        default_value: None,
+                        sql_type: None,
+                    });
+                }
+
                 f.push(__Field {
                     name_: format!("insertInto{}Collection", table_base_type_name),
                     type_: __Type::InsertResponse(InsertResponseType {
                         table: Arc::clone(table),
                         schema: Arc::clone(&self.schema),
                     }),
-                    args: vec![
-                        __InputValue {
-                            name_: "objects".to_string(),
-                            type_: __Type::NonNull(NonNullType {
-                                type_: Box::new(__Type::List(ListType {
-                                    type_: Box::new(__Type::NonNull(NonNullType {
-                                        type_: Box::new(__Type::InsertInput(InsertInputType {
-                                            table: Arc::clone(table),
-                                            schema: Arc::clone(&self.schema),
-                                        })),
-                                    })),
-                                })),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                        __InputValue {
-                            name_: "onConflict".to_string(),
-                            type_: __Type::InsertOnConflictInput(InsertOnConflictType {
-                                table: Arc::clone(table),
-                                schema: Arc::clone(&self.schema),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: None,
-                        },
-                    ],
+                    args,
                     description: Some(format!(
                         "Adds one or more `{}` records to the collection",
                         table_base_type_name
@@ -1660,6 +1664,10 @@ impl ___Type for EnumType {
                 "{}Field",
                 self.schema.graphql_table_base_type_name(&table)
             )),
+            EnumSource::OnConflictTarget(table) => Some(format!(
+                "{}OnConflictConstraint",
+                self.schema.graphql_table_base_type_name(&table)
+            )),
         }
     }
 
@@ -1709,6 +1717,18 @@ impl ___Type for EnumType {
                     deprecation_reason: None,
                 })
                 .collect(),
+            EnumSource::OnConflictTarget(table) => {
+                table
+                    .on_conflict_indexes()
+                    .iter()
+                    .map(|ix| __EnumValue {
+                        // TODO, apply name restrictions
+                        name: ix.name.clone(),
+                        description: None,
+                        deprecation_reason: None,
+                    })
+                    .collect()
+            }
         })
     }
 }
@@ -3166,13 +3186,9 @@ impl ___Type for InsertOnConflictType {
                 // If triggers are involved, we can't detect if a field is non-null. Default
                 // all fields to non-null and let postgres errors handle it.
                 type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::List(ListType {
-                        type_: Box::new(__Type::NonNull(NonNullType {
-                            type_: Box::new(__Type::Enum(EnumType {
-                                enum_: EnumSource::TableColumns(Arc::clone(&self.table)),
-                                schema: Arc::clone(&self.schema),
-                            })),
-                        })),
+                    type_: Box::new(__Type::Enum(EnumType {
+                        enum_: EnumSource::OnConflictTarget(Arc::clone(&self.table)),
+                        schema: Arc::clone(&self.schema),
                     })),
                 }),
                 description: Some(
@@ -4275,15 +4291,22 @@ impl __Schema {
                     table: Arc::clone(table),
                     schema: Arc::clone(&schema_rc),
                 }));
-                // Used by on conflict
-                types_.push(__Type::Enum(EnumType {
-                    enum_: EnumSource::TableColumns(Arc::clone(table)),
-                    schema: Arc::clone(&schema_rc),
-                }));
-                types_.push(__Type::InsertOnConflictInput(InsertOnConflictType {
-                    table: Arc::clone(table),
-                    schema: Arc::clone(&schema_rc),
-                }));
+
+                // Used exclusively by onConflict
+                if table.has_upsert_support() {
+                    types_.push(__Type::InsertOnConflictInput(InsertOnConflictType {
+                        table: Arc::clone(table),
+                        schema: Arc::clone(&schema_rc),
+                    }));
+                    types_.push(__Type::Enum(EnumType {
+                        enum_: EnumSource::TableColumns(Arc::clone(table)),
+                        schema: Arc::clone(&schema_rc),
+                    }));
+                    types_.push(__Type::Enum(EnumType {
+                        enum_: EnumSource::OnConflictTarget(Arc::clone(table)),
+                        schema: Arc::clone(&schema_rc),
+                    }));
+                }
             }
 
             if self.graphql_table_update_types_are_valid(table) {

@@ -414,6 +414,7 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                                 EnumSource::FilterIs => value.clone(),
                                 // TODO(or): Do I need to check directives here?
                                 EnumSource::TableColumns(_e) => value.clone(),
+                                EnumSource::OnConflictTarget(_e) => value.clone(),
                             }
                         }
                         None => return Err(format!("Invalid input for {} type", enum_name)),
