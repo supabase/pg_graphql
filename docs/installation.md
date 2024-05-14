@@ -8,28 +8,30 @@ cd pg_graphql
 cargo pgrx install --release
 ```
 
-Before enabling the extension in PostgreSQL, you need to initialize `pgrx`. Depending on your PostgreSQL installation, you might need to specify the path to `pg_config`. For example, on macOS with PostgreSQL installed via Homebrew:
+Before enabling the extension you need to initialize `pgrx`. The easiest way to get started is to allow `pgrx` to manage its own version/s of Postgres:
 
 ```bash
-cargo pgrx init --pg14 "/opt/homebrew/bin/pg_config"
+cargo pgrx init --pg16=download
 ```
+
+For more advanced configuration options, like building against an existing Postgres installation from e.g. Homebrew, see the [pgrx docs](https://github.com/pgcentralfoundation/pgrx)
 
 To start the database:
 
 ```bash
-cargo pgrx start pg14
+cargo pgrx start pg16
 ```
 
 To connect:
 
 ```bash
-cargo pgrx connect pg14
+cargo pgrx connect pg16
 ```
 
-Finally, to enable the `pg_graphql` extension in PostgreSQL, execute the `create extension` statement. This extension creates its own schema/namespace named `graphql` to avoid naming conflicts.
+Finally, to enable the `pg_graphql` extension in Postgres, execute the `create extension` statement. This extension creates its own schema/namespace named `graphql` to avoid naming conflicts.
 
 ```psql
 create extension pg_graphql;
 ```
 
-These additional steps ensure that `pgrx` is properly initialized, and the database is started and connected before attempting to install and use the `pg_graphql` extension.
+These steps ensure that `pgrx` is properly initialized, and the database is started and connected before attempting to install and use the `pg_graphql` extension.
