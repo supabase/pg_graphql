@@ -50,7 +50,7 @@ create table blog(
 );
 
 
-create type blog_post_status as enum ('PENDING', 'RELEASED');
+create type blog_post_status as enum ('PENDING', 'RELEASED', 'ARCHIVED');
 
 
 create table blog_post(
