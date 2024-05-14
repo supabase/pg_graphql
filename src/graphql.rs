@@ -1116,6 +1116,7 @@ pub struct OrderByEntityType {
 pub enum FilterableType {
     Scalar(Scalar),
     Enum(EnumType),
+    List(ListType),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -1129,6 +1130,7 @@ impl FilterTypeType {
         match &self.entity {
             FilterableType::Scalar(s) => s.name().expect("scalar name should exist"),
             FilterableType::Enum(e) => e.name().expect("enum type name should exist"),
+            FilterableType::List(l) => l.name().expect("list type name should exist"),
         }
     }
 }
@@ -3620,14 +3622,11 @@ impl ___Type for FilterEntityType {
             .columns
             .iter()
             .filter(|x| x.permissions.is_selectable)
-            // No filtering on arrays
-            .filter(|x| !x.type_name.ends_with("[]"))
             // No filtering on composites
             .filter(|x| !self.schema.context.is_composite(x.type_oid))
             // No filtering on json/b. they do not support = or <>
             .filter(|x| !["json", "jsonb"].contains(&x.type_name.as_ref()))
             .filter_map(|col| {
-                // Should be a scalar
                 if let Some(utype) = sql_column_to_graphql_type(col, &self.schema) {
                     let column_graphql_name = self.schema.graphql_column_field_name(col);
 
@@ -3652,11 +3651,20 @@ impl ___Type for FilterEntityType {
                             default_value: None,
                             sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                         }),
-                        // ERROR HERE
-                        __Type::Enum(s) => Some(__InputValue {
+                        __Type::Enum(e) => Some(__InputValue {
                             name_: column_graphql_name,
                             type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::Enum(s),
+                                entity: FilterableType::Enum(e),
+                                schema: Arc::clone(&self.schema),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                        }),
+                        __Type::List(l) => Some(__InputValue {
+                            name_: column_graphql_name,
+                            type_: __Type::FilterType(FilterTypeType {
+                                entity: FilterableType::List(l),
                                 schema: Arc::clone(&self.schema),
                             }),
                             description: None,
