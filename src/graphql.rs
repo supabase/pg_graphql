@@ -3330,6 +3330,9 @@ pub enum FilterOp {
     ILike,
     RegEx,
     IRegEx,
+    Contains,
+    ContainedBy,
+    Overlap,
 }
 
 impl ToString for FilterOp {
@@ -3348,6 +3351,9 @@ impl ToString for FilterOp {
             Self::ILike => "ilike",
             Self::RegEx => "regex",
             Self::IRegEx => "iregex",
+            Self::Contains => "cs",
+            Self::ContainedBy => "cd",
+            Self::Overlap => "ov",
         }
         .to_string()
     }
@@ -3371,6 +3377,9 @@ impl FromStr for FilterOp {
             "ilike" => Ok(Self::ILike),
             "regex" => Ok(Self::RegEx),
             "iregex" => Ok(Self::IRegEx),
+            "cs" => Ok(Self::Contains),
+            "cd" => Ok(Self::ContainedBy),
+            "ov" => Ok(Self::Overlap),
             _ => Err("Invalid filter operation".to_string()),
         }
     }
@@ -3543,6 +3552,8 @@ impl ___Type for FilterTypeType {
                             default_value: None,
                             sql_type: None,
                         },
+                        // shouldn't happen since we've covered all cases in supported_ops
+                        _ => panic!("encountered unknown FilterOp")
                     })
                     .collect()
             }
@@ -3584,6 +3595,36 @@ impl ___Type for FilterTypeType {
                         sql_type: None,
                     },
                 ]
+            }
+            FilterableType::List(list_type) => {
+                let supported_ops = vec![
+                    FilterOp::Contains,
+                    FilterOp::ContainedBy,
+                    FilterOp::Equal,
+                    FilterOp::GreaterThan,
+                    FilterOp::GreaterThanEqualTo,
+                    FilterOp::LessThan,
+                    FilterOp::LessThanEqualTo,
+                    FilterOp::NotEqual,
+                    FilterOp::Overlap,
+                ];
+
+                supported_ops
+                    .iter()
+                    .map(|op| match op {
+                        _ => __InputValue {
+                            name_: op.to_string(),
+                            type_: __Type::List(ListType {
+                                type_: Box::new(__Type::NonNull(NonNullType {
+                                    type_: Box::new(*list_type.type_.clone()),
+                                })),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: None,
+                        },
+                    })
+                    .collect()
             }
         };
 
