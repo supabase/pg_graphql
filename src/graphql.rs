@@ -3883,13 +3883,24 @@ impl ___Type for OrderByEntityType {
                 .columns
                 .iter()
                 .filter(|x| x.permissions.is_selectable)
-                // No filtering on arrays
-                .filter(|x| !x.type_name.ends_with("[]"))
-                // No filtering on composites
+                // Previously, ordering by arrays was not supported, as shown on the next line.
+                // .filter(|x| !x.type_name.ends_with("[]"))
+                // However, in response to Issue #460, the line above has been commented out and
+                // array types are now exposed in the `orderBy` input for collections.
+                // Per the [latest PostgreSQL docs](https://www.postgresql.org/docs/16/functions-array.html#FUNCTIONS-ARRAY)
+                // at the time of writing, array comparison/ordering works as follows:
+                //
+                // The comparison operators compare the array contents element-by-element, using the
+                // default B-tree comparison function for the element data type, and sort based on the
+                // first difference. In multidimensional arrays the elements are visited in row-major
+                // order (last subscript varies most rapidly). If the contents of two arrays are equal
+                // but the dimensionality is different, the first difference in the dimensionality
+                // information determines the sort order.
+
+                // No ordering by composites
                 .filter(|x| !self.schema.context.is_composite(x.type_oid))
-                // No filtering on json/b. they do not support = or <>
+                // No ordering by json/b. they do not support = or <>
                 .filter(|x| !["json", "jsonb"].contains(&x.type_name.as_ref()))
-                // TODO  filter out arrays, json and composites
                 .map(|col| __InputValue {
                     name_: self.schema.graphql_column_field_name(col),
                     type_: __Type::OrderBy(OrderByType {}),
