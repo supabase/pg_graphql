@@ -3684,17 +3684,19 @@ impl ___Type for FilterEntityType {
                         not_column_exists = true;
                     }
 
-                    match utype {
-                        __Type::Scalar(s) => Some(__InputValue {
-                            name_: column_graphql_name,
-                            type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::Scalar(s),
-                                schema: Arc::clone(&self.schema),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                        }),
+                    match utype.nullable_type() {
+                        __Type::Scalar(s) => {
+                            Some(__InputValue {
+                                name_: column_graphql_name,
+                                type_: __Type::FilterType(FilterTypeType {
+                                    entity: FilterableType::Scalar(s),
+                                    schema: Arc::clone(&self.schema),
+                                }),
+                                description: None,
+                                default_value: None,
+                                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                            })
+                        },
                         __Type::Enum(e) => Some(__InputValue {
                             name_: column_graphql_name,
                             type_: __Type::FilterType(FilterTypeType {
