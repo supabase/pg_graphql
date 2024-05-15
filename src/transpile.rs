@@ -714,6 +714,9 @@ impl FilterBuilderElem {
                     _ => {
                         let cast_type_name = match op {
                             FilterOp::In => format!("{}[]", column.type_name),
+                            FilterOp::Contains => format!("{}[]", column.type_name),
+                            FilterOp::ContainedBy => format!("{}[]", column.type_name),
+                            FilterOp::Overlap => format!("{}[]", column.type_name),
                             _ => column.type_name.clone(),
                         };
 
@@ -735,6 +738,9 @@ impl FilterBuilderElem {
                                 FilterOp::ILike => "ilike",
                                 FilterOp::RegEx => "~",
                                 FilterOp::IRegEx => "~*",
+                                FilterOp::Contains => "@>",
+                                FilterOp::ContainedBy => "<@",
+                                FilterOp::Overlap => "&&",
                                 FilterOp::Is => {
                                     return Err("Error transpiling Is filter".to_string());
                                 }
