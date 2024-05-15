@@ -4021,6 +4021,72 @@ impl __Schema {
                 entity: FilterableType::Scalar(Scalar::Opaque),
                 schema: Arc::clone(&schema_rc),
             }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::ID))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Int))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Float))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::String(None)))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Date))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Time))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::Datetime))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::BigInt))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::UUID))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
+            __Type::FilterType(FilterTypeType {
+                entity: FilterableType::List(ListType {
+                    type_: Box::new(__Type::Scalar(Scalar::BigFloat))
+                }),
+                schema: Arc::clone(&schema_rc),
+            }),
             __Type::Query(QueryType {
                 schema: Arc::clone(&schema_rc),
             }),
