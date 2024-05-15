@@ -3704,9 +3704,13 @@ impl ___Type for FilterEntityType {
                         }),
                         __Type::List(l) => Some(__InputValue {
                             name_: column_graphql_name,
-                            type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::List(l),
-                                schema: Arc::clone(&self.schema),
+                            type_: __Type::List(ListType {
+                                type_: Box::new(__Type::NonNull(NonNullType {
+                                    type_: Box::new(__Type::FilterType(FilterTypeType {
+                                        entity: FilterableType::List(l),
+                                        schema: Arc::clone(&self.schema),
+                                    })),
+                                })),
                             }),
                             description: None,
                             default_value: None,
