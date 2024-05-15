@@ -3681,7 +3681,7 @@ impl ___Type for FilterEntityType {
                         not_column_exists = true;
                     }
 
-                    match utype.unmodified_type() {
+                    match utype {
                         __Type::Scalar(s) => Some(__InputValue {
                             name_: column_graphql_name,
                             type_: __Type::FilterType(FilterTypeType {
