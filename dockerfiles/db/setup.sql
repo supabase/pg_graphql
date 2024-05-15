@@ -58,6 +58,7 @@ create table blog_post(
     blog_id integer not null references blog(id) on delete cascade,
     title varchar(255) not null,
     body varchar(10000),
+    tags TEXT[],
     status blog_post_status not null,
     created_at timestamp not null
 );
@@ -78,6 +79,17 @@ values
     ((select id from account where email ilike 'a%'), 'A: Blog 2', 'a desc2', now()),
     ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', now()),
     ((select id from account where email ilike 'b%'), 'B: Blog 3', 'b desc1', now());
+
+-- Sample inserts for blog_post
+insert into blog_post (blog_id, title, body, tags, status, created_at)
+values
+    ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 1 in A Blog 1', 'Content for post 1 in A Blog 1', '{"tech", "update"}', 'RELEASED', NOW()),
+    ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 2 in A Blog 1', 'Content for post 2 in A Blog 1', '{"announcement", "tech"}', 'PENDING', NOW()),
+    ((SELECT id FROM blog WHERE name = 'A: Blog 2'), 'Post 1 in A Blog 2', 'Content for post 1 in A Blog 2', '{"personal"}', 'RELEASED', NOW()),
+    ((SELECT id FROM blog WHERE name = 'A: Blog 2'), 'Post 2 in A Blog 2', 'Content for post 2 in A Blog 2', '{"update"}', 'ARCHIVED', NOW()),
+    ((SELECT id FROM blog WHERE name = 'A: Blog 3'), 'Post 1 in A Blog 3', 'Content for post 1 in A Blog 3', '{"travel", "adventure"}', 'PENDING', NOW()),
+    ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 1 in B Blog 3', 'Content for post 1 in B Blog 3', '{"tech", "review"}', 'RELEASED', NOW()),
+    ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 2 in B Blog 3', 'Content for post 2 in B Blog 3', '{"coding", "tutorial"}', 'PENDING', NOW());
 
 
 comment on schema public is '@graphql({"inflect_names": true})';
