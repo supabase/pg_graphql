@@ -1085,7 +1085,7 @@ fn create_filters(
     let kv_map = match validated {
         gson::Value::Absent | gson::Value::Null => return Ok(filters),
         gson::Value::Object(kv) => kv,
-        _ => return Err("Filter re-validation errror".to_string()),
+        _ => return Err("Filter re-validation error".to_string()),
     };
 
     for (k, op_to_v) in kv_map {
@@ -1174,22 +1174,19 @@ fn create_filters(
             } else {
                 if !values.is_empty() {
                     for value in values {
-                        match value {
-                            gson::Value::Object(filter_op_to_value_map) => {
-                                for (filter_op_str, filter_val) in filter_op_to_value_map {
-                                    let filter_op = FilterOp::from_str(filter_op_str)?;
+                        if let gson::Value::Object(filter_op_to_value_map) = value {
+                            for (filter_op_str, filter_val) in filter_op_to_value_map {
+                                let filter_op = FilterOp::from_str(filter_op_str)?;
 
-                                    // Skip absent
-                                    // Technically nulls should be treated as literals. It will always filter out all rows
-                                    // val <op> null is never true
-                                    if filter_val == &gson::Value::Absent {
-                                        continue;
-                                    }
-
-                                    filters.push(create_filter_builder_elem(filter_iv, filter_op, filter_val)?);
+                                // Skip absent
+                                // Technically nulls should be treated as literals. It will always filter out all rows
+                                // val <op> null is never true
+                                if filter_val == &gson::Value::Absent {
+                                    continue;
                                 }
-                            },
-                            _ => return Err("Filter re-validation error op_to_value map".to_string()),
+
+                                filters.push(create_filter_builder_elem(filter_iv, filter_op, filter_val)?);
+                            }
                         }
                     }
                 }
