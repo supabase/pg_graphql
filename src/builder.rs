@@ -1171,7 +1171,7 @@ fn create_filters(
 
                     filters.push(filter_builder);
                 }
-                            }
+            }
             _ => return Err("Filter re-validation errror op_to_value map".to_string()),
         }
     }
