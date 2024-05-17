@@ -806,6 +806,15 @@ The `cd` filter is used to return results where every element of the array colum
           "edges": [
             {
               "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation"]
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
                 "id": 3,
                 "name": "A: Blog 3",
                 "createdAt": "2023-07-24T04:01:09.882781",
