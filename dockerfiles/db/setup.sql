@@ -80,7 +80,6 @@ values
     ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', now()),
     ((select id from account where email ilike 'b%'), 'B: Blog 3', 'b desc1', now());
 
--- Sample inserts for blog_post
 insert into blog_post (blog_id, title, body, tags, status, created_at)
 values
     ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 1 in A Blog 1', 'Content for post 1 in A Blog 1', '{"tech", "update"}', 'RELEASED', NOW()),
