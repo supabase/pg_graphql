@@ -526,6 +526,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       id: IntFilter
       name: StringFilter
       description: StringFilter
+      tags: StringListFilter
       createdAt: DatetimeFilter
       updatedAt: DatetimeFilter
       and: [BlogFilter!]
@@ -575,6 +576,25 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
     }
     ```
 
+=== "StringListFilter"
+
+    ```graphql
+    """
+    Boolean expression comparing fields on type "StringList"
+    """
+    input StringListFilter {
+      cd: [String!]
+      cs: [String!]
+      eq: [String!]
+      gt: [String!]
+      gte: [String!]
+      lt: [String!]
+      lte: [String!]
+      neq: [String!]
+      ov: [String!]
+    }
+    ```
+
 === "FilterIs"
 
     ```graphql
@@ -587,21 +607,24 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
 The following list shows the operators that may be available on `<Type>Filter` types.
 
 
-| Operator    | Description                                      |
-| ----------- | -------------------------------------------------|
-| eq          | Equal To                                         |
-| neq         | Not Equal To                                     |
-| gt          | Greater Than                                     |
-| gte         | Greater Than Or Equal To                         |
-| in          | Contained by Value List                          |
-| lt          | Less Than                                        |
-| lte         | Less Than Or Equal To                            |
-| is          | Null or Not Null                                 |
-| startsWith  | Starts with prefix                               |
-| like        | Pattern Match. '%' as wildcard                   |
-| ilike       | Pattern Match. '%' as wildcard. Case Insensitive |
-| regex       | POSIX Regular Expression Match                   |
-| iregex      | POSIX Regular Expression Match. Case Insensitive |
+| Operator   | Description                                                       |
+|------------|-------------------------------------------------------------------|
+| eq         | Equal To                                                          |
+| neq        | Not Equal To                                                      |
+| gt         | Greater Than                                                      |
+| gte        | Greater Than Or Equal To                                          |
+| in         | Contained by Value List                                           |
+| lt         | Less Than                                                         |
+| lte        | Less Than Or Equal To                                             |
+| is         | Null or Not Null                                                  |
+| startsWith | Starts with prefix                                                |
+| like       | Pattern Match. '%' as wildcard                                    |
+| ilike      | Pattern Match. '%' as wildcard. Case Insensitive                  |
+| regex      | POSIX Regular Expression Match                                    |
+| iregex     | POSIX Regular Expression Match. Case Insensitive                  |
+| cs         | Contains. Applies to array columns only.                          |
+| cd         | Contained in. Applies to array columns only.                      |
+| ov         | Overlap (have points in common). Applies to array columns only.   |
 
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
@@ -650,7 +673,256 @@ Not all operators are available on every `<Type>Filter` type. For example, `UUID
     ```
 
 
-** Example: and/or **
+**Example: array column**
+
+The `cs` filter is used to return results where all the elements in the input array appear in the array column.
+
+=== "`cs` Filter Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {tags: {cs: ["tech", "innovation"]}},
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            tags
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`cs` Filter Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation"]
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation", "entrepreneurship"]
+              },
+              "cursor": "WzJd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+The `cs` filter can also accept a single scalar.
+
+=== "`cs` Filter with Scalar Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {tags: {cs: "tech"}},
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            tags
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`cs` Filter with Scalar Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation"]
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation", "entrepreneurship"]
+              },
+              "cursor": "WzJd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+The `cd` filter is used to return results where every element of the array column appears in the input array.
+
+=== "`cd` Filter Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {tags: {cd: ["entrepreneurship", "innovation", "tech"]}},
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            tags
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`cd` Filter Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 3,
+                "name": "A: Blog 3",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["innovation", "entrepreneurship"]
+              },
+              "cursor": "WzNd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+The `cd` filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar.
+
+=== "`cd` Filter with Scalar Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {tags: {cd: "travel"}},
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            tags
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`cd` Filter with Scalar Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 4,
+                "name": "A: Blog 4",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["travel"]
+              },
+              "cursor": "WzPd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+The `ov` filter is used to return results where the array column and the input array have at least one element in common.
+
+=== "`ov` Filter Query"
+    ```graphql
+    {
+      blogCollection(
+        filter: {tags: {ov: ["tech", "travel"]}},
+      ) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            tags
+            createdAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "`ov` Filter Result"
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "name": "A: Blog 1",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation"]
+              },
+              "cursor": "WzFd"
+            },
+            {
+              "node": {
+                "id": 2,
+                "name": "A: Blog 2",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["tech", "innovation", "entrepreneurship"]
+              },
+              "cursor": "WzJd"
+            },
+            {
+              "node": {
+                "id": 4,
+                "name": "A: Blog 4",
+                "createdAt": "2023-07-24T04:01:09.882781",
+                "tags": ["travel"]
+              },
+              "cursor": "WzPd"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+
+**Example: and/or**
 
 Multiple filters can be combined with `and`, `or` and `not` operators. The `and` and `or` operators accept a list of `<Type>Filter`.
 
@@ -754,7 +1026,7 @@ Multiple filters can be combined with `and`, `or` and `not` operators. The `and`
     ```
 
 
-** Example: not **
+**Example: not**
 
 `not` accepts a single `<Type>Filter`.
 
@@ -819,7 +1091,7 @@ Multiple filters can be combined with `and`, `or` and `not` operators. The `and`
     ```
 
 
-** Example: nested composition **
+**Example: nested composition**
 
 The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
 
@@ -888,7 +1160,7 @@ The `and`, `or` and `not` operators can be arbitrarily nested inside each other.
     }
     ```
 
-** Example: empty **
+**Example: empty**
 
 Empty filters are ignored, i.e. they behave as if the operator was not specified at all.
 
@@ -963,7 +1235,7 @@ Empty filters are ignored, i.e. they behave as if the operator was not specified
     ```
 
 
-** Example: implicit and **
+**Example: implicit and**
 
 Multiple column filters at the same level will be implicitly combined with boolean `and`. In the following example the `id: {eq: 1}` and `name: {eq: "A: Blog 1"}` will be `and`ed.
 

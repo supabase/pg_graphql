@@ -125,6 +125,21 @@ input BigFloatFilter {
   neq: BigFloat
 }
 
+"""
+Boolean expression comparing fields on type "BigFloatList"
+"""
+input BigFloatListFilter {
+  cd: [BigFloat!]
+  cs: [BigFloat!]
+  eq: [BigFloat!]
+  gt: [BigFloat!]
+  gte: [BigFloat!]
+  lt: [BigFloat!]
+  lte: [BigFloat!]
+  neq: [BigFloat!]
+  ov: [BigFloat!]
+}
+
 """An arbitrary size integer represented as a string"""
 scalar BigInt
 
@@ -142,6 +157,21 @@ input BigIntFilter {
   neq: BigInt
 }
 
+"""
+Boolean expression comparing fields on type "BigIntList"
+"""
+input BigIntListFilter {
+  cd: [BigInt!]
+  cs: [BigInt!]
+  eq: [BigInt!]
+  gt: [BigInt!]
+  gte: [BigInt!]
+  lt: [BigInt!]
+  lte: [BigInt!]
+  neq: [BigInt!]
+  ov: [BigInt!]
+}
+
 type Blog implements Node {
   """Globally Unique Record Identifier"""
   nodeId: ID!
@@ -149,6 +179,7 @@ type Blog implements Node {
   ownerId: Int!
   name: String!
   description: String
+  tags: [String]
   createdAt: Datetime!
   updatedAt: Datetime!
   owner: Account!
@@ -201,6 +232,7 @@ input BlogFilter {
   ownerId: IntFilter
   name: StringFilter
   description: StringFilter
+  tags: StringListFilter
   createdAt: DatetimeFilter
   updatedAt: DatetimeFilter
   nodeId: IDFilter
@@ -385,6 +417,21 @@ input BooleanFilter {
 }
 
 """
+Boolean expression comparing fields on type "BooleanList"
+"""
+input BooleanListFilter {
+  cd: [Boolean!]
+  cs: [Boolean!]
+  eq: [Boolean!]
+  gt: [Boolean!]
+  gte: [Boolean!]
+  lt: [Boolean!]
+  lte: [Boolean!]
+  neq: [Boolean!]
+  ov: [Boolean!]
+}
+
+"""
 An opaque string using for tracking a position in results during pagination
 """
 scalar Cursor
@@ -406,6 +453,21 @@ input DateFilter {
   neq: Date
 }
 
+"""
+Boolean expression comparing fields on type "DateList"
+"""
+input DateListFilter {
+  cd: [Date!]
+  cs: [Date!]
+  eq: [Date!]
+  gt: [Date!]
+  gte: [Date!]
+  lt: [Date!]
+  lte: [Date!]
+  neq: [Date!]
+  ov: [Date!]
+}
+
 """A date and time"""
 scalar Datetime
 
@@ -421,6 +483,21 @@ input DatetimeFilter {
   lt: Datetime
   lte: Datetime
   neq: Datetime
+}
+
+"""
+Boolean expression comparing fields on type "DatetimeList"
+"""
+input DatetimeListFilter {
+  cd: [Datetime!]
+  cs: [Datetime!]
+  eq: [Datetime!]
+  gt: [Datetime!]
+  gte: [Datetime!]
+  lt: [Datetime!]
+  lte: [Datetime!]
+  neq: [Datetime!]
+  ov: [Datetime!]
 }
 
 enum FilterIs {
@@ -443,10 +520,40 @@ input FloatFilter {
 }
 
 """
+Boolean expression comparing fields on type "FloatList"
+"""
+input FloatListFilter {
+  cd: [Float!]
+  cs: [Float!]
+  eq: [Float!]
+  gt: [Float!]
+  gte: [Float!]
+  lt: [Float!]
+  lte: [Float!]
+  neq: [Float!]
+  ov: [Float!]
+}
+
+"""
 Boolean expression comparing fields on type "ID"
 """
 input IDFilter {
   eq: ID
+}
+
+"""
+Boolean expression comparing fields on type "IDList"
+"""
+input IDListFilter {
+  cd: [ID!]
+  cs: [ID!]
+  eq: [ID!]
+  gt: [ID!]
+  gte: [ID!]
+  lt: [ID!]
+  lte: [ID!]
+  neq: [ID!]
+  ov: [ID!]
 }
 
 """
@@ -461,6 +568,21 @@ input IntFilter {
   lt: Int
   lte: Int
   neq: Int
+}
+
+"""
+Boolean expression comparing fields on type "IntList"
+"""
+input IntListFilter {
+  cd: [Int!]
+  cs: [Int!]
+  eq: [Int!]
+  gt: [Int!]
+  gte: [Int!]
+  lt: [Int!]
+  lte: [Int!]
+  neq: [Int!]
+  ov: [Int!]
 }
 
 """A Javascript Object Notation value serialized as a string"""
@@ -703,6 +825,21 @@ input StringFilter {
   startsWith: String
 }
 
+"""
+Boolean expression comparing fields on type "StringList"
+"""
+input StringListFilter {
+  cd: [String!]
+  cs: [String!]
+  eq: [String!]
+  gt: [String!]
+  gte: [String!]
+  lt: [String!]
+  lte: [String!]
+  neq: [String!]
+  ov: [String!]
+}
+
 """A time without date information"""
 scalar Time
 
@@ -720,6 +857,21 @@ input TimeFilter {
   neq: Time
 }
 
+"""
+Boolean expression comparing fields on type "TimeList"
+"""
+input TimeListFilter {
+  cd: [Time!]
+  cs: [Time!]
+  eq: [Time!]
+  gt: [Time!]
+  gte: [Time!]
+  lt: [Time!]
+  lte: [Time!]
+  neq: [Time!]
+  ov: [Time!]
+}
+
 """A universally unique identifier"""
 scalar UUID
 
@@ -731,4 +883,19 @@ input UUIDFilter {
   in: [UUID!]
   is: FilterIs
   neq: UUID
+}
+
+"""
+Boolean expression comparing fields on type "UUIDList"
+"""
+input UUIDListFilter {
+  cd: [UUID!]
+  cs: [UUID!]
+  eq: [UUID!]
+  gt: [UUID!]
+  gte: [UUID!]
+  lt: [UUID!]
+  lte: [UUID!]
+  neq: [UUID!]
+  ov: [UUID!]
 }

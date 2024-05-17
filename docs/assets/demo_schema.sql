@@ -16,6 +16,7 @@ create table blog(
     owner_id integer not null references account(id),
     name varchar(255) not null,
     description varchar(255),
+    tags text[],
     created_at timestamp not null,
     updated_at timestamp not null
 );
