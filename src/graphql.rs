@@ -1130,10 +1130,12 @@ impl FilterTypeType {
         match &self.entity {
             FilterableType::Scalar(s) => s.name().expect("scalar name should exist"),
             FilterableType::Enum(e) => e.name().expect("enum type name should exist"),
-            FilterableType::List(l) => match l.of_type().unwrap().name() {
-                None => panic!("inner list type name should exist"),
-                Some(name) => format!("{}List", name)
-            },
+            FilterableType::List(l) => format!(
+                "{}List",
+                l.of_type()
+                    .expect("inner list type should exist")
+                    .name()
+                    .expect("inner list type name should exist"))
         }
     }
 }
