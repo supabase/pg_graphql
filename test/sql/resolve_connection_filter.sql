@@ -190,7 +190,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {ov: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
