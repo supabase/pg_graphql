@@ -828,7 +828,7 @@ The `cd` filter is used to return results where every element of the array colum
     }
     ```
 
-The `cd` filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar.
+The `cd` filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar are returned.
 
 === "`cd` Filter with Scalar Query"
     ```graphql
