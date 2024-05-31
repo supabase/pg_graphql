@@ -25,16 +25,25 @@ begin;
                      "name": "BigFloatFilter"     +
                  },                               +
                  {                                +
+                     "name": "BigFloatListFilter" +
+                 },                               +
+                 {                                +
                      "name": "BigInt"             +
                  },                               +
                  {                                +
                      "name": "BigIntFilter"       +
                  },                               +
                  {                                +
+                     "name": "BigIntListFilter"   +
+                 },                               +
+                 {                                +
                      "name": "Boolean"            +
                  },                               +
                  {                                +
                      "name": "BooleanFilter"      +
+                 },                               +
+                 {                                +
+                     "name": "BooleanListFilter"  +
                  },                               +
                  {                                +
                      "name": "Cursor"             +
@@ -46,10 +55,16 @@ begin;
                      "name": "DateFilter"         +
                  },                               +
                  {                                +
+                     "name": "DateListFilter"     +
+                 },                               +
+                 {                                +
                      "name": "Datetime"           +
                  },                               +
                  {                                +
                      "name": "DatetimeFilter"     +
+                 },                               +
+                 {                                +
+                     "name": "DatetimeListFilter" +
                  },                               +
                  {                                +
                      "name": "FilterIs"           +
@@ -61,16 +76,25 @@ begin;
                      "name": "FloatFilter"        +
                  },                               +
                  {                                +
+                     "name": "FloatListFilter"    +
+                 },                               +
+                 {                                +
                      "name": "ID"                 +
                  },                               +
                  {                                +
                      "name": "IDFilter"           +
                  },                               +
                  {                                +
+                     "name": "IDListFilter"       +
+                 },                               +
+                 {                                +
                      "name": "Int"                +
                  },                               +
                  {                                +
                      "name": "IntFilter"          +
+                 },                               +
+                 {                                +
+                     "name": "IntListFilter"      +
                  },                               +
                  {                                +
                      "name": "JSON"               +
@@ -100,16 +124,25 @@ begin;
                      "name": "StringFilter"       +
                  },                               +
                  {                                +
+                     "name": "StringListFilter"   +
+                 },                               +
+                 {                                +
                      "name": "Time"               +
                  },                               +
                  {                                +
                      "name": "TimeFilter"         +
                  },                               +
                  {                                +
+                     "name": "TimeListFilter"     +
+                 },                               +
+                 {                                +
                      "name": "UUID"               +
                  },                               +
                  {                                +
                      "name": "UUIDFilter"         +
+                 },                               +
+                 {                                +
+                     "name": "UUIDListFilter"     +
                  },                               +
                  {                                +
                      "name": "__Directive"        +

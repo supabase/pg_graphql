@@ -1085,7 +1085,7 @@ fn create_filters(
     let kv_map = match validated {
         gson::Value::Absent | gson::Value::Null => return Ok(filters),
         gson::Value::Object(kv) => kv,
-        _ => return Err("Filter re-validation errror".to_string()),
+        _ => return Err("Filter re-validation error".to_string()),
     };
 
     for (k, op_to_v) in kv_map {

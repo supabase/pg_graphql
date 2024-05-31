@@ -3,14 +3,15 @@ begin;
         id int primary key,
         is_verified bool,
         name text,
-        phone text
+        phone text,
+        tags text[]
     );
 
-    insert into public.account(id, is_verified, name, phone)
+    insert into public.account(id, is_verified, name, phone, tags)
     values
-        (1, true, 'foo', '1111111111'),
-        (2, true, 'bar', null),
-        (3, false, 'baz', '33333333333');
+        (1, true, 'foo', '1111111111', '{"customer", "priority"}'),
+        (2, true, 'bar', null, '{"customer"}'),
+        (3, false, 'baz', '33333333333', '{"lead", "priority"}');
 
     savepoint a;
 
@@ -119,6 +120,86 @@ begin;
 
     -- is - null literal returns error (this may change but currently seems like the best option and "unbreaking" it is backwards compatible)
     select graphql.resolve($${accountCollection(filter: {phone: {is: null}}) { edges { node { id } } }}$$);
+    rollback to savepoint a;
+
+    -- cs - array column contains the input scalar
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {cs: "customer"}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- cd - array column is contained by input scalar (aka, the only value in the array column is the input scalar)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {cd: "customer"}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- cs - array column contains the input array
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {cs: ["customer", "priority"]}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- cd - array column is contained by input array
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {cd: ["customer", "priority"]}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+    rollback to savepoint a;
+
+    -- ov - array column overlaps with input array
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {ov: ["customer", "priority"]}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
     rollback to savepoint a;
 
     -- variable is - is null
