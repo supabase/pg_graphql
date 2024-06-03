@@ -81,4 +81,7 @@
 ## 1.5.4
 - bugfix: once a query panics, all subsequent queries return a lock poisoned error.
 
+## 1.5.5
+- feature: add support for filtering on array column types
+
 ## master
