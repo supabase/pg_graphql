@@ -2,82 +2,82 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://supabase.github.io/pg_graphql/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/api/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/changelog/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/computed_fields/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/configuration/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/contributing/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/example_schema/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/functions/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/installation/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/quickstart/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/security/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/sql_interface/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/supabase/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/usage_with_apollo/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/usage_with_relay/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://supabase.github.io/pg_graphql/views/</loc>
-         <lastmod>2023-12-21</lastmod>
+         <lastmod>2024-06-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

@@ -16,6 +16,7 @@ create table blog(
     owner_id integer not null references account(id),
     name varchar(255) not null,
     description varchar(255),
+    tags text[],
     created_at timestamp not null,
     updated_at timestamp not null
 );
@@ -23,7 +24,7 @@ create table blog(
 create type blog_post_status as enum ('PENDING', 'RELEASED');
 
 create table blog_post(
-    id uuid not null default uuid_generate_v4() primary key,
+    id uuid not null default gen_random_uuid() primary key,
     blog_id integer not null references blog(id),
     title varchar(255) not null,
     body varchar(10000),
