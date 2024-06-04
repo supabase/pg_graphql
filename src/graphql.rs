@@ -3718,6 +3718,7 @@ impl ___Type for FilterEntityType {
                                 | Scalar::UUID
                                 | Scalar::BigInt
                                 | Scalar::BigFloat
+                                | Scalar::Time
                                 | Scalar::Date
                                 | Scalar::Datetime => Some(__InputValue {
                                     name_: column_graphql_name,
@@ -4035,12 +4036,6 @@ impl __Schema {
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::Scalar(Scalar::Opaque),
-                schema: Arc::clone(&schema_rc),
-            }),
-            __Type::FilterType(FilterTypeType {
-                entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::ID)),
-                }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
