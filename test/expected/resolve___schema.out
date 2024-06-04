@@ -270,10 +270,6 @@ begin;
                      "name": "IDFilter"                                                                           +
                  },                                                                                               +
                  {                                                                                                +
-                     "kind": "INPUT_OBJECT",                                                                      +
-                     "name": "IDListFilter"                                                                       +
-                 },                                                                                               +
-                 {                                                                                                +
                      "kind": "SCALAR",                                                                            +
                      "name": "Int"                                                                                +
                  },                                                                                               +
