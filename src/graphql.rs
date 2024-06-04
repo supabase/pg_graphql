@@ -1135,7 +1135,8 @@ impl FilterTypeType {
                 l.of_type()
                     .expect("inner list type should exist")
                     .name()
-                    .expect("inner list type name should exist"))
+                    .expect("inner list type name should exist")
+            ),
         }
     }
 }
@@ -3558,7 +3559,7 @@ impl ___Type for FilterTypeType {
                             sql_type: None,
                         },
                         // shouldn't happen since we've covered all cases in supported_ops
-                        _ => panic!("encountered unknown FilterOp")
+                        _ => panic!("encountered unknown FilterOp"),
                     })
                     .collect()
             }
@@ -3687,18 +3688,16 @@ impl ___Type for FilterEntityType {
                     }
 
                     match utype.nullable_type() {
-                        __Type::Scalar(s) => {
-                            Some(__InputValue {
-                                name_: column_graphql_name,
-                                type_: __Type::FilterType(FilterTypeType {
-                                    entity: FilterableType::Scalar(s),
-                                    schema: Arc::clone(&self.schema),
-                                }),
-                                description: None,
-                                default_value: None,
-                                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                            })
-                        },
+                        __Type::Scalar(s) => Some(__InputValue {
+                            name_: column_graphql_name,
+                            type_: __Type::FilterType(FilterTypeType {
+                                entity: FilterableType::Scalar(s),
+                                schema: Arc::clone(&self.schema),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                        }),
                         __Type::Enum(e) => Some(__InputValue {
                             name_: column_graphql_name,
                             type_: __Type::FilterType(FilterTypeType {
@@ -3709,16 +3708,31 @@ impl ___Type for FilterEntityType {
                             default_value: None,
                             sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                         }),
-                        __Type::List(l) => Some(__InputValue {
-                            name_: column_graphql_name,
-                            type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::List(l),
-                                schema: Arc::clone(&self.schema),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                        }),
+                        __Type::List(l) => match l.type_.nullable_type() {
+                            // Only non-json scalars are supported in list types
+                            __Type::Scalar(s) => match s {
+                                Scalar::Int
+                                | Scalar::Float
+                                | Scalar::String(_)
+                                | Scalar::Boolean
+                                | Scalar::UUID
+                                | Scalar::BigInt
+                                | Scalar::BigFloat
+                                | Scalar::Date
+                                | Scalar::Datetime => Some(__InputValue {
+                                    name_: column_graphql_name,
+                                    type_: __Type::FilterType(FilterTypeType {
+                                        entity: FilterableType::List(l),
+                                        schema: Arc::clone(&self.schema),
+                                    }),
+                                    description: None,
+                                    default_value: None,
+                                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                                }),
+                                _ => None,
+                            },
+                            _ => None,
+                        },
                         _ => None,
                     }
                 } else {
@@ -4025,67 +4039,67 @@ impl __Schema {
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::ID))
+                    type_: Box::new(__Type::Scalar(Scalar::ID)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Int))
+                    type_: Box::new(__Type::Scalar(Scalar::Int)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Float))
+                    type_: Box::new(__Type::Scalar(Scalar::Float)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::String(None)))
+                    type_: Box::new(__Type::Scalar(Scalar::String(None))),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
+                    type_: Box::new(__Type::Scalar(Scalar::Boolean)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Date))
+                    type_: Box::new(__Type::Scalar(Scalar::Date)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Time))
+                    type_: Box::new(__Type::Scalar(Scalar::Time)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Datetime))
+                    type_: Box::new(__Type::Scalar(Scalar::Datetime)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::BigInt))
+                    type_: Box::new(__Type::Scalar(Scalar::BigInt)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::UUID))
+                    type_: Box::new(__Type::Scalar(Scalar::UUID)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::BigFloat))
+                    type_: Box::new(__Type::Scalar(Scalar::BigFloat)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
