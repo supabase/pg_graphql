@@ -236,7 +236,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cs: "customer"}}) {
+              accountCollection(filter: {tags: {contains: "customer"}}) {
                 edges {
                   node {
                     id
@@ -246,25 +246,15 @@ begin;
             }
         $$)
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "accountCollection": { +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 1+
-                     }          +
-                 },             +
-                 {              +
-                     "node": {  +
-                         "id": 2+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     }                          +
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": null,                                +
+     "errors": [                                  +
+         {                                        +
+             "message": "Invalid filter operation"+
+         }                                        +
+     ]                                            +
  }
 (1 row)
 
@@ -273,7 +263,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: "customer"}}) {
+              accountCollection(filter: {tags: {containedBy: "customer"}}) {
                 edges {
                   node {
                     id
@@ -283,20 +273,15 @@ begin;
             }
         $$)
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "accountCollection": { +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 2+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     }                          +
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": null,                                +
+     "errors": [                                  +
+         {                                        +
+             "message": "Invalid filter operation"+
+         }                                        +
+     ]                                            +
  }
 (1 row)
 
@@ -305,7 +290,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cs: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {contains: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -315,20 +300,15 @@ begin;
             }
         $$)
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "accountCollection": { +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 1+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     }                          +
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": null,                                +
+     "errors": [                                  +
+         {                                        +
+             "message": "Invalid filter operation"+
+         }                                        +
+     ]                                            +
  }
 (1 row)
 
@@ -337,7 +317,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {containedBy: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -347,25 +327,15 @@ begin;
             }
         $$)
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "accountCollection": { +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 1+
-                     }          +
-                 },             +
-                 {              +
-                     "node": {  +
-                         "id": 2+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     }                          +
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": null,                                +
+     "errors": [                                  +
+         {                                        +
+             "message": "Invalid filter operation"+
+         }                                        +
+     ]                                            +
  }
 (1 row)
 
@@ -374,7 +344,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {ov: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {overlaps: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -384,30 +354,15 @@ begin;
             }
         $$)
     );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "accountCollection": { +
-             "edges": [         +
-                 {              +
-                     "node": {  +
-                         "id": 1+
-                     }          +
-                 },             +
-                 {              +
-                     "node": {  +
-                         "id": 2+
-                     }          +
-                 },             +
-                 {              +
-                     "node": {  +
-                         "id": 3+
-                     }          +
-                 }              +
-             ]                  +
-         }                      +
-     }                          +
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": null,                                +
+     "errors": [                                  +
+         {                                        +
+             "message": "Invalid filter operation"+
+         }                                        +
+     ]                                            +
  }
 (1 row)
 

@@ -1311,7 +1311,7 @@ where
     )?;
     let _: Scalar = match field
         .get_arg(arg_name)
-        .unwrap_or_else(|| panic!("failed to get {arg_name} argument"))
+        .expect(&format!("failed to get {arg_name} argument"))
         .type_()
         .unmodified_type()
     {

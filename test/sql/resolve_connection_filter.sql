@@ -126,7 +126,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cs: "customer"}}) {
+              accountCollection(filter: {tags: {contains: "customer"}}) {
                 edges {
                   node {
                     id
@@ -142,7 +142,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: "customer"}}) {
+              accountCollection(filter: {tags: {containedBy: "customer"}}) {
                 edges {
                   node {
                     id
@@ -158,7 +158,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cs: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {contains: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -174,7 +174,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {containedBy: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -190,7 +190,7 @@ begin;
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {ov: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {overlaps: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
