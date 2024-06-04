@@ -3357,9 +3357,9 @@ impl ToString for FilterOp {
             Self::ILike => "ilike",
             Self::RegEx => "regex",
             Self::IRegEx => "iregex",
-            Self::Contains => "cs",
-            Self::ContainedBy => "cd",
-            Self::Overlap => "ov",
+            Self::Contains => "contains",
+            Self::ContainedBy => "containedBy",
+            Self::Overlap => "overlaps",
         }
         .to_string()
     }
@@ -3383,9 +3383,9 @@ impl FromStr for FilterOp {
             "ilike" => Ok(Self::ILike),
             "regex" => Ok(Self::RegEx),
             "iregex" => Ok(Self::IRegEx),
-            "cs" => Ok(Self::Contains),
-            "cd" => Ok(Self::ContainedBy),
-            "ov" => Ok(Self::Overlap),
+            "contains" => Ok(Self::Contains),
+            "containedBy" => Ok(Self::ContainedBy),
+            "overlaps" => Ok(Self::Overlap),
             _ => Err("Invalid filter operation".to_string()),
         }
     }
@@ -3519,7 +3519,7 @@ impl ___Type for FilterTypeType {
 
                 supported_ops
                     .iter()
-                    .map(|op| match op {
+                    .filter_map(|op| match op {
                         FilterOp::Equal
                         | FilterOp::NotEqual
                         | FilterOp::GreaterThan
@@ -3530,14 +3530,14 @@ impl ___Type for FilterTypeType {
                         | FilterOp::Like
                         | FilterOp::ILike
                         | FilterOp::RegEx
-                        | FilterOp::IRegEx => __InputValue {
+                        | FilterOp::IRegEx => Some(__InputValue {
                             name_: op.to_string(),
                             type_: __Type::Scalar(scalar.clone()),
                             description: None,
                             default_value: None,
                             sql_type: None,
-                        },
-                        FilterOp::In => __InputValue {
+                        }),
+                        FilterOp::In => Some(__InputValue {
                             name_: op.to_string(),
                             type_: __Type::List(ListType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
@@ -3547,8 +3547,8 @@ impl ___Type for FilterTypeType {
                             description: None,
                             default_value: None,
                             sql_type: None,
-                        },
-                        FilterOp::Is => __InputValue {
+                        }),
+                        FilterOp::Is => Some(__InputValue {
                             name_: "is".to_string(),
                             type_: __Type::Enum(EnumType {
                                 enum_: EnumSource::FilterIs,
@@ -3557,9 +3557,9 @@ impl ___Type for FilterTypeType {
                             description: None,
                             default_value: None,
                             sql_type: None,
-                        },
+                        }),
                         // shouldn't happen since we've covered all cases in supported_ops
-                        _ => panic!("encountered unknown FilterOp"),
+                        FilterOp::Contains | FilterOp::ContainedBy | FilterOp::Overlap => None,
                     })
                     .collect()
             }

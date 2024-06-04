@@ -122,11 +122,11 @@ begin;
     select graphql.resolve($${accountCollection(filter: {phone: {is: null}}) { edges { node { id } } }}$$);
     rollback to savepoint a;
 
-    -- cs - array column contains the input scalar
+    -- contains - array column contains the input scalar
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cs: "customer"}}) {
+              accountCollection(filter: {tags: {contains: "customer"}}) {
                 edges {
                   node {
                     id
@@ -138,11 +138,11 @@ begin;
     );
     rollback to savepoint a;
 
-    -- cd - array column is contained by input scalar (aka, the only value in the array column is the input scalar)
+    -- containedBy - array column is contained by input scalar (aka, the only value in the array column is the input scalar)
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: "customer"}}) {
+              accountCollection(filter: {tags: {containedBy: "customer"}}) {
                 edges {
                   node {
                     id
@@ -154,11 +154,11 @@ begin;
     );
     rollback to savepoint a;
 
-    -- cs - array column contains the input array
+    -- contains - array column contains the input array
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cs: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {contains: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -170,11 +170,11 @@ begin;
     );
     rollback to savepoint a;
 
-    -- cd - array column is contained by input array
+    -- containedByd - array column is contained by input array
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {cd: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {containedBy: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
@@ -186,11 +186,11 @@ begin;
     );
     rollback to savepoint a;
 
-    -- ov - array column overlaps with input array
+    -- overlaps - array column overlaps with input array
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection(filter: {tags: {ov: ["customer", "priority"]}}) {
+              accountCollection(filter: {tags: {overlaps: ["customer", "priority"]}}) {
                 edges {
                   node {
                     id
