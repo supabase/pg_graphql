@@ -246,15 +246,25 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": null,                                +
-     "errors": [                                  +
-         {                                        +
-             "message": "Invalid filter operation"+
-         }                                        +
-     ]                                            +
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
  }
 (1 row)
 
@@ -273,15 +283,20 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": null,                                +
-     "errors": [                                  +
-         {                                        +
-             "message": "Invalid filter operation"+
-         }                                        +
-     ]                                            +
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
  }
 (1 row)
 
@@ -300,15 +315,20 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": null,                                +
-     "errors": [                                  +
-         {                                        +
-             "message": "Invalid filter operation"+
-         }                                        +
-     ]                                            +
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
  }
 (1 row)
 
@@ -327,15 +347,25 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": null,                                +
-     "errors": [                                  +
-         {                                        +
-             "message": "Invalid filter operation"+
-         }                                        +
-     ]                                            +
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
  }
 (1 row)
 
@@ -354,15 +384,30 @@ begin;
             }
         $$)
     );
-                   jsonb_pretty                    
----------------------------------------------------
- {                                                +
-     "data": null,                                +
-     "errors": [                                  +
-         {                                        +
-             "message": "Invalid filter operation"+
-         }                                        +
-     ]                                            +
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
  }
 (1 row)
 
