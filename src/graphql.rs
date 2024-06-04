@@ -3607,11 +3607,6 @@ impl ___Type for FilterTypeType {
                     FilterOp::Contains,
                     FilterOp::ContainedBy,
                     FilterOp::Equal,
-                    FilterOp::GreaterThan,
-                    FilterOp::GreaterThanEqualTo,
-                    FilterOp::LessThan,
-                    FilterOp::LessThanEqualTo,
-                    FilterOp::NotEqual,
                     FilterOp::Overlap,
                 ];
 
