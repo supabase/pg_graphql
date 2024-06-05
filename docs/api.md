@@ -583,15 +583,10 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
     Boolean expression comparing fields on type "StringList"
     """
     input StringListFilter {
-      cd: [String!]
-      cs: [String!]
+      contains: [String!]
+      containedBy: [String!]
       eq: [String!]
-      gt: [String!]
-      gte: [String!]
-      lt: [String!]
-      lte: [String!]
-      neq: [String!]
-      ov: [String!]
+      overlaps: [String!]
     }
     ```
 
@@ -607,24 +602,24 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
 The following list shows the operators that may be available on `<Type>Filter` types.
 
 
-| Operator   | Description                                                       |
-|------------|-------------------------------------------------------------------|
-| eq         | Equal To                                                          |
-| neq        | Not Equal To                                                      |
-| gt         | Greater Than                                                      |
-| gte        | Greater Than Or Equal To                                          |
-| in         | Contained by Value List                                           |
-| lt         | Less Than                                                         |
-| lte        | Less Than Or Equal To                                             |
-| is         | Null or Not Null                                                  |
-| startsWith | Starts with prefix                                                |
-| like       | Pattern Match. '%' as wildcard                                    |
-| ilike      | Pattern Match. '%' as wildcard. Case Insensitive                  |
-| regex      | POSIX Regular Expression Match                                    |
-| iregex     | POSIX Regular Expression Match. Case Insensitive                  |
-| cs         | Contains. Applies to array columns only.                          |
-| cd         | Contained in. Applies to array columns only.                      |
-| ov         | Overlap (have points in common). Applies to array columns only.   |
+| Operator    | Description                                                       |
+|-------------|-------------------------------------------------------------------|
+| eq          | Equal To                                                          |
+| neq         | Not Equal To                                                      |
+| gt          | Greater Than                                                      |
+| gte         | Greater Than Or Equal To                                          |
+| in          | Contained by Value List                                           |
+| lt          | Less Than                                                         |
+| lte         | Less Than Or Equal To                                             |
+| is          | Null or Not Null                                                  |
+| startsWith  | Starts with prefix                                                |
+| like        | Pattern Match. '%' as wildcard                                    |
+| ilike       | Pattern Match. '%' as wildcard. Case Insensitive                  |
+| regex       | POSIX Regular Expression Match                                    |
+| iregex      | POSIX Regular Expression Match. Case Insensitive                  |
+| contains    | Contains. Applies to array columns only.                          |
+| containedBy | Contained in. Applies to array columns only.                      |
+| overlaps    | Overlap (have points in common). Applies to array columns only.   |
 
 Not all operators are available on every `<Type>Filter` type. For example, `UUIDFilter` only supports `eq` and `neq` because `UUID`s are not ordered.
 
@@ -675,13 +670,13 @@ Not all operators are available on every `<Type>Filter` type. For example, `UUID
 
 **Example: array column**
 
-The `cs` filter is used to return results where all the elements in the input array appear in the array column.
+The `contains` filter is used to return results where all the elements in the input array appear in the array column.
 
-=== "`cs` Filter Query"
+=== "`contains` Filter Query"
     ```graphql
     {
       blogCollection(
-        filter: {tags: {cs: ["tech", "innovation"]}},
+        filter: {tags: {contains: ["tech", "innovation"]}},
       ) {
         edges {
           cursor
@@ -696,7 +691,7 @@ The `cs` filter is used to return results where all the elements in the input ar
     }
     ```
 
-=== "`cs` Filter Result"
+=== "`contains` Filter Result"
     ```json
     {
       "data": {
@@ -726,13 +721,13 @@ The `cs` filter is used to return results where all the elements in the input ar
     }
     ```
 
-The `cs` filter can also accept a single scalar.
+The `contains` filter can also accept a single scalar.
 
-=== "`cs` Filter with Scalar Query"
+=== "`contains` Filter with Scalar Query"
     ```graphql
     {
       blogCollection(
-        filter: {tags: {cs: "tech"}},
+        filter: {tags: {contains: "tech"}},
       ) {
         edges {
           cursor
@@ -747,7 +742,7 @@ The `cs` filter can also accept a single scalar.
     }
     ```
 
-=== "`cs` Filter with Scalar Result"
+=== "`contains` Filter with Scalar Result"
     ```json
     {
       "data": {
@@ -777,13 +772,13 @@ The `cs` filter can also accept a single scalar.
     }
     ```
 
-The `cd` filter is used to return results where every element of the array column appears in the input array.
+The `containedBy` filter is used to return results where every element of the array column appears in the input array.
 
-=== "`cd` Filter Query"
+=== "`containedBy` Filter Query"
     ```graphql
     {
       blogCollection(
-        filter: {tags: {cd: ["entrepreneurship", "innovation", "tech"]}},
+        filter: {tags: {containedBy: ["entrepreneurship", "innovation", "tech"]}},
       ) {
         edges {
           cursor
@@ -798,7 +793,7 @@ The `cd` filter is used to return results where every element of the array colum
     }
     ```
 
-=== "`cd` Filter Result"
+=== "`containedBy` Filter Result"
     ```json
     {
       "data": {
@@ -828,13 +823,13 @@ The `cd` filter is used to return results where every element of the array colum
     }
     ```
 
-The `cd` filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar are returned.
+The `containedBy` filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar are returned.
 
-=== "`cd` Filter with Scalar Query"
+=== "`containedBy` Filter with Scalar Query"
     ```graphql
     {
       blogCollection(
-        filter: {tags: {cd: "travel"}},
+        filter: {tags: {containedBy: "travel"}},
       ) {
         edges {
           cursor
@@ -849,7 +844,7 @@ The `cd` filter can also accept a single scalar. In this case, only results wher
     }
     ```
 
-=== "`cd` Filter with Scalar Result"
+=== "`containedBy` Filter with Scalar Result"
     ```json
     {
       "data": {
@@ -870,13 +865,13 @@ The `cd` filter can also accept a single scalar. In this case, only results wher
     }
     ```
 
-The `ov` filter is used to return results where the array column and the input array have at least one element in common.
+The `overlaps` filter is used to return results where the array column and the input array have at least one element in common.
 
-=== "`ov` Filter Query"
+=== "`overlaps` Filter Query"
     ```graphql
     {
       blogCollection(
-        filter: {tags: {ov: ["tech", "travel"]}},
+        filter: {tags: {overlaps: ["tech", "travel"]}},
       ) {
         edges {
           cursor
@@ -891,7 +886,7 @@ The `ov` filter is used to return results where the array column and the input a
     }
     ```
 
-=== "`ov` Filter Result"
+=== "`overlaps` Filter Result"
     ```json
     {
       "data": {
