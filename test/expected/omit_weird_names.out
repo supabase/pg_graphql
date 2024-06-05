@@ -85,9 +85,6 @@ begin;
                      "name": "IDFilter"           +
                  },                               +
                  {                                +
-                     "name": "IDListFilter"       +
-                 },                               +
-                 {                                +
                      "name": "Int"                +
                  },                               +
                  {                                +

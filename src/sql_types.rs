@@ -662,8 +662,6 @@ impl Context {
                     },
                 };
 
-                //panic!("{:?}, {}", fk, self.fkey_is_selectable(&fk));
-
                 fkeys.push(Arc::new(fk));
             }
         }

@@ -686,26 +686,10 @@ begin;
                      }                                +
                  },                                   +
                  {                                    +
-                     "name": "typeArrayEnum",         +
-                     "type": {                        +
-                         "kind": "INPUT_OBJECT",      +
-                         "name": "ColorListFilter",   +
-                         "ofType": null               +
-                     }                                +
-                 },                                   +
-                 {                                    +
                      "name": "typeArrayText",         +
                      "type": {                        +
                          "kind": "INPUT_OBJECT",      +
                          "name": "StringListFilter",  +
-                         "ofType": null               +
-                     }                                +
-                 },                                   +
-                 {                                    +
-                     "name": "typeArrayJson",         +
-                     "type": {                        +
-                         "kind": "INPUT_OBJECT",      +
-                         "name": "JSONListFilter",    +
                          "ofType": null               +
                      }                                +
                  },                                   +

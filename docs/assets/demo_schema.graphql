@@ -129,15 +129,10 @@ input BigFloatFilter {
 Boolean expression comparing fields on type "BigFloatList"
 """
 input BigFloatListFilter {
-  cd: [BigFloat!]
-  cs: [BigFloat!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
   eq: [BigFloat!]
-  gt: [BigFloat!]
-  gte: [BigFloat!]
-  lt: [BigFloat!]
-  lte: [BigFloat!]
-  neq: [BigFloat!]
-  ov: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """An arbitrary size integer represented as a string"""
@@ -161,15 +156,10 @@ input BigIntFilter {
 Boolean expression comparing fields on type "BigIntList"
 """
 input BigIntListFilter {
-  cd: [BigInt!]
-  cs: [BigInt!]
-  eq: [BigInt!]
-  gt: [BigInt!]
-  gte: [BigInt!]
-  lt: [BigInt!]
-  lte: [BigInt!]
-  neq: [BigInt!]
-  ov: [BigInt!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 type Blog implements Node {
@@ -420,15 +410,10 @@ input BooleanFilter {
 Boolean expression comparing fields on type "BooleanList"
 """
 input BooleanListFilter {
-  cd: [Boolean!]
-  cs: [Boolean!]
-  eq: [Boolean!]
-  gt: [Boolean!]
-  gte: [Boolean!]
-  lt: [Boolean!]
-  lte: [Boolean!]
-  neq: [Boolean!]
-  ov: [Boolean!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """
@@ -457,15 +442,10 @@ input DateFilter {
 Boolean expression comparing fields on type "DateList"
 """
 input DateListFilter {
-  cd: [Date!]
-  cs: [Date!]
-  eq: [Date!]
-  gt: [Date!]
-  gte: [Date!]
-  lt: [Date!]
-  lte: [Date!]
-  neq: [Date!]
-  ov: [Date!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """A date and time"""
@@ -489,15 +469,10 @@ input DatetimeFilter {
 Boolean expression comparing fields on type "DatetimeList"
 """
 input DatetimeListFilter {
-  cd: [Datetime!]
-  cs: [Datetime!]
-  eq: [Datetime!]
-  gt: [Datetime!]
-  gte: [Datetime!]
-  lt: [Datetime!]
-  lte: [Datetime!]
-  neq: [Datetime!]
-  ov: [Datetime!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 enum FilterIs {
@@ -523,15 +498,10 @@ input FloatFilter {
 Boolean expression comparing fields on type "FloatList"
 """
 input FloatListFilter {
-  cd: [Float!]
-  cs: [Float!]
-  eq: [Float!]
-  gt: [Float!]
-  gte: [Float!]
-  lt: [Float!]
-  lte: [Float!]
-  neq: [Float!]
-  ov: [Float!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """
@@ -539,21 +509,6 @@ Boolean expression comparing fields on type "ID"
 """
 input IDFilter {
   eq: ID
-}
-
-"""
-Boolean expression comparing fields on type "IDList"
-"""
-input IDListFilter {
-  cd: [ID!]
-  cs: [ID!]
-  eq: [ID!]
-  gt: [ID!]
-  gte: [ID!]
-  lt: [ID!]
-  lte: [ID!]
-  neq: [ID!]
-  ov: [ID!]
 }
 
 """
@@ -574,15 +529,10 @@ input IntFilter {
 Boolean expression comparing fields on type "IntList"
 """
 input IntListFilter {
-  cd: [Int!]
-  cs: [Int!]
-  eq: [Int!]
-  gt: [Int!]
-  gte: [Int!]
-  lt: [Int!]
-  lte: [Int!]
-  neq: [Int!]
-  ov: [Int!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """A Javascript Object Notation value serialized as a string"""
@@ -829,15 +779,10 @@ input StringFilter {
 Boolean expression comparing fields on type "StringList"
 """
 input StringListFilter {
-  cd: [String!]
-  cs: [String!]
-  eq: [String!]
-  gt: [String!]
-  gte: [String!]
-  lt: [String!]
-  lte: [String!]
-  neq: [String!]
-  ov: [String!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """A time without date information"""
@@ -861,15 +806,10 @@ input TimeFilter {
 Boolean expression comparing fields on type "TimeList"
 """
 input TimeListFilter {
-  cd: [Time!]
-  cs: [Time!]
-  eq: [Time!]
-  gt: [Time!]
-  gte: [Time!]
-  lt: [Time!]
-  lte: [Time!]
-  neq: [Time!]
-  ov: [Time!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }
 
 """A universally unique identifier"""
@@ -889,13 +829,8 @@ input UUIDFilter {
 Boolean expression comparing fields on type "UUIDList"
 """
 input UUIDListFilter {
-  cd: [UUID!]
-  cs: [UUID!]
-  eq: [UUID!]
-  gt: [UUID!]
-  gte: [UUID!]
-  lt: [UUID!]
-  lte: [UUID!]
-  neq: [UUID!]
-  ov: [UUID!]
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  overlaps: [BigFloat!]
 }

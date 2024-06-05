@@ -1135,7 +1135,8 @@ impl FilterTypeType {
                 l.of_type()
                     .expect("inner list type should exist")
                     .name()
-                    .expect("inner list type name should exist"))
+                    .expect("inner list type name should exist")
+            ),
         }
     }
 }
@@ -3356,9 +3357,9 @@ impl ToString for FilterOp {
             Self::ILike => "ilike",
             Self::RegEx => "regex",
             Self::IRegEx => "iregex",
-            Self::Contains => "cs",
-            Self::ContainedBy => "cd",
-            Self::Overlap => "ov",
+            Self::Contains => "contains",
+            Self::ContainedBy => "containedBy",
+            Self::Overlap => "overlaps",
         }
         .to_string()
     }
@@ -3382,9 +3383,9 @@ impl FromStr for FilterOp {
             "ilike" => Ok(Self::ILike),
             "regex" => Ok(Self::RegEx),
             "iregex" => Ok(Self::IRegEx),
-            "cs" => Ok(Self::Contains),
-            "cd" => Ok(Self::ContainedBy),
-            "ov" => Ok(Self::Overlap),
+            "contains" => Ok(Self::Contains),
+            "containedBy" => Ok(Self::ContainedBy),
+            "overlaps" => Ok(Self::Overlap),
             _ => Err("Invalid filter operation".to_string()),
         }
     }
@@ -3518,7 +3519,7 @@ impl ___Type for FilterTypeType {
 
                 supported_ops
                     .iter()
-                    .map(|op| match op {
+                    .filter_map(|op| match op {
                         FilterOp::Equal
                         | FilterOp::NotEqual
                         | FilterOp::GreaterThan
@@ -3529,14 +3530,14 @@ impl ___Type for FilterTypeType {
                         | FilterOp::Like
                         | FilterOp::ILike
                         | FilterOp::RegEx
-                        | FilterOp::IRegEx => __InputValue {
+                        | FilterOp::IRegEx => Some(__InputValue {
                             name_: op.to_string(),
                             type_: __Type::Scalar(scalar.clone()),
                             description: None,
                             default_value: None,
                             sql_type: None,
-                        },
-                        FilterOp::In => __InputValue {
+                        }),
+                        FilterOp::In => Some(__InputValue {
                             name_: op.to_string(),
                             type_: __Type::List(ListType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
@@ -3546,8 +3547,8 @@ impl ___Type for FilterTypeType {
                             description: None,
                             default_value: None,
                             sql_type: None,
-                        },
-                        FilterOp::Is => __InputValue {
+                        }),
+                        FilterOp::Is => Some(__InputValue {
                             name_: "is".to_string(),
                             type_: __Type::Enum(EnumType {
                                 enum_: EnumSource::FilterIs,
@@ -3556,9 +3557,9 @@ impl ___Type for FilterTypeType {
                             description: None,
                             default_value: None,
                             sql_type: None,
-                        },
+                        }),
                         // shouldn't happen since we've covered all cases in supported_ops
-                        _ => panic!("encountered unknown FilterOp")
+                        FilterOp::Contains | FilterOp::ContainedBy | FilterOp::Overlap => None,
                     })
                     .collect()
             }
@@ -3606,11 +3607,6 @@ impl ___Type for FilterTypeType {
                     FilterOp::Contains,
                     FilterOp::ContainedBy,
                     FilterOp::Equal,
-                    FilterOp::GreaterThan,
-                    FilterOp::GreaterThanEqualTo,
-                    FilterOp::LessThan,
-                    FilterOp::LessThanEqualTo,
-                    FilterOp::NotEqual,
                     FilterOp::Overlap,
                 ];
 
@@ -3687,18 +3683,16 @@ impl ___Type for FilterEntityType {
                     }
 
                     match utype.nullable_type() {
-                        __Type::Scalar(s) => {
-                            Some(__InputValue {
-                                name_: column_graphql_name,
-                                type_: __Type::FilterType(FilterTypeType {
-                                    entity: FilterableType::Scalar(s),
-                                    schema: Arc::clone(&self.schema),
-                                }),
-                                description: None,
-                                default_value: None,
-                                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                            })
-                        },
+                        __Type::Scalar(s) => Some(__InputValue {
+                            name_: column_graphql_name,
+                            type_: __Type::FilterType(FilterTypeType {
+                                entity: FilterableType::Scalar(s),
+                                schema: Arc::clone(&self.schema),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                        }),
                         __Type::Enum(e) => Some(__InputValue {
                             name_: column_graphql_name,
                             type_: __Type::FilterType(FilterTypeType {
@@ -3709,16 +3703,32 @@ impl ___Type for FilterEntityType {
                             default_value: None,
                             sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
                         }),
-                        __Type::List(l) => Some(__InputValue {
-                            name_: column_graphql_name,
-                            type_: __Type::FilterType(FilterTypeType {
-                                entity: FilterableType::List(l),
-                                schema: Arc::clone(&self.schema),
-                            }),
-                            description: None,
-                            default_value: None,
-                            sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
-                        }),
+                        __Type::List(l) => match l.type_.nullable_type() {
+                            // Only non-json scalars are supported in list types
+                            __Type::Scalar(s) => match s {
+                                Scalar::Int
+                                | Scalar::Float
+                                | Scalar::String(_)
+                                | Scalar::Boolean
+                                | Scalar::UUID
+                                | Scalar::BigInt
+                                | Scalar::BigFloat
+                                | Scalar::Time
+                                | Scalar::Date
+                                | Scalar::Datetime => Some(__InputValue {
+                                    name_: column_graphql_name,
+                                    type_: __Type::FilterType(FilterTypeType {
+                                        entity: FilterableType::List(l),
+                                        schema: Arc::clone(&self.schema),
+                                    }),
+                                    description: None,
+                                    default_value: None,
+                                    sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                                }),
+                                _ => None,
+                            },
+                            _ => None,
+                        },
                         _ => None,
                     }
                 } else {
@@ -4025,67 +4035,61 @@ impl __Schema {
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::ID))
+                    type_: Box::new(__Type::Scalar(Scalar::Int)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Int))
+                    type_: Box::new(__Type::Scalar(Scalar::Float)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Float))
+                    type_: Box::new(__Type::Scalar(Scalar::String(None))),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::String(None)))
+                    type_: Box::new(__Type::Scalar(Scalar::Boolean)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Boolean))
+                    type_: Box::new(__Type::Scalar(Scalar::Date)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Date))
+                    type_: Box::new(__Type::Scalar(Scalar::Time)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Time))
+                    type_: Box::new(__Type::Scalar(Scalar::Datetime)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::Datetime))
+                    type_: Box::new(__Type::Scalar(Scalar::BigInt)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::BigInt))
+                    type_: Box::new(__Type::Scalar(Scalar::UUID)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
             __Type::FilterType(FilterTypeType {
                 entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::UUID))
-                }),
-                schema: Arc::clone(&schema_rc),
-            }),
-            __Type::FilterType(FilterTypeType {
-                entity: FilterableType::List(ListType {
-                    type_: Box::new(__Type::Scalar(Scalar::BigFloat))
+                    type_: Box::new(__Type::Scalar(Scalar::BigFloat)),
                 }),
                 schema: Arc::clone(&schema_rc),
             }),
