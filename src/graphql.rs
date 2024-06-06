@@ -3608,11 +3608,22 @@ impl ___Type for FilterTypeType {
                     FilterOp::ContainedBy,
                     FilterOp::Equal,
                     FilterOp::Overlap,
+                    FilterOp::Is,
                 ];
 
                 supported_ops
                     .iter()
                     .map(|op| match op {
+                        FilterOp::Is => __InputValue {
+                            name_: "is".to_string(),
+                            type_: __Type::Enum(EnumType {
+                                enum_: EnumSource::FilterIs,
+                                schema: Arc::clone(&self.schema),
+                            }),
+                            description: None,
+                            default_value: None,
+                            sql_type: None,
+                        },
                         _ => __InputValue {
                             name_: op.to_string(),
                             type_: __Type::List(ListType {

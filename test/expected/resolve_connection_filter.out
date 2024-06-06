@@ -10,7 +10,8 @@ begin;
     values
         (1, true, 'foo', '1111111111', '{"customer", "priority"}'),
         (2, true, 'bar', null, '{"customer"}'),
-        (3, false, 'baz', '33333333333', '{"lead", "priority"}');
+        (3, false, 'baz', '33333333333', '{"lead", "priority"}'),
+        (4, false, 'qui', '4585858', null);
     savepoint a;
     -- Filter by Int
     select jsonb_pretty(
@@ -137,6 +138,11 @@ begin;
                      "node": {  +
                          "id": 3+
                      }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 4+
+                     }          +
                  }              +
              ]                  +
          }                      +
@@ -146,17 +152,17 @@ begin;
 
     -- filter = null is ignored
     select graphql.resolve($${accountCollection(filter: null) { edges { node { id } } }}$$);
-                                                   resolve                                                   
--------------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
+                                                             resolve                                                              
+----------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
     -- neq
     select graphql.resolve($${accountCollection(filter: {id: {neq: 2}}) { edges { node { id } } }}$$);
-                                        resolve                                         
-----------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 3}}]}}}
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -186,17 +192,17 @@ begin;
     rollback to savepoint a;
     -- gte
     select graphql.resolve($${accountCollection(filter: {id: {gte: 2}}) { edges { node { id } } }}$$);
-                                        resolve                                         
-----------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 2}}, {"node": {"id": 3}}]}}}
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
     -- gt
     select graphql.resolve($${accountCollection(filter: {id: {gt: 2}}) { edges { node { id } } }}$$);
-                              resolve                              
--------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}]}}}
+                                        resolve                                         
+----------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -210,9 +216,9 @@ begin;
     rollback to savepoint a;
     -- is - is not null
     select graphql.resolve($${accountCollection(filter: {phone: {is: NOT_NULL}}) { edges { node { id } } }}$$);
-                                        resolve                                         
-----------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 3}}]}}}
+                                                   resolve                                                   
+-------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -412,6 +418,37 @@ begin;
 (1 row)
 
     rollback to savepoint a;
+    -- is - array column is NULL/NOT_NULL
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {is: NULL}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 4+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
     -- variable is - is null
     select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{"nis": "NULL"}');
                               resolve                              
@@ -422,9 +459,9 @@ begin;
     rollback to savepoint a;
     -- variable is - absent treated as ignored / returns all
     select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{}');
-                                                   resolve                                                   
--------------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
+                                                             resolve                                                              
+----------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -478,9 +515,9 @@ begin;
     rollback to savepoint a;
     -- variable in - absent treated as ignored / returns all
     select graphql.resolve($$query AAA($nin: [String!]) { accountCollection(filter: {name: {in: $nin}}) { edges { node { id } } }}$$, '{}');
-                                                   resolve                                                   
--------------------------------------------------------------------------------------------------------------
- {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}]}}}
+                                                             resolve                                                              
+----------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}]}}}
 (1 row)
 
     rollback to savepoint a;
@@ -959,6 +996,11 @@ begin;
                  {              +
                      "node": {  +
                          "id": 3+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 4+
                      }          +
                  }              +
              ]                  +

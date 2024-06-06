@@ -11,7 +11,8 @@ begin;
     values
         (1, true, 'foo', '1111111111', '{"customer", "priority"}'),
         (2, true, 'bar', null, '{"customer"}'),
-        (3, false, 'baz', '33333333333', '{"lead", "priority"}');
+        (3, false, 'baz', '33333333333', '{"lead", "priority"}'),
+        (4, false, 'qui', '4585858', null);
 
     savepoint a;
 
@@ -201,6 +202,21 @@ begin;
         $$)
     );
     rollback to savepoint a;
+
+    -- is - array column is NULL/NOT_NULL
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection(filter: {tags: {is: NULL}}) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$)
+    );
 
     -- variable is - is null
     select graphql.resolve($$query AAA($nis: FilterIs) { accountCollection(filter: {phone: {is: $nis}}) { edges { node { id } } }}$$, '{"nis": "NULL"}');
