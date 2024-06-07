@@ -587,6 +587,7 @@ Where the `<Table>Filter` type enumerates filterable fields and their associated
       containedBy: [String!]
       eq: [String!]
       overlaps: [String!]
+      is: FilterIs
     }
     ```
 
