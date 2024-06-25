@@ -263,10 +263,12 @@ impl<'a> ArgsIterator<'a> {
 
     fn sql_to_graphql_default(default_str: &str, type_oid: u32) -> Option<DefaultValue> {
         let trimmed = default_str.trim();
+
         if trimmed.starts_with("NULL::") {
             return Some(DefaultValue::Null);
         }
-        match type_oid {
+
+        let res = match type_oid {
             21 | 23 => trimmed
                 .parse::<i32>()
                 .ok()
@@ -283,6 +285,16 @@ impl<'a> ArgsIterator<'a> {
                 DefaultValue::NonNull(format!("\"{}\"", i.trim_matches(',').trim_matches('\'')))
             }),
             _ => None,
+        };
+
+        // return the non-parsed value as default if for whatever reason the default value can't
+        // be parsed into a value of the required type. This fixes problems where the default
+        // is a complex expression like a function call etc. See test/sql/issue_533.sql for
+        // a test case for this scenario.
+        if res.is_some() {
+            res
+        } else {
+            Some(DefaultValue::NonNull(trimmed.to_string()))
         }
     }
 }
