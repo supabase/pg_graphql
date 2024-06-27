@@ -84,5 +84,5 @@
 ## 1.5.6
 - feature: add support for filtering on array column types using `contains`, `containedBy`, `overlaps`, `is`, `eq`
 
-
 ## master
+- bugfix: UDF argument with a complex default expression was marked as required
