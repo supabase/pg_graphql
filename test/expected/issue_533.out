@@ -52,7 +52,7 @@ begin;
                                      "name": "UUID",                   +
                                      "ofType": null                    +
                                  },                                    +
-                                 "defaultValue": "uid()"               +
+                                 "defaultValue": null                  +
                              }                                         +
                          ],                                            +
                          "name": "getUserId",                          +
@@ -181,7 +181,7 @@ begin;
                                      "name": "String",                 +
                                      "ofType": null                    +
                                  },                                    +
-                                 "defaultValue": "uid()"               +
+                                 "defaultValue": null                  +
                              }                                         +
                          ],                                            +
                          "name": "getUserId",                          +
@@ -305,7 +305,7 @@ begin;
                                      "name": "Int",                    +
                                      "ofType": null                    +
                                  },                                    +
-                                 "defaultValue": "(1 + 1)"             +
+                                 "defaultValue": null                  +
                              },                                        +
                              {                                         +
                                  "name": "b",                          +
@@ -314,7 +314,7 @@ begin;
                                      "name": "Int",                    +
                                      "ofType": null                    +
                                  },                                    +
-                                 "defaultValue": "(2 + 2)"             +
+                                 "defaultValue": null                  +
                              }                                         +
                          ],                                            +
                          "name": "addNums",                            +

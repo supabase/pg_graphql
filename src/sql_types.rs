@@ -294,7 +294,7 @@ impl<'a> ArgsIterator<'a> {
         if res.is_some() {
             res
         } else {
-            Some(DefaultValue::NonNull(trimmed.to_string()))
+            Some(DefaultValue::Null)
         }
     }
 }
