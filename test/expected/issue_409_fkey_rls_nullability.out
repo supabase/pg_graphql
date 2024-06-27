@@ -210,56 +210,54 @@ begin;
         }
         $$)
     );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": {                                +
-         "__type": {                          +
-             "kind": "OBJECT",                +
-             "fields": [                      +
-                 {                            +
-                     "name": "nodeId",        +
-                     "type": {                +
-                         "kind": "NON_NULL",  +
-                         "name": null,        +
-                         "ofType": {          +
-                             "name": "ID"     +
-                         }                    +
-                     }                        +
-                 },                           +
-                 {                            +
-                     "name": "id",            +
-                     "type": {                +
-                         "kind": "NON_NULL",  +
-                         "name": null,        +
-                         "ofType": {          +
-                             "name": "Int"    +
-                         }                    +
-                     }                        +
-                 },                           +
-                 {                            +
-                     "name": "accountId",     +
-                     "type": {                +
-                         "kind": "NON_NULL",  +
-                         "name": null,        +
-                         "ofType": {          +
-                             "name": "Int"    +
-                         }                    +
-                     }                        +
-                 },                           +
-                 {                            +
-                     "name": "account",       +
-                     "type": {                +
-                         "kind": "NON_NULL",  +
-                         "name": null,        +
-                         "ofType": {          +
-                             "name": "Account"+
-                         }                    +
-                     }                        +
-                 }                            +
-             ]                                +
-         }                                    +
-     }                                        +
+                jsonb_pretty                 
+---------------------------------------------
+ {                                          +
+     "data": {                              +
+         "__type": {                        +
+             "kind": "OBJECT",              +
+             "fields": [                    +
+                 {                          +
+                     "name": "nodeId",      +
+                     "type": {              +
+                         "kind": "NON_NULL",+
+                         "name": null,      +
+                         "ofType": {        +
+                             "name": "ID"   +
+                         }                  +
+                     }                      +
+                 },                         +
+                 {                          +
+                     "name": "id",          +
+                     "type": {              +
+                         "kind": "NON_NULL",+
+                         "name": null,      +
+                         "ofType": {        +
+                             "name": "Int"  +
+                         }                  +
+                     }                      +
+                 },                         +
+                 {                          +
+                     "name": "accountId",   +
+                     "type": {              +
+                         "kind": "NON_NULL",+
+                         "name": null,      +
+                         "ofType": {        +
+                             "name": "Int"  +
+                         }                  +
+                     }                      +
+                 },                         +
+                 {                          +
+                     "name": "account",     +
+                     "type": {              +
+                         "kind": "OBJECT",  +
+                         "name": "Account", +
+                         "ofType": null     +
+                     }                      +
+                 }                          +
+             ]                              +
+         }                                  +
+     }                                      +
  }
 (1 row)
 
