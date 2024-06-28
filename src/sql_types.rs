@@ -425,6 +425,7 @@ pub struct ForeignKeyTableInfo {
     // The table's actual name
     pub name: String,
     pub schema: String,
+    pub is_rls_enabled: bool,
     pub column_names: Vec<String>,
 }
 
@@ -503,6 +504,7 @@ pub struct Table {
     pub schema: String,
     pub columns: Vec<Arc<Column>>,
     pub comment: Option<String>,
+    pub is_rls_enabled: bool,
     pub relkind: String, // r = table, v = view, m = mat view, f = foreign table
     pub reltype: u32,
     pub permissions: TablePermissions,
@@ -660,12 +662,14 @@ impl Context {
                         oid: table.oid,
                         name: table.name.clone(),
                         schema: table.schema.clone(),
+                        is_rls_enabled: table.is_rls_enabled,
                         column_names: directive_fkey.local_columns.clone(),
                     },
                     referenced_table_meta: ForeignKeyTableInfo {
                         oid: referenced_t.oid,
                         name: referenced_t.name.clone(),
                         schema: referenced_t.schema.clone(),
+                        is_rls_enabled: table.is_rls_enabled,
                         column_names: directive_fkey.foreign_columns.clone(),
                     },
                     directives: ForeignKeyDirectives {

@@ -1958,6 +1958,7 @@ impl NodeType {
                 .columns
                 .iter()
                 .any(|c| &c.name == colname && c.is_not_null)
+                && !fkey.referenced_table_meta.is_rls_enabled
         }) {
             __Type::NonNull(NonNullType {
                 type_: Box::new(type_),

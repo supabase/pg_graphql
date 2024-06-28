@@ -148,6 +148,7 @@ select
                                 'local_table_meta', jsonb_build_object(
                                     'oid', pf.conrelid::int,
                                     'name', pa_local.relname::text,
+                                    'is_rls_enabled', pa_local.relrowsecurity,
                                     'schema', pa_local.relnamespace::regnamespace::text,
                                     'column_names', (
                                         select
@@ -163,6 +164,7 @@ select
                                 'referenced_table_meta', jsonb_build_object(
                                     'oid', pf.confrelid::int,
                                     'name', pa_referenced.relname::text,
+                                    'is_rls_enabled', pa_referenced.relrowsecurity,
                                     'schema', pa_referenced.relnamespace::regnamespace::text,
                                     'column_names', (
                                         select
@@ -234,6 +236,7 @@ select
                             'name', pc.relname::text,
                             'relkind', pc.relkind::text,
                             'reltype', pc.reltype::int,
+                            'is_rls_enabled', pc.relrowsecurity,
                             'schema', schemas_.name,
                             'schema_oid', pc.relnamespace::int,
                             'comment', pg_catalog.obj_description(pc.oid, 'pg_class'),
