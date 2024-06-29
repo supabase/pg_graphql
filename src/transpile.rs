@@ -2,7 +2,6 @@ use crate::builder::*;
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
-use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
 use pgrx::spi::SpiClient;
 use pgrx::{direct_function_call, JsonB};
