@@ -84,5 +84,8 @@
 ## 1.5.6
 - feature: add support for filtering on array column types using `contains`, `containedBy`, `overlaps`, `is`, `eq`
 
-## master
+## 1.5.7
 - bugfix: UDF argument with a complex default expression was marked as required
+- bugfix: not null foreign keys referencing tables with RLS are marked as nullable
+
+## master
