@@ -12,15 +12,8 @@
       
         <link rel="canonical" href="https://supabase.github.io/pg_graphql/api/">
       
-      
-        <link rel="prev" href="../sql_interface/">
-      
-      
-        <link rel="next" href="../views/">
-      
-      
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.3.2">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-8.5.3">
     
     
       
@@ -28,17 +21,19 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.30068a00.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.7a952b86.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.85d0ee34.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#000000">
+        
       
       
 
-
     
-    
-      
     
     
       
@@ -65,7 +60,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="light-green">
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="black" data-md-color-accent="light-green">
   
     
     
@@ -87,9 +82,7 @@
     
       
 
-  
-
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="pg_graphql" class="md-header__button md-logo" aria-label="pg_graphql" data-md-component="logo">
       
@@ -97,7 +90,6 @@
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
@@ -117,12 +109,9 @@
       </div>
     </div>
     
-      
-    
     
     
       <label class="md-header__button md-icon" for="__search">
-        
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
       </label>
       <div class="md-search" data-md-component="search" role="dialog">
@@ -131,15 +120,12 @@
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-        
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
-          
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
@@ -151,7 +137,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
+          <ol class="md-search-result__list"></ol>
         </div>
       </div>
     </div>
@@ -163,7 +149,7 @@
         <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -193,7 +179,6 @@
                     
 
 
-
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="pg_graphql" class="md-nav__button md-logo" aria-label="pg_graphql" data-md-component="logo">
@@ -208,7 +193,7 @@
       <a href="https://github.com/supabase/pg_graphql" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     supabase/pg_graphql
@@ -220,18 +205,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Welcome
-  </span>
-  
-
+        Welcome
       </a>
     </li>
   
@@ -239,18 +220,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../quickstart/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Quickstart
-  </span>
-  
-
+        Quickstart
       </a>
     </li>
   
@@ -258,18 +235,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../sql_interface/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    SQL Interface
-  </span>
-  
-
+        SQL Interface
       </a>
     </li>
   
@@ -277,6 +250,8 @@
     
       
       
+      
+
   
   
     
@@ -284,29 +259,17 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    API
-  </span>
-  
-
+          API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    API
-  </span>
-  
-
+        API
       </a>
       
         
@@ -542,18 +505,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../views/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Views
-  </span>
-  
-
+        Views
       </a>
     </li>
   
@@ -561,18 +520,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../functions/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Functions
-  </span>
-  
-
+        Functions
       </a>
     </li>
   
@@ -580,18 +535,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../computed_fields/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Computed Fields
-  </span>
-  
-
+        Computed Fields
       </a>
     </li>
   
@@ -599,18 +550,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Security
-  </span>
-  
-
+        Security
       </a>
     </li>
   
@@ -618,18 +565,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../configuration/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Configuration
-  </span>
-  
-
+        Configuration
       </a>
     </li>
   
@@ -637,121 +580,90 @@
     
       
       
+      
+
   
   
   
-    
-    
     
     <li class="md-nav__item md-nav__item--nested">
       
-        
-        
-        
-        
+      
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10">
+          Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Guides" data-md-level="1">
+        <label class="md-nav__title" for="__nav_10">
+          <span class="md-nav__icon md-icon"></span>
+          Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
-        
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    Guides
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
-            <span class="md-nav__icon md-icon"></span>
-            Guides
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
             
               
-                
   
   
   
     <li class="md-nav__item">
       <a href="../supabase/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Supabase
-  </span>
-  
-
+        Supabase
       </a>
     </li>
   
 
-              
+            
+          
             
               
-                
   
   
   
     <li class="md-nav__item">
       <a href="../usage_with_apollo/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Usage with Apollo
-  </span>
-  
-
+        Usage with Apollo
       </a>
     </li>
   
 
-              
+            
+          
             
               
-                
   
   
   
     <li class="md-nav__item">
       <a href="../usage_with_relay/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Usage with Relay
-  </span>
-  
-
+        Usage with Relay
       </a>
     </li>
   
 
-              
             
-          </ul>
-        </nav>
-      
+          
+        </ul>
+      </nav>
     </li>
   
 
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../example_schema/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Example Schema
-  </span>
-  
-
+        Example Schema
       </a>
     </li>
   
@@ -759,18 +671,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Installation
-  </span>
-  
-
+        Installation
       </a>
     </li>
   
@@ -778,18 +686,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../contributing/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Contributing
-  </span>
-  
-
+        Contributing
       </a>
     </li>
   
@@ -797,18 +701,14 @@
     
       
       
+      
+
   
   
   
     <li class="md-nav__item">
       <a href="../changelog/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Changelog
-  </span>
-  
-
+        Changelog
       </a>
     </li>
   
@@ -1062,8 +962,10 @@
                 
                   
 
-  
-  
+  <a href="https://github.com/supabase/pg_graphql/edit/master/docs/api.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
 
 
   <h1>API</h1>
@@ -1119,11 +1021,11 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;The</span><span class="w"> </span><span class="err">root</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">querying</span><span class="w"> </span><span class="err">data&quot;&quot;&quot;</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Query</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for querying data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Retrieve</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">record</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">its</span><span class="w"> </span><span class="err">`</span><span class="n">ID</span><span class="err">`&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">node</span><span class="p">(</span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="no">ID</span><span class="err">!</span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="n">Node</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Retrieve a record by its `ID`&quot;&quot;&quot;</span>
+  <span class="k">node</span><span class="p">(</span>nodeId: <span class="k">ID</span><span class="p">!):</span> <span class="k">Node</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -1147,16 +1049,16 @@
 <span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">node</span><span class="p">(</span>
-<span class="w">    </span><span class="n">nodeId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;WyJwdWJsaWMiLCAiYmxvZyIsIDFd&quot;</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">nodeId</span>
-<span class="w">    </span><span class="c"># Inline fragment for `Blog` type</span>
-<span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="nc">Blog</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">name</span>
-<span class="w">      </span><span class="n">description</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">node</span><span class="p">(</span>
+    nodeId: <span class="s2">&quot;WyJwdWJsaWMiLCAiYmxvZyIsIDFd&quot;</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">nodeId</span>
+    <span class="c c-Singline"># Inline fragment for `Blog` type</span>
+    <span class="o">...</span> <span class="kt">on</span> <span class="k">Blog</span> <span class="p">{</span>
+      <span class="k">name</span>
+      <span class="k">description</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1232,36 +1134,36 @@
 <span class="normal">27</span>
 <span class="normal">28</span>
 <span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;The</span><span class="w"> </span><span class="err">root</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">querying</span><span class="w"> </span><span class="err">data&quot;&quot;&quot;</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Query</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for querying data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">A</span><span class="w"> </span><span class="n">pagable</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="err">`</span><span class="n">Blog</span><span class="err">`&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
+  <span class="c c-Multi">&quot;&quot;&quot;A pagable collection of type `Blog`&quot;&quot;&quot;</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="err">`</span><span class="n">n</span><span class="err">`</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">first</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
+    first: <span class="k">Int</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">last</span><span class="w"> </span><span class="err">`</span><span class="n">n</span><span class="err">`</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">last</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span>
+    last: <span class="k">Int</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">before</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">provided</span><span class="w"> </span><span class="n">cursor</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">before</span><span class="p">:</span><span class="w"> </span><span class="no">Cursor</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span>
+    before: <span class="k">Cursor</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">after</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">provided</span><span class="w"> </span><span class="n">cursor</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">after</span><span class="p">:</span><span class="w"> </span><span class="no">Cursor</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span>
+    after: <span class="k">Cursor</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">Skip</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">after</span><span class="w"> </span><span class="n">cursor</span><span class="err">.</span><span class="w"> </span><span class="n">Alternative</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">cursor</span><span class="w"> </span><span class="n">pagination</span><span class="err">.</span><span class="w"> </span><span class="n">Backward</span><span class="w"> </span><span class="n">pagination</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">supported</span><span class="err">.</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">offset</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    offset: <span class="k">Int</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Filters</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">apply</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="n">set</span><span class="w"> </span><span class="n">when</span><span class="w"> </span><span class="n">querying</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="no">BlogFilter</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Sort</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">apply</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">orderBy</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="no">BlogOrderBy</span><span class="err">!]</span>
-<span class="w">  </span><span class="err">):</span><span class="w"> </span><span class="no">BlogConnection</span>
-<span class="err">}</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
+    orderBy: <span class="p">[</span><span class="k">BlogOrderBy</span><span class="p">!]</span>
+  <span class="p">):</span> <span class="k">BlogConnection</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 </div>
@@ -1282,16 +1184,16 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">BlogConnection</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="c"># Count of all records matching the *filter* criteria</span>
-<span class="w">  </span><span class="nl">totalCount</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span><span class="err">!</span>
+  <span class="c c-Singline"># Count of all records matching the *filter* criteria</span>
+  totalCount: <span class="k">Int</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Pagination metadata</span>
-<span class="w">  </span><span class="nl">pageInfo</span><span class="p">:</span><span class="w"> </span><span class="n">PageInfo</span><span class="err">!</span>
+  <span class="c c-Singline"># Pagination metadata</span>
+  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Result set</span>
-<span class="w">  </span><span class="nl">edges</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogEdge</span><span class="err">!]!</span>
+  <span class="c c-Singline"># Result set</span>
+  edges: <span class="p">[</span><span class="k">BlogEdge</span><span class="p">!]!</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -1305,13 +1207,13 @@
 <span class="normal">6</span>
 <span class="normal">7</span>
 <span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">BlogEdge</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogEdge</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="c"># Unique identifier of the record within the query</span>
-<span class="w">  </span><span class="nl">cursor</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="err">!</span>
+  <span class="c c-Singline"># Unique identifier of the record within the query</span>
+  cursor: <span class="k">String</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Contents of a record/row in the results set</span>
-<span class="w">  </span><span class="nl">node</span><span class="p">:</span><span class="w"> </span><span class="n">Blog</span>
+  <span class="c c-Singline"># Contents of a record/row in the results set</span>
+  node: <span class="k">Blog</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -1330,19 +1232,19 @@
 <span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">PageInfo</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">PageInfo</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="c"># unique identifier of the first record within the query</span>
-<span class="w">  </span><span class="nl">startCursor</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
+  <span class="c c-Singline"># unique identifier of the first record within the query</span>
+  startCursor: <span class="k">String</span>
 
-<span class="w">  </span><span class="c"># unique identifier of the last record within the query</span>
-<span class="w">  </span><span class="nl">endCursor</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
+  <span class="c c-Singline"># unique identifier of the last record within the query</span>
+  endCursor: <span class="k">String</span>
 
-<span class="w">  </span><span class="c"># is another page of content available</span>
-<span class="w">  </span><span class="nl">hasNextPage</span><span class="p">:</span><span class="w"> </span><span class="n">Boolean</span><span class="err">!</span>
+  <span class="c c-Singline"># is another page of content available</span>
+  hasNextPage: <span class="k">Boolean</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># is another page of content available</span>
-<span class="w">  </span><span class="nl">hasPreviousPage</span><span class="p">:</span><span class="w"> </span><span class="n">Boolean</span><span class="err">!</span>
+  <span class="c c-Singline"># is another page of content available</span>
+  hasPreviousPage: <span class="k">Boolean</span><span class="p">!</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1368,26 +1270,26 @@
 <span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c"># A record from the `blog` table</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Blog</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Singline"># A record from the `blog` table</span>
+<span class="kt">type</span> <span class="k">Blog</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="c"># globally unique identifier</span>
-<span class="w">  </span><span class="nl">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">ID</span><span class="err">!</span>
+  <span class="c c-Singline"># globally unique identifier</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Value from `id` column</span>
-<span class="w">  </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span><span class="err">!</span>
+  <span class="c c-Singline"># Value from `id` column</span>
+  id: <span class="k">Int</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Value from `name` column</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span><span class="err">!</span>
+  <span class="c c-Singline"># Value from `name` column</span>
+  name: <span class="k">String</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Value from `description` column</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
+  <span class="c c-Singline"># Value from `description` column</span>
+  description: <span class="k">String</span>
 
-<span class="w">  </span><span class="c"># Value from `createdAt` column</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">Datetime</span><span class="err">!</span>
+  <span class="c c-Singline"># Value from `createdAt` column</span>
+  createdAt: <span class="k">Datetime</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Value from `updatedAt` column</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">Datetime</span><span class="err">!</span>
+  <span class="c c-Singline"># Value from `updatedAt` column</span>
+  updatedAt: <span class="k">Datetime</span><span class="p">!</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -1399,12 +1301,12 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogOrderBy</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogOrderBy</span> <span class="p">{</span>
+  id: <span class="k">OrderByDirection</span>
+  name: <span class="k">OrderByDirection</span>
+  description: <span class="k">OrderByDirection</span>
+  createdAt: <span class="k">OrderByDirection</span>
+  updatedAt: <span class="k">OrderByDirection</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1419,16 +1321,16 @@
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">IDFilter</span>
-<span class="w">  </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="n">IntFilter</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">StringFilter</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">StringFilter</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">DatetimeFilter</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">DatetimeFilter</span>
-<span class="w">  </span><span class="nl">and</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogFilter</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">or</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogFilter</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">not</span><span class="p">:</span><span class="w"> </span><span class="n">BlogFilter</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
+  id: <span class="k">IntFilter</span>
+  name: <span class="k">StringFilter</span>
+  description: <span class="k">StringFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
+  updatedAt: <span class="k">DatetimeFilter</span>
+  and: <span class="p">[</span><span class="k">BlogFilter</span><span class="p">!]</span>
+  or: <span class="p">[</span><span class="k">BlogFilter</span><span class="p">!]</span>
+  not: <span class="k">BlogFilter</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1463,25 +1365,25 @@
 <span class="normal">17</span>
 <span class="normal">18</span>
 <span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">Query</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="err">`</span><span class="n">n</span><span class="err">`</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">first</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query the first `n` records in the collection&quot;&quot;&quot;</span>
+    first: <span class="k">Int</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">last</span><span class="w"> </span><span class="err">`</span><span class="n">n</span><span class="err">`</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">last</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query the last `n` records in the collection&quot;&quot;&quot;</span>
+    last: <span class="k">Int</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">before</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">provided</span><span class="w"> </span><span class="n">cursor</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">before</span><span class="p">:</span><span class="w"> </span><span class="no">Cursor</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection before the provided cursor&quot;&quot;&quot;</span>
+    before: <span class="k">Cursor</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Query</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">after</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">provided</span><span class="w"> </span><span class="n">cursor</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">after</span><span class="p">:</span><span class="w"> </span><span class="no">Cursor</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Query values in the collection after the provided cursor&quot;&quot;&quot;</span>
+    after: <span class="k">Cursor</span>
 
-<span class="w">    </span><span class="err">...</span><span class="n">truncated</span><span class="err">...</span>
+    <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
 
-<span class="w">  </span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="n">BlogConnection</span>
+  <span class="p">):</span> <span class="k">BlogConnection</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1504,19 +1406,19 @@
 <span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">PageInfo</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">PageInfo</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="c"># unique identifier of the first record within the query</span>
-<span class="w">  </span><span class="nl">startCursor</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
+  <span class="c c-Singline"># unique identifier of the first record within the query</span>
+  startCursor: <span class="k">String</span>
 
-<span class="w">  </span><span class="c"># unique identifier of the last record within the query</span>
-<span class="w">  </span><span class="nl">endCursor</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
+  <span class="c c-Singline"># unique identifier of the last record within the query</span>
+  endCursor: <span class="k">String</span>
 
-<span class="w">  </span><span class="c"># is another page of content available</span>
-<span class="w">  </span><span class="nl">hasNextPage</span><span class="p">:</span><span class="w"> </span><span class="n">Boolean</span><span class="err">!</span>
+  <span class="c c-Singline"># is another page of content available</span>
+  hasNextPage: <span class="k">Boolean</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># is another page of content available</span>
-<span class="w">  </span><span class="nl">hasPreviousPage</span><span class="p">:</span><span class="w"> </span><span class="n">Boolean</span><span class="err">!</span>
+  <span class="c c-Singline"># is another page of content available</span>
+  hasPreviousPage: <span class="k">Boolean</span><span class="p">!</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1529,13 +1431,13 @@
 <span class="normal">6</span>
 <span class="normal">7</span>
 <span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">BlogConnection</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogConnection</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="c"># Pagination metadata</span>
-<span class="w">  </span><span class="nl">pageInfo</span><span class="p">:</span><span class="w"> </span><span class="n">PageInfo</span><span class="err">!</span>
+  <span class="c c-Singline"># Pagination metadata</span>
+  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
 
-<span class="w">  </span><span class="c"># Result set</span>
-<span class="w">  </span><span class="nl">edges</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogEdge</span><span class="err">!]!</span>
+  <span class="c c-Singline"># Result set</span>
+  edges: <span class="p">[</span><span class="k">BlogEdge</span><span class="p">!]!</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -1566,23 +1468,23 @@
 <span class="normal">17</span>
 <span class="normal">18</span>
 <span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">first</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<span class="w">    </span><span class="n">after</span><span class="p">:</span><span class="w"> </span><span class="nb">null</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">pageInfo</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">startCursor</span>
-<span class="w">      </span><span class="n">endCursor</span>
-<span class="w">      </span><span class="n">hasPreviousPage</span>
-<span class="w">      </span><span class="n">hasNextPage</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    first: <span class="mi">2</span>,
+    after: <span class="kt">null</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">pageInfo</span> <span class="p">{</span>
+      <span class="k">startCursor</span>
+      <span class="k">endCursor</span>
+      <span class="k">hasPreviousPage</span>
+      <span class="k">hasNextPage</span>
+    <span class="p">}</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1653,12 +1555,12 @@
 <span class="normal">5</span>
 <span class="normal">6</span>
 <span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">first</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<span class="w">    </span><span class="n">after</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;WzJd&quot;</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="p">...</span><span class="n">truncated</span><span class="p">...</span>
-<span class="err">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    first: <span class="mi">2</span>,
+    after: <span class="s2">&quot;WzJd&quot;</span>
+  <span class="p">)</span> <span class="p">{</span>
+  <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 <div class="tabbed-block">
@@ -1735,12 +1637,12 @@
 <span class="normal">5</span>
 <span class="normal">6</span>
 <span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">first</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<span class="w">    </span><span class="n">offset</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="p">...</span><span class="n">truncated</span><span class="p">...</span>
-<span class="err">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    first: <span class="mi">2</span>,
+    offset: <span class="mi">2</span>
+  <span class="p">)</span> <span class="p">{</span>
+  <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 <div class="tabbed-block">
@@ -1814,16 +1716,16 @@
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">Query</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Filters</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">apply</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="n">set</span><span class="w"> </span><span class="n">when</span><span class="w"> </span><span class="n">querying</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="no">BlogFilter</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Filters to apply to the results set when querying from the collection&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
 
-<span class="w">    </span><span class="err">...</span><span class="n">truncated</span><span class="err">...</span>
+    <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
 
-<span class="w">  </span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="n">BlogConnection</span>
+  <span class="p">):</span> <span class="k">BlogConnection</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1844,17 +1746,17 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">nodeId</span><span class="p">:</span><span class="w"> </span><span class="n">IDFilter</span>
-<span class="w">  </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="n">IntFilter</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">StringFilter</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">StringFilter</span>
-<span class="w">  </span><span class="nl">tags</span><span class="p">:</span><span class="w"> </span><span class="n">StringListFilter</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">DatetimeFilter</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">DatetimeFilter</span>
-<span class="w">  </span><span class="nl">and</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogFilter</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">or</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogFilter</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">not</span><span class="p">:</span><span class="w"> </span><span class="n">BlogFilter</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  nodeId: <span class="k">IDFilter</span>
+  id: <span class="k">IntFilter</span>
+  name: <span class="k">StringFilter</span>
+  description: <span class="k">StringFilter</span>
+  tags: <span class="k">StringListFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
+  updatedAt: <span class="k">DatetimeFilter</span>
+  and: <span class="p">[</span><span class="k">BlogFilter</span><span class="p">!]</span>
+  or: <span class="p">[</span><span class="k">BlogFilter</span><span class="p">!]</span>
+  not: <span class="k">BlogFilter</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1871,18 +1773,18 @@
 <span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;</span>
-<span class="err">Boolean</span><span class="w"> </span><span class="err">expression</span><span class="w"> </span><span class="err">comparing</span><span class="w"> </span><span class="err">fields</span><span class="w"> </span><span class="err">on</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">&quot;Int&quot;</span>
-<span class="err">&quot;&quot;&quot;</span>
-<span class="k">input</span><span class="w"> </span><span class="err">IntFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">eq</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span>
-<span class="w">  </span><span class="nl">gt</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span>
-<span class="w">  </span><span class="nl">gte</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span>
-<span class="w">  </span><span class="nl">in</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">Int</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">lt</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span>
-<span class="w">  </span><span class="nl">lte</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span>
-<span class="w">  </span><span class="nl">neq</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span>
-<span class="w">  </span><span class="nl">is</span><span class="p">:</span><span class="w"> </span><span class="n">FilterIs</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;Int&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">IntFilter</span> <span class="p">{</span>
+  eq: <span class="k">Int</span>
+  gt: <span class="k">Int</span>
+  gte: <span class="k">Int</span>
+  in: <span class="p">[</span><span class="k">Int</span><span class="p">!]</span>
+  lt: <span class="k">Int</span>
+  lte: <span class="k">Int</span>
+  neq: <span class="k">Int</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1904,23 +1806,23 @@
 <span class="normal">15</span>
 <span class="normal">16</span>
 <span class="normal">17</span>
-<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;</span>
-<span class="err">Boolean</span><span class="w"> </span><span class="err">expression</span><span class="w"> </span><span class="err">comparing</span><span class="w"> </span><span class="err">fields</span><span class="w"> </span><span class="err">on</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">&quot;String&quot;</span>
-<span class="err">&quot;&quot;&quot;</span>
-<span class="k">input</span><span class="w"> </span><span class="err">StringFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">eq</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">gt</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">gte</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">in</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">lt</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">lte</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">neq</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">is</span><span class="p">:</span><span class="w"> </span><span class="n">FilterIs</span>
-<span class="w">  </span><span class="nl">startsWith</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">like</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">ilike</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">regex</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">iregex</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
+<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;String&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">StringFilter</span> <span class="p">{</span>
+  eq: <span class="k">String</span>
+  gt: <span class="k">String</span>
+  gte: <span class="k">String</span>
+  in: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
+  lt: <span class="k">String</span>
+  lte: <span class="k">String</span>
+  neq: <span class="k">String</span>
+  is: <span class="k">FilterIs</span>
+  startsWith: <span class="k">String</span>
+  like: <span class="k">String</span>
+  ilike: <span class="k">String</span>
+  regex: <span class="k">String</span>
+  iregex: <span class="k">String</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1934,23 +1836,15 @@
 <span class="normal"> 7</span>
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;</span>
-<span class="err">Boolean</span><span class="w"> </span><span class="err">expression</span><span class="w"> </span><span class="err">comparing</span><span class="w"> </span><span class="err">fields</span><span class="w"> </span><span class="err">on</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">&quot;StringList&quot;</span>
-<span class="err">&quot;&quot;&quot;</span>
-<span class="k">input</span><span class="w"> </span><span class="err">StringListFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">cd</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">cs</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">eq</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">gt</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">gte</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">lt</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">lte</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">neq</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">ov</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">String</span><span class="err">!]</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">Boolean expression comparing fields on type &quot;StringList&quot;</span>
+<span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="kt">input</span> <span class="k">StringListFilter</span> <span class="p">{</span>
+  contains: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
+  containedBy: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
+  eq: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
+  overlaps: <span class="p">[</span><span class="k">String</span><span class="p">!]</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -1958,9 +1852,9 @@
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">enum</span><span class="w"> </span><span class="err">FilterIs</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="n">NULL</span>
-<span class="w">  </span><span class="n">NOT_NULL</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">enum</span> <span class="k">FilterIs</span> <span class="p">{</span>
+  <span class="k">NULL</span>
+  <span class="k">NOT_NULL</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2028,15 +1922,15 @@
 <td>POSIX Regular Expression Match. Case Insensitive</td>
 </tr>
 <tr>
-<td>cs</td>
+<td>contains</td>
 <td>Contains. Applies to array columns only.</td>
 </tr>
 <tr>
-<td>cd</td>
+<td>containedBy</td>
 <td>Contained in. Applies to array columns only.</td>
 </tr>
 <tr>
-<td>ov</td>
+<td>overlaps</td>
 <td>Overlap (have points in common). Applies to array columns only.</td>
 </tr>
 </tbody>
@@ -2058,16 +1952,16 @@
 <span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">lt</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">}},</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>id: <span class="p">{</span>lt: <span class="mi">3</span><span class="p">}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2116,8 +2010,8 @@
 </div>
 </div>
 <p><strong>Example: array column</strong></p>
-<p>The <code>cs</code> filter is used to return results where all the elements in the input array appear in the array column.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1"><code>cs</code> Filter Query</label><label for="__tabbed_13_2"><code>cs</code> Filter Result</label></div>
+<p>The <code>contains</code> filter is used to return results where all the elements in the input array appear in the array column.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1"><code>contains</code> Filter Query</label><label for="__tabbed_13_2"><code>contains</code> Filter Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2135,19 +2029,19 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">tags</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">cs</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;tech&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;innovation&quot;</span><span class="p">]}},</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">tags</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>tags: <span class="p">{</span>contains: <span class="p">[</span><span class="s2">&quot;tech&quot;, &quot;innovation&quot;</span><span class="p">]}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">tags</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2207,8 +2101,8 @@
 </div>
 </div>
 </div>
-<p>The <code>cs</code> filter can also accept a single scalar.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1"><code>cs</code> Filter with Scalar Query</label><label for="__tabbed_14_2"><code>cs</code> Filter with Scalar Result</label></div>
+<p>The <code>contains</code> filter can also accept a single scalar.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1"><code>contains</code> Filter with Scalar Query</label><label for="__tabbed_14_2"><code>contains</code> Filter with Scalar Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2226,19 +2120,19 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">tags</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">cs</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tech&quot;</span><span class="p">}},</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">tags</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>tags: <span class="p">{</span>contains: <span class="s2">&quot;tech&quot;</span><span class="p">}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">tags</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2298,8 +2192,8 @@
 </div>
 </div>
 </div>
-<p>The <code>cd</code> filter is used to return results where every element of the array column appears in the input array.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1"><code>cd</code> Filter Query</label><label for="__tabbed_15_2"><code>cd</code> Filter Result</label></div>
+<p>The <code>containedBy</code> filter is used to return results where every element of the array column appears in the input array.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1"><code>containedBy</code> Filter Query</label><label for="__tabbed_15_2"><code>containedBy</code> Filter Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2317,19 +2211,19 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">tags</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">cd</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;entrepreneurship&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;innovation&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;tech&quot;</span><span class="p">]}},</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">tags</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>tags: <span class="p">{</span>containedBy: <span class="p">[</span><span class="s2">&quot;entrepreneurship&quot;, &quot;innovation&quot;, &quot;tech&quot;</span><span class="p">]}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">tags</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2389,8 +2283,8 @@
 </div>
 </div>
 </div>
-<p>The <code>cd</code> filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar are returned.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1"><code>cd</code> Filter with Scalar Query</label><label for="__tabbed_16_2"><code>cd</code> Filter with Scalar Result</label></div>
+<p>The <code>containedBy</code> filter can also accept a single scalar. In this case, only results where the only element in the array column is the input scalar are returned.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1"><code>containedBy</code> Filter with Scalar Query</label><label for="__tabbed_16_2"><code>containedBy</code> Filter with Scalar Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2408,19 +2302,19 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">tags</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">cd</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;travel&quot;</span><span class="p">}},</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">tags</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>tags: <span class="p">{</span>containedBy: <span class="s2">&quot;travel&quot;</span><span class="p">}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">tags</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2462,8 +2356,8 @@
 </div>
 </div>
 </div>
-<p>The <code>ov</code> filter is used to return results where the array column and the input array have at least one element in common.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1"><code>ov</code> Filter Query</label><label for="__tabbed_17_2"><code>ov</code> Filter Result</label></div>
+<p>The <code>overlaps</code> filter is used to return results where the array column and the input array have at least one element in common.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1"><code>overlaps</code> Filter Query</label><label for="__tabbed_17_2"><code>overlaps</code> Filter Result</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
@@ -2481,19 +2375,19 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">tags</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">ov</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;tech&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;travel&quot;</span><span class="p">]}},</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">tags</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>tags: <span class="p">{</span>overlaps: <span class="p">[</span><span class="s2">&quot;tech&quot;, &quot;travel&quot;</span><span class="p">]}}</span>,
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">tags</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2596,24 +2490,24 @@
 <span class="normal">18</span>
 <span class="normal">19</span>
 <span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">and</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}}</span>
-<span class="w">        </span><span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 1&quot;</span><span class="p">}}</span>
-<span class="w">      </span><span class="p">]</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      and: <span class="p">[</span>
+        <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+        <span class="p">{</span>name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 1&quot;</span><span class="p">}}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2674,24 +2568,24 @@
 <span class="normal">18</span>
 <span class="normal">19</span>
 <span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">or</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}}</span>
-<span class="w">        </span><span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 2&quot;</span><span class="p">}}</span>
-<span class="w">      </span><span class="p">]</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      or: <span class="p">[</span>
+        <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+        <span class="p">{</span>name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 2&quot;</span><span class="p">}}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2773,21 +2667,21 @@
 <span class="normal">15</span>
 <span class="normal">16</span>
 <span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">not</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      not: <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -2891,25 +2785,25 @@
 <span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">or</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
-<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
-<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">and</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">not</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 2&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}]</span><span class="w"> </span><span class="p">}</span>
-<span class="w">      </span><span class="p">]</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      or: <span class="p">[</span>
+        <span class="p">{</span> id: <span class="p">{</span> eq: <span class="mi">1</span> <span class="p">}</span> <span class="p">}</span>
+        <span class="p">{</span> id: <span class="p">{</span> eq: <span class="mi">2</span> <span class="p">}</span> <span class="p">}</span>
+        <span class="p">{</span> and: <span class="p">[{</span> id: <span class="p">{</span> eq: <span class="mi">3</span> <span class="p">}</span>, not: <span class="p">{</span> name: <span class="p">{</span> eq: <span class="s2">&quot;A: Blog 2&quot;</span> <span class="p">}</span> <span class="p">}</span> <span class="p">}]</span> <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3009,21 +2903,21 @@
 <span class="normal">15</span>
 <span class="normal">16</span>
 <span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">and</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="n">or</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="n">not</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      and: <span class="p">[]</span>, or: <span class="p">[]</span>, not: <span class="p">{}</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3145,25 +3039,25 @@
 <span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="c"># Equivalent to not: { and: [{id: {eq: 1}}, {name: {eq: &quot;A: Blog 1&quot;}}]}</span>
-<span class="w">      </span><span class="n">not</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span>
-<span class="w">        </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 1&quot;</span><span class="p">}</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      <span class="c c-Singline"># Equivalent to not: { and: [{id: {eq: 1}}, {name: {eq: &quot;A: Blog 1&quot;}}]}</span>
+      not: <span class="p">{</span>
+        id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}</span>
+        name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 1&quot;</span><span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3266,25 +3160,25 @@
 <span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">and</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">gt</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">}}</span>
-<span class="w">        </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">lt</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">}}</span>
-<span class="w">        </span><span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 1&quot;</span><span class="p">}}</span>
-<span class="w">      </span><span class="p">]</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      and: <span class="p">[</span>
+        <span class="p">{</span>id: <span class="p">{</span>gt: <span class="mi">0</span><span class="p">}}</span>
+        <span class="p">{</span>id: <span class="p">{</span>lt: <span class="mi">2</span><span class="p">}}</span>
+        <span class="p">{</span>name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 1&quot;</span><span class="p">}}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3308,23 +3202,23 @@
 <span class="normal">17</span>
 <span class="normal">18</span>
 <span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">gt</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">}</span>
-<span class="w">        </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">lt</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">}</span>
-<span class="w">        </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 1&quot;</span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+        id: <span class="p">{</span>gt: <span class="mi">0</span><span class="p">}</span>
+        id: <span class="p">{</span>lt: <span class="mi">2</span><span class="p">}</span>
+        name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 1&quot;</span><span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3347,22 +3241,22 @@
 <span class="normal">16</span>
 <span class="normal">17</span>
 <span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">gt</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">lt</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">}</span>
-<span class="w">        </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 1&quot;</span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+        id: <span class="p">{</span>gt: <span class="mi">0</span>, lt: <span class="mi">2</span><span class="p">}</span>
+        name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 1&quot;</span><span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3465,25 +3359,25 @@
 <span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="c"># This is really an `and` in `or`&#39;s clothing</span>
-<span class="w">      </span><span class="n">or</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span>
-<span class="w">        </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A: Blog 2&quot;</span><span class="p">}</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">cursor</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">description</span>
-<span class="w">        </span><span class="n">createdAt</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>
+      <span class="c c-Singline"># This is really an `and` in `or`&#39;s clothing</span>
+      or: <span class="p">{</span>
+        id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}</span>
+        name: <span class="p">{</span>eq: <span class="s2">&quot;A: Blog 2&quot;</span><span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">cursor</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+        <span class="k">description</span>
+        <span class="k">createdAt</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3526,17 +3420,17 @@
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">Query</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Sort</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">apply</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">orderBy</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="no">BlogOrderBy</span><span class="err">!]</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Sort order to apply to the collection&quot;&quot;&quot;</span>
+    orderBy: <span class="p">[</span><span class="k">BlogOrderBy</span><span class="p">!]</span>
 
-<span class="w">    </span><span class="err">...</span><span class="no">truncated</span><span class="err">...</span>
+    <span class="o">...</span><span class="k">truncated</span><span class="o">...</span>
 
-<span class="w">  </span><span class="err">):</span><span class="w"> </span><span class="no">BlogConnection</span>
-<span class="err">}</span>
+  <span class="p">):</span> <span class="k">BlogConnection</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 <div class="tabbed-block">
@@ -3546,12 +3440,12 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogOrderBy</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">OrderByDirection</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogOrderBy</span> <span class="p">{</span>
+  id: <span class="k">OrderByDirection</span>
+  name: <span class="k">OrderByDirection</span>
+  description: <span class="k">OrderByDirection</span>
+  createdAt: <span class="k">OrderByDirection</span>
+  updatedAt: <span class="k">OrderByDirection</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3569,19 +3463,19 @@
 <span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;Defines</span><span class="w"> </span><span class="err">a</span><span class="w"> </span><span class="err">per-field</span><span class="w"> </span><span class="err">sorting</span><span class="w"> </span><span class="err">order&quot;&quot;&quot;</span>
-<span class="k">enum</span><span class="w"> </span><span class="err">OrderByDirection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Ascending</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="n">first</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">AscNullsFirst</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;Defines a per-field sorting order&quot;&quot;&quot;</span>
+<span class="k">enum</span> <span class="k">OrderByDirection</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Ascending order, nulls first&quot;&quot;&quot;</span>
+  <span class="k">AscNullsFirst</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Ascending</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="n">last</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">AscNullsLast</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Ascending order, nulls last&quot;&quot;&quot;</span>
+  <span class="k">AscNullsLast</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Descending</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="n">first</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">DescNullsFirst</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Descending order, nulls first&quot;&quot;&quot;</span>
+  <span class="k">DescNullsFirst</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Descending</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="n">last</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">DescNullsLast</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Descending order, nulls last&quot;&quot;&quot;</span>
+  <span class="k">DescNullsLast</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3602,15 +3496,15 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">orderBy</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="no">DescNullsLast</span><span class="p">}]</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span><span class="p">(</span>
+    orderBy: <span class="p">[{</span>id: <span class="k">DescNullsLast</span><span class="p">}]</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3736,47 +3630,47 @@
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
-<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;The</span><span class="w"> </span><span class="err">root</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">creating</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">mutating</span><span class="w"> </span><span class="err">data&quot;&quot;&quot;</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Mutation</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Adds</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="err">`</span><span class="n">BlogInsertResponse</span><span class="err">`</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">insertIntoBlogCollection</span><span class="p">(</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="k">insertIntoBlogCollection</span><span class="p">(</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Records</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">Blog</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">objects</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="no">BlogInsertInput</span><span class="err">!]!</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Records to add to the Blog collection&quot;&quot;&quot;</span>
+    objects: <span class="p">[</span><span class="k">BlogInsertInput</span><span class="p">!]!</span>
 
-<span class="w">  </span><span class="err">):</span><span class="w"> </span><span class="no">BlogInsertResponse</span>
+  <span class="p">):</span> <span class="k">BlogInsertResponse</span>
 
-<span class="w">  </span><span class="s">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="no">updateBlogCollection</span><span class="err">(</span>
-<span class="w">    </span><span class="s">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="err">Fields</span><span class="w"> </span><span class="err">that</span><span class="w"> </span><span class="err">are</span><span class="w"> </span><span class="err">set</span><span class="w"> </span><span class="err">will</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">updated</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">all</span><span class="w"> </span><span class="err">records</span><span class="w"> </span><span class="err">matching</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">`filter`</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="err">set:</span><span class="w"> </span><span class="err">BlogUpdateInput!</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="k">updateBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    set: <span class="k">BlogUpdateInput</span><span class="p">!</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;Restricts</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="k">mutation</span><span class="err">&#39;</span><span class="nf">s</span><span class="w"> </span><span class="nf">impact</span><span class="w"> </span><span class="nf">to</span><span class="w"> </span><span class="nf">records</span><span class="w"> </span><span class="nf">matching</span><span class="w"> </span><span class="nf">the</span><span class="w"> </span><span class="nf">critera</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="nf">filter</span><span class="err">:</span><span class="w"> </span><span class="nf">BlogFilter</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="nf">The</span><span class="w"> </span><span class="nf">maximum</span><span class="w"> </span><span class="nf">number</span><span class="w"> </span><span class="nf">of</span><span class="w"> </span><span class="nf">records</span><span class="w"> </span><span class="nf">in</span><span class="w"> </span><span class="nf">the</span><span class="w"> </span><span class="nf">collection</span><span class="w"> </span><span class="nf">permitted</span><span class="w"> </span><span class="nf">to</span><span class="w"> </span><span class="nf">be</span><span class="w"> </span><span class="nf">affected</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="nf">atMost</span><span class="err">:</span><span class="w"> </span><span class="nf">Int</span><span class="err">!</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="err">1</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
 
-<span class="w">  </span><span class="err">):</span><span class="w"> </span><span class="nf">BlogUpdateResponse</span><span class="err">!</span>
+  <span class="p">):</span> <span class="k">BlogUpdateResponse</span><span class="p">!</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="nf">Deletes</span><span class="w"> </span><span class="nf">zero</span><span class="w"> </span><span class="nf">or</span><span class="w"> </span><span class="nf">more</span><span class="w"> </span><span class="nf">records</span><span class="w"> </span><span class="nf">from</span><span class="w"> </span><span class="nf">the</span><span class="w"> </span><span class="nf">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nf">deleteFromBlogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;Restricts</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">mutation&#39;s</span><span class="w"> </span><span class="err">impact</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">records</span><span class="w"> </span><span class="err">matching</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">critera&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="err">filter</span><span class="p">:</span><span class="w"> </span><span class="nc">BlogFilter</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="err">The</span><span class="w"> </span><span class="err">maximum</span><span class="w"> </span><span class="err">number</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">records</span><span class="w"> </span><span class="err">in</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">collection</span><span class="w"> </span><span class="err">permitted</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">affected</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="err">atMost</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="p">!</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
 
-<span class="w">  </span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="nf">BlogDeleteResponse</span><span class="err">!</span>
+  <span class="p">):</span> <span class="k">BlogDeleteResponse</span><span class="p">!</span>
 
-<span class="err">}</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 </div>
@@ -3813,18 +3707,18 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;The</span><span class="w"> </span><span class="err">root</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">creating</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">mutating</span><span class="w"> </span><span class="err">data&quot;&quot;&quot;</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Mutation</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Adds</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="err">`</span><span class="n">BlogInsertResponse</span><span class="err">`</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">insertIntoBlogCollection</span><span class="p">(</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Adds one or more `BlogInsertResponse` records to the collection&quot;&quot;&quot;</span>
+  <span class="k">insertIntoBlogCollection</span><span class="p">(</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Records</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">Blog</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">objects</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="no">BlogInsertInput</span><span class="err">!]!</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Records to add to the Blog collection&quot;&quot;&quot;</span>
+    objects: <span class="p">[</span><span class="k">BlogInsertInput</span><span class="p">!]!</span>
 
-<span class="w">  </span><span class="err">):</span><span class="w"> </span><span class="no">BlogInsertResponse</span>
+  <span class="p">):</span> <span class="k">BlogInsertResponse</span>
 
-<span class="err">}</span>
+<span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
 <div class="tabbed-block">
@@ -3833,11 +3727,11 @@
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogInsertInput</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">Datetime</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">Datetime</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogInsertInput</span> <span class="p">{</span>
+  name: <span class="k">String</span>
+  description: <span class="k">String</span>
+  createdAt: <span class="k">Datetime</span>
+  updatedAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3848,12 +3742,12 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">BlogInsertResponse</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Count</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">impacted</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nl">affectedCount</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span><span class="err">!</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogInsertResponse</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span>
+  affectedCount: <span class="k">Int</span><span class="p">!</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Array</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">impacted</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nl">records</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">Blog</span><span class="err">!]!</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
+  records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3877,19 +3771,19 @@
 <span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">mutation</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="n">insertIntoBlogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">objects</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">]</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">affectedCount</span>
-<span class="w">    </span><span class="n">records</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">id</span>
-<span class="w">      </span><span class="n">name</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">mutation</span> <span class="p">{</span>
+  <span class="k">insertIntoBlogCollection</span><span class="p">(</span>
+    objects: <span class="p">[</span>
+      <span class="p">{</span>name: <span class="s2">&quot;foo&quot;</span><span class="p">}</span>,
+      <span class="p">{</span>name: <span class="s2">&quot;bar&quot;</span><span class="p">}</span>,
+    <span class="p">]</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">affectedCount</span>
+    <span class="k">records</span> <span class="p">{</span>
+      <span class="k">id</span>
+      <span class="k">name</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -3972,25 +3866,25 @@
 <span class="normal">18</span>
 <span class="normal">19</span>
 <span class="normal">20</span>
-<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;The</span><span class="w"> </span><span class="err">root</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">creating</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">mutating</span><span class="w"> </span><span class="err">data&quot;&quot;&quot;</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Mutation</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Updates</span><span class="w"> </span><span class="n">zero</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">updateBlogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">Fields</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">set</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">updated</span><span class="w"> </span><span class="n">for</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">matching</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="err">`</span><span class="n">filter</span><span class="err">`</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">set</span><span class="p">:</span><span class="w"> </span><span class="no">BlogUpdateInput</span><span class="err">!</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Updates zero or more records in the collection&quot;&quot;&quot;</span>
+  <span class="k">updateBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    Fields that are set will be updated for all records matching the `filter`</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    set: <span class="k">BlogUpdateInput</span><span class="p">!</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Restricts</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">impact</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">matching</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">critera</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="no">BlogFilter</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">The</span><span class="w"> </span><span class="n">maximum</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">permitted</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">affected</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">atMost</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span><span class="err">!</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="err">1</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
 
-<span class="w">  </span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="n">BlogUpdateResponse</span><span class="err">!</span>
+  <span class="p">):</span> <span class="k">BlogUpdateResponse</span><span class="p">!</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -4001,11 +3895,11 @@
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogUpdateInput</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">String</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">Datetime</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">Datetime</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogUpdateInput</span> <span class="p">{</span>
+  name: <span class="k">String</span>
+  description: <span class="k">String</span>
+  createdAt: <span class="k">Datetime</span>
+  updatedAt: <span class="k">Datetime</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4018,13 +3912,13 @@
 <span class="normal">6</span>
 <span class="normal">7</span>
 <span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">BlogUpdateResponse</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogUpdateResponse</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Count</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">impacted</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nl">affectedCount</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span><span class="err">!</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span>
+  affectedCount: <span class="k">Int</span><span class="p">!</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Array</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">impacted</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nl">records</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">Blog</span><span class="err">!]!</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
+  records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -4047,17 +3941,17 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">mutation</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="n">updateBlogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">set</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;baz&quot;</span><span class="p">}</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">affectedCount</span>
-<span class="w">    </span><span class="n">records</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">id</span>
-<span class="w">      </span><span class="n">name</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">mutation</span> <span class="p">{</span>
+  <span class="k">updateBlogCollection</span><span class="p">(</span>
+    set: <span class="p">{</span>name: <span class="s2">&quot;baz&quot;</span><span class="p">}</span>
+    filter: <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">affectedCount</span>
+    <span class="k">records</span> <span class="p">{</span>
+      <span class="k">id</span>
+      <span class="k">name</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4127,20 +4021,20 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span>
-<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">&quot;&quot;&quot;The</span><span class="w"> </span><span class="err">root</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">creating</span><span class="w"> </span><span class="err">and</span><span class="w"> </span><span class="err">mutating</span><span class="w"> </span><span class="err">data&quot;&quot;&quot;</span>
-<span class="k">type</span><span class="w"> </span><span class="err">Mutation</span><span class="w"> </span><span class="p">{</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c c-Multi">&quot;&quot;&quot;The root type for creating and mutating data&quot;&quot;&quot;</span>
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Deletes</span><span class="w"> </span><span class="n">zero</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="n">deleteFromBlogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span><span class="n">Restricts</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">impact</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">matching</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">critera</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="no">BlogFilter</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Deletes zero or more records from the collection&quot;&quot;&quot;</span>
+  <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
+    <span class="c c-Multi">&quot;&quot;&quot;Restricts the mutation&#39;s impact to records matching the critera&quot;&quot;&quot;</span>
+    filter: <span class="k">BlogFilter</span>
 
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">The</span><span class="w"> </span><span class="n">maximum</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">permitted</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">affected</span>
-<span class="w">    </span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="n">atMost</span><span class="p">:</span><span class="w"> </span><span class="no">Int</span><span class="err">!</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="err">1</span>
+    <span class="c c-Multi">&quot;&quot;&quot;</span>
+<span class="c c-Multi">    The maximum number of records in the collection permitted to be affected</span>
+<span class="c c-Multi">    &quot;&quot;&quot;</span>
+    atMost: <span class="k">Int</span><span class="p">!</span> <span class="p">=</span> <span class="mi">1</span>
 
-<span class="w">  </span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="n">BlogDeleteResponse</span><span class="err">!</span>
+  <span class="p">):</span> <span class="k">BlogDeleteResponse</span><span class="p">!</span>
 
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -4155,15 +4049,15 @@
 <span class="normal"> 7</span>
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
-<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">input</span><span class="w"> </span><span class="err">BlogFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="n">IntFilter</span>
-<span class="w">  </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="n">StringFilter</span>
-<span class="w">  </span><span class="nl">description</span><span class="p">:</span><span class="w"> </span><span class="n">StringFilter</span>
-<span class="w">  </span><span class="nl">createdAt</span><span class="p">:</span><span class="w"> </span><span class="n">DatetimeFilter</span>
-<span class="w">  </span><span class="nl">updatedAt</span><span class="p">:</span><span class="w"> </span><span class="n">DatetimeFilter</span>
-<span class="w">  </span><span class="nl">and</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogFilter</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">or</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BlogFilter</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">not</span><span class="p">:</span><span class="w"> </span><span class="n">BlogFilter</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">input</span> <span class="k">BlogFilter</span> <span class="p">{</span>
+  id: <span class="k">IntFilter</span>
+  name: <span class="k">StringFilter</span>
+  description: <span class="k">StringFilter</span>
+  createdAt: <span class="k">DatetimeFilter</span>
+  updatedAt: <span class="k">DatetimeFilter</span>
+  and: <span class="p">[</span><span class="k">BlogFilter</span><span class="p">!]</span>
+  or: <span class="p">[</span><span class="k">BlogFilter</span><span class="p">!]</span>
+  not: <span class="k">BlogFilter</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4174,12 +4068,12 @@
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">type</span><span class="w"> </span><span class="err">BlogDeleteResponse</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Count</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">impacted</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nl">affectedCount</span><span class="p">:</span><span class="w"> </span><span class="n">Int</span><span class="err">!</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">type</span> <span class="k">BlogDeleteResponse</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Count of the records impacted by the mutation&quot;&quot;&quot;</span>
+  affectedCount: <span class="k">Int</span><span class="p">!</span>
 
-<span class="w">  </span><span class="err">&quot;&quot;&quot;</span><span class="n">Array</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="n">impacted</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutation</span><span class="err">&quot;&quot;&quot;</span>
-<span class="w">  </span><span class="nl">records</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">Blog</span><span class="err">!]!</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Array of records impacted by the mutation&quot;&quot;&quot;</span>
+  records: <span class="p">[</span><span class="k">Blog</span><span class="p">!]!</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4200,16 +4094,16 @@
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">mutation</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="n">deleteFromBlogCollection</span><span class="p">(</span>
-<span class="w">    </span><span class="n">filter</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="n">eq</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}}</span>
-<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">affectedCount</span>
-<span class="w">    </span><span class="n">records</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">id</span>
-<span class="w">      </span><span class="n">name</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kt">mutation</span> <span class="p">{</span>
+  <span class="k">deleteFromBlogCollection</span><span class="p">(</span>
+    filter: <span class="p">{</span>id: <span class="p">{</span>eq: <span class="mi">1</span><span class="p">}}</span>
+  <span class="p">)</span> <span class="p">{</span>
+    <span class="k">affectedCount</span>
+    <span class="k">records</span> <span class="p">{</span>
+      <span class="k">id</span>
+      <span class="k">name</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4402,21 +4296,21 @@
 <span class="normal">15</span>
 <span class="normal">16</span>
 <span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">blogPostCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">              </span><span class="n">id</span>
-<span class="w">              </span><span class="n">title</span>
-<span class="w">            </span><span class="p">}</span>
-<span class="w">          </span><span class="p">}</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">name</span>
+        <span class="k">blogPostCollection</span> <span class="p">{</span>
+          <span class="k">edges</span> <span class="p">{</span>
+            <span class="k">node</span> <span class="p">{</span>
+              <span class="k">id</span>
+              <span class="k">title</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4548,16 +4442,16 @@
 <span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">blogPostCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">title</span>
-<span class="w">        </span><span class="n">blog</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="n">name</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">blogPostCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">title</span>
+        <span class="k">blog</span> <span class="p">{</span>
+          <span class="k">name</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4690,19 +4584,19 @@
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">employeeCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">        </span><span class="n">emailAddress</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="n">address</span>
-<span class="w">          </span><span class="n">employee</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">name</span>
-<span class="w">          </span><span class="p">}</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">employeeCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">name</span>
+        <span class="k">emailAddress</span> <span class="p">{</span>
+          <span class="k">address</span>
+          <span class="k">employee</span> <span class="p">{</span>
+            <span class="k">name</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 </div>
@@ -4752,7 +4646,7 @@
 <p>Due to differences among the types supported by PostgreSQL, JSON, and GraphQL, <code>pg_graphql</code> adds several new Scalar types to handle PostgreSQL builtins that require special handling.</p>
 <h3 id="json">JSON</h3>
 <p><code>pg_graphql</code> serializes <code>json</code> and <code>jsonb</code> data types as <code>String</code> under the custom scalar name <code>JSON</code>.</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span><span class="w"> </span><span class="err">JSON</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">JSON</span>
 </code></pre></div></td></tr></table></div>
 <p><strong>Example</strong></p>
 <p>Given the setup</p>
@@ -4798,13 +4692,13 @@
 <span class="normal">7</span>
 <span class="normal">8</span>
 <span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">userCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">config</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">userCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">config</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <p>The returns the following data. Note that <code>config</code> is serialized as a string</p>
@@ -4850,17 +4744,17 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span><span class="w"> </span><span class="err">BigInt</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">BigInt</span>
 
-<span class="k">input</span><span class="w"> </span><span class="err">BigIntFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">eq</span><span class="p">:</span><span class="w"> </span><span class="n">BigInt</span>
-<span class="w">  </span><span class="nl">gt</span><span class="p">:</span><span class="w"> </span><span class="n">BigInt</span>
-<span class="w">  </span><span class="nl">gte</span><span class="p">:</span><span class="w"> </span><span class="n">BigInt</span>
-<span class="w">  </span><span class="nl">in</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BigInt</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">lt</span><span class="p">:</span><span class="w"> </span><span class="n">BigInt</span>
-<span class="w">  </span><span class="nl">lte</span><span class="p">:</span><span class="w"> </span><span class="n">BigInt</span>
-<span class="w">  </span><span class="nl">neq</span><span class="p">:</span><span class="w"> </span><span class="n">BigInt</span>
-<span class="w">  </span><span class="nl">is</span><span class="p">:</span><span class="w"> </span><span class="n">FilterIs</span>
+<span class="kt">input</span> <span class="k">BigIntFilter</span> <span class="p">{</span>
+  eq: <span class="k">BigInt</span>
+  gt: <span class="k">BigInt</span>
+  gte: <span class="k">BigInt</span>
+  in: <span class="p">[</span><span class="k">BigInt</span><span class="p">!]</span>
+  lt: <span class="k">BigInt</span>
+  lte: <span class="k">BigInt</span>
+  neq: <span class="k">BigInt</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <p><strong>Example</strong></p>
@@ -4908,14 +4802,14 @@
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">personCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">name</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">personCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">name</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <p>The returns the following data. Note that <code>id</code> is serialized as a string</p>
@@ -4961,17 +4855,17 @@
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span><span class="w"> </span><span class="err">BigFloat</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">BigFloat</span>
 
-<span class="k">input</span><span class="w"> </span><span class="err">BigFloatFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">eq</span><span class="p">:</span><span class="w"> </span><span class="n">BigFloat</span>
-<span class="w">  </span><span class="nl">gt</span><span class="p">:</span><span class="w"> </span><span class="n">BigFloat</span>
-<span class="w">  </span><span class="nl">gte</span><span class="p">:</span><span class="w"> </span><span class="n">BigFloat</span>
-<span class="w">  </span><span class="nl">in</span><span class="p">:</span><span class="w"> </span><span class="err">[</span><span class="n">BigFloat</span><span class="err">!]</span>
-<span class="w">  </span><span class="nl">lt</span><span class="p">:</span><span class="w"> </span><span class="n">BigFloat</span>
-<span class="w">  </span><span class="nl">lte</span><span class="p">:</span><span class="w"> </span><span class="n">BigFloat</span>
-<span class="w">  </span><span class="nl">neq</span><span class="p">:</span><span class="w"> </span><span class="n">BigFloat</span>
-<span class="w">  </span><span class="nl">is</span><span class="p">:</span><span class="w"> </span><span class="n">FilterIs</span>
+<span class="kt">input</span> <span class="k">BigFloatFilter</span> <span class="p">{</span>
+  eq: <span class="k">BigFloat</span>
+  gt: <span class="k">BigFloat</span>
+  gte: <span class="k">BigFloat</span>
+  in: <span class="p">[</span><span class="k">BigFloat</span><span class="p">!]</span>
+  lt: <span class="k">BigFloat</span>
+  lte: <span class="k">BigFloat</span>
+  neq: <span class="k">BigFloat</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <p><strong>Example</strong></p>
@@ -5001,14 +4895,14 @@
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="n">generalLedgerCollection</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">edges</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">id</span>
-<span class="w">        </span><span class="n">amount</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
+  <span class="k">generalLedgerCollection</span> <span class="p">{</span>
+    <span class="k">edges</span> <span class="p">{</span>
+      <span class="k">node</span> <span class="p">{</span>
+        <span class="k">id</span>
+        <span class="k">amount</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <p>The returns the following data. Note that <code>amount</code> is serialized as a string</p>
@@ -5047,11 +4941,11 @@
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span><span class="w"> </span><span class="err">Opaque</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">scalar</span> <span class="k">Opaque</span>
 
-<span class="k">input</span><span class="w"> </span><span class="err">OpaqueFilter</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nl">eq</span><span class="p">:</span><span class="w"> </span><span class="n">Opaque</span>
-<span class="w">  </span><span class="nl">is</span><span class="p">:</span><span class="w"> </span><span class="n">FilterIs</span>
+<span class="kt">input</span> <span class="k">OpaqueFilter</span> <span class="p">{</span>
+  eq: <span class="k">Opaque</span>
+  is: <span class="k">FilterIs</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 
@@ -5069,6 +4963,42 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../sql_interface/" class="md-footer__link md-footer__link--prev" aria-label="Previous: SQL Interface" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              SQL Interface
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../views/" class="md-footer__link md-footer__link--next" aria-label="Next: Views" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Views
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -5091,10 +5021,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand"], "search": "../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand"], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.dff1b7c8.min.js"></script>
+      <script src="../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>
