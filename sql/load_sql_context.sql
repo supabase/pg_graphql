@@ -280,7 +280,7 @@ select
                                                     ),
                                                     array[]::text[]
                                                 ),
-                                                'is_unique', pi.indisunique,
+                                                'is_unique', pi.indisunique and pi.indpred is null,
                                                 'is_primary_key', pi.indisprimary
                                             )
                                         )
