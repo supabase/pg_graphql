@@ -11,7 +11,7 @@ as $$
             (
                 regexp_match(
                     comment_,
-                    '@graphql\((.+?)\)'
+                    '@graphql\((.+)\)'
                 )
             )[1]::jsonb,
             jsonb_build_object()

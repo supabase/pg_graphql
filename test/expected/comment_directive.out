@@ -1,9 +1,36 @@
 select
     graphql.comment_directive(
         comment_ := '@graphql({"name": "myField"})'
-    )
+    );
   comment_directive  
 ---------------------
  {"name": "myField"}
+(1 row)
+
+select
+    graphql.comment_directive(
+        comment_ := '@graphql({"name": "myField with (parentheses)"})'
+    );
+           comment_directive            
+----------------------------------------
+ {"name": "myField with (parentheses)"}
+(1 row)
+
+select
+    graphql.comment_directive(
+        comment_ := '@graphql({"name": "myField with a (starting parenthesis"})'
+    );
+                comment_directive                 
+--------------------------------------------------
+ {"name": "myField with a (starting parenthesis"}
+(1 row)
+
+select
+    graphql.comment_directive(
+        comment_ := '@graphql({"name": "myField with an ending parenthesis)"})'
+    );
+                comment_directive                
+-------------------------------------------------
+ {"name": "myField with an ending parenthesis)"}
 (1 row)
 
