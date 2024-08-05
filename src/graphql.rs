@@ -1594,7 +1594,7 @@ impl ___Type for Scalar {
                 Self::String(_) => "A string",
                 Self::Boolean => "A value that is true or false",
                 Self::BigInt => "An arbitrary size integer represented as a string",
-                Self::Date => "A date wihout time information",
+                Self::Date => "A date without time information",
                 Self::Time => "A time without date information",
                 Self::Datetime => "A date and time",
                 Self::UUID => "A universally unique identifier",
