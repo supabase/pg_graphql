@@ -34,6 +34,10 @@ Modify your `relay.config.js` file to reflect the following:
    - `schemaConfig` tells the Relay compiler where to find the `nodeId` field on the `node` interface
    - `customScalarTypes` will improve Relay's type emission
 
+!!! note
+
+    For Relay versions older than v16.2.0, it should be named `customScalars` instead.
+
 ### Configuring your Relay Environment
 
    This example uses [Supabase](https://supabase.com) for the GraphQL server, but pg_graphql can be used independently.
