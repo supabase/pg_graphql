@@ -20,7 +20,7 @@ Modify your `relay.config.js` file to reflect the following:
        nodeInterfaceIdField: 'nodeId',
        nodeInterfaceIdVariableName: 'nodeId',
      },
-     customScalars: {
+     customScalarTypes: {
        UUID: 'string',
        Datetime: 'string',
        JSON: 'string',
@@ -32,7 +32,11 @@ Modify your `relay.config.js` file to reflect the following:
    ```
 
    - `schemaConfig` tells the Relay compiler where to find the `nodeId` field on the `node` interface
-   - `customScalars` will improve Relay's type emission
+   - `customScalarTypes` will improve Relay's type emission
+
+!!! note
+
+    For Relay versions older than v16.2.0, it should be named `customScalars` instead.
 
 ### Configuring your Relay Environment
 
