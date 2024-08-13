@@ -19,8 +19,6 @@ pub struct OnConflictBuilder {
 
 #[derive(Clone, Debug)]
 pub struct InsertBuilder {
-    pub alias: String,
-
     // args
     pub objects: Vec<InsertRowBuilder>,
 
@@ -365,7 +363,6 @@ where
         .name()
         .ok_or("Encountered type without name in connection builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::InsertResponse(xtype) => {
@@ -416,7 +413,6 @@ where
                 }
             }
             Ok(InsertBuilder {
-                alias,
                 table: Arc::clone(&xtype.table),
                 objects,
                 selections: builder_fields,
@@ -432,8 +428,6 @@ where
 
 #[derive(Clone, Debug)]
 pub struct UpdateBuilder {
-    pub alias: String,
-
     // args
     pub filter: FilterBuilder,
     pub set: SetBuilder,
@@ -535,7 +529,6 @@ where
         .name()
         .ok_or("Encountered type without name in update builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::UpdateResponse(xtype) => {
@@ -587,7 +580,6 @@ where
                 }
             }
             Ok(UpdateBuilder {
-                alias,
                 filter,
                 set,
                 at_most,
@@ -604,8 +596,6 @@ where
 
 #[derive(Clone, Debug)]
 pub struct DeleteBuilder {
-    pub alias: String,
-
     // args
     pub filter: FilterBuilder,
     pub at_most: i64,
@@ -641,7 +631,6 @@ where
         .name()
         .ok_or("Encountered type without name in delete builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::DeleteResponse(xtype) => {
@@ -691,7 +680,6 @@ where
                 }
             }
             Ok(DeleteBuilder {
-                alias,
                 filter,
                 at_most,
                 table: Arc::clone(&xtype.table),
