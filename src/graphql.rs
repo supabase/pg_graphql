@@ -515,7 +515,7 @@ pub enum __Type {
     // Mutation
     Mutation(MutationType),
     InsertInput(InsertInputType),
-    InsertOnConflictInput(InsertOnConflictType),
+    OnConflictInput(OnConflictType),
     InsertResponse(InsertResponseType),
     UpdateInput(UpdateInputType),
     UpdateResponse(UpdateResponseType),
@@ -594,7 +594,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.kind(),
             Self::NodeInterface(x) => x.kind(),
             Self::InsertInput(x) => x.kind(),
-            Self::InsertOnConflictInput(x) => x.kind(),
+            Self::OnConflictInput(x) => x.kind(),
             Self::InsertResponse(x) => x.kind(),
             Self::UpdateInput(x) => x.kind(),
             Self::UpdateResponse(x) => x.kind(),
@@ -630,7 +630,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.name(),
             Self::NodeInterface(x) => x.name(),
             Self::InsertInput(x) => x.name(),
-            Self::InsertOnConflictInput(x) => x.name(),
+            Self::OnConflictInput(x) => x.name(),
             Self::InsertResponse(x) => x.name(),
             Self::UpdateInput(x) => x.name(),
             Self::UpdateResponse(x) => x.name(),
@@ -666,7 +666,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.description(),
             Self::NodeInterface(x) => x.description(),
             Self::InsertInput(x) => x.description(),
-            Self::InsertOnConflictInput(x) => x.description(),
+            Self::OnConflictInput(x) => x.description(),
             Self::InsertResponse(x) => x.description(),
             Self::UpdateInput(x) => x.description(),
             Self::UpdateResponse(x) => x.description(),
@@ -703,7 +703,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.fields(_include_deprecated),
             Self::NodeInterface(x) => x.fields(_include_deprecated),
             Self::InsertInput(x) => x.fields(_include_deprecated),
-            Self::InsertOnConflictInput(x) => x.fields(_include_deprecated),
+            Self::OnConflictInput(x) => x.fields(_include_deprecated),
             Self::InsertResponse(x) => x.fields(_include_deprecated),
             Self::UpdateInput(x) => x.fields(_include_deprecated),
             Self::UpdateResponse(x) => x.fields(_include_deprecated),
@@ -740,7 +740,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.interfaces(),
             Self::NodeInterface(x) => x.interfaces(),
             Self::InsertInput(x) => x.interfaces(),
-            Self::InsertOnConflictInput(x) => x.interfaces(),
+            Self::OnConflictInput(x) => x.interfaces(),
             Self::InsertResponse(x) => x.interfaces(),
             Self::UpdateInput(x) => x.interfaces(),
             Self::UpdateResponse(x) => x.interfaces(),
@@ -786,7 +786,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.enum_values(_include_deprecated),
             Self::NodeInterface(x) => x.enum_values(_include_deprecated),
             Self::InsertInput(x) => x.enum_values(_include_deprecated),
-            Self::InsertOnConflictInput(x) => x.enum_values(_include_deprecated),
+            Self::OnConflictInput(x) => x.enum_values(_include_deprecated),
             Self::InsertResponse(x) => x.enum_values(_include_deprecated),
             Self::UpdateInput(x) => x.enum_values(_include_deprecated),
             Self::UpdateResponse(x) => x.enum_values(_include_deprecated),
@@ -823,7 +823,7 @@ impl ___Type for __Type {
             Self::Node(x) => x.input_fields(),
             Self::NodeInterface(x) => x.input_fields(),
             Self::InsertInput(x) => x.input_fields(),
-            Self::InsertOnConflictInput(x) => x.input_fields(),
+            Self::OnConflictInput(x) => x.input_fields(),
             Self::InsertResponse(x) => x.input_fields(),
             Self::UpdateInput(x) => x.input_fields(),
             Self::UpdateResponse(x) => x.input_fields(),
@@ -971,7 +971,7 @@ pub struct InsertResponseType {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct InsertOnConflictType {
+pub struct OnConflictType {
     pub table: Arc<Table>,
     pub schema: Arc<__Schema>,
 }
@@ -1456,7 +1456,7 @@ impl ___Type for MutationType {
                 if table.has_upsert_support() {
                     args.push(__InputValue {
                         name_: "onConflict".to_string(),
-                        type_: __Type::InsertOnConflictInput(InsertOnConflictType {
+                        type_: __Type::OnConflictInput(OnConflictType {
                             table: Arc::clone(table),
                             schema: Arc::clone(&self.schema),
                         }),
@@ -3162,7 +3162,7 @@ impl ___Type for InsertInputType {
     }
 }
 
-impl ___Type for InsertOnConflictType {
+impl ___Type for OnConflictType {
     fn kind(&self) -> __TypeKind {
         __TypeKind::INPUT_OBJECT
     }
@@ -4294,7 +4294,7 @@ impl __Schema {
 
                 // Used exclusively by onConflict
                 if table.has_upsert_support() {
-                    types_.push(__Type::InsertOnConflictInput(InsertOnConflictType {
+                    types_.push(__Type::OnConflictInput(OnConflictType {
                         table: Arc::clone(table),
                         schema: Arc::clone(&schema_rc),
                     }));

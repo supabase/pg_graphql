@@ -472,11 +472,12 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                 _ => out_elem,
             }
         }
-        __Type::InsertInput(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::UpdateInput(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::OrderByEntity(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::FilterType(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::FilterEntity(_) => validate_arg_from_input_object(type_, value)?,
+        __Type::InsertInput(_)
+        | __Type::UpdateInput(_)
+        | __Type::OrderByEntity(_)
+        | __Type::FilterType(_)
+        | __Type::FilterEntity(_)
+        | __Type::OnConflictInput(_) => validate_arg_from_input_object(type_, value)?,
         _ => {
             return Err(format!(
                 "Invalid Type used as input argument {}",

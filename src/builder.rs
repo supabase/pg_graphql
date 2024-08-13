@@ -202,10 +202,10 @@ where
         variable_definitions,
     )?;
 
-    let insert_type: InsertOnConflictType = match field.get_arg("onConflict") {
+    let insert_type: OnConflictType = match field.get_arg("onConflict") {
         None => return Ok(None),
         Some(x) => match x.type_().unmodified_type() {
-            __Type::InsertOnConflictInput(insert_on_conflict) => insert_on_conflict,
+            __Type::OnConflictInput(insert_on_conflict) => insert_on_conflict,
             _ => return Err("Could not locate Insert Entity type".to_string()),
         },
     };
@@ -372,11 +372,11 @@ where
             // Raise for disallowed arguments
             restrict_allowed_arguments(&["objects", "onConflict"], query_field)?;
 
-            let objects: Vec<InsertRowBuilder> =
-                read_argument_objects(field, query_field, variables, variable_definitions)?;
-
             let on_conflict: Option<OnConflictBuilder> =
                 read_argument_on_conflict(field, query_field, variables, variable_definitions)?;
+
+            let objects: Vec<InsertRowBuilder> =
+                read_argument_objects(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<InsertSelection> = vec![];
 
