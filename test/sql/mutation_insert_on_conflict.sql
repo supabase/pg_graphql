@@ -91,9 +91,9 @@ begin;
         onConflict: {
           constraint: account_pkey,
           updateFields: [email, status],
-        }
-        filter: {
-          id: {id: $ifilt}
+          filter: {
+            id: $ifilt
+          }
         }
     ) {
         affectedCount
@@ -104,7 +104,9 @@ begin;
         }
       }
     }
-    $$));
+    $$,
+    variables:= '{"ifilt": {"eq": 2}}'
+    ));
 
     -- Variable Filter
     -- Only row id=2 updated due to where clause
@@ -118,9 +120,9 @@ begin;
         onConflict: {
           constraint: account_pkey,
           updateFields: [email, status],
-        }
-        filter: {
-          id: {id: $ifilt}
+          filter: {
+            id: $ifilt
+          }
         }
     ) {
         affectedCount

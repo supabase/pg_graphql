@@ -192,14 +192,6 @@ fn read_argument_on_conflict<'a, T>(
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
-    let validated: gson::Value = read_argument(
-        "onConflict",
-        field,
-        query_field,
-        variables,
-        variable_definitions,
-    )?;
-
     let conflict_type: OnConflictType = match field.get_arg("onConflict") {
         None => return Ok(None),
         Some(x) => match x.type_().unmodified_type() {
@@ -207,6 +199,14 @@ where
             _ => return Err("Could not locate Insert Entity type".to_string()),
         },
     };
+
+    let validated: gson::Value = read_argument(
+        "onConflict",
+        field,
+        query_field,
+        variables,
+        variable_definitions,
+    )?;
 
     let on_conflict_builder = match validated {
         gson::Value::Absent | gson::Value::Null => None,
@@ -394,10 +394,23 @@ where
     match &type_ {
         __Type::InsertResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["objects", "onConflict"], query_field)?;
+            let allowed_args = field
+                .args
+                .iter()
+                .map(|iv| iv.name())
+                .collect::<HashSet<String>>();
 
-            let on_conflict: Option<OnConflictBuilder> =
-                read_argument_on_conflict(field, query_field, variables, variable_definitions)?;
+            match allowed_args.contains("onConflict") {
+                true => restrict_allowed_arguments(&["objects", "onConflict"], query_field)?,
+                false => restrict_allowed_arguments(&["objects"], query_field)?,
+            }
+
+            let on_conflict: Option<OnConflictBuilder> = match allowed_args.contains("onConflict") {
+                true => {
+                    read_argument_on_conflict(field, query_field, variables, variable_definitions)?
+                }
+                false => None,
+            };
 
             let objects: Vec<InsertRowBuilder> =
                 read_argument_objects(field, query_field, variables, variable_definitions)?;

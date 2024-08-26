@@ -312,7 +312,7 @@ impl MutationEntrypoint<'_> for InsertBuilder {
         let insert_quoted_block_name = rand_block_name();
         let on_conflict_clause = match &self.on_conflict {
             Some(on_conflict) => {
-                let constraint_name = &on_conflict.constraint.name;
+                let quoted_constraint_name = quote_ident(&on_conflict.constraint.name);
                 let do_update_set_clause = on_conflict
                     .update_fields
                     .iter()
@@ -333,7 +333,7 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 
                 format!(
                     "
-                on conflict on constraint {constraint_name}
+                on conflict on constraint {quoted_constraint_name}
                 do update set {do_update_set_clause}
                 where {conflict_where_clause}
                 ",

@@ -148,9 +148,9 @@ begin;
         onConflict: {
           constraint: account_pkey,
           updateFields: [email, status],
-        }
-        filter: {
-          id: {id: $ifilt}
+          filter: {
+            id: $ifilt
+          }
         }
     ) {
         affectedCount
@@ -161,16 +161,24 @@ begin;
         }
       }
     }
-    $$));
-                          jsonb_pretty                           
------------------------------------------------------------------
- {                                                              +
-     "data": null,                                              +
-     "errors": [                                                +
-         {                                                      +
-             "message": "Input contains extra keys [\"filter\"]"+
-         }                                                      +
-     ]                                                          +
+    $$,
+    variables:= '{"ifilt": {"eq": 2}}'
+    ));
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": {                                +
+         "insertIntoAccountCollection": {     +
+             "records": [                     +
+                 {                            +
+                     "id": 2,                 +
+                     "email": "new@email.com",+
+                     "priority": null         +
+                 }                            +
+             ],                               +
+             "affectedCount": 1               +
+         }                                    +
+     }                                        +
  }
 (1 row)
 
@@ -186,9 +194,9 @@ begin;
         onConflict: {
           constraint: account_pkey,
           updateFields: [email, status],
-        }
-        filter: {
-          id: {id: $ifilt}
+          filter: {
+            id: $ifilt
+          }
         }
     ) {
         affectedCount

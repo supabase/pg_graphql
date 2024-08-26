@@ -166,6 +166,10 @@ begin;
                      "name": "BlogPostEdge"                                                                       +
                  },                                                                                               +
                  {                                                                                                +
+                     "kind": "ENUM",                                                                              +
+                     "name": "BlogPostField"                                                                      +
+                 },                                                                                               +
+                 {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
                      "name": "BlogPostFilter"                                                                     +
                  },                                                                                               +
@@ -176,6 +180,14 @@ begin;
                  {                                                                                                +
                      "kind": "OBJECT",                                                                            +
                      "name": "BlogPostInsertResponse"                                                             +
+                 },                                                                                               +
+                 {                                                                                                +
+                     "kind": "ENUM",                                                                              +
+                     "name": "BlogPostOnConflictConstraint"                                                       +
+                 },                                                                                               +
+                 {                                                                                                +
+                     "kind": "INPUT_OBJECT",                                                                      +
+                     "name": "BlogPostOnConflictInput"                                                            +
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
