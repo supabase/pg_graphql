@@ -200,16 +200,13 @@ where
         variable_definitions,
     )?;
 
-    let insert_type: OnConflictType = match field.get_arg("onConflict") {
+    let conflict_type: OnConflictType = match field.get_arg("onConflict") {
         None => return Ok(None),
         Some(x) => match x.type_().unmodified_type() {
             __Type::OnConflictInput(insert_on_conflict) => insert_on_conflict,
             _ => return Err("Could not locate Insert Entity type".to_string()),
         },
     };
-
-    let filter: FilterBuilder =
-        read_argument_filter(field, query_field, variables, variable_definitions)?;
 
     let on_conflict_builder = match validated {
         gson::Value::Absent | gson::Value::Null => None,
@@ -218,7 +215,7 @@ where
                 .get("constraint")
                 .expect("OnConflict revalidation error. Expected constraint")
             {
-                gson::Value::String(ix_name) => insert_type
+                gson::Value::String(ix_name) => conflict_type
                     .table
                     .indexes
                     .iter()
@@ -231,6 +228,36 @@ where
                 }
             };
 
+            // TODO: Filter reading logic is partially duplicated from read_argument_filter
+            // ideally this should be refactored
+            let filter_gson = contents
+                .get("filter")
+                .expect("onConflict revalidation error");
+
+            let filter = match filter_gson {
+                gson::Value::Null | gson::Value::Absent => FilterBuilder { elems: vec![] },
+                gson::Value::Object(_) => {
+                    let filter_type = conflict_type
+                        .input_fields()
+                        .expect("Failed to unwrap input fields on OnConflict type")
+                        .iter()
+                        .find(|in_f| in_f.name() == "filter")
+                        .expect("Failed to get filter input_field on onConflict type")
+                        .type_()
+                        .unmodified_type();
+
+                    if !matches!(filter_type, __Type::FilterEntity(_)) {
+                        return Err("Could not locate Filter Entity type".to_string());
+                    }
+                    let filter_field_map = input_field_map(&filter_type);
+                    let filter_elems = create_filters(&filter_gson, &filter_field_map)?;
+                    FilterBuilder {
+                        elems: filter_elems,
+                    }
+                }
+                _ => return Err("OnConflict revalidation error. invalid filter object".to_string()),
+            };
+
             let update_fields = match contents
                 .get("updateFields")
                 .expect("OnConflict revalidation error. Expected updateFields")
@@ -240,7 +267,7 @@ where
                     for col_name in col_names {
                         match col_name {
                             gson::Value::String(c) => {
-                                let col = insert_type.table.columns.iter().find(|column| &column.name == c).expect("OnConflict revalidation error. updateFields: unknown column name");
+                                let col = conflict_type.table.columns.iter().find(|column| &column.name == c).expect("OnConflict revalidation error. updateFields: unknown column name");
                                 update_columns.insert(Arc::clone(col));
                             }
                             _ => return Err("OnConflict revalidation error. Expected updateFields to be column names".to_string()),
@@ -1145,11 +1172,14 @@ where
         variable_definitions,
     )?;
 
+    //return Err(format!("Err {:?}", validated));
+
     let filter_type = field
         .get_arg("filter")
         .expect("failed to get filter argument")
         .type_()
         .unmodified_type();
+
     if !matches!(filter_type, __Type::FilterEntity(_)) {
         return Err("Could not locate Filter Entity type".to_string());
     }

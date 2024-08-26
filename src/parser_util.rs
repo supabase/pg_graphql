@@ -529,7 +529,10 @@ pub fn validate_arg_from_input_object(
 
                 match input_obj.get(&obj_field_key) {
                     None => {
-                        validate_arg_from_type(&obj_field_type, &GsonValue::Null)?;
+                        // If there was no provided key, use "Absent" so all arguments
+                        // always exist in the validated input datat
+                        validate_arg_from_type(&obj_field_type, &GsonValue::Absent)?;
+                        out_map.insert(obj_field_key, GsonValue::Absent);
                     }
                     Some(x) => {
                         let out_val = validate_arg_from_type(&obj_field_type, x)?;

@@ -309,11 +309,45 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 
         let values_clause = values_rows_clause.join(", ");
 
+        let insert_quoted_block_name = rand_block_name();
+        let on_conflict_clause = match &self.on_conflict {
+            Some(on_conflict) => {
+                let constraint_name = &on_conflict.constraint.name;
+                let do_update_set_clause = on_conflict
+                    .update_fields
+                    .iter()
+                    .map(|col| {
+                        format!(
+                            "{} = excluded.{}",
+                            quote_ident(&col.name),
+                            quote_ident(&col.name),
+                        )
+                    })
+                    .join(", ");
+
+                let conflict_where_clause = on_conflict.filter.to_where_clause(
+                    &insert_quoted_block_name,
+                    &self.table,
+                    param_context,
+                )?;
+
+                format!(
+                    "
+                on conflict on constraint {constraint_name}
+                do update set {do_update_set_clause}
+                where {conflict_where_clause}
+                ",
+                )
+            }
+            None => "".to_string(),
+        };
+
         Ok(format!(
             "
         with affected as (
-            insert into {quoted_schema}.{quoted_table}({referenced_columns_clause})
+            insert into {quoted_schema}.{quoted_table} as {insert_quoted_block_name} ({referenced_columns_clause})
             values {values_clause}
+            {on_conflict_clause}
             returning {selectable_columns_clause}
         )
         select

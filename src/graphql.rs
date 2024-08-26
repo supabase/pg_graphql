@@ -3181,7 +3181,6 @@ impl ___Type for OnConflictType {
     fn input_fields(&self) -> Option<Vec<__InputValue>> {
         Some(vec![
             __InputValue {
-                // TODO: Create a custom type for available constraints
                 name_: "constraint".to_string(),
                 // If triggers are involved, we can't detect if a field is non-null. Default
                 // all fields to non-null and let postgres errors handle it.
