@@ -4,17 +4,22 @@ version = "1.5.7"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
+
+[[bin]]
+name = "pgrx_embed_pg_graphql"
+path = "./src/bin/pgrx_embed.rs"
 
 [features]
 default = ["pg16"]
 pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
 pg15 = ["pgrx/pg15", "pgrx-tests/pg15"]
 pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
+pg17 = ["pgrx/pg17", "pgrx-tests/pg17"]
 pg_test = []
 
 [dependencies]
-pgrx = "=0.11.3"
+pgrx = "=0.12.4"
 graphql-parser = "0.4"
 serde = { version = "1.0", features = ["rc"] }
 serde_json = "1.0"
@@ -30,7 +35,7 @@ bimap = { version = "0.6.3", features = ["serde"] }
 indexmap = "2.2"
 
 [dev-dependencies]
-pgrx-tests = "=0.11.3"
+pgrx-tests = "=0.12.4"
 
 [profile.dev]
 panic = "unwind"
