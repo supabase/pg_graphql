@@ -89,3 +89,4 @@
 - bugfix: not null foreign keys referencing tables with RLS are marked as nullable
 
 ## master
+- bugfix: relational query with more than 100 fields fails
