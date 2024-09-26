@@ -1045,7 +1045,7 @@ dependencies = [
 
 [[package]]
 name = "pg_graphql"
-version = "1.5.7"
+version = "1.5.8"
 dependencies = [
  "base64 0.13.1",
  "bimap",
