@@ -412,6 +412,9 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                                     .map(|val| GsonValue::String(val.clone()))
                                     .unwrap_or_else(|| value.clone()),
                                 EnumSource::FilterIs => value.clone(),
+                                // TODO(or): Do I need to check directives here?
+                                EnumSource::TableColumns(_e) => value.clone(),
+                                EnumSource::OnConflictTarget(_e) => value.clone(),
                             }
                         }
                         None => return Err(format!("Invalid input for {} type", enum_name)),
@@ -469,11 +472,12 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                 _ => out_elem,
             }
         }
-        __Type::InsertInput(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::UpdateInput(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::OrderByEntity(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::FilterType(_) => validate_arg_from_input_object(type_, value)?,
-        __Type::FilterEntity(_) => validate_arg_from_input_object(type_, value)?,
+        __Type::InsertInput(_)
+        | __Type::UpdateInput(_)
+        | __Type::OrderByEntity(_)
+        | __Type::FilterType(_)
+        | __Type::FilterEntity(_)
+        | __Type::OnConflictInput(_) => validate_arg_from_input_object(type_, value)?,
         _ => {
             return Err(format!(
                 "Invalid Type used as input argument {}",
@@ -525,7 +529,10 @@ pub fn validate_arg_from_input_object(
 
                 match input_obj.get(&obj_field_key) {
                     None => {
-                        validate_arg_from_type(&obj_field_type, &GsonValue::Null)?;
+                        // If there was no provided key, use "Absent" so all arguments
+                        // always exist in the validated input datat
+                        validate_arg_from_type(&obj_field_type, &GsonValue::Absent)?;
+                        out_map.insert(obj_field_key, GsonValue::Absent);
                     }
                     Some(x) => {
                         let out_val = validate_arg_from_type(&obj_field_type, x)?;

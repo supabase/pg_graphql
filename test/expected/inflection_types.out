@@ -20,19 +20,22 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "blog")'
         )
     );
-       jsonb_pretty        
----------------------------
+          jsonb_pretty           
+---------------------------------
  "blog_post"
  "blog_postConnection"
  "blog_postDeleteResponse"
  "blog_postEdge"
+ "blog_postField"
  "blog_postFilter"
  "blog_postInsertInput"
  "blog_postInsertResponse"
+ "blog_postOnConflictConstraint"
+ "blog_postOnConflictInput"
  "blog_postOrderBy"
  "blog_postUpdateInput"
  "blog_postUpdateResponse"
-(10 rows)
+(13 rows)
 
     -- Inflection off, Overrides: on
     comment on table blog_post is e'@graphql({"name": "BlogZZZ"})';
@@ -50,19 +53,22 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "Blog")'
         )
     );
-      jsonb_pretty       
--------------------------
+         jsonb_pretty          
+-------------------------------
  "BlogZZZ"
  "BlogZZZConnection"
  "BlogZZZDeleteResponse"
  "BlogZZZEdge"
+ "BlogZZZField"
  "BlogZZZFilter"
  "BlogZZZInsertInput"
  "BlogZZZInsertResponse"
+ "BlogZZZOnConflictConstraint"
+ "BlogZZZOnConflictInput"
  "BlogZZZOrderBy"
  "BlogZZZUpdateInput"
  "BlogZZZUpdateResponse"
-(10 rows)
+(13 rows)
 
     rollback to savepoint a;
     -- Inflection on, Overrides: off
@@ -81,19 +87,22 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "Blog")'
         )
     );
-       jsonb_pretty       
---------------------------
+          jsonb_pretty          
+--------------------------------
  "BlogPost"
  "BlogPostConnection"
  "BlogPostDeleteResponse"
  "BlogPostEdge"
+ "BlogPostField"
  "BlogPostFilter"
  "BlogPostInsertInput"
  "BlogPostInsertResponse"
+ "BlogPostOnConflictConstraint"
+ "BlogPostOnConflictInput"
  "BlogPostOrderBy"
  "BlogPostUpdateInput"
  "BlogPostUpdateResponse"
-(10 rows)
+(13 rows)
 
     -- Inflection on, Overrides: on
     comment on table blog_post is e'@graphql({"name": "BlogZZZ"})';
@@ -111,18 +120,21 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "Blog")'
         )
     );
-      jsonb_pretty       
--------------------------
+         jsonb_pretty          
+-------------------------------
  "BlogZZZ"
  "BlogZZZConnection"
  "BlogZZZDeleteResponse"
  "BlogZZZEdge"
+ "BlogZZZField"
  "BlogZZZFilter"
  "BlogZZZInsertInput"
  "BlogZZZInsertResponse"
+ "BlogZZZOnConflictConstraint"
+ "BlogZZZOnConflictInput"
  "BlogZZZOrderBy"
  "BlogZZZUpdateInput"
  "BlogZZZUpdateResponse"
-(10 rows)
+(13 rows)
 
 rollback;

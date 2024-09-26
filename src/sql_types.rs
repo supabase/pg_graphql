@@ -417,6 +417,7 @@ pub struct Index {
     pub column_names: Vec<String>,
     pub is_unique: bool,
     pub is_primary_key: bool,
+    pub name: String,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -544,11 +545,37 @@ impl Table {
                     column_names: column_names.clone(),
                     is_unique: true,
                     is_primary_key: true,
+                    name: "NOT REQUIRED".to_string(),
                 })
             }
         } else {
             None
         }
+    }
+
+    pub fn on_conflict_indexes(&self) -> Vec<&Index> {
+        // Indexes that are valid targets for an on conflict clause
+        // must be unique, real (not comment directives), and must
+        // not contain serial or generated columns because we don't
+        // allow those to be set in insert statements
+        let unique_indexes = self.indexes.iter().filter(|x| x.is_unique);
+
+        let allowed_column_names = self
+            .columns
+            .iter()
+            .filter(|x| x.permissions.is_insertable)
+            .filter(|x| !x.is_generated)
+            .filter(|x| !x.is_serial)
+            .map(|x| &x.name)
+            .collect::<HashSet<&String>>();
+
+        unique_indexes
+            .filter(|uix| {
+                uix.column_names
+                    .iter()
+                    .all(|col_name| allowed_column_names.contains(col_name))
+            })
+            .collect::<Vec<&Index>>()
     }
 
     pub fn primary_key_columns(&self) -> Vec<&Arc<Column>> {
@@ -563,6 +590,10 @@ impl Table {
                     .expect("Failed to unwrap pkey by column names")
             })
             .collect::<Vec<&Arc<Column>>>()
+    }
+
+    pub fn has_upsert_support(&self) -> bool {
+        self.on_conflict_indexes().len() > 0
     }
 
     pub fn is_any_column_selectable(&self) -> bool {
