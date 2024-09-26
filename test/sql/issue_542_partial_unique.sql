@@ -28,7 +28,7 @@ begin;
     );
 
     /* Creating partial unique referencing status should NOT change the relationship with
-    the readthroughs to a non-null unique because its partial and other statuses may
+    the readthroughs to a 1:1 because its partial and other statuses may
     have multiple associated readthroughs */
     create unique index idx_unique_in_progress_readthrough
       on public.readthroughs (work_id)
