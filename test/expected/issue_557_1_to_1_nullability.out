@@ -1,0 +1,163 @@
+begin;
+    -- Create the party table
+    create table party (
+        id uuid primary key default gen_random_uuid(),
+        kind varchar not null -- Indicates whether the party is a 'contact' or an 'organisation'
+    );
+    -- Create the contact table
+    create table contact (
+        id uuid primary key, -- Also a foreign key to party.id
+        given_name text,
+        family_name text,
+        foreign key (id) references party(id)
+    );
+    -- Create the organisation table
+    create table organization (
+        id uuid primary key, -- Also a foreign key to party.id
+        name text not null,
+        foreign key (id) references party(id)
+    );
+    -- Party should have nullable relationships to Contact and Organization
+    select jsonb_pretty(
+      graphql.resolve($$
+        {
+          __type(name: "Party") {
+            kind
+            fields {
+              name
+              type {
+                ofType {
+                  name
+                  kind
+                  description
+                }
+
+              }
+            }
+          }
+        }
+        $$)
+    );
+                                         jsonb_pretty                                         
+----------------------------------------------------------------------------------------------
+ {                                                                                           +
+     "data": {                                                                               +
+         "__type": {                                                                         +
+             "kind": "OBJECT",                                                               +
+             "fields": [                                                                     +
+                 {                                                                           +
+                     "name": "nodeId",                                                       +
+                     "type": {                                                               +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "ID",                                                   +
+                             "description": "A globally unique identifier for a given record"+
+                         }                                                                   +
+                     }                                                                       +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "id",                                                           +
+                     "type": {                                                               +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "UUID",                                                 +
+                             "description": "A universally unique identifier"                +
+                         }                                                                   +
+                     }                                                                       +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "kind",                                                         +
+                     "type": {                                                               +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "String",                                               +
+                             "description": "A string"                                       +
+                         }                                                                   +
+                     }                                                                       +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "contact",                                                      +
+                     "type": {                                                               +
+                         "ofType": null                                                      +
+                     }                                                                       +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "organization",                                                 +
+                     "type": {                                                               +
+                         "ofType": null                                                      +
+                     }                                                                       +
+                 }                                                                           +
+             ]                                                                               +
+         }                                                                                   +
+     }                                                                                       +
+ }
+(1 row)
+
+    -- Contact and Organization should have non-nullable relationship to Party
+    select jsonb_pretty(
+      graphql.resolve($$
+        {
+          __type(name: "Organization") {
+            kind
+            fields {
+              name
+              kind
+              description
+              type {
+                ofType {
+                  name
+                  kind
+                  description
+                }
+              }
+            }
+          }
+        }
+        $$)
+    );
+                      jsonb_pretty                      
+--------------------------------------------------------
+ {                                                     +
+     "data": null,                                     +
+     "errors": [                                       +
+         {                                             +
+             "message": "unknown field in __Field kind"+
+         }                                             +
+     ]                                                 +
+ }
+(1 row)
+
+    select jsonb_pretty(
+      graphql.resolve($$
+        {
+          __type(name: "Contact") {
+            kind
+            fields {
+              name
+              kind
+              description
+              type {
+                ofType {
+                  name
+                  kind
+                  description
+                }
+              }
+            }
+          }
+        }
+        $$)
+    );
+                      jsonb_pretty                      
+--------------------------------------------------------
+ {                                                     +
+     "data": null,                                     +
+     "errors": [                                       +
+         {                                             +
+             "message": "unknown field in __Field kind"+
+         }                                             +
+     ]                                                 +
+ }
+(1 row)
+
+rollback;
