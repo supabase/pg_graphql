@@ -23,42 +23,42 @@ begin;
         }
       $$)
     );
-                     jsonb_pretty                      
--------------------------------------------------------
- {                                                    +
-     "data": {                                        +
-         "__type": {                                  +
-             "kind": "OBJECT",                        +
-             "fields": [                              +
-                 {                                    +
-                     "name": "nodeId",                +
-                     "type": {                        +
-                         "kind": "NON_NULL",          +
-                         "name": null                 +
-                     }                                +
-                 },                                   +
-                 {                                    +
-                     "name": "workId",                +
-                     "type": {                        +
-                         "kind": "NON_NULL",          +
-                         "name": null                 +
-                     }                                +
-                 },                                   +
-                 {                                    +
-                     "name": "readthroughsCollection",+
-                     "type": {                        +
-                         "kind": "NON_NULL",          +
-                         "name": null                 +
-                     }                                +
-                 }                                    +
-             ]                                        +
-         }                                            +
-     }                                                +
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "__type": {                                     +
+             "kind": "OBJECT",                           +
+             "fields": [                                 +
+                 {                                       +
+                     "name": "nodeId",                   +
+                     "type": {                           +
+                         "kind": "NON_NULL",             +
+                         "name": null                    +
+                     }                                   +
+                 },                                      +
+                 {                                       +
+                     "name": "workId",                   +
+                     "type": {                           +
+                         "kind": "NON_NULL",             +
+                         "name": null                    +
+                     }                                   +
+                 },                                      +
+                 {                                       +
+                     "name": "readthroughsCollection",   +
+                     "type": {                           +
+                         "kind": "OBJECT",               +
+                         "name": "ReadthroughsConnection"+
+                     }                                   +
+                 }                                       +
+             ]                                           +
+         }                                               +
+     }                                                   +
  }
 (1 row)
 
     /* Creating partial unique referencing status should NOT change the relationship with
-    the readthroughs to a non-null unique because its partial and other statuses may
+    the readthroughs to a 1:1 because its partial and other statuses may
     have multiple associated readthroughs */
     create unique index idx_unique_in_progress_readthrough
       on public.readthroughs (work_id)
@@ -79,37 +79,37 @@ begin;
         }
         $$)
     );
-                     jsonb_pretty                      
--------------------------------------------------------
- {                                                    +
-     "data": {                                        +
-         "__type": {                                  +
-             "kind": "OBJECT",                        +
-             "fields": [                              +
-                 {                                    +
-                     "name": "nodeId",                +
-                     "type": {                        +
-                         "kind": "NON_NULL",          +
-                         "name": null                 +
-                     }                                +
-                 },                                   +
-                 {                                    +
-                     "name": "workId",                +
-                     "type": {                        +
-                         "kind": "NON_NULL",          +
-                         "name": null                 +
-                     }                                +
-                 },                                   +
-                 {                                    +
-                     "name": "readthroughsCollection",+
-                     "type": {                        +
-                         "kind": "NON_NULL",          +
-                         "name": null                 +
-                     }                                +
-                 }                                    +
-             ]                                        +
-         }                                            +
-     }                                                +
+                       jsonb_pretty                       
+----------------------------------------------------------
+ {                                                       +
+     "data": {                                           +
+         "__type": {                                     +
+             "kind": "OBJECT",                           +
+             "fields": [                                 +
+                 {                                       +
+                     "name": "nodeId",                   +
+                     "type": {                           +
+                         "kind": "NON_NULL",             +
+                         "name": null                    +
+                     }                                   +
+                 },                                      +
+                 {                                       +
+                     "name": "workId",                   +
+                     "type": {                           +
+                         "kind": "NON_NULL",             +
+                         "name": null                    +
+                     }                                   +
+                 },                                      +
+                 {                                       +
+                     "name": "readthroughsCollection",   +
+                     "type": {                           +
+                         "kind": "OBJECT",               +
+                         "name": "ReadthroughsConnection"+
+                     }                                   +
+                 }                                       +
+             ]                                           +
+         }                                               +
+     }                                                   +
  }
 (1 row)
 

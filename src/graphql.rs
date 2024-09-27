@@ -1946,13 +1946,19 @@ pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> Optio
 }
 
 impl NodeType {
-    fn foreign_key_type(&self, fkey: &ForeignKey, type_: __Type) -> __Type {
+    fn foreign_key_type(
+        &self,
+        fkey: &ForeignKey,
+        type_: __Type,
+        is_reverse_reference: bool,
+    ) -> __Type {
         if fkey.local_table_meta.column_names.iter().any(|colname| {
             self.table
                 .columns
                 .iter()
                 .any(|c| &c.name == colname && c.is_not_null)
                 && !fkey.referenced_table_meta.is_rls_enabled
+                && !is_reverse_reference
         }) {
             __Type::NonNull(NonNullType {
                 type_: Box::new(type_),
@@ -2121,6 +2127,7 @@ impl ___Type for NodeType {
                     reverse_reference: Some(reverse_reference),
                     schema: Arc::clone(&self.schema),
                 }),
+                reverse_reference,
             );
 
             let relation_field = __Field {
@@ -2174,7 +2181,11 @@ impl ___Type for NodeType {
                     };
                     let connection_args = connection_type.get_connection_input_args();
 
-                    let type_ = self.foreign_key_type(fkey, __Type::Connection(connection_type));
+                    let type_ = self.foreign_key_type(
+                        fkey,
+                        __Type::Connection(connection_type),
+                        reverse_reference,
+                    );
 
                     __Field {
                         name_: self
@@ -2196,6 +2207,7 @@ impl ___Type for NodeType {
                             reverse_reference: Some(reverse_reference),
                             schema: Arc::clone(&self.schema),
                         }),
+                        reverse_reference,
                     );
 
                     __Field {
