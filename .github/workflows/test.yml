@@ -1,14 +1,14 @@
 name: tests
 on:
   pull_request:
-  push: { branches: master }
+  push: { branches: [master] }
 
 jobs:
   test:
     name: Run tests
     strategy:
       matrix:
-        postgres: [14, 15, 16]
+        postgres: [14, 15, 16, 17]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
