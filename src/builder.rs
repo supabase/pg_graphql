@@ -12,8 +12,6 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct InsertBuilder {
-    pub alias: String,
-
     // args
     pub objects: Vec<InsertRowBuilder>,
 
@@ -272,7 +270,6 @@ where
         .name()
         .ok_or("Encountered type without name in connection builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::InsertResponse(xtype) => {
@@ -320,7 +317,6 @@ where
                 }
             }
             Ok(InsertBuilder {
-                alias,
                 table: Arc::clone(&xtype.table),
                 objects,
                 selections: builder_fields,
@@ -335,8 +331,6 @@ where
 
 #[derive(Clone, Debug)]
 pub struct UpdateBuilder {
-    pub alias: String,
-
     // args
     pub filter: FilterBuilder,
     pub set: SetBuilder,
@@ -438,7 +432,6 @@ where
         .name()
         .ok_or("Encountered type without name in update builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::UpdateResponse(xtype) => {
@@ -490,7 +483,6 @@ where
                 }
             }
             Ok(UpdateBuilder {
-                alias,
                 filter,
                 set,
                 at_most,
@@ -507,8 +499,6 @@ where
 
 #[derive(Clone, Debug)]
 pub struct DeleteBuilder {
-    pub alias: String,
-
     // args
     pub filter: FilterBuilder,
     pub at_most: i64,
@@ -544,7 +534,6 @@ where
         .name()
         .ok_or("Encountered type without name in delete builder")?;
     let field_map = field_map(&type_);
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::DeleteResponse(xtype) => {
@@ -594,7 +583,6 @@ where
                 }
             }
             Ok(DeleteBuilder {
-                alias,
                 filter,
                 at_most,
                 table: Arc::clone(&xtype.table),
@@ -609,8 +597,6 @@ where
 }
 
 pub struct FunctionCallBuilder {
-    pub alias: String,
-
     // metadata
     pub function: Arc<Function>,
 
@@ -650,7 +636,6 @@ where
     T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
-    let alias = alias_or_name(query_field);
 
     match &type_ {
         __Type::FuncCallResponse(func_call_resp_type) => {
@@ -703,7 +688,6 @@ where
             };
 
             Ok(FunctionCallBuilder {
-                alias,
                 function: Arc::clone(&func_call_resp_type.function),
                 args_builder: args,
                 return_type_builder,
@@ -1311,7 +1295,7 @@ where
     )?;
     let _: Scalar = match field
         .get_arg(arg_name)
-        .expect(&format!("failed to get {} argument", arg_name))
+        .unwrap_or_else(|| panic!("failed to get {} argument", arg_name))
         .type_()
         .unmodified_type()
     {
@@ -1977,7 +1961,6 @@ pub struct __SchemaSelection {
 
 #[derive(Clone)]
 pub struct __SchemaBuilder {
-    pub schema: __Schema,
     pub selections: Vec<__SchemaSelection>,
 }
 
@@ -2618,7 +2601,6 @@ impl __Schema {
                 }
 
                 Ok(__SchemaBuilder {
-                    schema: self.clone(),
                     selections: builder_fields,
                 })
             }
