@@ -17,7 +17,7 @@ To run tests locally, first execute:
 cargo pgrx install
 ```
 
-to build and install the latest `pg_graphql` in the Postgres instance specified by `pg_config`. This step is needed when you have made any changes in the Rust code.
+to build `pg_graphql` from source and install it in the Postgres instance specified by `pg_config`. This step must be run when you have made any changes in the Rust code. It can be skipped if there are no Rust code changes since the last time the command was run. The skipping is expecially useful when you are only modifying the test sql files.
 
 Next, run all the tests by executing:
 
@@ -25,7 +25,7 @@ Next, run all the tests by executing:
 ./bin/installcheck
 ```
 
-You can combine the last two steps to quickly run all the tests:
+You can combine the last two steps to build and install `pg_graphql` and run all the tests:
 
 ```bash
 $ cargo pgrx install; ./bin/installcheck
