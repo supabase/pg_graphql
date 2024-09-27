@@ -26,6 +26,9 @@ begin;
             fields {
               name
               type {
+                name
+                kind
+                description
                 ofType {
                   name
                   kind
@@ -48,43 +51,58 @@ begin;
                  {                                                                           +
                      "name": "nodeId",                                                       +
                      "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
                          "ofType": {                                                         +
                              "kind": "SCALAR",                                               +
                              "name": "ID",                                                   +
                              "description": "A globally unique identifier for a given record"+
-                         }                                                                   +
+                         },                                                                  +
+                         "description": null                                                 +
                      }                                                                       +
                  },                                                                          +
                  {                                                                           +
                      "name": "id",                                                           +
                      "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
                          "ofType": {                                                         +
                              "kind": "SCALAR",                                               +
                              "name": "UUID",                                                 +
                              "description": "A universally unique identifier"                +
-                         }                                                                   +
+                         },                                                                  +
+                         "description": null                                                 +
                      }                                                                       +
                  },                                                                          +
                  {                                                                           +
                      "name": "kind",                                                         +
                      "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
                          "ofType": {                                                         +
                              "kind": "SCALAR",                                               +
                              "name": "String",                                               +
                              "description": "A string"                                       +
-                         }                                                                   +
+                         },                                                                  +
+                         "description": null                                                 +
                      }                                                                       +
                  },                                                                          +
                  {                                                                           +
                      "name": "contact",                                                      +
                      "type": {                                                               +
-                         "ofType": null                                                      +
+                         "kind": "OBJECT",                                                   +
+                         "name": "Contact",                                                  +
+                         "ofType": null,                                                     +
+                         "description": null                                                 +
                      }                                                                       +
                  },                                                                          +
                  {                                                                           +
                      "name": "organization",                                                 +
                      "type": {                                                               +
-                         "ofType": null                                                      +
+                         "kind": "OBJECT",                                                   +
+                         "name": "Organization",                                             +
+                         "ofType": null,                                                     +
+                         "description": null                                                 +
                      }                                                                       +
                  }                                                                           +
              ]                                                                               +
@@ -101,9 +119,11 @@ begin;
             kind
             fields {
               name
-              kind
               description
               type {
+                name
+                kind
+                description
                 ofType {
                   name
                   kind
@@ -115,15 +135,72 @@ begin;
         }
         $$)
     );
-                      jsonb_pretty                      
---------------------------------------------------------
- {                                                     +
-     "data": null,                                     +
-     "errors": [                                       +
-         {                                             +
-             "message": "unknown field in __Field kind"+
-         }                                             +
-     ]                                                 +
+                                         jsonb_pretty                                         
+----------------------------------------------------------------------------------------------
+ {                                                                                           +
+     "data": {                                                                               +
+         "__type": {                                                                         +
+             "kind": "OBJECT",                                                               +
+             "fields": [                                                                     +
+                 {                                                                           +
+                     "name": "nodeId",                                                       +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "ID",                                                   +
+                             "description": "A globally unique identifier for a given record"+
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": "Globally Unique Record Identifier"                      +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "id",                                                           +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "UUID",                                                 +
+                             "description": "A universally unique identifier"                +
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": null                                                     +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "name",                                                         +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "String",                                               +
+                             "description": "A string"                                       +
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": null                                                     +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "party",                                                        +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "OBJECT",                                               +
+                             "name": "Party",                                                +
+                             "description": null                                             +
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": null                                                     +
+                 }                                                                           +
+             ]                                                                               +
+         }                                                                                   +
+     }                                                                                       +
  }
 (1 row)
 
@@ -134,9 +211,11 @@ begin;
             kind
             fields {
               name
-              kind
               description
               type {
+                name
+                kind
+                description
                 ofType {
                   name
                   kind
@@ -148,15 +227,78 @@ begin;
         }
         $$)
     );
-                      jsonb_pretty                      
---------------------------------------------------------
- {                                                     +
-     "data": null,                                     +
-     "errors": [                                       +
-         {                                             +
-             "message": "unknown field in __Field kind"+
-         }                                             +
-     ]                                                 +
+                                         jsonb_pretty                                         
+----------------------------------------------------------------------------------------------
+ {                                                                                           +
+     "data": {                                                                               +
+         "__type": {                                                                         +
+             "kind": "OBJECT",                                                               +
+             "fields": [                                                                     +
+                 {                                                                           +
+                     "name": "nodeId",                                                       +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "ID",                                                   +
+                             "description": "A globally unique identifier for a given record"+
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": "Globally Unique Record Identifier"                      +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "id",                                                           +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "SCALAR",                                               +
+                             "name": "UUID",                                                 +
+                             "description": "A universally unique identifier"                +
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": null                                                     +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "givenName",                                                    +
+                     "type": {                                                               +
+                         "kind": "SCALAR",                                                   +
+                         "name": "String",                                                   +
+                         "ofType": null,                                                     +
+                         "description": "A string"                                           +
+                     },                                                                      +
+                     "description": null                                                     +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "familyName",                                                   +
+                     "type": {                                                               +
+                         "kind": "SCALAR",                                                   +
+                         "name": "String",                                                   +
+                         "ofType": null,                                                     +
+                         "description": "A string"                                           +
+                     },                                                                      +
+                     "description": null                                                     +
+                 },                                                                          +
+                 {                                                                           +
+                     "name": "party",                                                        +
+                     "type": {                                                               +
+                         "kind": "NON_NULL",                                                 +
+                         "name": null,                                                       +
+                         "ofType": {                                                         +
+                             "kind": "OBJECT",                                               +
+                             "name": "Party",                                                +
+                             "description": null                                             +
+                         },                                                                  +
+                         "description": null                                                 +
+                     },                                                                      +
+                     "description": null                                                     +
+                 }                                                                           +
+             ]                                                                               +
+         }                                                                                   +
+     }                                                                                       +
  }
 (1 row)
 

@@ -30,6 +30,9 @@ begin;
             fields {
               name
               type {
+                name
+                kind
+                description
                 ofType {
                   name
                   kind
@@ -51,9 +54,11 @@ begin;
             kind
             fields {
               name
-              kind
               description
               type {
+                name
+                kind
+                description
                 ofType {
                   name
                   kind
@@ -73,9 +78,11 @@ begin;
             kind
             fields {
               name
-              kind
               description
               type {
+                name
+                kind
+                description
                 ofType {
                   name
                   kind
