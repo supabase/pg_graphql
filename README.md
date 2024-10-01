@@ -69,4 +69,4 @@ Each table receives an entrypoint in the top level `Query` type that is a pageab
 
 ### Contributing
 
-Please refer to the [contributing docs](./docs/contributing) for more information.
+Please refer to the [contributing docs](./docs/contributing.md) for more information.
