@@ -66,3 +66,7 @@ Translates into a GraphQL schema displayed below.
 Each table receives an entrypoint in the top level `Query` type that is a pageable collection with relationships defined by its foreign keys. Tables similarly recieve entrypoints in the `Mutation` schema that enable bulk operations for insert, update, and delete.
 
 ![GraphiQL](./docs/assets/quickstart_graphiql.png)
+
+### Contributing
+
+Please refer to the [contributing docs](./docs/contributing.md) for more information.
