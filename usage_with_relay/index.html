@@ -670,7 +670,7 @@
 <span class="w">    </span><span class="nx">nodeInterfaceIdField</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;nodeId&#39;</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">nodeInterfaceIdVariableName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;nodeId&#39;</span><span class="p">,</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nx">customScalars</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">customScalarTypes</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">UUID</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;string&#39;</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">Datetime</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;string&#39;</span><span class="p">,</span>
 <span class="w">    </span><span class="nb">JSON</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;string&#39;</span><span class="p">,</span>
@@ -682,8 +682,12 @@
 </code></pre></div></td></tr></table></div>
 <ul>
 <li><code>schemaConfig</code> tells the Relay compiler where to find the <code>nodeId</code> field on the <code>node</code> interface</li>
-<li><code>customScalars</code> will improve Relay's type emission</li>
+<li><code>customScalarTypes</code> will improve Relay's type emission</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For Relay versions older than v16.2.0, it should be named <code>customScalars</code> instead.</p>
+</div>
 <h3 id="configuring-your-relay-environment">Configuring your Relay Environment</h3>
 <p>This example uses <a href="https://supabase.com">Supabase</a> for the GraphQL server, but pg_graphql can be used independently.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>

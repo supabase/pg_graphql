@@ -424,7 +424,7 @@ An opaque string using for tracking a position in results during pagination
 """
 scalar Cursor
 
-"""A date wihout time information"""
+"""A date without time information"""
 scalar Date
 
 """

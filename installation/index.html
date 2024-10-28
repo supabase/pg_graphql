@@ -524,14 +524,14 @@
 cargo<span class="w"> </span>pgrx<span class="w"> </span>install<span class="w"> </span>--release
 </code></pre></div></td></tr></table></div>
 <p>Before enabling the extension you need to initialize <code>pgrx</code>. The easiest way to get started is to allow <code>pgrx</code> to manage its own version/s of Postgres:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>init<span class="w"> </span>--pg16<span class="o">=</span>download
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>init<span class="w"> </span>--pg17<span class="o">=</span>download
 </code></pre></div></td></tr></table></div>
 <p>For more advanced configuration options, like building against an existing Postgres installation from e.g. Homebrew, see the <a href="https://github.com/pgcentralfoundation/pgrx">pgrx docs</a></p>
 <p>To start the database:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>start<span class="w"> </span>pg16
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>start<span class="w"> </span>pg17
 </code></pre></div></td></tr></table></div>
 <p>To connect:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>connect<span class="w"> </span>pg16
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>connect<span class="w"> </span>pg17
 </code></pre></div></td></tr></table></div>
 <p>Finally, to enable the <code>pg_graphql</code> extension in Postgres, execute the <code>create extension</code> statement. This extension creates its own schema/namespace named <code>graphql</code> to avoid naming conflicts.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">extension</span><span class="w"> </span><span class="n">pg_graphql</span><span class="p">;</span>

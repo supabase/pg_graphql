@@ -497,6 +497,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    Debugging
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#interactive-psql-development" class="md-nav__link">
     Interactive PSQL Development
   </a>
@@ -598,6 +605,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    Debugging
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#interactive-psql-development" class="md-nav__link">
     Interactive PSQL Development
   </a>
@@ -660,20 +674,32 @@
 
 <p>pg_graphql is OSS. PR and issues are welcome.</p>
 <h2 id="development">Development</h2>
-<p>Requirements:</p>
-<ul>
-<li>rust</li>
-<li>cargo</li>
-<li><a href="https://github.com/tcdi/pgrx">pgrx</a></li>
-</ul>
+<p>To start developing <code>pg_graphql</code>:</p>
+<ol>
+<li><a href="https://www.rust-lang.org/tools/install">Install Rust</a>.</li>
+<li><a href="https://github.com/pgcentralfoundation/pgrx">Install pgrx</a></li>
+</ol>
 <h3 id="testing">Testing</h3>
-<p>Tests are located in <code>./test/sql</code> with expected output in <code>./test/expected</code></p>
-<p>To run tests locally, execute:</p>
+<p>Tests are located in sql files in the <code>./test/sql</code> folder. Each sql file has a corresponding expected output file in <code>./test/expected</code> folder. For example, <code>./test/sql/aliases.sql</code>'s expected output is in <code>./tests/expected/aliases.out</code>. When a test runs, its actual output is saved in the <code>./results</code> folder. If the file in <code>./results</code> folder matches the corresponding file in the <code>./test/expected</code> folder, the test passes, otherwise it fails.</p>
+<p>To run tests locally, first execute:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>install
+</code></pre></div></td></tr></table></div>
+<p>to build <code>pg_graphql</code> from source and install it in the Postgres instance specified by <code>pg_config</code>. This step must be run when you have made any changes in the Rust code. It can be skipped if there are no Rust code changes since the last time the command was run. The skipping is expecially useful when you are only modifying the test sql files.</p>
+<p>Next, run all the tests by executing:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>./bin/installcheck
+</code></pre></div></td></tr></table></div>
+<p>You can combine the last two steps to build and install <code>pg_graphql</code> and run all the tests:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>cargo<span class="w"> </span>pgrx<span class="w"> </span>install<span class="p">;</span><span class="w"> </span>./bin/installcheck
 </code></pre></div></td></tr></table></div>
+<p>You can run a single test by passing its name to the <code>installcheck</code> command. For example, the following runs the test in <code>./test/sql/aliases.sql</code>.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>./bin/installcheck<span class="w"> </span>aliases
+</code></pre></div></td></tr></table></div>
+<p>When writing a new test, or editing an existing one, the file in <code>./result</code> should be inspected manually and then copied over to the <code>./test/expected</code> folder to make the test pass.</p>
+<h3 id="debugging">Debugging</h3>
+<p>You can print to the output by using the <code>pgrx_pg_sys::submodules::elog::info!</code> macro in the Rust code. Lines printed with this macro will show in the .out file in the <code>./results</code> folder.</p>
 <h3 id="interactive-psql-development">Interactive PSQL Development</h3>
 <p>To reduce the iteration cycle, you may want to launch a psql prompt with <code>pg_graphql</code> installed to experiment</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>run<span class="w"> </span>pg14
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>cargo<span class="w"> </span>pgrx<span class="w"> </span>run<span class="w"> </span>pg16
 </code></pre></div></td></tr></table></div>
 <p>Try out the commands below to spin up a database with the extension installed &amp; query a table using GraphQL. Experiment with aliasing field/table names and filtering on different columns.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
