@@ -70,7 +70,7 @@ const cache = new InMemoryCache({
 
     return defaultDataIdFromObject(responseObject)
   },
-  possibleTypes: { Node: ['Todos'] } // optional, but useful to specify supertype-subtype relationships
+  possibleTypes: { Node: ['Todos'] }, // optional, but useful to specify supertype-subtype relationships
   typePolicies: {
     Query: {
       fields: {
