@@ -11,10 +11,10 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
 
-    - name: set up python 3.12
+    - name: set up python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.12
+        python-version: 3.8
 
     - name: install pre-commit
       run: |
