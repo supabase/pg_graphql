@@ -15,9 +15,8 @@ fn is_valid_graphql_name(name: &str) -> bool {
 }
 
 fn to_base_type_name(name: &str, name_override: &Option<String>, inflect_names: bool) -> String {
-    match name_override {
-        Some(name) => return name.to_string(),
-        None => (),
+    if let Some(name) = name_override {
+        return name.to_string();
     };
 
     match inflect_names {
@@ -142,9 +141,8 @@ impl __Schema {
         let is_inflection_on = self.inflect_names(table.schema_oid);
 
         // If name is overridden, return immediately
-        match name_override {
-            Some(name) => return name.to_string(),
-            None => (),
+        if let Some(name) = name_override {
+            return name.to_string();
         }
         // "AccountHolder"
         let base_type_name =
