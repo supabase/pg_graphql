@@ -1,0 +1,64 @@
+name: Code Coverage
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.81.0
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - run: |
+          sudo apt remove -y postgres*
+          sudo apt-get install -y wget gnupg
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update -y -qq --fix-missing
+          sudo apt-get install -y \
+            clang-10 \
+            llvm-10 \
+            clang \
+            gcc \
+            make \
+            build-essential \
+            libz-dev \
+            zlib1g-dev \
+            strace \
+            libssl-dev \
+            pkg-config \
+            postgresql-16 \
+            postgresql-server-dev-16
+          sudo chmod a+rwx `/usr/lib/postgresql/16/bin/pg_config --pkglibdir` `/usr/lib/postgresql/16/bin/pg_config --sharedir`/extension /var/run/postgresql/
+
+      - run: cargo install cargo-pgrx --version 0.12.6
+      - run: cargo pgrx init --pg16 /usr/lib/postgresql/16/bin/pg_config
+
+      - name: Generate code coverage
+        id: coverage
+        run: |
+          cargo llvm-cov test --workspace --no-fail-fast --lcov --output-path lcov.info
+
+      - name: Coveralls upload
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: lcov.info
+          debug: true
