@@ -55,14 +55,6 @@ jobs:
           cargo build
           cp ./target/debug/libpg_graphql.so /usr/lib/postgresql/16/lib/pg_graphql.so
           ./bin/installcheck
-          echo 'listing files in target'
-          ls ./target
-          echo 'listing files in target/llvm-cov-target'
-          ls ./target/llvm-cov-target
-
-      - name: Generate code coverage
-        id: coverage
-        run: |
           cargo llvm-cov report --lcov --output-path lcov.info
 
       - name: Coveralls upload
