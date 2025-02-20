@@ -91,4 +91,7 @@
 ## 1.5.8
 - bugfix: relational query with more than 100 fields fails
 
+## 1.5.11
+- bugfix: qualify schema refs
+
 ## master
