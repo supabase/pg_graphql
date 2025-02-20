@@ -7,7 +7,7 @@ create or replace function graphql.increment_schema_version()
     language plpgsql
 as $$
 begin
-    perform nextval('graphql.seq_schema_version');
+    perform pg_catalog.nextval('graphql.seq_schema_version');
 end;
 $$;
 
