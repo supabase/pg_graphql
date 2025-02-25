@@ -60,6 +60,11 @@ create table blog_post(
     created_at timestamp not null,
     updated_at timestamp not null
 );
+
+-- This enables default inflection, which automatically renames
+-- snake_case to PascalCase for type names, and snake_case to camelCase for field names.
+-- See https://supabase.github.io/pg_graphql/configuration/#inflection for more details.
+COMMENT ON SCHEMA public IS e'@graphql({"inflect_names": true})';
 ```
 Translates into a GraphQL schema displayed below.
 
