@@ -1945,6 +1945,7 @@ pub struct __DirectiveBuilder {
 #[allow(dead_code)]
 #[serde(untagged)]
 pub enum __SchemaField {
+    Description,
     Types(Vec<__TypeBuilder>),
     QueryType(__TypeBuilder),
     MutationType(Option<__TypeBuilder>),
@@ -1961,6 +1962,7 @@ pub struct __SchemaSelection {
 
 #[derive(Clone)]
 pub struct __SchemaBuilder {
+    pub description: String,
     pub selections: Vec<__SchemaSelection>,
 }
 
@@ -2516,6 +2518,7 @@ impl __Schema {
                             builder_fields.push(__SchemaSelection {
                                 alias: alias_or_name(&selection_field),
                                 selection: match f.name().as_str() {
+                                    "description" => __SchemaField::Description,
                                     "types" => {
                                         let builders = self
                                             .types()
@@ -2601,6 +2604,7 @@ impl __Schema {
                 }
 
                 Ok(__SchemaBuilder {
+                    description: "Represents the GraphQL schema of the database".to_string(),
                     selections: builder_fields,
                 })
             }
