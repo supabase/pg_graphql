@@ -1660,6 +1660,9 @@ impl Serialize for __SchemaBuilder {
 
         for selection in &self.selections {
             match &selection.selection {
+                __SchemaField::Description => {
+                    map.serialize_entry(&selection.alias, &self.description)?;
+                }
                 __SchemaField::Types(type_builders) => {
                     map.serialize_entry(&selection.alias, &type_builders)?;
                 }
