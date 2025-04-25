@@ -1,0 +1,23 @@
+name: Deploy docs
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "docs/**"
+
+permissions: {}
+
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+    env:
+      DOCS_REVALIDATION_KEY: ${{ secrets.DOCS_REVALIDATION_KEY }}
+    steps:
+      - name: Request docs revalidation
+        run: |
+          curl -X POST https://supabase.com/docs/api/revalidate \
+            -H 'Content-Type: application/json' \
+            -H 'Authorization: Bearer ${{ secrets.DOCS_REVALIDATION_KEY }}' \
+            -d '{"tags": ["graphql"]}'
