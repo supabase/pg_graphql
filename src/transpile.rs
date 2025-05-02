@@ -1110,7 +1110,8 @@ impl ConnectionBuilder {
         let aggregate_cte = if requested_aggregates {
             // Use the generated select list to build the object inside the CTE
             let select_list_str = aggregate_select_list.unwrap_or_default(); // Safe unwrap due to requested_aggregates check
-            format!("
+            format!(
+                r#"
                 ,__aggregates(agg_result) as (
                      select
                          jsonb_build_object({select_list_str})
@@ -1119,16 +1120,38 @@ impl ConnectionBuilder {
                     where
                         {join_clause}
                         and {where_clause}
-                )"
+                )
+                "#
             )
         } else {
             // Dummy CTE still needed for syntax if not requested
             // It must output a single column named agg_result of type jsonb
-            "\n            ,__aggregates(agg_result) as (select null::jsonb)".to_string()
+            r#"
+            ,__aggregates(agg_result) as (select null::jsonb)
+            "#
+            .to_string()
+        };
+
+        // --- NEW STRUCTURE ---
+        // Clause containing selections *not* including the aggregate
+        let base_object_clause = object_clause; // Renamed original object_clause
+
+        // Clause to merge the aggregate result if requested
+        let aggregate_merge_clause = if requested_aggregates {
+            let agg_alias = self
+                .aggregate_selection
+                .as_ref()
+                .map_or("aggregate".to_string(), |b| b.alias.clone());
+            format!(
+                "|| jsonb_build_object({}, coalesce(__aggregates.agg_result, '{{}}'::jsonb))",
+                quote_literal(&agg_alias)
+            )
+        } else {
+            "".to_string()
         };
 
         Ok(format!(
-            "
+            r#"
             (
                 with __records as (
                     select
@@ -1163,26 +1186,29 @@ impl ConnectionBuilder {
                 __has_previous_page(___has_previous_page) as (
                     {has_prev_page_query}
                 )
-                {aggregate_cte}
+                {aggregate_cte},
+                __base_object as (
+                     select jsonb_build_object({base_object_clause}) as obj
+                     from
+                        -- OLD: __records {quoted_block_name}, __total_count, __has_next_page, __has_previous_page
+                        -- Ensure a row is always present by starting with guaranteed CTEs and LEFT JOINing records
+                        __total_count
+                        cross join __has_next_page
+                        cross join __has_previous_page
+                        left join __records {quoted_block_name} on true
+                    -- Required grouping for aggregations like jsonb_agg used within base_object_clause
+                     group by __total_count.___total_count, __has_next_page.___has_next_page, __has_previous_page.___has_previous_page
+                )
                 select
-                    jsonb_build_object({object_clause})
+                    -- Combine base object (might be null if no records) with aggregate object
+                    coalesce(__base_object.obj, '{{}}'::jsonb) {aggregate_merge_clause}
                 from
-                    __records {quoted_block_name},
-                    __total_count,
-                    __has_next_page,
-                    __has_previous_page,
-                    __aggregates
-            )",
-            object_clause = {
-                 let mut clauses = vec![object_clause];
-                 if requested_aggregates {
-                     // Use the alias from the AggregateBuilder
-                     let agg_alias = self.aggregate_selection.as_ref().map_or("aggregate".to_string(), |b| b.alias.clone());
-                     // Select the pre-built JSON object from the CTE's agg_result column
-                     clauses.push(format!("{}, coalesce(__aggregates.agg_result, \'{{}}\'::jsonb)", quote_literal(&agg_alias)));
-                 }
-                 clauses.join(", ")
-            }
+                    -- Use a dummy row and LEFT JOIN to handle cases where __records (and thus __base_object) is empty
+                    (select 1) as __dummy_for_left_join
+                    left join __base_object on true
+                    cross join __aggregates -- Aggregate result always exists (even if null)
+            )
+            "#
         ))
     }
 }
@@ -1314,7 +1340,7 @@ impl EdgeBuilder {
                 jsonb_agg(
                     jsonb_build_object({x})
                     order by {order_by_clause}
-                ),
+                ) FILTER (WHERE {block_name} IS NOT NULL),
                 jsonb_build_array()
             )"
         ))
