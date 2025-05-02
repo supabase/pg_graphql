@@ -179,7 +179,7 @@ begin;
     -- Count where description is not null
     select graphql.resolve($$
         query {
-            blogCollection(filter: { description: { isNull: false }}) {
+            blogCollection(filter: { description: { is: NOT_NULL }}) {
                 aggregate {
                     count
                 }
@@ -189,7 +189,7 @@ begin;
     -- Count where description is null
     select graphql.resolve($$
         query {
-            blogCollection(filter: { description: { isNull: true }}) {
+            blogCollection(filter: { description: { is: NULL }}) {
                 aggregate {
                     count
                 }
