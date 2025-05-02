@@ -1279,6 +1279,12 @@ impl ConnectionSelection {
                     x.to_sql(block_name, order_by, table)?
                 )
             }
+            Self::TotalCount { alias } => {
+                format!(
+                    "{}, coalesce(__total_count.___total_count, 0)",
+                    quote_literal(alias),
+                )
+            }
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
