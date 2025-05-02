@@ -940,6 +940,7 @@ pub enum PageInfoSelection {
 
 #[derive(Clone, Debug)]
 pub enum ConnectionSelection {
+    TotalCount { alias: String },
     Edge(EdgeBuilder),
     PageInfo(PageInfoBuilder),
     Typename { alias: String, typename: String },
@@ -1483,6 +1484,18 @@ where
                                 alias: alias_or_name(&selection_field),
                                 typename: xtype.name().expect("connection type should have a name"),
                             }
+                        }
+                        __Type::Scalar(Scalar::Int) => {
+                           if selection_field.name.as_ref() == "totalCount" {
+                                ConnectionSelection::TotalCount {
+                                    alias: alias_or_name(&selection_field),
+                                }
+                           } else {
+                                return Err(format!(
+                                    "Unsupported field type for connection field {}",
+                                    selection_field.name.as_ref()
+                                ))
+                           }
                         }
                         __Type::Scalar(Scalar::String(None)) => {
                             if selection_field.name.as_ref() == "__typename" {
