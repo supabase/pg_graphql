@@ -1722,18 +1722,25 @@ impl ___Type for ConnectionType {
             sql_type: None,
         };
 
-        let total_count = __Field {
-            name_: "totalCount".to_string(),
-            type_: __Type::NonNull(NonNullType {
-                type_: Box::new(__Type::Scalar(Scalar::Int)),
-            }),
-            args: vec![],
-            description: Some(format!(
-                "The total number of records matching the query, ignoring pagination. Is null if the query returns no rows."
-            )),
-            deprecation_reason: None,
-            sql_type: None,
-        };
+        let mut fields = vec![page_info, edge]; // Start with pageInfo and edge
+
+        // Conditionally add totalCount based on the directive
+        if let Some(total_count_directive) = self.table.directives.total_count.as_ref() {
+            if total_count_directive.enabled {
+                let total_count = __Field {
+                    name_: "totalCount".to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::Scalar(Scalar::Int)),
+                    }),
+                    args: vec![],
+                    // Using description from the user's provided removed block
+                    description: Some("The total number of records matching the `filter` criteria".to_string()),
+                    deprecation_reason: None,
+                    sql_type: None,
+                };
+                fields.push(total_count);
+            }
+        }
 
         let aggregate = __Field {
             name_: "aggregate".to_string(),
@@ -1749,7 +1756,8 @@ impl ___Type for ConnectionType {
             sql_type: None,
         };
 
-        Some(vec![page_info, edge, total_count, aggregate])
+        fields.push(aggregate); // Add aggregate last
+        Some(fields)
     }
 }
 
@@ -4208,6 +4216,40 @@ impl __Schema {
                     schema: Arc::clone(&schema_rc),
                 }));
             }
+
+            // Add Aggregate types if the table is selectable
+            if self.graphql_table_select_types_are_valid(table) {
+                 types_.push(__Type::Aggregate(AggregateType {
+                     table: Arc::clone(table),
+                     schema: Arc::clone(&schema_rc),
+                 }));
+                // Check if there are any columns aggregatable by sum/avg
+                if table.columns.iter().any(|c| is_aggregatable(c, &AggregateOperation::Sum)) {
+                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                         table: Arc::clone(table),
+                         schema: Arc::clone(&schema_rc),
+                         aggregate_op: AggregateOperation::Sum,
+                     }));
+                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                         table: Arc::clone(table),
+                         schema: Arc::clone(&schema_rc),
+                         aggregate_op: AggregateOperation::Avg,
+                     }));
+                }
+                 // Check if there are any columns aggregatable by min/max
+                 if table.columns.iter().any(|c| is_aggregatable(c, &AggregateOperation::Min)) {
+                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                         table: Arc::clone(table),
+                         schema: Arc::clone(&schema_rc),
+                         aggregate_op: AggregateOperation::Min,
+                     }));
+                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                         table: Arc::clone(table),
+                         schema: Arc::clone(&schema_rc),
+                         aggregate_op: AggregateOperation::Max,
+                     }));
+                 }
+            }
         }
 
         for (_, enum_) in self
@@ -4613,3 +4655,4 @@ fn sql_type_to_scalar(sql_type_name: &str, typmod: Option<i32>) -> Option<Scalar
         _ => Some(Scalar::Opaque), // Fallback for unknown types
     }
 }
+
