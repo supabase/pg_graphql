@@ -1,0 +1,8 @@
+{"data": {"testsPostsCollection": {"aggregate": {"count": 3}}}}
+{"data": {"testsPostsCollection": {"aggregate": {"count": 2}}}}
+{"data": {"testsPostsCollection": {"aggregate": {"count": 3, "sum": {"views": 350}, "avg": {"views": 116.6666666666666667}, "min": {"views": 50}, "max": {"views": 200}}}}}
+{"data": {"testsPostsCollection": {"aggregate": {"count": 2, "sum": {"views": 150}, "avg": {"views": 75.0000000000000000}, "min": {"views": 50}, "max": {"views": 100}}}}}
+{"data": {"testsPostsCollection": {"edges": [{"node": {"id": "WyJ0ZXN0cyIsInBvc3RzIiwxXQ==", "title": "Post 1"}}], "aggregate": {"count": 3, "sum": {"views": 350}}}}}
+{"data": {"testsNumericTypesCollection": {"aggregate": {"count": 3, "sum": {"intVal": 60, "bigintVal": "60000000000", "floatVal": 61.5, "numericVal": "601.50"}, "avg": {"intVal": 20.0000000000000000, "bigintVal": 20000000000.0000000000000000, "floatVal": 20.5000000000000000, "numericVal": 200.5000000000000000}, "min": {"intVal": 10, "bigintVal": "10000000000", "floatVal": 10.5, "numericVal": "100.50"}, "max": {"intVal": 30, "bigintVal": "30000000000", "floatVal": 30.5, "numericVal": "300.50"}}}}}
+{"data": {"testsPostsCollection": {"aggregate": {"count": 0, "sum": {"views": null}, "avg": {"views": null}, "min": {"views": null}, "max": {"views": null}}}}}
+{"data": {"testsPostsWithNullsCollection": {"aggregate": {"count": 3, "sum": {"views": 300}, "avg": {"views": 150.0000000000000000}, "min": {"views": 100}, "max": {"views": 200}}}}} 

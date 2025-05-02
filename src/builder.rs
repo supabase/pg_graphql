@@ -11,6 +11,22 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
+pub struct AggregateBuilder {
+    pub alias: String,
+    pub selections: Vec<AggregateSelection>,
+}
+
+#[derive(Clone, Debug)]
+pub enum AggregateSelection {
+    Count { alias: String },
+    Sum { alias: String, selections: Vec<ColumnBuilder> },
+    Avg { alias: String, selections: Vec<ColumnBuilder> },
+    Min { alias: String, selections: Vec<ColumnBuilder> },
+    Max { alias: String, selections: Vec<ColumnBuilder> },
+    Typename { alias: String, typename: String },
+}
+
+#[derive(Clone, Debug)]
 pub struct InsertBuilder {
     // args
     pub objects: Vec<InsertRowBuilder>,
@@ -758,6 +774,7 @@ pub struct ConnectionBuilder {
 
     //fields
     pub selections: Vec<ConnectionSelection>,
+    pub aggregate_selection: Option<AggregateBuilder>,
 
     pub max_rows: u64,
 }
@@ -923,7 +940,6 @@ pub enum PageInfoSelection {
 
 #[derive(Clone, Debug)]
 pub enum ConnectionSelection {
-    TotalCount { alias: String },
     Edge(EdgeBuilder),
     PageInfo(PageInfoBuilder),
     Typename { alias: String, typename: String },
@@ -1429,6 +1445,7 @@ where
                 read_argument_order_by(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<ConnectionSelection> = vec![];
+            let mut aggregate_builder: Option<AggregateBuilder> = None;
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
@@ -1454,20 +1471,37 @@ where
                             fragment_definitions,
                             variables,
                         )?),
-
-                        _ => match f.name().as_ref() {
-                            "totalCount" => ConnectionSelection::TotalCount {
-                                alias: alias_or_name(&selection_field),
-                            },
-                            "__typename" => ConnectionSelection::Typename {
+                        __Type::Aggregate(_) => {
+                            aggregate_builder = Some(to_aggregate_builder(
+                                f,
+                                &selection_field,
+                                fragment_definitions,
+                                variables,
+                                variable_definitions,
+                            )?);
+                            ConnectionSelection::Typename {
                                 alias: alias_or_name(&selection_field),
                                 typename: xtype.name().expect("connection type should have a name"),
-                            },
-                            _ => return Err("unexpected field type on connection".to_string()),
-                        },
+                            }
+                        }
+                        __Type::Scalar(Scalar::String(None)) => {
+                            if selection_field.name.as_ref() == "__typename" {
+                                ConnectionSelection::Typename {
+                                    alias: alias_or_name(&selection_field),
+                                    typename: xtype.name().expect("connection type should have a name"),
+                                }
+                            } else {
+                                return Err(format!(
+                                    "Unsupported field type for connection field {}",
+                                    selection_field.name.as_ref()
+                                ))
+                            }
+                        }
+                        _ => return Err(format!("unknown field type on connection: {}", selection_field.name.as_ref())),
                     }),
                 }
             }
+
             Ok(ConnectionBuilder {
                 alias,
                 source: ConnectionBuilderSource {
@@ -1482,6 +1516,7 @@ where
                 filter,
                 order_by,
                 selections: builder_fields,
+                aggregate_selection: aggregate_builder,
                 max_rows,
             })
         }
@@ -1490,6 +1525,136 @@ where
             type_.name()
         )),
     }
+}
+
+fn to_aggregate_builder<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
+) -> Result<AggregateBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
+{
+    let type_ = field.type_().unmodified_type();
+    let __Type::Aggregate(ref _agg_type) = type_ else {
+        return Err("Internal Error: Expected AggregateType in to_aggregate_builder".to_string());
+    };
+
+    let alias = query_field.alias.as_ref().map_or(field.name_.as_str(), |x| x.as_ref()).to_string();
+    let mut selections = Vec::new();
+    let field_map = field_map(&type_); // Get fields of the AggregateType (count, sum, avg, etc.)
+
+    for item in query_field.selection_set.items.iter() {
+         match item {
+            Selection::Field(query_sub_field) => {
+                let field_name = query_sub_field.name.as_ref();
+                let sub_field = field_map.get(field_name).ok_or(format!(
+                    "Unknown field \"{}\" selected on type \"{}\"",
+                    field_name,
+                    type_.name().unwrap_or_default()
+                ))?;
+                let sub_alias = query_sub_field.alias.as_ref().map_or(sub_field.name_.as_str(), |x| x.as_ref()).to_string();
+
+                match field_name {
+                    "count" => selections.push(AggregateSelection::Count { alias: sub_alias }),
+                    "sum" | "avg" | "min" | "max" => {
+                        let col_selections = parse_aggregate_numeric_selections(
+                            sub_field,
+                            query_sub_field,
+                            fragment_definitions,
+                            variables,
+                            variable_definitions
+                        )?;
+                        match field_name {
+                            "sum" => selections.push(AggregateSelection::Sum { alias: sub_alias, selections: col_selections }),
+                            "avg" => selections.push(AggregateSelection::Avg { alias: sub_alias, selections: col_selections }),
+                            "min" => selections.push(AggregateSelection::Min { alias: sub_alias, selections: col_selections }),
+                            "max" => selections.push(AggregateSelection::Max { alias: sub_alias, selections: col_selections }),
+                            _ => unreachable!(), // Should not happen due to outer match
+                        }
+                    }
+                    "__typename" => selections.push(AggregateSelection::Typename {
+                        alias: sub_alias,
+                        typename: sub_field.type_().name().ok_or("Typename missing")?,
+                    }),
+                    _ => return Err(format!("Unknown aggregate field: {}", field_name)),
+                }
+            }
+            Selection::FragmentSpread(_spread) => {
+                // TODO: Handle fragment spreads within aggregate selection if needed
+                 return Err("Fragment spreads within aggregate selections are not yet supported".to_string());
+            }
+            Selection::InlineFragment(_inline_frag) => {
+                // TODO: Handle inline fragments within aggregate selection if needed
+                return Err("Inline fragments within aggregate selections are not yet supported".to_string());
+            }
+         }
+    }
+
+    Ok(AggregateBuilder {
+        alias,
+        selections,
+    })
+}
+
+fn parse_aggregate_numeric_selections<'a, T>(
+    field: &__Field, // The sum/avg/min/max field itself
+    query_field: &graphql_parser::query::Field<'a, T>, // The query field for sum/avg/min/max
+    _fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    _variables: &serde_json::Value,
+    _variable_definitions: &Vec<VariableDefinition<'a, T>>,
+) -> Result<Vec<ColumnBuilder>, String>
+where
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
+{
+    let type_ = field.type_().unmodified_type();
+    let __Type::AggregateNumeric(ref _agg_numeric_type) = type_ else {
+         return Err("Internal Error: Expected AggregateNumericType".to_string());
+    };
+
+    let mut col_selections = Vec::new();
+    let field_map = field_map(&type_); // Fields of AggregateNumericType (numeric columns)
+
+    for item in query_field.selection_set.items.iter() {
+        match item {
+            Selection::Field(col_field) => {
+                let col_name = col_field.name.as_ref();
+                let sub_field = field_map.get(col_name).ok_or(format!(
+                    "Unknown field \"{}\" selected on type \"{}\"",
+                    col_name,
+                    type_.name().unwrap_or_default()
+                ))?;
+
+                 // Ensure the selected field is actually a column
+                 let __Type::Scalar(_) = sub_field.type_().unmodified_type() else {
+                     return Err(format!("Field \"{}\" on type \"{}\" is not a scalar column", col_name, type_.name().unwrap_or_default()));
+                 };
+                 // We expect the sql_type to be set for columns within the numeric aggregate type's fields
+                 // This might require adjustment in how AggregateNumericType fields are created in graphql.rs if sql_type isn't populated there
+                 let Some(NodeSQLType::Column(column)) = sub_field.sql_type.clone() else {
+                    // We need the Arc<Column>! It should be available via the __Field's sql_type.
+                    // If it's not, the creation of AggregateNumericType fields in graphql.rs needs adjustment.
+                     return Err(format!("Internal error: Missing column info for aggregate field '{}'", col_name));
+                 };
+
+                let alias = col_field.alias.as_ref().map_or(col_name, |x| x.as_ref()).to_string();
+
+                col_selections.push(ColumnBuilder {
+                    alias,
+                    column,
+                });
+            }
+            Selection::FragmentSpread(_) | Selection::InlineFragment(_) => {
+                // TODO: Support fragments if needed within numeric aggregates
+                 return Err("Fragments within numeric aggregate selections are not yet supported".to_string());
+            }
+        }
+    }
+    Ok(col_selections)
 }
 
 fn to_page_info_builder<'a, T>(
