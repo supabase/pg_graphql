@@ -167,6 +167,9 @@ Connections wrap a result set with some additional metadata.
       # Result set
       edges: [BlogEdge!]!
 
+      # Aggregate functions
+      aggregate: BlogAggregate
+
     }
     ```
 
@@ -264,8 +267,174 @@ Connections wrap a result set with some additional metadata.
 
     The `totalCount` field is disabled by default because it can be expensive on large tables. To enable it use a [comment directive](configuration.md#totalcount)
 
+#### Aggregates
 
+Aggregate functions are available on the collection's `aggregate` field. These allow you to perform calculations on the collection of records that match your filter criteria.
 
+The supported aggregate operations are:
+
+- **count**: Always available, returns the number of records matching the query
+- **sum**: Available for numeric fields, returns the sum of values
+- **avg**: Available for numeric fields, returns the average (mean) of values
+- **min**: Available for numeric, string, boolean, and date/time fields, returns the minimum value
+- **max**: Available for numeric, string, boolean, and date/time fields, returns the maximum value
+
+**Example**
+
+=== "Query"
+
+    ```graphql
+    {
+      blogCollection(
+        filter: { rating: { gt: 3 } }
+      ) {
+        aggregate {
+          count
+          sum {
+            rating
+            visits
+          }
+          avg {
+            rating
+          }
+          min {
+            createdAt
+            title
+          }
+          max {
+            rating
+            updatedAt
+          }
+        }
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "aggregate": {
+            "count": 5,
+            "sum": {
+              "rating": 23,
+              "visits": 1250
+            },
+            "avg": {
+              "rating": 4.6
+            },
+            "min": {
+              "createdAt": "2022-01-15T08:30:00Z",
+              "title": "A Blog Post"
+            },
+            "max": {
+              "rating": 5,
+              "updatedAt": "2023-04-22T14:15:30Z"
+            }
+          }
+        }
+      }
+    }
+    ```
+
+**GraphQL Types**
+=== "BlogAggregate"
+
+    ```graphql
+    """Aggregate results for `Blog`"""
+    type BlogAggregate {
+      """The number of records matching the query"""
+      count: Int!
+      
+      """Summation aggregates for `Blog`"""
+      sum: BlogSumAggregateResult
+      
+      """Average aggregates for `Blog`"""
+      avg: BlogAvgAggregateResult
+      
+      """Minimum aggregates for comparable fields"""
+      min: BlogMinAggregateResult
+      
+      """Maximum aggregates for comparable fields"""
+      max: BlogMaxAggregateResult
+    }
+    ```
+
+=== "BlogSumAggregateResult"
+
+    ```graphql
+    """Result of summation aggregation for `Blog`"""
+    type BlogSumAggregateResult {
+      """Sum of rating values"""
+      rating: BigFloat
+      
+      """Sum of visits values"""
+      visits: BigInt
+      
+      # Other numeric fields...
+    }
+    ```
+
+=== "BlogAvgAggregateResult"
+
+    ```graphql
+    """Result of average aggregation for `Blog`"""
+    type BlogAvgAggregateResult {
+      """Average of rating values"""
+      rating: BigFloat
+      
+      """Average of visits values"""
+      visits: BigFloat
+      
+      # Other numeric fields...
+    }
+    ```
+
+=== "BlogMinAggregateResult"
+
+    ```graphql
+    """Result of minimum aggregation for `Blog`"""
+    type BlogMinAggregateResult {
+      """Minimum rating value"""
+      rating: Float
+      
+      """Minimum title value"""
+      title: String
+      
+      """Minimum createdAt value"""
+      createdAt: Datetime
+      
+      # Other comparable fields...
+    }
+    ```
+
+=== "BlogMaxAggregateResult"
+
+    ```graphql
+    """Result of maximum aggregation for `Blog`"""
+    type BlogMaxAggregateResult {
+      """Maximum rating value"""
+      rating: Float
+      
+      """Maximum title value"""
+      title: String
+      
+      """Maximum updatedAt value"""
+      updatedAt: Datetime
+      
+      # Other comparable fields...
+    }
+    ```
+
+!!! note
+
+    - The `sum` and `avg` operations are only available for numeric fields.
+    - The `min` and `max` operations are available for numeric, string, boolean, and date/time fields.
+    - The return type for `sum` depends on the input type: integer fields return `BigInt`, while other numeric fields return `BigFloat`.
+    - The return type for `avg` is always `BigFloat`.
+    - The return types for `min` and `max` match the original field types.
 
 #### Pagination
 
