@@ -11,7 +11,7 @@ export PGDATABASE=postgres
 export PGTZ=UTC
 export PG_COLOR=auto
 
-PATH=~/.pgrx/16.8/pgrx-install/bin/:$PATH
+# PATH=~/.pgrx/15.1/pgrx-install/bin/:$PATH
 
 ####################
 # Ensure Clean Env #
@@ -30,8 +30,6 @@ initdb --no-locale --encoding=UTF8 --nosync -U "$PGUSER"
 pg_ctl start -o "-F -c listen_addresses=\"\" -c log_min_messages=WARNING -k $PGDATA"
 # Create the test db
 createdb contrib_regression
-
-cargo pgrx install
 
 #########
 # Tests #
