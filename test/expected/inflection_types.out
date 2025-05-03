@@ -20,19 +20,24 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "blog")'
         )
     );
-       jsonb_pretty        
----------------------------
+         jsonb_pretty          
+-------------------------------
  "blog_post"
+ "blog_postAggregate"
+ "blog_postAvgAggregateResult"
  "blog_postConnection"
  "blog_postDeleteResponse"
  "blog_postEdge"
  "blog_postFilter"
  "blog_postInsertInput"
  "blog_postInsertResponse"
+ "blog_postMaxAggregateResult"
+ "blog_postMinAggregateResult"
  "blog_postOrderBy"
+ "blog_postSumAggregateResult"
  "blog_postUpdateInput"
  "blog_postUpdateResponse"
-(10 rows)
+(15 rows)
 
     -- Inflection off, Overrides: on
     comment on table blog_post is e'@graphql({"name": "BlogZZZ"})';
@@ -50,19 +55,24 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "Blog")'
         )
     );
-      jsonb_pretty       
--------------------------
+        jsonb_pretty         
+-----------------------------
  "BlogZZZ"
+ "BlogZZZAggregate"
+ "BlogZZZAvgAggregateResult"
  "BlogZZZConnection"
  "BlogZZZDeleteResponse"
  "BlogZZZEdge"
  "BlogZZZFilter"
  "BlogZZZInsertInput"
  "BlogZZZInsertResponse"
+ "BlogZZZMaxAggregateResult"
+ "BlogZZZMinAggregateResult"
  "BlogZZZOrderBy"
+ "BlogZZZSumAggregateResult"
  "BlogZZZUpdateInput"
  "BlogZZZUpdateResponse"
-(10 rows)
+(15 rows)
 
     rollback to savepoint a;
     -- Inflection on, Overrides: off
@@ -81,19 +91,24 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "Blog")'
         )
     );
-       jsonb_pretty       
---------------------------
+         jsonb_pretty         
+------------------------------
  "BlogPost"
+ "BlogPostAggregate"
+ "BlogPostAvgAggregateResult"
  "BlogPostConnection"
  "BlogPostDeleteResponse"
  "BlogPostEdge"
  "BlogPostFilter"
  "BlogPostInsertInput"
  "BlogPostInsertResponse"
+ "BlogPostMaxAggregateResult"
+ "BlogPostMinAggregateResult"
  "BlogPostOrderBy"
+ "BlogPostSumAggregateResult"
  "BlogPostUpdateInput"
  "BlogPostUpdateResponse"
-(10 rows)
+(15 rows)
 
     -- Inflection on, Overrides: on
     comment on table blog_post is e'@graphql({"name": "BlogZZZ"})';
@@ -111,18 +126,23 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "Blog")'
         )
     );
-      jsonb_pretty       
--------------------------
+        jsonb_pretty         
+-----------------------------
  "BlogZZZ"
+ "BlogZZZAggregate"
+ "BlogZZZAvgAggregateResult"
  "BlogZZZConnection"
  "BlogZZZDeleteResponse"
  "BlogZZZEdge"
  "BlogZZZFilter"
  "BlogZZZInsertInput"
  "BlogZZZInsertResponse"
+ "BlogZZZMaxAggregateResult"
+ "BlogZZZMinAggregateResult"
  "BlogZZZOrderBy"
+ "BlogZZZSumAggregateResult"
  "BlogZZZUpdateInput"
  "BlogZZZUpdateResponse"
-(10 rows)
+(15 rows)
 
 rollback;
