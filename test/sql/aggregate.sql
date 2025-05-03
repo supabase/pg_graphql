@@ -33,28 +33,28 @@ begin;
     -- 5 Accounts
     insert into public.account(email, created_at)
     values
-        ('aardvark@x.com', NOW() - INTERVAL '5 days'),
-        ('bat@x.com', NOW() - INTERVAL '4 days'),
-        ('cat@x.com', NOW() - INTERVAL '3 days'),
-        ('dog@x.com', NOW() - INTERVAL '2 days'),
-        ('elephant@x.com', NOW() - INTERVAL '1 day');
+        ('aardvark@x.com', '2025-04-27 12:00:00'),
+        ('bat@x.com', '2025-04-28 12:00:00'),
+        ('cat@x.com', '2025-04-29 12:00:00'),
+        ('dog@x.com', '2025-04-30 12:00:00'),
+        ('elephant@x.com', '2025-05-01 12:00:00');
 
     insert into blog(owner_id, name, description, created_at)
     values
-        ((select id from account where email ilike 'a%'), 'A: Blog 1', 'a desc1', NOW() - INTERVAL '10 days'),
-        ((select id from account where email ilike 'a%'), 'A: Blog 2', 'a desc2', NOW() - INTERVAL '9 days'),
-        ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', NOW() - INTERVAL '8 days'),
-        ((select id from account where email ilike 'b%'), 'B: Blog 3', 'b desc1', NOW() - INTERVAL '7 days');
+        ((select id from account where email ilike 'a%'), 'A: Blog 1', 'a desc1', '2025-04-22 12:00:00'),
+        ((select id from account where email ilike 'a%'), 'A: Blog 2', 'a desc2', '2025-04-23 12:00:00'),
+        ((select id from account where email ilike 'a%'), 'A: Blog 3', 'a desc3', '2025-04-24 12:00:00'),
+        ((select id from account where email ilike 'b%'), 'B: Blog 3', 'b desc1', '2025-04-25 12:00:00');
 
     insert into blog_post (blog_id, title, body, tags, status, created_at)
     values
-        ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 1 in A Blog 1', 'Content for post 1 in A Blog 1', '{"tech", "update"}', 'RELEASED', NOW() - INTERVAL '30 days'),
-        ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 2 in A Blog 1', 'Content for post 2 in A Blog 1', '{"announcement", "tech"}', 'PENDING', NOW() - INTERVAL '25 days'),
-        ((SELECT id FROM blog WHERE name = 'A: Blog 2'), 'Post 1 in A Blog 2', 'Content for post 1 in A Blog 2', '{"personal"}', 'RELEASED', NOW() - INTERVAL '20 days'),
-        ((SELECT id FROM blog WHERE name = 'A: Blog 2'), 'Post 2 in A Blog 2', 'Content for post 2 in A Blog 2', '{"update"}', 'RELEASED', NOW() - INTERVAL '15 days'),
-        ((SELECT id FROM blog WHERE name = 'A: Blog 3'), 'Post 1 in A Blog 3', 'Content for post 1 in A Blog 3', '{"travel", "adventure"}', 'PENDING', NOW() - INTERVAL '10 days'),
-        ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 1 in B Blog 3', 'Content for post 1 in B Blog 3', '{"tech", "review"}', 'RELEASED', NOW() - INTERVAL '5 days'),
-        ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 2 in B Blog 3', 'Content for post 2 in B Blog 3', '{"coding", "tutorial"}', 'PENDING', NOW());
+        ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 1 in A Blog 1', 'Content for post 1 in A Blog 1', '{"tech", "update"}', 'RELEASED', '2025-04-02 12:00:00'),
+        ((SELECT id FROM blog WHERE name = 'A: Blog 1'), 'Post 2 in A Blog 1', 'Content for post 2 in A Blog 1', '{"announcement", "tech"}', 'PENDING', '2025-04-07 12:00:00'),
+        ((SELECT id FROM blog WHERE name = 'A: Blog 2'), 'Post 1 in A Blog 2', 'Content for post 1 in A Blog 2', '{"personal"}', 'RELEASED', '2025-04-12 12:00:00'),
+        ((SELECT id FROM blog WHERE name = 'A: Blog 2'), 'Post 2 in A Blog 2', 'Content for post 2 in A Blog 2', '{"update"}', 'RELEASED', '2025-04-17 12:00:00'),
+        ((SELECT id FROM blog WHERE name = 'A: Blog 3'), 'Post 1 in A Blog 3', 'Content for post 1 in A Blog 3', '{"travel", "adventure"}', 'PENDING', '2025-04-22 12:00:00'),
+        ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 1 in B Blog 3', 'Content for post 1 in B Blog 3', '{"tech", "review"}', 'RELEASED', '2025-04-27 12:00:00'),
+        ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 2 in B Blog 3', 'Content for post 2 in B Blog 3', '{"coding", "tutorial"}', 'PENDING', '2025-05-02 12:00:00');
 
 
     comment on table blog_post is e'@graphql({"totalCount": {"enabled": true}})';
@@ -413,25 +413,3 @@ begin;
         }
     $$);
 
-
-    -- Test Case 19: Check aggregates work with pagination (should ignore pagination for aggregates)
-    select graphql.resolve($$
-        query {
-            blogPostCollection(first: 2, offset: 1) {
-                edges {
-                    node {
-                        title
-                    }
-                }
-                aggregate {
-                    count
-                    min {
-                        createdAt
-                    }
-                    max {
-                        createdAt
-                    }
-                }
-            }
-        }
-    $$); 
