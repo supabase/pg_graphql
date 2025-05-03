@@ -929,11 +929,10 @@ impl ConnectionBuilder {
                     // Produces: 'count_alias', count(*)
                     agg_selections.push(format!("{}, count(*)", quote_literal(alias)));
                 }
-                AggregateSelection::Sum { alias, selections } |
-                AggregateSelection::Avg { alias, selections } |
-                AggregateSelection::Min { alias, selections } |
-                AggregateSelection::Max { alias, selections } => {
-
+                AggregateSelection::Sum { alias, selections }
+                | AggregateSelection::Avg { alias, selections }
+                | AggregateSelection::Min { alias, selections }
+                | AggregateSelection::Max { alias, selections } => {
                     let pg_func = match selection {
                         AggregateSelection::Sum { .. } => "sum",
                         AggregateSelection::Avg { .. } => "avg",
@@ -949,9 +948,9 @@ impl ConnectionBuilder {
 
                         // Always cast avg input to numeric for precision
                         let col_sql_casted = if pg_func == "avg" {
-                           format!("{}::numeric", col_sql)
+                            format!("{}::numeric", col_sql)
                         } else {
-                           col_sql.clone()
+                            col_sql.clone()
                         };
                         // Produces: 'col_alias', agg_func(col)
                         field_selections.push(format!(
@@ -964,22 +963,25 @@ impl ConnectionBuilder {
                     // Produces: 'agg_alias', jsonb_build_object('col_alias', agg_func(col), ...)
                     agg_selections.push(format!(
                         "{}, jsonb_build_object({})",
-                         quote_literal(alias),
-                         field_selections.join(", ")
+                        quote_literal(alias),
+                        field_selections.join(", ")
                     ));
-
                 }
                 AggregateSelection::Typename { alias, typename } => {
-                     // Produces: '__typename', 'AggregateTypeName'
-                     agg_selections.push(format!("{}, {}", quote_literal(alias), quote_literal(typename)));
+                    // Produces: '__typename', 'AggregateTypeName'
+                    agg_selections.push(format!(
+                        "{}, {}",
+                        quote_literal(alias),
+                        quote_literal(typename)
+                    ));
                 }
             }
         }
 
         if agg_selections.is_empty() {
-             Ok(None)
+            Ok(None)
         } else {
-             Ok(Some(agg_selections.join(", ")))
+            Ok(Some(agg_selections.join(", ")))
         }
     }
 
@@ -1054,7 +1056,8 @@ impl ConnectionBuilder {
         let offset = self.offset.unwrap_or(0);
 
         // Determine if aggregates are requested based on if we generated a select list
-        let requested_aggregates = self.aggregate_selection.is_some() && aggregate_select_list.is_some();
+        let requested_aggregates =
+            self.aggregate_selection.is_some() && aggregate_select_list.is_some();
 
         // initialized assuming forwards pagination
         let mut has_next_page_query = format!(
@@ -1124,12 +1127,8 @@ impl ConnectionBuilder {
                 "#
             )
         } else {
-            // Dummy CTE still needed for syntax if not requested
-            // It must output a single column named agg_result of type jsonb
-            r#"
-            ,__aggregates(agg_result) as (select null::jsonb)
-            "#
-            .to_string()
+            // Dummy CTE still needed for syntax
+            r#",__aggregates(agg_result) as (select null::jsonb)"#.to_string()
         };
 
         // --- NEW STRUCTURE ---
