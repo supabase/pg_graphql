@@ -4408,29 +4408,26 @@ fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
         return false;
     };
 
-    // Helper to check if a type name is numeric based on common PostgreSQL numeric types
     let is_numeric = |name: &str| {
         matches!(
             name,
             "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
         )
     };
-    // Helper for common string types
     let is_string = |name: &str| {
         matches!(
             name,
             "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
         )
     };
-    // Helper for common date/time types
     let is_datetime = |name: &str| {
         matches!(
             name,
             "date" | "time" | "timetz" | "timestamp" | "timestamptz"
         )
     };
-    // Helper for boolean
     let is_boolean = |name: &str| matches!(name, "bool");
+    let is_uuid = |name: &str| matches!(name, "uuid");
 
     match op {
         // Sum/Avg only make sense for numeric types
