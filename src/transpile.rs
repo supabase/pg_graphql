@@ -1022,9 +1022,7 @@ impl ConnectionBuilder {
         let cursor = &self.before.clone().or_else(|| self.after.clone());
 
         let object_clause = self.object_clause(&quoted_block_name, param_context)?;
-        // --- REVISED --- Generate the *select list* for the aggregate CTE
         let aggregate_select_list = self.aggregate_select_list(&quoted_block_name)?;
-        // --- END REVISED ---
 
         let selectable_columns_clause = self.source.table.to_selectable_columns_clause();
 
@@ -1080,7 +1078,7 @@ impl ConnectionBuilder {
         "
         );
 
-        let mut has_prev_page_query =  format!("
+        let mut has_prev_page_query = format!("
             with page_minus_1 as (
                 select
                     not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
@@ -1132,6 +1130,11 @@ impl ConnectionBuilder {
             .to_string()
         };
 
+        // Add helper cte to set page info correctly for empty collections
+        let has_records_cte = r#"
+        ,__has_records(has_records) as (select exists(select 1 from __records))
+        "#;
+
         // Clause containing selections *not* including the aggregate
         let base_object_clause = object_clause; // Renamed original object_clause
 
@@ -1180,32 +1183,32 @@ impl ConnectionBuilder {
                 ),
                 __has_next_page(___has_next_page) as (
                     {has_next_page_query}
-
                 ),
                 __has_previous_page(___has_previous_page) as (
                     {has_prev_page_query}
                 )
+                {has_records_cte}
                 {aggregate_cte},
                 __base_object as (
                      select jsonb_build_object({base_object_clause}) as obj
                      from
-                        -- OLD: __records {quoted_block_name}, __total_count, __has_next_page, __has_previous_page
-                        -- Ensure a row is always present by starting with guaranteed CTEs and LEFT JOINing records
                         __total_count
                         cross join __has_next_page
                         cross join __has_previous_page
+                        cross join __has_records
                         left join __records {quoted_block_name} on true
-                    -- Required grouping for aggregations like jsonb_agg used within base_object_clause
-                     group by __total_count.___total_count, __has_next_page.___has_next_page, __has_previous_page.___has_previous_page
+                     group by 
+                        __total_count.___total_count, 
+                        __has_next_page.___has_next_page, 
+                        __has_previous_page.___has_previous_page,
+                        __has_records.has_records
                 )
                 select
-                    -- Combine base object (might be null if no records) with aggregate object
                     coalesce(__base_object.obj, '{{}}'::jsonb) {aggregate_merge_clause}
                 from
-                    -- Use a dummy row and LEFT JOIN to handle cases where __records (and thus __base_object) is empty
                     (select 1) as __dummy_for_left_join
                     left join __base_object on true
-                    cross join __aggregates -- Aggregate result always exists (even if null)
+                    cross join __aggregates
             )
             "#
         ))
@@ -1252,13 +1255,13 @@ impl PageInfoSelection {
         Ok(match self {
             Self::StartCursor { alias } => {
                 format!(
-                    "{}, (array_agg({cursor_clause} order by {order_by_clause}))[1]",
+                    "{}, CASE WHEN __has_records.has_records THEN (array_agg({cursor_clause} order by {order_by_clause}))[1] ELSE NULL END",
                     quote_literal(alias)
                 )
             }
             Self::EndCursor { alias } => {
                 format!(
-                    "{}, (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1]",
+                    "{}, CASE WHEN __has_records.has_records THEN (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1] ELSE NULL END",
                     quote_literal(alias)
                 )
             }
