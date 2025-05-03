@@ -11,7 +11,7 @@ export PGDATABASE=postgres
 export PGTZ=UTC
 export PG_COLOR=auto
 
-# PATH=~/.pgrx/15.1/pgrx-install/bin/:$PATH
+PATH=~/.pgrx/16.8/pgrx-install/bin/:$PATH
 
 ####################
 # Ensure Clean Env #
@@ -31,21 +31,22 @@ pg_ctl start -o "-F -c listen_addresses=\"\" -c log_min_messages=WARNING -k $PGD
 # Create the test db
 createdb contrib_regression
 
+cargo pgrx install
+
 #########
 # Tests #
 #########
 TESTDIR="test"
-PGXS=$(dirname `pg_config --pgxs`)
+PGXS=$(dirname $(pg_config --pgxs))
 REGRESS="${PGXS}/../test/regress/pg_regress"
 
 # Test names can be passed as parameters to this script.
 # If any test names are passed run only those tests.
 # Otherwise run all tests.
-if [ "$#" -ne 0 ]
-then
-    TESTS=$@
+if [ "$#" -ne 0 ]; then
+  TESTS=$@
 else
-    TESTS=$(ls ${TESTDIR}/sql | sed -e 's/\..*$//' | sort )
+  TESTS=$(ls ${TESTDIR}/sql | sed -e 's/\..*$//' | sort)
 fi
 
 # Execute the test fixtures
