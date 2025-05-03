@@ -1722,7 +1722,7 @@ impl ___Type for ConnectionType {
             sql_type: None,
         };
 
-        let mut fields = vec![page_info, edge]; // Start with pageInfo and edge
+        let mut fields = vec![edge, page_info];
 
         // Conditionally add totalCount based on the directive
         if let Some(total_count_directive) = self.table.directives.total_count.as_ref() {
@@ -1734,7 +1734,9 @@ impl ___Type for ConnectionType {
                     }),
                     args: vec![],
                     // Using description from the user's provided removed block
-                    description: Some("The total number of records matching the `filter` criteria".to_string()),
+                    description: Some(
+                        "The total number of records matching the `filter` criteria".to_string(),
+                    ),
                     deprecation_reason: None,
                     sql_type: None,
                 };
@@ -4219,36 +4221,44 @@ impl __Schema {
 
             // Add Aggregate types if the table is selectable
             if self.graphql_table_select_types_are_valid(table) {
-                 types_.push(__Type::Aggregate(AggregateType {
-                     table: Arc::clone(table),
-                     schema: Arc::clone(&schema_rc),
-                 }));
+                types_.push(__Type::Aggregate(AggregateType {
+                    table: Arc::clone(table),
+                    schema: Arc::clone(&schema_rc),
+                }));
                 // Check if there are any columns aggregatable by sum/avg
-                if table.columns.iter().any(|c| is_aggregatable(c, &AggregateOperation::Sum)) {
-                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                         table: Arc::clone(table),
-                         schema: Arc::clone(&schema_rc),
-                         aggregate_op: AggregateOperation::Sum,
-                     }));
-                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                         table: Arc::clone(table),
-                         schema: Arc::clone(&schema_rc),
-                         aggregate_op: AggregateOperation::Avg,
-                     }));
+                if table
+                    .columns
+                    .iter()
+                    .any(|c| is_aggregatable(c, &AggregateOperation::Sum))
+                {
+                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                        table: Arc::clone(table),
+                        schema: Arc::clone(&schema_rc),
+                        aggregate_op: AggregateOperation::Sum,
+                    }));
+                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                        table: Arc::clone(table),
+                        schema: Arc::clone(&schema_rc),
+                        aggregate_op: AggregateOperation::Avg,
+                    }));
                 }
-                 // Check if there are any columns aggregatable by min/max
-                 if table.columns.iter().any(|c| is_aggregatable(c, &AggregateOperation::Min)) {
-                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                         table: Arc::clone(table),
-                         schema: Arc::clone(&schema_rc),
-                         aggregate_op: AggregateOperation::Min,
-                     }));
-                     types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                         table: Arc::clone(table),
-                         schema: Arc::clone(&schema_rc),
-                         aggregate_op: AggregateOperation::Max,
-                     }));
-                 }
+                // Check if there are any columns aggregatable by min/max
+                if table
+                    .columns
+                    .iter()
+                    .any(|c| is_aggregatable(c, &AggregateOperation::Min))
+                {
+                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                        table: Arc::clone(table),
+                        schema: Arc::clone(&schema_rc),
+                        aggregate_op: AggregateOperation::Min,
+                    }));
+                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                        table: Arc::clone(table),
+                        schema: Arc::clone(&schema_rc),
+                        aggregate_op: AggregateOperation::Max,
+                    }));
+                }
             }
         }
 
@@ -4390,101 +4400,120 @@ pub enum AggregateOperation {
     // Count is handled directly in AggregateType
 }
 
-
 /// Determines if a column's type is suitable for a given aggregate operation.
 fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
-    let Some(ref type_) = column.type_ else { return false };
+    let Some(ref type_) = column.type_ else {
+        return false;
+    };
 
     // Helper to check if a type name is numeric based on common PostgreSQL numeric types
     let is_numeric = |name: &str| {
-        matches!(name, "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money")
+        matches!(
+            name,
+            "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
+        )
     };
     // Helper for common string types
     let is_string = |name: &str| {
-        matches!(name, "text" | "varchar" | "char" | "bpchar" | "name" | "citext")
+        matches!(
+            name,
+            "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
+        )
     };
     // Helper for common date/time types
     let is_datetime = |name: &str| {
-        matches!(name, "date" | "time" | "timetz" | "timestamp" | "timestamptz")
+        matches!(
+            name,
+            "date" | "time" | "timetz" | "timestamp" | "timestamptz"
+        )
     };
     // Helper for boolean
-    let is_boolean = |name: &str| {
-        matches!(name, "bool")
-    };
-
+    let is_boolean = |name: &str| matches!(name, "bool");
 
     match op {
         // Sum/Avg only make sense for numeric types
         AggregateOperation::Sum | AggregateOperation::Avg => {
             // Check category first for arrays/enums, then check name for base types
             match type_.category {
-                 TypeCategory::Other => is_numeric(&type_.name),
-                 _ => false // Only allow sum/avg on base numeric types for now
+                TypeCategory::Other => is_numeric(&type_.name),
+                _ => false, // Only allow sum/avg on base numeric types for now
             }
         }
         // Min/Max can work on more types (numeric, string, date/time, etc.)
         AggregateOperation::Min | AggregateOperation::Max => {
-             match type_.category {
-                 TypeCategory::Other => {
-                    is_numeric(&type_.name) || is_string(&type_.name) || is_datetime(&type_.name) || is_boolean(&type_.name)
-                 },
-                 _ => false // Don't allow min/max on composites, arrays, tables, pseudo
-             }
+            match type_.category {
+                TypeCategory::Other => {
+                    is_numeric(&type_.name)
+                        || is_string(&type_.name)
+                        || is_datetime(&type_.name)
+                        || is_boolean(&type_.name)
+                }
+                _ => false, // Don't allow min/max on composites, arrays, tables, pseudo
+            }
         }
     }
 }
 
 /// Returns the appropriate GraphQL scalar type for an aggregate result.
 fn aggregate_result_type(column: &Column, op: &AggregateOperation) -> Option<Scalar> {
-     let Some(ref type_) = column.type_ else { return None };
+    let Some(ref type_) = column.type_ else {
+        return None;
+    };
 
-     // Use the same helpers as is_aggregatable
-     let is_numeric = |name: &str| {
-        matches!(name, "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money")
+    // Use the same helpers as is_aggregatable
+    let is_numeric = |name: &str| {
+        matches!(
+            name,
+            "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
+        )
     };
     let is_string = |name: &str| {
-        matches!(name, "text" | "varchar" | "char" | "bpchar" | "name" | "citext")
+        matches!(
+            name,
+            "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
+        )
     };
     let is_datetime = |name: &str| {
-        matches!(name, "date" | "time" | "timetz" | "timestamp" | "timestamptz")
+        matches!(
+            name,
+            "date" | "time" | "timetz" | "timestamp" | "timestamptz"
+        )
     };
-    let is_boolean = |name: &str| {
-        matches!(name, "bool")
-    };
+    let is_boolean = |name: &str| matches!(name, "bool");
 
-     match op {
-         AggregateOperation::Sum => {
-             // SUM of integers often results in bigint, SUM of float/numeric results in numeric/bigfloat
-             // Let's simplify and return BigInt for int-like, BigFloat otherwise
-             if matches!(type_.name.as_str(), "int2" | "int4" | "int8") {
-                 Some(Scalar::BigInt)
-             } else if is_numeric(&type_.name) {
-                 Some(Scalar::BigFloat)
-             } else {
-                 None
-             }
-         }
-         AggregateOperation::Avg => {
-             if is_numeric(&type_.name) {
-                 Some(Scalar::BigFloat)
-             } else {
-                 None
-             }
-         }
-         AggregateOperation::Min | AggregateOperation::Max => {
-             if is_numeric(&type_.name) {
-                 sql_type_to_scalar(&type_.name, column.max_characters)
-             } else if is_string(&type_.name) {
-                 Some(Scalar::String(column.max_characters))
-             } else if is_datetime(&type_.name) {
-                 sql_type_to_scalar(&type_.name, column.max_characters)
-             } else if is_boolean(&type_.name) {
-                 Some(Scalar::Boolean)
-             } else {
-                 None
-             }
-         }
-     }
+    match op {
+        AggregateOperation::Sum => {
+            // SUM of integers often results in bigint, SUM of float/numeric results in numeric/bigfloat
+            // Let's simplify and return BigInt for int-like, BigFloat otherwise
+            if matches!(type_.name.as_str(), "int2" | "int4" | "int8") {
+                Some(Scalar::BigInt)
+            } else if is_numeric(&type_.name) {
+                Some(Scalar::BigFloat)
+            } else {
+                None
+            }
+        }
+        AggregateOperation::Avg => {
+            if is_numeric(&type_.name) {
+                Some(Scalar::BigFloat)
+            } else {
+                None
+            }
+        }
+        AggregateOperation::Min | AggregateOperation::Max => {
+            if is_numeric(&type_.name) {
+                sql_type_to_scalar(&type_.name, column.max_characters)
+            } else if is_string(&type_.name) {
+                Some(Scalar::String(column.max_characters))
+            } else if is_datetime(&type_.name) {
+                sql_type_to_scalar(&type_.name, column.max_characters)
+            } else if is_boolean(&type_.name) {
+                Some(Scalar::Boolean)
+            } else {
+                None
+            }
+        }
+    }
 }
 
 impl ___Type for AggregateType {
@@ -4497,7 +4526,7 @@ impl ___Type for AggregateType {
         Some(format!("{table_base_type_name}Aggregate"))
     }
 
-     fn description(&self) -> Option<String> {
+    fn description(&self) -> Option<String> {
         let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
         Some(format!("Aggregate results for `{table_base_type_name}`"))
     }
@@ -4508,7 +4537,9 @@ impl ___Type for AggregateType {
         // Count field (always present)
         fields.push(__Field {
             name_: "count".to_string(),
-            type_: __Type::NonNull(NonNullType { type_: Box::new(__Type::Scalar(Scalar::Int)) }),
+            type_: __Type::NonNull(NonNullType {
+                type_: Box::new(__Type::Scalar(Scalar::Int)),
+            }),
             args: vec![],
             description: Some("The number of records matching the query".to_string()),
             deprecation_reason: None,
@@ -4516,72 +4547,80 @@ impl ___Type for AggregateType {
         });
 
         // Add fields for Sum, Avg, Min, Max if there are any aggregatable columns
-        let has_numeric = self.table.columns.iter().any(|c| is_aggregatable(c, &AggregateOperation::Sum));
-        let has_min_maxable = self.table.columns.iter().any(|c| is_aggregatable(c, &AggregateOperation::Min));
+        let has_numeric = self
+            .table
+            .columns
+            .iter()
+            .any(|c| is_aggregatable(c, &AggregateOperation::Sum));
+        let has_min_maxable = self
+            .table
+            .columns
+            .iter()
+            .any(|c| is_aggregatable(c, &AggregateOperation::Min));
 
         if has_numeric {
-             fields.push(__Field {
-                 name_: "sum".to_string(),
-                 type_: __Type::AggregateNumeric(AggregateNumericType {
-                     table: Arc::clone(&self.table),
-                     schema: Arc::clone(&self.schema),
-                     aggregate_op: AggregateOperation::Sum,
-                 }),
-                 args: vec![],
-                 description: Some("Summation aggregates for numeric fields".to_string()),
-                 deprecation_reason: None,
-                 sql_type: None,
-             });
-             fields.push(__Field {
-                 name_: "avg".to_string(),
-                 type_: __Type::AggregateNumeric(AggregateNumericType {
-                     table: Arc::clone(&self.table),
-                     schema: Arc::clone(&self.schema),
-                     aggregate_op: AggregateOperation::Avg,
-                 }),
-                 args: vec![],
-                 description: Some("Average aggregates for numeric fields".to_string()),
-                 deprecation_reason: None,
-                 sql_type: None,
-             });
+            fields.push(__Field {
+                name_: "sum".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Sum,
+                }),
+                args: vec![],
+                description: Some("Summation aggregates for numeric fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
+            fields.push(__Field {
+                name_: "avg".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Avg,
+                }),
+                args: vec![],
+                description: Some("Average aggregates for numeric fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
         }
 
         if has_min_maxable {
             fields.push(__Field {
-                 name_: "min".to_string(),
-                 type_: __Type::AggregateNumeric(AggregateNumericType {
-                     table: Arc::clone(&self.table),
-                     schema: Arc::clone(&self.schema),
-                     aggregate_op: AggregateOperation::Min,
-                 }),
-                 args: vec![],
-                 description: Some("Minimum aggregates for comparable fields".to_string()),
-                 deprecation_reason: None,
-                 sql_type: None,
-             });
-             fields.push(__Field {
-                 name_: "max".to_string(),
-                 type_: __Type::AggregateNumeric(AggregateNumericType {
-                     table: Arc::clone(&self.table),
-                     schema: Arc::clone(&self.schema),
-                     aggregate_op: AggregateOperation::Max,
-                 }),
-                 args: vec![],
-                 description: Some("Maximum aggregates for comparable fields".to_string()),
-                 deprecation_reason: None,
-                 sql_type: None,
-             });
+                name_: "min".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Min,
+                }),
+                args: vec![],
+                description: Some("Minimum aggregates for comparable fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
+            fields.push(__Field {
+                name_: "max".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Max,
+                }),
+                args: vec![],
+                description: Some("Maximum aggregates for comparable fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
         }
         Some(fields)
     }
 }
 
 impl ___Type for AggregateNumericType {
-     fn kind(&self) -> __TypeKind {
+    fn kind(&self) -> __TypeKind {
         __TypeKind::OBJECT
     }
 
-     fn name(&self) -> Option<String> {
+    fn name(&self) -> Option<String> {
         let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
         let op_name = match self.aggregate_op {
             AggregateOperation::Sum => "Sum",
@@ -4592,17 +4631,18 @@ impl ___Type for AggregateNumericType {
         Some(format!("{table_base_type_name}{op_name}AggregateResult"))
     }
 
-     fn description(&self) -> Option<String> {
-         let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
-         let op_desc = match self.aggregate_op {
+    fn description(&self) -> Option<String> {
+        let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
+        let op_desc = match self.aggregate_op {
             AggregateOperation::Sum => "summation",
             AggregateOperation::Avg => "average",
             AggregateOperation::Min => "minimum",
             AggregateOperation::Max => "maximum",
-         };
-         Some(format!("Result of {op_desc} aggregation for `{table_base_type_name}`"))
+        };
+        Some(format!(
+            "Result of {op_desc} aggregation for `{table_base_type_name}`"
+        ))
     }
-
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
         let mut fields = Vec::new();
@@ -4631,10 +4671,13 @@ impl ___Type for AggregateNumericType {
                 }
             }
         }
-        if fields.is_empty() { None } else { Some(fields) }
+        if fields.is_empty() {
+            None
+        } else {
+            Some(fields)
+        }
     }
 }
-
 
 // Converts SQL type name to a GraphQL Scalar, needed for aggregate_result_type
 // This function might already exist or needs to be created/adapted.
@@ -4655,4 +4698,3 @@ fn sql_type_to_scalar(sql_type_name: &str, typmod: Option<i32>) -> Option<Scalar
         _ => Some(Scalar::Opaque), // Fallback for unknown types
     }
 }
-

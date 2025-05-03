@@ -34,167 +34,233 @@ begin;
             '$.data.__schema.types[*] ? (@.name starts with "Something")'
         )
     );
-              jsonb_pretty              
-----------------------------------------
- {                                     +
-     "name": "Something",              +
-     "fields": [                       +
-         {                             +
-             "name": "nodeId"          +
-         },                            +
-         {                             +
-             "name": "id"              +
-         },                            +
-         {                             +
-             "name": "name"            +
-         },                            +
-         {                             +
-             "name": "tags"            +
-         },                            +
-         {                             +
-             "name": "js"              +
-         },                            +
-         {                             +
-             "name": "jsb"             +
-         }                             +
-     ],                                +
-     "inputFields": null               +
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "name": "Something",                  +
+     "fields": [                           +
+         {                                 +
+             "name": "nodeId"              +
+         },                                +
+         {                                 +
+             "name": "id"                  +
+         },                                +
+         {                                 +
+             "name": "name"                +
+         },                                +
+         {                                 +
+             "name": "tags"                +
+         },                                +
+         {                                 +
+             "name": "js"                  +
+         },                                +
+         {                                 +
+             "name": "jsb"                 +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingConnection",    +
-     "fields": [                       +
-         {                             +
-             "name": "edges"           +
-         },                            +
-         {                             +
-             "name": "pageInfo"        +
-         }                             +
-     ],                                +
-     "inputFields": null               +
+ {                                         +
+     "name": "SomethingAggregate",         +
+     "fields": [                           +
+         {                                 +
+             "name": "count"               +
+         },                                +
+         {                                 +
+             "name": "sum"                 +
+         },                                +
+         {                                 +
+             "name": "avg"                 +
+         },                                +
+         {                                 +
+             "name": "min"                 +
+         },                                +
+         {                                 +
+             "name": "max"                 +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingDeleteResponse",+
-     "fields": [                       +
-         {                             +
-             "name": "affectedCount"   +
-         },                            +
-         {                             +
-             "name": "records"         +
-         }                             +
-     ],                                +
-     "inputFields": null               +
+ {                                         +
+     "name": "SomethingAvgAggregateResult",+
+     "fields": [                           +
+         {                                 +
+             "name": "id"                  +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingEdge",          +
-     "fields": [                       +
-         {                             +
-             "name": "cursor"          +
-         },                            +
-         {                             +
-             "name": "node"            +
-         }                             +
-     ],                                +
-     "inputFields": null               +
+ {                                         +
+     "name": "SomethingConnection",        +
+     "fields": [                           +
+         {                                 +
+             "name": "edges"               +
+         },                                +
+         {                                 +
+             "name": "pageInfo"            +
+         },                                +
+         {                                 +
+             "name": "aggregate"           +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingFilter",        +
-     "fields": null,                   +
-     "inputFields": [                  +
-         {                             +
-             "name": "id"              +
-         },                            +
-         {                             +
-             "name": "name"            +
-         },                            +
-         {                             +
-             "name": "tags"            +
-         },                            +
-         {                             +
-             "name": "nodeId"          +
-         },                            +
-         {                             +
-             "name": "and"             +
-         },                            +
-         {                             +
-             "name": "or"              +
-         },                            +
-         {                             +
-             "name": "not"             +
-         }                             +
-     ]                                 +
+ {                                         +
+     "name": "SomethingDeleteResponse",    +
+     "fields": [                           +
+         {                                 +
+             "name": "affectedCount"       +
+         },                                +
+         {                                 +
+             "name": "records"             +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingInsertInput",   +
-     "fields": null,                   +
-     "inputFields": [                  +
-         {                             +
-             "name": "name"            +
-         },                            +
-         {                             +
-             "name": "tags"            +
-         },                            +
-         {                             +
-             "name": "js"              +
-         },                            +
-         {                             +
-             "name": "jsb"             +
-         }                             +
-     ]                                 +
+ {                                         +
+     "name": "SomethingEdge",              +
+     "fields": [                           +
+         {                                 +
+             "name": "cursor"              +
+         },                                +
+         {                                 +
+             "name": "node"                +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingInsertResponse",+
-     "fields": [                       +
-         {                             +
-             "name": "affectedCount"   +
-         },                            +
-         {                             +
-             "name": "records"         +
-         }                             +
-     ],                                +
-     "inputFields": null               +
+ {                                         +
+     "name": "SomethingFilter",            +
+     "fields": null,                       +
+     "inputFields": [                      +
+         {                                 +
+             "name": "id"                  +
+         },                                +
+         {                                 +
+             "name": "name"                +
+         },                                +
+         {                                 +
+             "name": "tags"                +
+         },                                +
+         {                                 +
+             "name": "nodeId"              +
+         },                                +
+         {                                 +
+             "name": "and"                 +
+         },                                +
+         {                                 +
+             "name": "or"                  +
+         },                                +
+         {                                 +
+             "name": "not"                 +
+         }                                 +
+     ]                                     +
  }
- {                                     +
-     "name": "SomethingOrderBy",       +
-     "fields": null,                   +
-     "inputFields": [                  +
-         {                             +
-             "name": "id"              +
-         },                            +
-         {                             +
-             "name": "name"            +
-         }                             +
-     ]                                 +
+ {                                         +
+     "name": "SomethingInsertInput",       +
+     "fields": null,                       +
+     "inputFields": [                      +
+         {                                 +
+             "name": "name"                +
+         },                                +
+         {                                 +
+             "name": "tags"                +
+         },                                +
+         {                                 +
+             "name": "js"                  +
+         },                                +
+         {                                 +
+             "name": "jsb"                 +
+         }                                 +
+     ]                                     +
  }
- {                                     +
-     "name": "SomethingUpdateInput",   +
-     "fields": null,                   +
-     "inputFields": [                  +
-         {                             +
-             "name": "name"            +
-         },                            +
-         {                             +
-             "name": "tags"            +
-         },                            +
-         {                             +
-             "name": "js"              +
-         },                            +
-         {                             +
-             "name": "jsb"             +
-         }                             +
-     ]                                 +
+ {                                         +
+     "name": "SomethingInsertResponse",    +
+     "fields": [                           +
+         {                                 +
+             "name": "affectedCount"       +
+         },                                +
+         {                                 +
+             "name": "records"             +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
- {                                     +
-     "name": "SomethingUpdateResponse",+
-     "fields": [                       +
-         {                             +
-             "name": "affectedCount"   +
-         },                            +
-         {                             +
-             "name": "records"         +
-         }                             +
-     ],                                +
-     "inputFields": null               +
+ {                                         +
+     "name": "SomethingMaxAggregateResult",+
+     "fields": [                           +
+         {                                 +
+             "name": "id"                  +
+         },                                +
+         {                                 +
+             "name": "name"                +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
  }
-(10 rows)
+ {                                         +
+     "name": "SomethingMinAggregateResult",+
+     "fields": [                           +
+         {                                 +
+             "name": "id"                  +
+         },                                +
+         {                                 +
+             "name": "name"                +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
+ }
+ {                                         +
+     "name": "SomethingOrderBy",           +
+     "fields": null,                       +
+     "inputFields": [                      +
+         {                                 +
+             "name": "id"                  +
+         },                                +
+         {                                 +
+             "name": "name"                +
+         }                                 +
+     ]                                     +
+ }
+ {                                         +
+     "name": "SomethingSumAggregateResult",+
+     "fields": [                           +
+         {                                 +
+             "name": "id"                  +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
+ }
+ {                                         +
+     "name": "SomethingUpdateInput",       +
+     "fields": null,                       +
+     "inputFields": [                      +
+         {                                 +
+             "name": "name"                +
+         },                                +
+         {                                 +
+             "name": "tags"                +
+         },                                +
+         {                                 +
+             "name": "js"                  +
+         },                                +
+         {                                 +
+             "name": "jsb"                 +
+         }                                 +
+     ]                                     +
+ }
+ {                                         +
+     "name": "SomethingUpdateResponse",    +
+     "fields": [                           +
+         {                                 +
+             "name": "affectedCount"       +
+         },                                +
+         {                                 +
+             "name": "records"             +
+         }                                 +
+     ],                                    +
+     "inputFields": null                   +
+ }
+(15 rows)
 
 rollback;
