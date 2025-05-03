@@ -1702,11 +1702,13 @@ impl ___Type for ConnectionType {
             name_: "edges".to_string(),
             type_: __Type::NonNull(NonNullType {
                 type_: Box::new(__Type::List(ListType {
-                    type_: Box::new(edge_type),
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new(edge_type),
+                    })),
                 })),
             }),
             args: vec![],
-            description: Some("Array of edges".to_string()),
+            description: None,
             deprecation_reason: None,
             sql_type: None,
         };
@@ -1717,7 +1719,7 @@ impl ___Type for ConnectionType {
                 type_: Box::new(__Type::PageInfo(PageInfoType)),
             }),
             args: vec![],
-            description: Some("Information to aid in pagination".to_string()),
+            description: None,
             deprecation_reason: None,
             sql_type: None,
         };
