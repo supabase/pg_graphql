@@ -1111,7 +1111,6 @@ impl ConnectionBuilder {
 
         // Build aggregate CTE if requested
         let aggregate_cte = if requested_aggregates {
-            // Use the generated select list to build the object inside the CTE
             let select_list_str = aggregate_select_list.unwrap_or_default(); // Safe unwrap due to requested_aggregates check
             format!(
                 r#"
@@ -1127,11 +1126,12 @@ impl ConnectionBuilder {
                 "#
             )
         } else {
-            // Dummy CTE still needed for syntax
-            r#",__aggregates(agg_result) as (select null::jsonb)"#.to_string()
+            r#"
+            ,__aggregates(agg_result) as (select null::jsonb)
+            "#
+            .to_string()
         };
 
-        // --- NEW STRUCTURE ---
         // Clause containing selections *not* including the aggregate
         let base_object_clause = object_clause; // Renamed original object_clause
 
@@ -1334,12 +1334,26 @@ impl EdgeBuilder {
         let x = frags.join(", ");
         let order_by_clause = order_by.to_order_by_clause(block_name);
 
+        // Get the first primary key column name to use in the filter
+        let first_pk_col = table.primary_key_columns().first().map(|col| &col.name);
+
+        // Create a filter clause that checks if any primary key column is not NULL
+        let filter_clause = if let Some(pk_col) = first_pk_col {
+            format!(
+                "FILTER (WHERE {}.{} IS NOT NULL)",
+                block_name,
+                quote_ident(pk_col)
+            )
+        } else {
+            "".to_string() // Fallback if no primary key columns (should be rare)
+        };
+
         Ok(format!(
             "coalesce(
                 jsonb_agg(
                     jsonb_build_object({x})
                     order by {order_by_clause}
-                ) FILTER (WHERE {block_name} IS NOT NULL),
+                ) {filter_clause},
                 jsonb_build_array()
             )"
         ))
