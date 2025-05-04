@@ -2037,213 +2037,233 @@ begin;
             }
         }
     } $$));
-                                  jsonb_pretty                                   
----------------------------------------------------------------------------------
- {                                                                              +
-     "data": {                                                                  +
-         "__schema": {                                                          +
-             "queryType": {                                                     +
-                 "fields": [                                                    +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "first",                               +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Int",                             +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "last",                                +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Int",                             +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "before",                              +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Cursor",                          +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "after",                               +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Cursor",                          +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "offset",                              +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Int",                             +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "filter",                              +
-                                 "type": {                                      +
-                                     "kind": "INPUT_OBJECT",                    +
-                                     "name": "AccountFilter",                   +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "orderBy",                             +
-                                 "type": {                                      +
-                                     "kind": "LIST",                            +
-                                     "name": null,                              +
-                                     "ofType": {                                +
-                                         "kind": "NON_NULL",                    +
-                                         "name": null                           +
-                                     }                                          +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "accountCollection",                           +
-                         "type": {                                              +
-                             "kind": "OBJECT"                                   +
-                         },                                                     +
-                         "description": "A pagable collection of type `Account`"+
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "nodeId",                              +
-                                 "type": {                                      +
-                                     "kind": "NON_NULL",                        +
-                                     "name": null,                              +
-                                     "ofType": {                                +
-                                         "kind": "SCALAR",                      +
-                                         "name": "ID"                           +
-                                     }                                          +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "node",                                        +
-                         "type": {                                              +
-                             "kind": "INTERFACE"                                +
-                         },                                                     +
-                         "description": "Retrieve a record by its `ID`"         +
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                         ],                                                     +
-                         "name": "returnsAccount",                              +
-                         "type": {                                              +
-                             "kind": "OBJECT"                                   +
-                         },                                                     +
-                         "description": null                                    +
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "idToSearch",                          +
-                                 "type": {                                      +
-                                     "kind": "NON_NULL",                        +
-                                     "name": null,                              +
-                                     "ofType": {                                +
-                                         "kind": "SCALAR",                      +
-                                         "name": "Int"                          +
-                                     }                                          +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "returnsAccountWithId",                        +
-                         "type": {                                              +
-                             "kind": "OBJECT"                                   +
-                         },                                                     +
-                         "description": null                                    +
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "top",                                 +
-                                 "type": {                                      +
-                                     "kind": "NON_NULL",                        +
-                                     "name": null,                              +
-                                     "ofType": {                                +
-                                         "kind": "SCALAR",                      +
-                                         "name": "Int"                          +
-                                     }                                          +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "first",                               +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Int",                             +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "last",                                +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Int",                             +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "before",                              +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Cursor",                          +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "after",                               +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Cursor",                          +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "offset",                              +
-                                 "type": {                                      +
-                                     "kind": "SCALAR",                          +
-                                     "name": "Int",                             +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "filter",                              +
-                                 "type": {                                      +
-                                     "kind": "INPUT_OBJECT",                    +
-                                     "name": "AccountFilter",                   +
-                                     "ofType": null                             +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "orderBy",                             +
-                                 "type": {                                      +
-                                     "kind": "LIST",                            +
-                                     "name": null,                              +
-                                     "ofType": {                                +
-                                         "kind": "NON_NULL",                    +
-                                         "name": null                           +
-                                     }                                          +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "returnsSetofAccount",                         +
-                         "type": {                                              +
-                             "kind": "OBJECT"                                   +
-                         },                                                     +
-                         "description": null                                    +
-                     }                                                          +
-                 ]                                                              +
-             }                                                                  +
-         }                                                                      +
-     }                                                                          +
+                                          jsonb_pretty                                           
+-------------------------------------------------------------------------------------------------
+ {                                                                                              +
+     "data": {                                                                                  +
+         "__schema": {                                                                          +
+             "queryType": {                                                                     +
+                 "fields": [                                                                    +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "id",                                                  +
+                                 "type": {                                                      +
+                                     "kind": "NON_NULL",                                        +
+                                     "name": null,                                              +
+                                     "ofType": {                                                +
+                                         "kind": "NON_NULL",                                    +
+                                         "name": null                                           +
+                                     }                                                          +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "accountByPk",                                                 +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": "Retrieve a record of type `Account` by its primary key"+
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "first",                                               +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Int",                                             +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "last",                                                +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Int",                                             +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "before",                                              +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Cursor",                                          +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "after",                                               +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Cursor",                                          +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "offset",                                              +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Int",                                             +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "filter",                                              +
+                                 "type": {                                                      +
+                                     "kind": "INPUT_OBJECT",                                    +
+                                     "name": "AccountFilter",                                   +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "orderBy",                                             +
+                                 "type": {                                                      +
+                                     "kind": "LIST",                                            +
+                                     "name": null,                                              +
+                                     "ofType": {                                                +
+                                         "kind": "NON_NULL",                                    +
+                                         "name": null                                           +
+                                     }                                                          +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "accountCollection",                                           +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": "A pagable collection of type `Account`"                +
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "nodeId",                                              +
+                                 "type": {                                                      +
+                                     "kind": "NON_NULL",                                        +
+                                     "name": null,                                              +
+                                     "ofType": {                                                +
+                                         "kind": "SCALAR",                                      +
+                                         "name": "ID"                                           +
+                                     }                                                          +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "node",                                                        +
+                         "type": {                                                              +
+                             "kind": "INTERFACE"                                                +
+                         },                                                                     +
+                         "description": "Retrieve a record by its `ID`"                         +
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                         ],                                                                     +
+                         "name": "returnsAccount",                                              +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": null                                                    +
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "idToSearch",                                          +
+                                 "type": {                                                      +
+                                     "kind": "NON_NULL",                                        +
+                                     "name": null,                                              +
+                                     "ofType": {                                                +
+                                         "kind": "SCALAR",                                      +
+                                         "name": "Int"                                          +
+                                     }                                                          +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "returnsAccountWithId",                                        +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": null                                                    +
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "top",                                                 +
+                                 "type": {                                                      +
+                                     "kind": "NON_NULL",                                        +
+                                     "name": null,                                              +
+                                     "ofType": {                                                +
+                                         "kind": "SCALAR",                                      +
+                                         "name": "Int"                                          +
+                                     }                                                          +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "first",                                               +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Int",                                             +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "last",                                                +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Int",                                             +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "before",                                              +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Cursor",                                          +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "after",                                               +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Cursor",                                          +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "offset",                                              +
+                                 "type": {                                                      +
+                                     "kind": "SCALAR",                                          +
+                                     "name": "Int",                                             +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "filter",                                              +
+                                 "type": {                                                      +
+                                     "kind": "INPUT_OBJECT",                                    +
+                                     "name": "AccountFilter",                                   +
+                                     "ofType": null                                             +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "orderBy",                                             +
+                                 "type": {                                                      +
+                                     "kind": "LIST",                                            +
+                                     "name": null,                                              +
+                                     "ofType": {                                                +
+                                         "kind": "NON_NULL",                                    +
+                                         "name": null                                           +
+                                     }                                                          +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "returnsSetofAccount",                                         +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": null                                                    +
+                     }                                                                          +
+                 ]                                                                              +
+             }                                                                                  +
+         }                                                                                      +
+     }                                                                                          +
  }
 (1 row)
 

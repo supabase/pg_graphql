@@ -1487,12 +1487,10 @@ impl QueryEntrypoint for NodeBuilder {
         let quoted_table = quote_ident(&self.table.name);
         let object_clause = self.to_sql(&quoted_block_name, param_context)?;
 
-        let node_id = self
-            .node_id
-            .as_ref()
-            .ok_or("Expected nodeId argument missing")?;
-
-        let node_id_clause = node_id.to_sql(&quoted_block_name, &self.table, param_context)?;
+        let where_clause = match &self.node_id {
+            Some(node_id) => node_id.to_sql(&quoted_block_name, &self.table, param_context)?,
+            None => "true".to_string(),
+        };
 
         Ok(format!(
             "
@@ -1502,7 +1500,81 @@ impl QueryEntrypoint for NodeBuilder {
                 from
                     {quoted_schema}.{quoted_table} as {quoted_block_name}
                 where
-                    {node_id_clause}
+                    {where_clause}
+            )
+            "
+        ))
+    }
+}
+
+impl NodeByPkBuilder {
+    pub fn to_sql(
+        &self,
+        block_name: &str,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let mut field_clauses = vec![];
+        for selection in &self.selections {
+            field_clauses.push(selection.to_sql(block_name, param_context)?);
+        }
+
+        if field_clauses.is_empty() {
+            return Ok("'{}'::jsonb".to_string());
+        }
+
+        let fields_clause = field_clauses.join(", ");
+        Ok(format!("jsonb_build_object({fields_clause})"))
+    }
+
+    pub fn to_pk_where_clause(
+        &self,
+        block_name: &str,
+        param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        let mut conditions = Vec::new();
+
+        for (column_name, value) in &self.pk_values {
+            let value_clause = param_context.clause_for(
+                value,
+                &self
+                    .table
+                    .columns
+                    .iter()
+                    .find(|c| &c.name == column_name)
+                    .ok_or_else(|| format!("Column {} not found", column_name))?
+                    .type_name,
+            )?;
+
+            conditions.push(format!(
+                "{}.{} = {}",
+                block_name,
+                quote_ident(column_name),
+                value_clause
+            ));
+        }
+
+        Ok(conditions.join(" AND "))
+    }
+}
+
+impl QueryEntrypoint for NodeByPkBuilder {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+        let quoted_block_name = rand_block_name();
+        let quoted_schema = quote_ident(&self.table.schema);
+        let quoted_table = quote_ident(&self.table.name);
+        let object_clause = self.to_sql(&quoted_block_name, param_context)?;
+
+        let where_clause = self.to_pk_where_clause(&quoted_block_name, param_context)?;
+
+        Ok(format!(
+            "
+            (
+                select
+                    {object_clause}
+                from
+                    {quoted_schema}.{quoted_table} as {quoted_block_name}
+                where
+                    {where_clause}
             )
             "
         ))
@@ -1516,19 +1588,43 @@ impl NodeIdInstance {
         table: &Table,
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
-        // TODO: abstract this logical check into builder. It is not related to
-        // transpiling and should not be in this module
-        if (&self.schema_name, &self.table_name) != (&table.schema, &table.name) {
+        // Validate that nodeId belongs to the table being queried
+        if self.schema_name != table.schema || self.table_name != table.name {
             return Err("nodeId belongs to a different collection".to_string());
         }
 
-        let mut col_val_pairs: Vec<String> = vec![];
-        for (col, val) in table.primary_key_columns().iter().zip(self.values.iter()) {
-            let column_name = &col.name;
-            let val_clause = param_context.clause_for(val, &col.type_name)?;
-            col_val_pairs.push(format!("{block_name}.{column_name} = {val_clause}"))
+        let pkey = table
+            .primary_key()
+            .ok_or_else(|| "Found table with no primary key".to_string())?;
+
+        if pkey.column_names.len() != self.values.len() {
+            return Err(format!(
+                "Primary key column count mismatch. Expected {}, provided {}",
+                pkey.column_names.len(),
+                self.values.len()
+            ));
         }
-        Ok(col_val_pairs.join(" and "))
+
+        let mut conditions = vec![];
+
+        for (column_name, value) in pkey.column_names.iter().zip(&self.values) {
+            let column = table
+                .columns
+                .iter()
+                .find(|c| &c.name == column_name)
+                .ok_or(format!("Primary key column {} not found", column_name))?;
+
+            let value_clause = param_context.clause_for(value, &column.type_name)?;
+
+            conditions.push(format!(
+                "{}.{} = {}",
+                block_name,
+                quote_ident(column_name),
+                value_clause
+            ));
+        }
+
+        Ok(conditions.join(" AND "))
     }
 }
 
