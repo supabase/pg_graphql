@@ -57,6 +57,9 @@ begin;
              "queryType": {                         +
                  "fields": [                        +
                      {                              +
+                         "name": "accountByPk"      +
+                     },                             +
+                     {                              +
                          "name": "accountCollection"+
                      },                             +
                      {                              +
