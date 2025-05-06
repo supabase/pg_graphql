@@ -400,9 +400,9 @@ begin;
             }
         }
     $$);
-                                                                               resolve                                                                                
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "UUID fields (like \"id\") are not supported for min/max aggregation because they don't have a meaningful natural ordering"}]}
+                                                          resolve                                                           
+----------------------------------------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Unknown or invalid field \"id\" selected on type \"BlogPostMinAggregateResult\""}]}
 (1 row)
 
     -- Test Case 16: Edge case - Empty result set with aggregates

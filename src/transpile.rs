@@ -1330,7 +1330,7 @@ impl ConnectionSelection {
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
-            Self::Aggregate(_) => String::new(), // Aggregate is handled in the ConnectionBuilder
+            Self::Aggregate(builder) => builder.to_sql(block_name, param_context)?,
         })
     }
 }
@@ -1910,6 +1910,18 @@ impl Serialize for __EnumValueBuilder {
             }
         }
         map.end()
+    }
+}
+
+impl AggregateBuilder {
+    pub fn to_sql(
+        &self,
+        _block_name: &str,
+        _param_context: &mut ParamContext,
+    ) -> Result<String, String> {
+        // SQL generation is handled by ConnectionBuilder::aggregate_select_list
+        // and the results are merged in later in the process
+        Ok(String::new())
     }
 }
 

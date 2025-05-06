@@ -1584,84 +1584,66 @@ where
         return Err("Internal Error: Expected AggregateType in to_aggregate_builder".to_string());
     };
 
-    let alias = query_field
-        .alias
-        .as_ref()
-        .map_or(field.name_.as_str(), |x| x.as_ref())
-        .to_string();
+    let alias = alias_or_name(query_field);
     let mut selections = Vec::new();
     let field_map = field_map(&type_); // Get fields of the AggregateType (count, sum, avg, etc.)
 
-    for item in query_field.selection_set.items.iter() {
-        match item {
-            Selection::Field(query_sub_field) => {
-                let field_name = query_sub_field.name.as_ref();
-                let sub_field = field_map.get(field_name).ok_or(format!(
-                    "Unknown field \"{}\" selected on type \"{}\"",
-                    field_name,
-                    type_.name().unwrap_or_default()
-                ))?;
-                let sub_alias = query_sub_field
-                    .alias
-                    .as_ref()
-                    .map_or(sub_field.name_.as_str(), |x| x.as_ref())
-                    .to_string();
+    let type_name = type_.name().ok_or("Aggregate type has no name")?;
 
+    let selection_fields = normalize_selection_set(
+        &query_field.selection_set,
+        fragment_definitions,
+        &type_name,
+        variables,
+    )?;
+
+    for selection_field in selection_fields {
+        let field_name = selection_field.name.as_ref();
+        let sub_field = field_map.get(field_name).ok_or(format!(
+            "Unknown field \"{}\" selected on type \"{}\"",
+            field_name, type_name
+        ))?;
+        let sub_alias = alias_or_name(&selection_field);
+
+        match field_name {
+            "count" => selections.push(AggregateSelection::Count { alias: sub_alias }),
+            "sum" | "avg" | "min" | "max" => {
+                let col_selections = parse_aggregate_numeric_selections(
+                    sub_field,
+                    &selection_field,
+                    fragment_definitions,
+                    variables,
+                    variable_definitions,
+                )?;
                 match field_name {
-                    "count" => selections.push(AggregateSelection::Count { alias: sub_alias }),
-                    "sum" | "avg" | "min" | "max" => {
-                        let col_selections = parse_aggregate_numeric_selections(
-                            sub_field,
-                            query_sub_field,
-                            fragment_definitions,
-                            variables,
-                            variable_definitions,
-                        )?;
-                        match field_name {
-                            "sum" => selections.push(AggregateSelection::Sum {
-                                alias: sub_alias,
-                                selections: col_selections,
-                            }),
-                            "avg" => selections.push(AggregateSelection::Avg {
-                                alias: sub_alias,
-                                selections: col_selections,
-                            }),
-                            "min" => selections.push(AggregateSelection::Min {
-                                alias: sub_alias,
-                                selections: col_selections,
-                            }),
-                            "max" => selections.push(AggregateSelection::Max {
-                                alias: sub_alias,
-                                selections: col_selections,
-                            }),
-                            _ => unreachable!(), // Should not happen due to outer match
-                        }
-                    }
-                    "__typename" => selections.push(AggregateSelection::Typename {
+                    "sum" => selections.push(AggregateSelection::Sum {
                         alias: sub_alias,
-                        typename: field
-                            .type_()
-                            .name()
-                            .ok_or("Name for aggregate field's type not found")?
-                            .to_string(),
+                        selections: col_selections,
                     }),
-                    _ => return Err(format!("Unknown aggregate field: {}", field_name)),
+                    "avg" => selections.push(AggregateSelection::Avg {
+                        alias: sub_alias,
+                        selections: col_selections,
+                    }),
+                    "min" => selections.push(AggregateSelection::Min {
+                        alias: sub_alias,
+                        selections: col_selections,
+                    }),
+                    "max" => selections.push(AggregateSelection::Max {
+                        alias: sub_alias,
+                        selections: col_selections,
+                    }),
+                    _ => unreachable!("Outer match should cover all field names"),
                 }
             }
-            Selection::FragmentSpread(_spread) => {
-                // TODO: Handle fragment spreads within aggregate selection if needed
-                return Err(
-                    "Fragment spreads within aggregate selections are not yet supported"
-                        .to_string(),
-                );
-            }
-            Selection::InlineFragment(_inline_frag) => {
-                // TODO: Handle inline fragments within aggregate selection if needed
-                return Err(
-                    "Inline fragments within aggregate selections are not yet supported"
-                        .to_string(),
-                );
-            }
+            "__typename" => selections.push(AggregateSelection::Typename {
+                alias: sub_alias,
+                typename: field
+                    .type_()
+                    .name()
+                    .ok_or("Name for aggregate field's type not found")?
+                    .to_string(),
+            }),
+            _ => return Err(format!("Unknown aggregate field: {}", field_name)),
         }
     }
 
@@ -1669,10 +1651,10 @@ where
 }
 
 fn parse_aggregate_numeric_selections<'a, T>(
-    field: &__Field,                                   // The sum/avg/min/max field itself
-    query_field: &graphql_parser::query::Field<'a, T>, // The query field for sum/avg/min/max
-    _fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
-    _variables: &serde_json::Value,
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
     _variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Vec<ColumnBuilder>, String>
 where
@@ -1680,84 +1662,45 @@ where
     T::Value: Hash,
 {
     let type_ = field.type_().unmodified_type();
-    let __Type::AggregateNumeric(ref agg_numeric_type) = type_ else {
+    let __Type::AggregateNumeric(_) = type_ else {
         return Err("Internal Error: Expected AggregateNumericType".to_string());
     };
-
     let mut col_selections = Vec::new();
-    let field_map = field_map(&type_); // Fields of AggregateNumericType (numeric columns)
+    let field_map = field_map(&type_);
+    let type_name = type_.name().ok_or("AggregateNumeric type has no name")?;
+    let selection_fields = normalize_selection_set(
+        &query_field.selection_set,
+        fragment_definitions,
+        &type_name,
+        variables,
+    )?;
 
-    for item in query_field.selection_set.items.iter() {
-        match item {
-            Selection::Field(col_field) => {
-                let col_name = col_field.name.as_ref();
+    for selection_field in selection_fields {
+        let col_name = selection_field.name.as_ref();
+        let sub_field = field_map.get(col_name).ok_or_else(|| {
+            format!(
+                "Unknown or invalid field \"{}\" selected on type \"{}\"",
+                col_name, type_name
+            )
+        })?;
 
-                let sub_field = field_map.get(col_name);
+        let __Type::Scalar(_) = sub_field.type_().unmodified_type() else {
+            return Err(format!(
+                "Field \"{}\" on type \"{}\" is not a scalar column",
+                col_name, type_name
+            ));
+        };
+        let Some(NodeSQLType::Column(column)) = sub_field.sql_type.clone() else {
+            // We need the Arc<Column>! It should be available via the __Field's sql_type.
+            return Err(format!(
+                "Internal error: Missing column info for aggregate field '{}'",
+                col_name
+            ));
+        };
 
-                if sub_field.is_none()
-                    && (matches!(agg_numeric_type.aggregate_op, AggregateOperation::Min)
-                        || matches!(agg_numeric_type.aggregate_op, AggregateOperation::Max))
-                {
-                    // Check if this is a UUID field by looking at the table columns
-                    for col in agg_numeric_type.table.columns.iter() {
-                        let column_name = &col.name;
-                        if col_name == column_name
-                            || col_name.to_lowercase() == column_name.to_lowercase()
-                        {
-                            if let Some(ref type_) = col.type_ {
-                                if type_.name == "uuid" {
-                                    return Err(format!(
-                                        "UUID fields (like \"{}\") are not supported for min/max aggregation because they don't have a meaningful natural ordering",
-                                        col_name
-                                    ));
-                                }
-                            }
-                        }
-                    }
-                }
+        let alias = alias_or_name(&selection_field);
 
-                // Regular error if field not found
-                let sub_field = sub_field.ok_or(format!(
-                    "Unknown field \"{}\" selected on type \"{}\"",
-                    col_name,
-                    type_.name().unwrap_or_default()
-                ))?;
-
-                // Ensure the selected field is actually a column
-                let __Type::Scalar(_) = sub_field.type_().unmodified_type() else {
-                    return Err(format!(
-                        "Field \"{}\" on type \"{}\" is not a scalar column",
-                        col_name,
-                        type_.name().unwrap_or_default()
-                    ));
-                };
-                // We expect the sql_type to be set for columns within the numeric aggregate type's fields
-                // This might require adjustment in how AggregateNumericType fields are created in graphql.rs if sql_type isn't populated there
-                let Some(NodeSQLType::Column(column)) = sub_field.sql_type.clone() else {
-                    // We need the Arc<Column>! It should be available via the __Field's sql_type.
-                    // If it's not, the creation of AggregateNumericType fields in graphql.rs needs adjustment.
-                    return Err(format!(
-                        "Internal error: Missing column info for aggregate field '{}'",
-                        col_name
-                    ));
-                };
-
-                let alias = col_field
-                    .alias
-                    .as_ref()
-                    .map_or(col_name, |x| x.as_ref())
-                    .to_string();
-
-                col_selections.push(ColumnBuilder { alias, column });
-            }
-            Selection::FragmentSpread(_) | Selection::InlineFragment(_) => {
-                // TODO: Support fragments if needed within numeric aggregates
-                return Err(
-                    "Fragments within numeric aggregate selections are not yet supported"
-                        .to_string(),
-                );
-            }
-        }
+        col_selections.push(ColumnBuilder { alias, column });
     }
     Ok(col_selections)
 }
