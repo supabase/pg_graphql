@@ -1197,9 +1197,9 @@ impl ConnectionBuilder {
                         cross join __has_previous_page
                         cross join __has_records
                         left join __records {quoted_block_name} on true
-                     group by 
-                        __total_count.___total_count, 
-                        __has_next_page.___has_next_page, 
+                     group by
+                        __total_count.___total_count,
+                        __has_next_page.___has_next_page,
                         __has_previous_page.___has_previous_page,
                         __has_records.has_records
                 )
