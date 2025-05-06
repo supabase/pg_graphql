@@ -347,16 +347,16 @@ The supported aggregate operations are:
     type BlogAggregate {
       """The number of records matching the query"""
       count: Int!
-      
+
       """Summation aggregates for `Blog`"""
       sum: BlogSumAggregateResult
-      
+
       """Average aggregates for `Blog`"""
       avg: BlogAvgAggregateResult
-      
+
       """Minimum aggregates for comparable fields"""
       min: BlogMinAggregateResult
-      
+
       """Maximum aggregates for comparable fields"""
       max: BlogMaxAggregateResult
     }
@@ -369,10 +369,10 @@ The supported aggregate operations are:
     type BlogSumAggregateResult {
       """Sum of rating values"""
       rating: BigFloat
-      
+
       """Sum of visits values"""
       visits: BigInt
-      
+
       # Other numeric fields...
     }
     ```
@@ -384,10 +384,10 @@ The supported aggregate operations are:
     type BlogAvgAggregateResult {
       """Average of rating values"""
       rating: BigFloat
-      
+
       """Average of visits values"""
       visits: BigFloat
-      
+
       # Other numeric fields...
     }
     ```
@@ -399,13 +399,13 @@ The supported aggregate operations are:
     type BlogMinAggregateResult {
       """Minimum rating value"""
       rating: Float
-      
+
       """Minimum title value"""
       title: String
-      
+
       """Minimum createdAt value"""
       createdAt: Datetime
-      
+
       # Other comparable fields...
     }
     ```
@@ -417,13 +417,13 @@ The supported aggregate operations are:
     type BlogMaxAggregateResult {
       """Maximum rating value"""
       rating: Float
-      
+
       """Maximum title value"""
       title: String
-      
+
       """Maximum updatedAt value"""
       updatedAt: Datetime
-      
+
       # Other comparable fields...
     }
     ```
