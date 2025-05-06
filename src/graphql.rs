@@ -4546,7 +4546,7 @@ impl ___Type for AggregateType {
         });
 
         // Add fields for Sum, Avg, Min, Max if there are any aggregatable columns
-        let has_numeric = self
+        let has_sum_avgable = self
             .table
             .columns
             .iter()
@@ -4557,7 +4557,7 @@ impl ___Type for AggregateType {
             .iter()
             .any(|c| is_aggregatable(c, &AggregateOperation::Min));
 
-        if has_numeric {
+        if has_sum_avgable {
             fields.push(__Field {
                 name_: "sum".to_string(),
                 type_: __Type::AggregateNumeric(AggregateNumericType {
