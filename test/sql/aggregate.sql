@@ -340,7 +340,7 @@ begin;
         }
     $$);
 
-    -- Test Case 15: UUID field aggregation 
+    -- Test Case 15: UUID field aggregation
     -- This test verifies that UUID fields are intentionally excluded from min/max aggregation.
     -- UUIDs don't have a meaningful natural ordering for aggregation purposes, so they're explicitly
     -- excluded from the list of types that can be aggregated with min/max.
