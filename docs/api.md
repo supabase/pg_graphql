@@ -430,8 +430,6 @@ The supported aggregate operations are:
 
 !!! note
 
-    - The `sum` and `avg` operations are only available for numeric fields.
-    - The `min` and `max` operations are available for numeric, string, boolean, and date/time fields.
     - The return type for `sum` depends on the input type: integer fields return `BigInt`, while other numeric fields return `BigFloat`.
     - The return type for `avg` is always `BigFloat`.
     - The return types for `min` and `max` match the original field types.
