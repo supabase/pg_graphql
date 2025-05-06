@@ -1735,7 +1735,6 @@ impl ___Type for ConnectionType {
                         type_: Box::new(__Type::Scalar(Scalar::Int)),
                     }),
                     args: vec![],
-                    // Using description from the user's provided removed block
                     description: Some(
                         "The total number of records matching the `filter` criteria".to_string(),
                     ),
@@ -4408,33 +4407,14 @@ fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
         return false;
     };
 
-    let is_numeric = |name: &str| {
-        matches!(
-            name,
-            "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
-        )
-    };
-    let is_string = |name: &str| {
-        matches!(
-            name,
-            "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
-        )
-    };
-    let is_datetime = |name: &str| {
-        matches!(
-            name,
-            "date" | "time" | "timetz" | "timestamp" | "timestamptz"
-        )
-    };
-    let is_boolean = |name: &str| matches!(name, "bool");
-    let is_uuid = |name: &str| matches!(name, "uuid");
+    // Removed duplicated closures, will use helper functions below
 
     match op {
         // Sum/Avg only make sense for numeric types
         AggregateOperation::Sum | AggregateOperation::Avg => {
             // Check category first for arrays/enums, then check name for base types
             match type_.category {
-                TypeCategory::Other => is_numeric(&type_.name),
+                TypeCategory::Other => is_pg_numeric_type(&type_.name),
                 _ => false, // Only allow sum/avg on base numeric types for now
             }
         }
@@ -4442,10 +4422,10 @@ fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
         AggregateOperation::Min | AggregateOperation::Max => {
             match type_.category {
                 TypeCategory::Other => {
-                    is_numeric(&type_.name)
-                        || is_string(&type_.name)
-                        || is_datetime(&type_.name)
-                        || is_boolean(&type_.name)
+                    is_pg_numeric_type(&type_.name)
+                        || is_pg_string_type(&type_.name)
+                        || is_pg_datetime_type(&type_.name)
+                        || is_pg_boolean_type(&type_.name)
                 }
                 _ => false, // Don't allow min/max on composites, arrays, tables, pseudo
             }
@@ -4459,54 +4439,36 @@ fn aggregate_result_type(column: &Column, op: &AggregateOperation) -> Option<Sca
         return None;
     };
 
-    // Use the same helpers as is_aggregatable
-    let is_numeric = |name: &str| {
-        matches!(
-            name,
-            "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
-        )
-    };
-    let is_string = |name: &str| {
-        matches!(
-            name,
-            "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
-        )
-    };
-    let is_datetime = |name: &str| {
-        matches!(
-            name,
-            "date" | "time" | "timetz" | "timestamp" | "timestamptz"
-        )
-    };
-    let is_boolean = |name: &str| matches!(name, "bool");
+    // Removed duplicated closures, will use helper functions below
 
     match op {
         AggregateOperation::Sum => {
-            // SUM of integers often results in bigint, SUM of float/numeric results in numeric/bigfloat
+            // SUM of integers often results in bigint
+            // SUM of float/numeric results in bigfloat
             // Let's simplify and return BigInt for int-like, BigFloat otherwise
             if matches!(type_.name.as_str(), "int2" | "int4" | "int8") {
                 Some(Scalar::BigInt)
-            } else if is_numeric(&type_.name) {
+            } else if is_pg_numeric_type(&type_.name) {
                 Some(Scalar::BigFloat)
             } else {
                 None
             }
         }
         AggregateOperation::Avg => {
-            if is_numeric(&type_.name) {
+            if is_pg_numeric_type(&type_.name) {
                 Some(Scalar::BigFloat)
             } else {
                 None
             }
         }
         AggregateOperation::Min | AggregateOperation::Max => {
-            if is_numeric(&type_.name) {
+            if is_pg_numeric_type(&type_.name) {
                 sql_type_to_scalar(&type_.name, column.max_characters)
-            } else if is_string(&type_.name) {
+            } else if is_pg_string_type(&type_.name) {
                 Some(Scalar::String(column.max_characters))
-            } else if is_datetime(&type_.name) {
+            } else if is_pg_datetime_type(&type_.name) {
                 sql_type_to_scalar(&type_.name, column.max_characters)
-            } else if is_boolean(&type_.name) {
+            } else if is_pg_boolean_type(&type_.name) {
                 Some(Scalar::Boolean)
             } else {
                 None
@@ -4696,4 +4658,30 @@ fn sql_type_to_scalar(sql_type_name: &str, typmod: Option<i32>) -> Option<Scalar
         "json" | "jsonb" => Some(Scalar::JSON),
         _ => Some(Scalar::Opaque), // Fallback for unknown types
     }
+}
+
+// Helper functions for PostgreSQL type checking (extracted to deduplicate)
+fn is_pg_numeric_type(name: &str) -> bool {
+    matches!(
+        name,
+        "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
+    )
+}
+
+fn is_pg_string_type(name: &str) -> bool {
+    matches!(
+        name,
+        "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
+    )
+}
+
+fn is_pg_datetime_type(name: &str) -> bool {
+    matches!(
+        name,
+        "date" | "time" | "timetz" | "timestamp" | "timestamptz"
+    )
+}
+
+fn is_pg_boolean_type(name: &str) -> bool {
+    matches!(name, "bool")
 }

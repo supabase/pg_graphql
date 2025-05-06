@@ -934,7 +934,12 @@ impl ConnectionBuilder {
                         AggregateSelection::Avg { .. } => "avg",
                         AggregateSelection::Min { .. } => "min",
                         AggregateSelection::Max { .. } => "max",
-                        _ => unreachable!(),
+                        AggregateSelection::Count { .. } => {
+                            unreachable!("Count should be handled by its own arm")
+                        }
+                        AggregateSelection::Typename { .. } => {
+                            unreachable!("Typename should be handled by its own arm")
+                        }
                     };
 
                     let mut field_selections = vec![];
@@ -946,7 +951,7 @@ impl ConnectionBuilder {
                         let col_sql_casted = if pg_func == "avg" {
                             format!("{}::numeric", col_sql)
                         } else {
-                            col_sql.clone()
+                            col_sql
                         };
                         // Produces: 'col_alias', agg_func(col)
                         field_selections.push(format!(
@@ -1050,8 +1055,7 @@ impl ConnectionBuilder {
         let offset = self.offset.unwrap_or(0);
 
         // Determine if aggregates are requested based on if we generated a select list
-        let requested_aggregates =
-            self.aggregate_builder.is_some() && aggregate_select_list.is_some();
+        let requested_aggregates = aggregate_select_list.is_some();
 
         // initialized assuming forwards pagination
         let mut has_next_page_query = format!(
@@ -1105,7 +1109,10 @@ impl ConnectionBuilder {
 
         // Build aggregate CTE if requested
         let aggregate_cte = if requested_aggregates {
-            let select_list_str = aggregate_select_list.unwrap_or_default(); // Safe unwrap due to requested_aggregates check
+            let select_list_str = match aggregate_select_list {
+                Some(list) => list,
+                None => String::new(),
+            };
             format!(
                 r#"
                 ,__aggregates(agg_result) as (
