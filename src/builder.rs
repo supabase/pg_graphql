@@ -791,7 +791,7 @@ pub struct ConnectionBuilder {
 
     //fields
     pub selections: Vec<ConnectionSelection>,
-    pub aggregate_selection: Option<AggregateBuilder>,
+    pub aggregate_builder: Option<AggregateBuilder>,
 
     pub max_rows: u64,
 }
@@ -1553,7 +1553,7 @@ where
                 filter,
                 order_by,
                 selections: builder_fields,
-                aggregate_selection: aggregate_builder,
+                aggregate_builder,
                 max_rows,
             })
         }

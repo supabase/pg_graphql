@@ -917,7 +917,7 @@ impl ConnectionBuilder {
         quoted_block_name: &str,
         // param_context: &mut ParamContext, // No longer needed here
     ) -> Result<Option<String>, String> {
-        let Some(ref agg_builder) = self.aggregate_selection else {
+        let Some(ref agg_builder) = self.aggregate_builder else {
             return Ok(None);
         };
 
@@ -1055,7 +1055,7 @@ impl ConnectionBuilder {
 
         // Determine if aggregates are requested based on if we generated a select list
         let requested_aggregates =
-            self.aggregate_selection.is_some() && aggregate_select_list.is_some();
+            self.aggregate_builder.is_some() && aggregate_select_list.is_some();
 
         // initialized assuming forwards pagination
         let mut has_next_page_query = format!(
@@ -1141,7 +1141,7 @@ impl ConnectionBuilder {
         // Clause to merge the aggregate result if requested
         let aggregate_merge_clause = if requested_aggregates {
             let agg_alias = self
-                .aggregate_selection
+                .aggregate_builder
                 .as_ref()
                 .map_or("aggregate".to_string(), |b| b.alias.clone());
             format!(
