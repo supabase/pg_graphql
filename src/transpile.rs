@@ -912,11 +912,7 @@ impl ConnectionBuilder {
     }
 
     // Generates the *contents* of the aggregate jsonb_build_object
-    fn aggregate_select_list(
-        &self,
-        quoted_block_name: &str,
-        // param_context: &mut ParamContext, // No longer needed here
-    ) -> Result<Option<String>, String> {
+    fn aggregate_select_list(&self, quoted_block_name: &str) -> Result<Option<String>, String> {
         let Some(ref agg_builder) = self.aggregate_builder else {
             return Ok(None);
         };
