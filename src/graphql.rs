@@ -4401,6 +4401,39 @@ pub enum AggregateOperation {
     // Count is handled directly in AggregateType
 }
 
+impl AggregateOperation {
+    // Helper for descriptive terms used in descriptions
+    fn descriptive_term(&self) -> &str {
+        match self {
+            AggregateOperation::Sum => "summation",
+            AggregateOperation::Avg => "average",
+            AggregateOperation::Min => "minimum",
+            AggregateOperation::Max => "maximum",
+        }
+    }
+
+    // Helper for capitalized descriptive terms used in field descriptions
+    fn capitalized_descriptive_term(&self) -> &str {
+        match self {
+            AggregateOperation::Sum => "Sum",
+            AggregateOperation::Avg => "Average",
+            AggregateOperation::Min => "Minimum",
+            AggregateOperation::Max => "Maximum",
+        }
+    }
+}
+
+impl std::fmt::Display for AggregateOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AggregateOperation::Sum => write!(f, "Sum"),
+            AggregateOperation::Avg => write!(f, "Avg"), // GraphQL schema uses "Avg" for the type name part
+            AggregateOperation::Min => write!(f, "Min"),
+            AggregateOperation::Max => write!(f, "Max"),
+        }
+    }
+}
+
 /// Determines if a column's type is suitable for a given aggregate operation.
 fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
     let Some(ref type_) = column.type_ else {
@@ -4583,25 +4616,18 @@ impl ___Type for AggregateNumericType {
 
     fn name(&self) -> Option<String> {
         let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
-        let op_name = match self.aggregate_op {
-            AggregateOperation::Sum => "Sum",
-            AggregateOperation::Avg => "Avg",
-            AggregateOperation::Min => "Min",
-            AggregateOperation::Max => "Max",
-        };
-        Some(format!("{table_base_type_name}{op_name}AggregateResult"))
+        // Use Display trait for op_name
+        Some(format!(
+            "{table_base_type_name}{}AggregateResult",
+            self.aggregate_op
+        ))
     }
 
     fn description(&self) -> Option<String> {
         let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
-        let op_desc = match self.aggregate_op {
-            AggregateOperation::Sum => "summation",
-            AggregateOperation::Avg => "average",
-            AggregateOperation::Min => "minimum",
-            AggregateOperation::Max => "maximum",
-        };
         Some(format!(
-            "Result of {op_desc} aggregation for `{table_base_type_name}`"
+            "Result of {} aggregation for `{table_base_type_name}`",
+            self.aggregate_op.descriptive_term()
         ))
     }
 
@@ -4618,12 +4644,7 @@ impl ___Type for AggregateNumericType {
                         args: vec![],
                         description: Some(format!(
                             "{} of {} across all matching records",
-                            match self.aggregate_op {
-                                AggregateOperation::Sum => "Sum",
-                                AggregateOperation::Avg => "Average",
-                                AggregateOperation::Min => "Minimum",
-                                AggregateOperation::Max => "Maximum",
-                            },
+                            self.aggregate_op.capitalized_descriptive_term(),
                             field_name
                         )),
                         deprecation_reason: None,
