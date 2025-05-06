@@ -1503,7 +1503,6 @@ where
                                 &selection_field,
                                 fragment_definitions,
                                 variables,
-                                variable_definitions,
                             )?;
                             builder_fields.push(ConnectionSelection::Aggregate(agg_builder));
                         }
@@ -1573,7 +1572,6 @@ fn to_aggregate_builder<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
-    variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<AggregateBuilder, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
@@ -1613,7 +1611,6 @@ where
                     &selection_field,
                     fragment_definitions,
                     variables,
-                    variable_definitions,
                 )?;
                 match field_name {
                     "sum" => selections.push(AggregateSelection::Sum {
@@ -1655,7 +1652,6 @@ fn parse_aggregate_numeric_selections<'a, T>(
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
     variables: &serde_json::Value,
-    _variable_definitions: &Vec<VariableDefinition<'a, T>>,
 ) -> Result<Vec<ColumnBuilder>, String>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
