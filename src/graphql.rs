@@ -4479,7 +4479,7 @@ fn aggregate_result_type(column: &Column, op: &AggregateOperation) -> Option<Sca
             // SUM of integers often results in bigint
             // SUM of float/numeric results in bigfloat
             // Let's simplify and return BigInt for int-like, BigFloat otherwise
-            if matches!(type_.name.as_str(), "int2" | "int4" | "int8") {
+            if is_pg_small_integer_type(&type_.name) {
                 Some(Scalar::BigInt)
             } else if is_pg_numeric_type(&type_.name) {
                 Some(Scalar::BigFloat)
@@ -4705,4 +4705,8 @@ fn is_pg_datetime_type(name: &str) -> bool {
 
 fn is_pg_boolean_type(name: &str) -> bool {
     matches!(name, "bool")
+}
+
+fn is_pg_small_integer_type(name: &str) -> bool {
+    matches!(name, "int2" | "int4" | "int8")
 }

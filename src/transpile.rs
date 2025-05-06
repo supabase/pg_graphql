@@ -879,7 +879,9 @@ impl ConnectionBuilder {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(frags.join(", "))
+        // Filter out empty strings from ConnectionSelection::Aggregate to_sql
+        let non_empty_frags: Vec<String> = frags.into_iter().filter(|s| !s.is_empty()).collect();
+        Ok(non_empty_frags.join(", "))
     }
 
     fn limit_clause(&self) -> u64 {
@@ -913,7 +915,10 @@ impl ConnectionBuilder {
 
     // Generates the *contents* of the aggregate jsonb_build_object
     fn aggregate_select_list(&self, quoted_block_name: &str) -> Result<Option<String>, String> {
-        let Some(ref agg_builder) = self.aggregate_builder else {
+        let Some(agg_builder) = self.selections.iter().find_map(|sel| match sel {
+            ConnectionSelection::Aggregate(builder) => Some(builder),
+            _ => None,
+        }) else {
             return Ok(None);
         };
 
@@ -1144,9 +1149,15 @@ impl ConnectionBuilder {
         // Clause to merge the aggregate result if requested
         let aggregate_merge_clause = if requested_aggregates {
             let agg_alias = self
-                .aggregate_builder
-                .as_ref()
-                .map_or("aggregate".to_string(), |b| b.alias.clone());
+                .selections
+                .iter()
+                .find_map(|sel| match sel {
+                    ConnectionSelection::Aggregate(builder) => Some(builder.alias.clone()),
+                    _ => None,
+                })
+                .ok_or(
+                    "Internal Error: Aggregate builder not found when requested_aggregates is true",
+                )?;
             format!(
                 "|| jsonb_build_object({}, coalesce(__aggregates.agg_result, '{{}}'::jsonb))",
                 quote_literal(&agg_alias)
@@ -1319,6 +1330,7 @@ impl ConnectionSelection {
             Self::Typename { alias, typename } => {
                 format!("{}, {}", quote_literal(alias), quote_literal(typename))
             }
+            Self::Aggregate(_) => String::new(), // Aggregate is handled in the ConnectionBuilder
         })
     }
 }

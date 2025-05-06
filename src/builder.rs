@@ -791,8 +791,6 @@ pub struct ConnectionBuilder {
 
     //fields
     pub selections: Vec<ConnectionSelection>,
-    pub aggregate_builder: Option<AggregateBuilder>,
-
     pub max_rows: u64,
 }
 
@@ -961,6 +959,7 @@ pub enum ConnectionSelection {
     Edge(EdgeBuilder),
     PageInfo(PageInfoBuilder),
     Typename { alias: String, typename: String },
+    Aggregate(AggregateBuilder),
 }
 
 #[derive(Clone, Debug)]
@@ -1463,7 +1462,6 @@ where
                 read_argument_order_by(field, query_field, variables, variable_definitions)?;
 
             let mut builder_fields: Vec<ConnectionSelection> = vec![];
-            let mut aggregate_builder: Option<AggregateBuilder> = None;
 
             let selection_fields = normalize_selection_set(
                 &query_field.selection_set,
@@ -1475,38 +1473,45 @@ where
             for selection_field in selection_fields {
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err("unknown field in connection".to_string()),
-                    Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
-                        __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
-                            f,
-                            &selection_field,
-                            fragment_definitions,
-                            variables,
-                            variable_definitions,
-                        )?),
-                        __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
-                            f,
-                            &selection_field,
-                            fragment_definitions,
-                            variables,
-                        )?),
-                        __Type::Aggregate(_) => {
-                            aggregate_builder = Some(to_aggregate_builder(
+                    Some(f) => match &f.type_.unmodified_type() {
+                        __Type::Edge(_) => {
+                            builder_fields.push(ConnectionSelection::Edge(to_edge_builder(
                                 f,
                                 &selection_field,
                                 fragment_definitions,
                                 variables,
                                 variable_definitions,
-                            )?);
-                            ConnectionSelection::Typename {
-                                alias: alias_or_name(&selection_field),
-                                typename: xtype.name().expect("connection type should have a name"),
+                            )?))
+                        }
+                        __Type::PageInfo(_) => builder_fields.push(ConnectionSelection::PageInfo(
+                            to_page_info_builder(
+                                f,
+                                &selection_field,
+                                fragment_definitions,
+                                variables,
+                            )?,
+                        )),
+                        __Type::Aggregate(_) => {
+                            if builder_fields
+                                .iter()
+                                .any(|sel| matches!(sel, ConnectionSelection::Aggregate(_)))
+                            {
+                                return Err("Multiple aggregate selections on a single connection are not supported.".to_string());
                             }
+                            let agg_builder = to_aggregate_builder(
+                                f,
+                                &selection_field,
+                                fragment_definitions,
+                                variables,
+                                variable_definitions,
+                            )?;
+                            builder_fields.push(ConnectionSelection::Aggregate(agg_builder));
                         }
                         __Type::Scalar(Scalar::Int) => {
                             if selection_field.name.as_ref() == "totalCount" {
-                                ConnectionSelection::TotalCount {
+                                builder_fields.push(ConnectionSelection::TotalCount {
                                     alias: alias_or_name(&selection_field),
-                                }
+                                });
                             } else {
                                 return Err(format!(
                                     "Unsupported field type for connection field {}",
@@ -1516,12 +1521,12 @@ where
                         }
                         __Type::Scalar(Scalar::String(None)) => {
                             if selection_field.name.as_ref() == "__typename" {
-                                ConnectionSelection::Typename {
+                                builder_fields.push(ConnectionSelection::Typename {
                                     alias: alias_or_name(&selection_field),
                                     typename: xtype
                                         .name()
                                         .expect("connection type should have a name"),
-                                }
+                                });
                             } else {
                                 return Err(format!(
                                     "Unsupported field type for connection field {}",
@@ -1535,7 +1540,7 @@ where
                                 selection_field.name.as_ref()
                             ))
                         }
-                    }),
+                    },
                 }
             }
 
@@ -1553,7 +1558,6 @@ where
                 filter,
                 order_by,
                 selections: builder_fields,
-                aggregate_builder,
                 max_rows,
             })
         }
@@ -1635,7 +1639,11 @@ where
                     }
                     "__typename" => selections.push(AggregateSelection::Typename {
                         alias: sub_alias,
-                        typename: sub_field.type_().name().ok_or("Typename missing")?,
+                        typename: field
+                            .type_()
+                            .name()
+                            .ok_or("Name for aggregate field's type not found")?
+                            .to_string(),
                     }),
                     _ => return Err(format!("Unknown aggregate field: {}", field_name)),
                 }
