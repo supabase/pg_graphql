@@ -1,6 +1,6 @@
 begin;
     -- Set up test tables with different primary key configurations
-    
+
     -- Table with single column integer primary key
     create table person(
         id int primary key,
@@ -171,7 +171,7 @@ begin;
                 ...PersonFields
               }
             }
-            
+
             fragment PersonFields on Person {
               id
               name
@@ -193,4 +193,4 @@ begin;
         $$)
     );
 
-rollback; 
+rollback;
