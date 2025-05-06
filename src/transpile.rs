@@ -1251,13 +1251,13 @@ impl PageInfoSelection {
         Ok(match self {
             Self::StartCursor { alias } => {
                 format!(
-                    "{}, CASE WHEN __has_records.has_records THEN (array_agg({cursor_clause} order by {order_by_clause}))[1] ELSE NULL END",
+                    "{}, case when __has_records.has_records then (array_agg({cursor_clause} order by {order_by_clause}))[1] else null end",
                     quote_literal(alias)
                 )
             }
             Self::EndCursor { alias } => {
                 format!(
-                    "{}, CASE WHEN __has_records.has_records THEN (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1] ELSE NULL END",
+                    "{}, case when __has_records.has_records then (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1] else null end",
                     quote_literal(alias)
                 )
             }
@@ -1339,7 +1339,7 @@ impl EdgeBuilder {
         // Create a filter clause that checks if any primary key column is not NULL
         let filter_clause = if let Some(pk_col) = first_pk_col {
             format!(
-                "FILTER (WHERE {}.{} IS NOT NULL)",
+                "filter (where {}.{} is not null)",
                 block_name,
                 quote_ident(pk_col)
             )
