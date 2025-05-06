@@ -382,7 +382,7 @@ begin;
  {"data": {"blogPostCollection": {"aggregate": {"count": 3}}}}
 (1 row)
 
-    -- Test Case 15: UUID field aggregation 
+    -- Test Case 15: UUID field aggregation
     -- This test verifies that UUID fields are intentionally excluded from min/max aggregation.
     -- UUIDs don't have a meaningful natural ordering for aggregation purposes, so they're explicitly
     -- excluded from the list of types that can be aggregated with min/max.
@@ -471,3 +471,4 @@ begin;
  {"data": {"blogCollection": {"edges": [{"node": {"name": "A: Blog 1", "blogPostCollection": {"aggregate": {"count": 1}}}}, {"node": {"name": "A: Blog 2", "blogPostCollection": {"aggregate": {"count": 2}}}}, {"node": {"name": "A: Blog 3", "blogPostCollection": {"aggregate": {"count": 0}}}}, {"node": {"name": "B: Blog 3", "blogPostCollection": {"aggregate": {"count": 1}}}}]}}}
 (1 row)
 
+rollback;
