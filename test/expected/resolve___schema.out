@@ -59,14 +59,6 @@ begin;
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "OBJECT",                                                                            +
-                     "name": "AccountAggregate"                                                                   +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "AccountAvgAggregateResult"                                                          +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
                      "name": "AccountConnection"                                                                  +
                  },                                                                                               +
                  {                                                                                                +
@@ -90,20 +82,8 @@ begin;
                      "name": "AccountInsertResponse"                                                              +
                  },                                                                                               +
                  {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "AccountMaxAggregateResult"                                                          +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "AccountMinAggregateResult"                                                          +
-                 },                                                                                               +
-                 {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
                      "name": "AccountOrderBy"                                                                     +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "AccountSumAggregateResult"                                                          +
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
@@ -143,14 +123,6 @@ begin;
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "OBJECT",                                                                            +
-                     "name": "BlogAggregate"                                                                      +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogAvgAggregateResult"                                                             +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
                      "name": "BlogConnection"                                                                     +
                  },                                                                                               +
                  {                                                                                                +
@@ -174,28 +146,12 @@ begin;
                      "name": "BlogInsertResponse"                                                                 +
                  },                                                                                               +
                  {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogMaxAggregateResult"                                                             +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogMinAggregateResult"                                                             +
-                 },                                                                                               +
-                 {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
                      "name": "BlogOrderBy"                                                                        +
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "OBJECT",                                                                            +
                      "name": "BlogPost"                                                                           +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogPostAggregate"                                                                  +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogPostAvgAggregateResult"                                                         +
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "OBJECT",                                                                            +
@@ -222,14 +178,6 @@ begin;
                      "name": "BlogPostInsertResponse"                                                             +
                  },                                                                                               +
                  {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogPostMaxAggregateResult"                                                         +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogPostMinAggregateResult"                                                         +
-                 },                                                                                               +
-                 {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
                      "name": "BlogPostOrderBy"                                                                    +
                  },                                                                                               +
@@ -242,20 +190,12 @@ begin;
                      "name": "BlogPostStatusFilter"                                                               +
                  },                                                                                               +
                  {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogPostSumAggregateResult"                                                         +
-                 },                                                                                               +
-                 {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +
                      "name": "BlogPostUpdateInput"                                                                +
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "OBJECT",                                                                            +
                      "name": "BlogPostUpdateResponse"                                                             +
-                 },                                                                                               +
-                 {                                                                                                +
-                     "kind": "OBJECT",                                                                            +
-                     "name": "BlogSumAggregateResult"                                                             +
                  },                                                                                               +
                  {                                                                                                +
                      "kind": "INPUT_OBJECT",                                                                      +

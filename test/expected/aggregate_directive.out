@@ -1,5 +1,4 @@
 begin;
-
 -- Create a simple table without any directives
 create table product(
     id serial primary key,
@@ -7,13 +6,11 @@ create table product(
     price numeric not null,
     stock int not null
 );
-
 insert into product(name, price, stock)
 values
     ('Widget', 9.99, 100),
     ('Gadget', 19.99, 50),
     ('Gizmo', 29.99, 25);
-
 -- Try to query aggregate without enabling the directive - should fail
 select graphql.resolve($$
 {
@@ -31,7 +28,6 @@ $$);
 
 -- Enable aggregates
 comment on table product is e'@graphql({"aggregate": {"enabled": true}})';
-
 -- Now aggregates should be available - should succeed
 select graphql.resolve($$
 {
@@ -56,9 +52,9 @@ select graphql.resolve($$
   }
 }
 $$);
-                                                                           resolve                                                                            
---------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"data": {"productCollection": {"aggregate": {"avg": {"price": 19.99}, "count": 3, "max": {"name": "Widget", "price": 29.99}, "min": {"stock": 25}, "sum": {"price": 59.97, "stock": 175}}}}}
+                                                                                            resolve                                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"productCollection": {"aggregate": {"avg": {"price": 19.99}, "max": {"name": "Widget", "price": 29.99}, "min": {"stock": 25}, "sum": {"price": 59.97, "stock": 175}, "count": 3}}}}
 (1 row)
 
 rollback; 

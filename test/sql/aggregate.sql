@@ -56,8 +56,9 @@ begin;
         ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 1 in B Blog 3', 'Content for post 1 in B Blog 3', '{"tech", "review"}', 'RELEASED', '2025-04-27 12:00:00'),
         ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 2 in B Blog 3', 'Content for post 2 in B Blog 3', '{"coding", "tutorial"}', 'PENDING', '2025-05-02 12:00:00');
 
-
-    comment on table blog_post is e'@graphql({"totalCount": {"enabled": true}})';
+    comment on table account is e'@graphql({"totalCount": {"enabled": true}, "aggregate": {"enabled": true}})';
+    comment on table blog is e'@graphql({"totalCount": {"enabled": true}, "aggregate": {"enabled": true}})';
+    comment on table blog_post is e'@graphql({"totalCount": {"enabled": true}, "aggregate": {"enabled": true}})';
 
     -- Test Case 1: Basic Count on accountCollection
     select graphql.resolve($$

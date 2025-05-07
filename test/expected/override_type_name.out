@@ -18,23 +18,18 @@ begin;
             '$.data.__schema.types[*].name ? (@ starts with "UserAccount")'
         )
     );
-          jsonb_pretty           
----------------------------------
+        jsonb_pretty         
+-----------------------------
  "UserAccount"
- "UserAccountAggregate"
- "UserAccountAvgAggregateResult"
  "UserAccountConnection"
  "UserAccountDeleteResponse"
  "UserAccountEdge"
  "UserAccountFilter"
  "UserAccountInsertInput"
  "UserAccountInsertResponse"
- "UserAccountMaxAggregateResult"
- "UserAccountMinAggregateResult"
  "UserAccountOrderBy"
- "UserAccountSumAggregateResult"
  "UserAccountUpdateInput"
  "UserAccountUpdateResponse"
-(15 rows)
+(10 rows)
 
 rollback;
