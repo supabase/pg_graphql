@@ -471,4 +471,31 @@ begin;
  {"data": {"blogCollection": {"edges": [{"node": {"name": "A: Blog 1", "blogPostCollection": {"aggregate": {"count": 1}}}}, {"node": {"name": "A: Blog 2", "blogPostCollection": {"aggregate": {"count": 2}}}}, {"node": {"name": "A: Blog 3", "blogPostCollection": {"aggregate": {"count": 0}}}}, {"node": {"name": "B: Blog 3", "blogPostCollection": {"aggregate": {"count": 1}}}}]}}}
 (1 row)
 
+    -- Test Case 19: aliases test case
+    select graphql.resolve($$
+        query {
+            blogCollection {
+                agg: aggregate {
+                    cnt: count
+                    total: sum {
+                        identifier: id
+                    }
+                    average: avg {
+                        identifier: id
+                    }
+                    minimum: min {
+                        identifier: id
+                    }
+                    maximum: max {
+                        identifier: id
+                    }
+                }
+            }
+        }
+    $$);
+                                                                                  resolve                                                                                   
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"blogCollection": {"agg": {"cnt": 4, "total": {"identifier": 10}, "average": {"identifier": 2.5}, "maximum": {"identifier": 4}, "minimum": {"identifier": 1}}}}}
+(1 row)
+
 rollback;

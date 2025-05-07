@@ -413,4 +413,28 @@ begin;
         }
     $$);
 
+
+    -- Test Case 19: aliases test case
+    select graphql.resolve($$
+        query {
+            blogCollection {
+                agg: aggregate {
+                    cnt: count
+                    total: sum {
+                        identifier: id
+                    }
+                    average: avg {
+                        identifier: id
+                    }
+                    minimum: min {
+                        identifier: id
+                    }
+                    maximum: max {
+                        identifier: id
+                    }
+                }
+            }
+        }
+    $$);
+
 rollback;
