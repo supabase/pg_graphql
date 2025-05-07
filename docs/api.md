@@ -1,4 +1,3 @@
-
 In our API, each SQL table is reflected as a set of GraphQL types. At a high level, tables become types and columns/foreign keys become fields on those types.
 
 
@@ -269,7 +268,7 @@ Connections wrap a result set with some additional metadata.
 
 #### Aggregates
 
-Aggregate functions are available on the collection's `aggregate` field. These allow you to perform calculations on the collection of records that match your filter criteria.
+Aggregate functions are available on the collection's `aggregate` field when enabled via [comment directive](configuration.md#aggregate). These allow you to perform calculations on the collection of records that match your filter criteria.
 
 The supported aggregate operations are:
 
@@ -433,6 +432,10 @@ The supported aggregate operations are:
     - The return type for `sum` depends on the input type: integer fields return `BigInt`, while other numeric fields return `BigFloat`.
     - The return type for `avg` is always `BigFloat`.
     - The return types for `min` and `max` match the original field types.
+
+!!! note
+
+    The `aggregate` field is disabled by default because it can be expensive on large tables. To enable it use a [comment directive](configuration.md#Aggregate)
 
 #### Pagination
 

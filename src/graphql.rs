@@ -1745,21 +1745,26 @@ impl ___Type for ConnectionType {
             }
         }
 
-        let aggregate = __Field {
-            name_: "aggregate".to_string(),
-            type_: __Type::Aggregate(AggregateType {
-                table: Arc::clone(&self.table),
-                schema: self.schema.clone(),
-            }),
-            args: vec![],
-            description: Some(format!(
-                "Aggregate functions calculated on the collection of `{table_base_type_name}`"
-            )),
-            deprecation_reason: None,
-            sql_type: None,
-        };
+        // Conditionally add aggregate based on the directive
+        if let Some(aggregate_directive) = self.table.directives.aggregate.as_ref() {
+            if aggregate_directive.enabled {
+                let aggregate = __Field {
+                    name_: "aggregate".to_string(),
+                    type_: __Type::Aggregate(AggregateType {
+                        table: Arc::clone(&self.table),
+                        schema: self.schema.clone(),
+                    }),
+                    args: vec![],
+                    description: Some(format!(
+                        "Aggregate functions calculated on the collection of `{table_base_type_name}`"
+                    )),
+                    deprecation_reason: None,
+                    sql_type: None,
+                };
+                fields.push(aggregate);
+            }
+        }
 
-        fields.push(aggregate); // Add aggregate last
         Some(fields)
     }
 }
@@ -4222,43 +4227,48 @@ impl __Schema {
 
             // Add Aggregate types if the table is selectable
             if self.graphql_table_select_types_are_valid(table) {
-                types_.push(__Type::Aggregate(AggregateType {
-                    table: Arc::clone(table),
-                    schema: Arc::clone(&schema_rc),
-                }));
-                // Check if there are any columns aggregatable by sum/avg
-                if table
-                    .columns
-                    .iter()
-                    .any(|c| is_aggregatable(c, &AggregateOperation::Sum))
-                {
-                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                        table: Arc::clone(table),
-                        schema: Arc::clone(&schema_rc),
-                        aggregate_op: AggregateOperation::Sum,
-                    }));
-                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                        table: Arc::clone(table),
-                        schema: Arc::clone(&schema_rc),
-                        aggregate_op: AggregateOperation::Avg,
-                    }));
-                }
-                // Check if there are any columns aggregatable by min/max
-                if table
-                    .columns
-                    .iter()
-                    .any(|c| is_aggregatable(c, &AggregateOperation::Min))
-                {
-                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                        table: Arc::clone(table),
-                        schema: Arc::clone(&schema_rc),
-                        aggregate_op: AggregateOperation::Min,
-                    }));
-                    types_.push(__Type::AggregateNumeric(AggregateNumericType {
-                        table: Arc::clone(table),
-                        schema: Arc::clone(&schema_rc),
-                        aggregate_op: AggregateOperation::Max,
-                    }));
+                // Only add aggregate types if the directive is enabled
+                if let Some(aggregate_directive) = table.directives.aggregate.as_ref() {
+                    if aggregate_directive.enabled {
+                        types_.push(__Type::Aggregate(AggregateType {
+                            table: Arc::clone(table),
+                            schema: Arc::clone(&schema_rc),
+                        }));
+                        // Check if there are any columns aggregatable by sum/avg
+                        if table
+                            .columns
+                            .iter()
+                            .any(|c| is_aggregatable(c, &AggregateOperation::Sum))
+                        {
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Sum,
+                            }));
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Avg,
+                            }));
+                        }
+                        // Check if there are any columns aggregatable by min/max
+                        if table
+                            .columns
+                            .iter()
+                            .any(|c| is_aggregatable(c, &AggregateOperation::Min))
+                        {
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Min,
+                            }));
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Max,
+                            }));
+                        }
+                    }
                 }
             }
         }

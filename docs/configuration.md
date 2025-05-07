@@ -95,6 +95,41 @@ create table "BlogPost"(
 comment on table "BlogPost" is e'@graphql({"totalCount": {"enabled": true}})';
 ```
 
+### Aggregate
+
+The `aggregate` field is an opt-in field that extends a table's Connection type. It provides various aggregate functions like count, sum, avg, min, and max that operate on the collection of records that match the query's filters.
+
+```graphql
+type BlogPostConnection {
+  edges: [BlogPostEdge!]!
+  pageInfo: PageInfo!
+  
+  """Aggregate functions calculated on the collection of `BlogPost`"""
+  aggregate: BlogPostAggregate # this field
+}
+```
+
+To enable the `aggregate` field for a table, use the directive:
+
+```sql
+comment on table "BlogPost" is e'@graphql({"aggregate": {"enabled": true}})';
+```
+
+For example:
+```sql
+create table "BlogPost"(
+    id serial primary key,
+    title varchar(255) not null,
+    rating int not null
+);
+comment on table "BlogPost" is e'@graphql({"aggregate": {"enabled": true}})';
+```
+
+You can combine both totalCount and aggregate directives:
+
+```sql
+comment on table "BlogPost" is e'@graphql({"totalCount": {"enabled": true}, "aggregate": {"enabled": true}})';
+```
 
 ### Renaming
 
