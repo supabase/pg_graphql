@@ -23,19 +23,19 @@ pub enum AggregateSelection {
     },
     Sum {
         alias: String,
-        selections: Vec<ColumnBuilder>,
+        column_builders: Vec<ColumnBuilder>,
     },
     Avg {
         alias: String,
-        selections: Vec<ColumnBuilder>,
+        column_builders: Vec<ColumnBuilder>,
     },
     Min {
         alias: String,
-        selections: Vec<ColumnBuilder>,
+        column_builders: Vec<ColumnBuilder>,
     },
     Max {
         alias: String,
-        selections: Vec<ColumnBuilder>,
+        column_builders: Vec<ColumnBuilder>,
     },
     Typename {
         alias: String,
@@ -1604,19 +1604,19 @@ where
                 match field_name {
                     "sum" => selections.push(AggregateSelection::Sum {
                         alias: sub_alias,
-                        selections: col_selections,
+                        column_builders: col_selections,
                     }),
                     "avg" => selections.push(AggregateSelection::Avg {
                         alias: sub_alias,
-                        selections: col_selections,
+                        column_builders: col_selections,
                     }),
                     "min" => selections.push(AggregateSelection::Min {
                         alias: sub_alias,
-                        selections: col_selections,
+                        column_builders: col_selections,
                     }),
                     "max" => selections.push(AggregateSelection::Max {
                         alias: sub_alias,
-                        selections: col_selections,
+                        column_builders: col_selections,
                     }),
                     _ => unreachable!("Outer match should cover all field names"),
                 }
@@ -1650,7 +1650,7 @@ where
     let __Type::AggregateNumeric(_) = type_ else {
         return Err("Internal Error: Expected AggregateNumericType".to_string());
     };
-    let mut col_selections = Vec::new();
+    let mut column_builers = Vec::new();
     let field_map = field_map(&type_);
     let type_name = type_.name().ok_or("AggregateNumeric type has no name")?;
     let selection_fields = normalize_selection_set(
@@ -1685,12 +1685,12 @@ where
 
         let alias = alias_or_name(&selection_field);
 
-        col_selections.push(ColumnBuilder {
+        column_builers.push(ColumnBuilder {
             alias,
             column: Arc::clone(column),
         });
     }
-    Ok(col_selections)
+    Ok(column_builers)
 }
 
 fn to_page_info_builder<'a, T>(

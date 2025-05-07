@@ -930,10 +930,22 @@ impl ConnectionBuilder {
                     // Produces: 'count_alias', count(*)
                     agg_selections.push(format!("{}, count(*)", quote_literal(alias)));
                 }
-                AggregateSelection::Sum { alias, selections }
-                | AggregateSelection::Avg { alias, selections }
-                | AggregateSelection::Min { alias, selections }
-                | AggregateSelection::Max { alias, selections } => {
+                AggregateSelection::Sum {
+                    alias,
+                    column_builders: selections,
+                }
+                | AggregateSelection::Avg {
+                    alias,
+                    column_builders: selections,
+                }
+                | AggregateSelection::Min {
+                    alias,
+                    column_builders: selections,
+                }
+                | AggregateSelection::Max {
+                    alias,
+                    column_builders: selections,
+                } => {
                     let pg_func = match selection {
                         AggregateSelection::Sum { .. } => "sum",
                         AggregateSelection::Avg { .. } => "avg",
