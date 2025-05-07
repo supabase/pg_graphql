@@ -4470,8 +4470,6 @@ fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
 fn aggregate_result_type(column: &Column, op: &AggregateOperation) -> Option<Scalar> {
     let type_ = column.type_.as_ref()?;
 
-    // Removed duplicated closures, will use helper functions below
-
     match op {
         AggregateOperation::Sum => {
             // SUM of integers often results in bigint
