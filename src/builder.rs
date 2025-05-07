@@ -1474,30 +1474,20 @@ where
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err("unknown field in connection".to_string()),
                     Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
-                        __Type::Edge(_) => {
-                            ConnectionSelection::Edge(to_edge_builder(
-                                f,
-                                &selection_field,
-                                fragment_definitions,
-                                variables,
-                                variable_definitions,
-                            )?)
-                        }
-                        __Type::PageInfo(_) => ConnectionSelection::PageInfo(
-                            to_page_info_builder(
-                                f,
-                                &selection_field,
-                                fragment_definitions,
-                                variables,
-                            )?,
-                        ),
+                        __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
+                            f,
+                            &selection_field,
+                            fragment_definitions,
+                            variables,
+                            variable_definitions,
+                        )?),
+                        __Type::PageInfo(_) => ConnectionSelection::PageInfo(to_page_info_builder(
+                            f,
+                            &selection_field,
+                            fragment_definitions,
+                            variables,
+                        )?),
                         __Type::Aggregate(_) => {
-                            if builder_fields
-                                .iter()
-                                .any(|sel| matches!(sel, ConnectionSelection::Aggregate(_)))
-                            {
-                                return Err("Multiple aggregate selections on a single connection are not supported.".to_string());
-                            }
                             ConnectionSelection::Aggregate(to_aggregate_builder(
                                 f,
                                 &selection_field,
