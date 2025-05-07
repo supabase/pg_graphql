@@ -1592,45 +1592,49 @@ where
         ))?;
         let sub_alias = alias_or_name(&selection_field);
 
-        match field_name {
-            "count" => selections.push(AggregateSelection::Count { alias: sub_alias }),
-            "sum" | "avg" | "min" | "max" => {
-                let col_selections = to_aggregate_column_builders(
-                    sub_field,
-                    &selection_field,
-                    fragment_definitions,
-                    variables,
-                )?;
-                match field_name {
-                    "sum" => selections.push(AggregateSelection::Sum {
-                        alias: sub_alias,
-                        column_builders: col_selections,
-                    }),
-                    "avg" => selections.push(AggregateSelection::Avg {
-                        alias: sub_alias,
-                        column_builders: col_selections,
-                    }),
-                    "min" => selections.push(AggregateSelection::Min {
-                        alias: sub_alias,
-                        column_builders: col_selections,
-                    }),
-                    "max" => selections.push(AggregateSelection::Max {
-                        alias: sub_alias,
-                        column_builders: col_selections,
-                    }),
-                    _ => unreachable!("Outer match should cover all field names"),
-                }
-            }
-            "__typename" => selections.push(AggregateSelection::Typename {
+        let col_selections = if field_name == "sum"
+            || field_name == "avg"
+            || field_name == "min"
+            || field_name == "max"
+        {
+            to_aggregate_column_builders(
+                sub_field,
+                &selection_field,
+                fragment_definitions,
+                variables,
+            )?
+        } else {
+            vec![]
+        };
+
+        selections.push(match field_name {
+            "count" => AggregateSelection::Count { alias: sub_alias },
+            "sum" => AggregateSelection::Sum {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "avg" => AggregateSelection::Avg {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "min" => AggregateSelection::Min {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "max" => AggregateSelection::Max {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "__typename" => AggregateSelection::Typename {
                 alias: sub_alias,
                 typename: field
                     .type_()
                     .name()
                     .ok_or("Name for aggregate field's type not found")?
                     .to_string(),
-            }),
+            },
             _ => return Err(format!("Unknown aggregate field: {}", field_name)),
-        }
+        })
     }
 
     Ok(AggregateBuilder { alias, selections })
