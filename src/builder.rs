@@ -1675,7 +1675,7 @@ where
                 col_name, type_name
             ));
         };
-        let Some(NodeSQLType::Column(column)) = sub_field.sql_type.clone() else {
+        let Some(NodeSQLType::Column(column)) = &sub_field.sql_type else {
             // We need the Arc<Column>! It should be available via the __Field's sql_type.
             return Err(format!(
                 "Internal error: Missing column info for aggregate field '{}'",
@@ -1685,7 +1685,10 @@ where
 
         let alias = alias_or_name(&selection_field);
 
-        col_selections.push(ColumnBuilder { alias, column });
+        col_selections.push(ColumnBuilder {
+            alias,
+            column: Arc::clone(column),
+        });
     }
     Ok(col_selections)
 }
