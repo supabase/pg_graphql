@@ -1680,7 +1680,6 @@ where
             ));
         };
         let Some(NodeSQLType::Column(column)) = &sub_field.sql_type else {
-            // We need the Arc<Column>! It should be available via the __Field's sql_type.
             return Err(format!(
                 "Internal error: Missing column info for aggregate field '{}'",
                 col_name
