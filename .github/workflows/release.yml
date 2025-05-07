@@ -1,11 +1,10 @@
 name: Release
 
-
 on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 permissions:
   contents: write
@@ -47,7 +46,7 @@ jobs:
           - 0.12.9
         postgres: [14, 15, 16, 17]
         box:
-          - { runner: ubuntu-20.04, arch: amd64 }
+          - { runner: ubuntu-latest, arch: amd64 }
           - { runner: arm-runner, arch: arm64 }
     runs-on: ${{ matrix.box.runner }}
     timeout-minutes: 90
