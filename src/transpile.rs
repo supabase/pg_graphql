@@ -869,19 +869,17 @@ impl ConnectionBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| {
+            .filter_map(|x| {
                 x.to_sql(
                     quoted_block_name,
                     &self.order_by,
                     &self.source.table,
                     param_context,
-                )
+                ).transpose()
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        // Filter out empty strings from ConnectionSelection::Aggregate to_sql
-        let non_empty_frags: Vec<String> = frags.into_iter().filter(|s| !s.is_empty()).collect();
-        Ok(non_empty_frags.join(", "))
+        Ok(frags.join(", "))
     }
 
     fn limit_clause(&self) -> u64 {
@@ -1314,32 +1312,30 @@ impl ConnectionSelection {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> Result<Option<String>, String> {
         Ok(match self {
-            Self::Edge(x) => {
-                format!(
-                    "{}, {}",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, order_by, table, param_context)?
-                )
-            }
-            Self::PageInfo(x) => {
-                format!(
-                    "{}, {}",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, order_by, table)?
-                )
-            }
-            Self::TotalCount { alias } => {
-                format!(
-                    "{}, coalesce(__total_count.___total_count, 0)",
-                    quote_literal(alias),
-                )
-            }
-            Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
-            }
-            Self::Aggregate(builder) => builder.to_sql(block_name, param_context)?,
+            Self::Edge(x) => Some(format!(
+                "{}, {}",
+                quote_literal(&x.alias),
+                x.to_sql(block_name, order_by, table, param_context)?
+            )),
+            Self::PageInfo(x) => Some(format!(
+                "{}, {}",
+                quote_literal(&x.alias),
+                x.to_sql(block_name, order_by, table)?
+            )),
+            Self::TotalCount { alias } => Some(format!(
+                "{}, coalesce(__total_count.___total_count, 0)",
+                quote_literal(alias),
+            )),
+            Self::Typename { alias, typename } => Some(format!(
+                "{}, {}",
+                quote_literal(alias),
+                quote_literal(typename)
+            )),
+            // SQL generation is handled by ConnectionBuilder::aggregate_select_list
+            // and the results are merged in later in the process
+            Self::Aggregate(_) => None,
         })
     }
 }
@@ -1919,18 +1915,6 @@ impl Serialize for __EnumValueBuilder {
             }
         }
         map.end()
-    }
-}
-
-impl AggregateBuilder {
-    pub fn to_sql(
-        &self,
-        _block_name: &str,
-        _param_context: &mut ParamContext,
-    ) -> Result<String, String> {
-        // SQL generation is handled by ConnectionBuilder::aggregate_select_list
-        // and the results are merged in later in the process
-        Ok(String::new())
     }
 }
 
