@@ -8,7 +8,7 @@ schemas_with_privilege(oid, name) as (
     -- irreleavnt tenants
     -- https://github.com/supabase/pg_graphql/pull/480
     select
-        pn.oid::int,
+        pn.oid::bigint,
         pn.nspname::text
     from
         pg_namespace pn
@@ -45,8 +45,8 @@ select
                     select
                         pt.oid,
                         jsonb_build_object(
-                            'oid', pt.oid::int,
-                            'schema_oid', min(pt.typnamespace)::int,
+                            'oid', pt.oid::bigint,
+                            'schema_oid', min(pt.typnamespace)::bigint,
                             'name', min(pt.typname),
                             'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
                             'directives', jsonb_build_object(
@@ -55,7 +55,7 @@ select
                             ),
                             'values', jsonb_agg(
                                 jsonb_build_object(
-                                    'oid', pe.oid::int,
+                                    'oid', pe.oid::bigint,
                                     'name', pe.enumlabel,
                                     'sort_order', (pe.enumsortorder * 100000)::int
                                 )
@@ -85,10 +85,10 @@ select
             (
                 select
                     jsonb_object_agg(
-                        pt.oid::int,
+                        pt.oid::bigint,
                         jsonb_build_object(
-                            'oid', pt.oid::int,
-                            'schema_oid', pt.typnamespace::int,
+                            'oid', pt.oid::bigint,
+                            'schema_oid', pt.typnamespace::bigint,
                             'name', pt.typname,
                             'category', case
                                 when pt.typcategory = 'A' then 'Array'
@@ -99,9 +99,9 @@ select
                                 else 'Other'
                             end,
                             -- if category is 'Array', points at the underlying element type
-                            'array_element_type_oid', nullif(pt.typelem::int, 0),
+                            'array_element_type_oid', nullif(pt.typelem::bigint, 0),
                             -- if category is 'Table' points to the table oid
-                            'table_oid', tabs.oid::int,
+                            'table_oid', tabs.oid::bigint,
                             'comment', pg_catalog.obj_description(pt.oid, 'pg_type'),
                             'permissions', jsonb_build_object(
                                 'is_usable', pg_catalog.has_type_privilege(current_user, pt.oid, 'USAGE')
@@ -122,8 +122,8 @@ select
                 select
                     jsonb_agg(
                         jsonb_build_object(
-                            'oid', pt.oid::int,
-                            'schema_oid', pt.typnamespace::int
+                            'oid', pt.oid::bigint,
+                            'schema_oid', pt.typnamespace::bigint
                         )
                     )
                 from
@@ -146,7 +146,7 @@ select
                         jsonb_agg(
                             jsonb_build_object(
                                 'local_table_meta', jsonb_build_object(
-                                    'oid', pf.conrelid::int,
+                                    'oid', pf.conrelid::bigint,
                                     'name', pa_local.relname::text,
                                     'is_rls_enabled', pa_local.relrowsecurity,
                                     'schema', pa_local.relnamespace::regnamespace::text,
@@ -162,7 +162,7 @@ select
                                     )
                                 ),
                                 'referenced_table_meta', jsonb_build_object(
-                                    'oid', pf.confrelid::int,
+                                    'oid', pf.confrelid::bigint,
                                     'name', pa_referenced.relname::text,
                                     'is_rls_enabled', pa_referenced.relrowsecurity,
                                     'schema', pa_referenced.relnamespace::regnamespace::text,
@@ -202,9 +202,9 @@ select
             (
                 select
                     jsonb_object_agg(
-                        pn.oid::int,
+                        pn.oid::bigint,
                         jsonb_build_object(
-                            'oid', pn.oid::int,
+                            'oid', pn.oid::bigint,
                             'name', pn.name,
                             'comment', pg_catalog.obj_description(pn.oid, 'pg_namespace'),
                             'directives', jsonb_build_object(
@@ -230,15 +230,15 @@ select
             (
                 select
                     jsonb_object_agg(
-                        pc.oid::int,
+                        pc.oid::bigint,
                         jsonb_build_object(
-                            'oid', pc.oid::int,
+                            'oid', pc.oid::bigint,
                             'name', pc.relname::text,
                             'relkind', pc.relkind::text,
-                            'reltype', pc.reltype::int,
+                            'reltype', pc.reltype::bigint,
                             'is_rls_enabled', pc.relrowsecurity,
                             'schema', schemas_.name,
-                            'schema_oid', pc.relnamespace::int,
+                            'schema_oid', pc.relnamespace::bigint,
                             'comment', pg_catalog.obj_description(pc.oid, 'pg_class'),
                             'directives', (
                                 with directives(directive) as (
@@ -267,7 +267,7 @@ select
                                     select
                                         jsonb_agg(
                                             jsonb_build_object(
-                                                'table_oid', pi.indrelid::int,
+                                                'table_oid', pi.indrelid::bigint,
                                                 'column_names', coalesce(
                                                     (
                                                         select
@@ -296,13 +296,13 @@ select
                                     jsonb_agg(
                                         jsonb_build_object(
                                             'name', pa.attname::text,
-                                            'type_oid', pa.atttypid::int,
+                                            'type_oid', pa.atttypid::bigint,
                                             -- includes type mod info like char(4)
                                             'type_name', pg_catalog.format_type(pa.atttypid, pa.atttypmod),
                                             -- char, bpchar, varchar, char[], bpchar[], carchar[]
                                             -- the -4 removes the byte for the null terminated str
                                             'max_characters', nullif(pa.atttypmod, -1) - 4,
-                                            'schema_oid', schemas_.oid::int,
+                                            'schema_oid', schemas_.oid::bigint,
                                             'is_not_null', pa.attnotnull,
                                             'attribute_num', pa.attnum,
                                             'has_default', pd.adbin is not null, -- pg_get_expr(pd.adbin, pd.adrelid) shows expression
@@ -397,13 +397,13 @@ select
                 select
                     jsonb_agg(
                         jsonb_build_object(
-                            'oid', pp.oid::int,
+                            'oid', pp.oid::bigint,
                             'name', pp.proname::text,
-                            'type_oid', pp.prorettype::oid::int,
+                            'type_oid', pp.prorettype::bigint,
                             'type_name', pp.prorettype::regtype::text,
-                            'schema_oid', pronamespace::int,
+                            'schema_oid', pronamespace::bigint,
                             'schema_name', pronamespace::regnamespace::text,
-                            'arg_types', proargtypes::int[],
+                            'arg_types', proargtypes::bigint[],
                             'arg_names', proargnames::text[],
                             'arg_defaults', pg_get_expr(proargdefaults, 0)::text,
                             'num_args', pronargs,
