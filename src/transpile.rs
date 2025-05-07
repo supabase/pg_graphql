@@ -1126,10 +1126,7 @@ impl ConnectionBuilder {
 
         // Build aggregate CTE if requested
         let aggregate_cte = if requested_aggregates {
-            let select_list_str = match aggregate_select_list {
-                Some(list) => list,
-                None => String::new(),
-            };
+            let select_list_str = aggregate_select_list.unwrap_or_default();
             format!(
                 r#"
                 ,__aggregates(agg_result) as (

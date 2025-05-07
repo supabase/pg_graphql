@@ -4468,9 +4468,7 @@ fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
 
 /// Returns the appropriate GraphQL scalar type for an aggregate result.
 fn aggregate_result_type(column: &Column, op: &AggregateOperation) -> Option<Scalar> {
-    let Some(ref type_) = column.type_ else {
-        return None;
-    };
+    let type_ = column.type_.as_ref()?;
 
     // Removed duplicated closures, will use helper functions below
 
