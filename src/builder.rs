@@ -1595,7 +1595,7 @@ where
         match field_name {
             "count" => selections.push(AggregateSelection::Count { alias: sub_alias }),
             "sum" | "avg" | "min" | "max" => {
-                let col_selections = parse_aggregate_numeric_selections(
+                let col_selections = to_aggregate_column_builders(
                     sub_field,
                     &selection_field,
                     fragment_definitions,
@@ -1636,7 +1636,7 @@ where
     Ok(AggregateBuilder { alias, selections })
 }
 
-fn parse_aggregate_numeric_selections<'a, T>(
+fn to_aggregate_column_builders<'a, T>(
     field: &__Field,
     query_field: &graphql_parser::query::Field<'a, T>,
     fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
