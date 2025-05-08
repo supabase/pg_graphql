@@ -256,6 +256,14 @@ select
                                                 false
                                             )
                                         ),
+                                        'aggregate', jsonb_build_object(
+                                            'enabled', coalesce(
+                                                (
+                                                    d.directive -> 'aggregate' ->> 'enabled' = 'true'
+                                                ),
+                                                false
+                                            )
+                                        ),
                                         'primary_key_columns', d.directive -> 'primary_key_columns',
                                         'foreign_keys', d.directive -> 'foreign_keys'
                                     )

@@ -95,3 +95,4 @@
 - bugfix: qualify schema refs
 
 ## master
+- feature: Add support for aggregate functions (count, sum, avg, min, max) on collection types

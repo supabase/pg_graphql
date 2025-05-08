@@ -11,6 +11,39 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
+pub struct AggregateBuilder {
+    pub alias: String,
+    pub selections: Vec<AggregateSelection>,
+}
+
+#[derive(Clone, Debug)]
+pub enum AggregateSelection {
+    Count {
+        alias: String,
+    },
+    Sum {
+        alias: String,
+        column_builders: Vec<ColumnBuilder>,
+    },
+    Avg {
+        alias: String,
+        column_builders: Vec<ColumnBuilder>,
+    },
+    Min {
+        alias: String,
+        column_builders: Vec<ColumnBuilder>,
+    },
+    Max {
+        alias: String,
+        column_builders: Vec<ColumnBuilder>,
+    },
+    Typename {
+        alias: String,
+        typename: String,
+    },
+}
+
+#[derive(Clone, Debug)]
 pub struct InsertBuilder {
     // args
     pub objects: Vec<InsertRowBuilder>,
@@ -758,7 +791,6 @@ pub struct ConnectionBuilder {
 
     //fields
     pub selections: Vec<ConnectionSelection>,
-
     pub max_rows: u64,
 }
 
@@ -927,6 +959,7 @@ pub enum ConnectionSelection {
     Edge(EdgeBuilder),
     PageInfo(PageInfoBuilder),
     Typename { alias: String, typename: String },
+    Aggregate(AggregateBuilder),
 }
 
 #[derive(Clone, Debug)]
@@ -1439,7 +1472,15 @@ where
 
             for selection_field in selection_fields {
                 match field_map.get(selection_field.name.as_ref()) {
-                    None => return Err("unknown field in connection".to_string()),
+                    None => {
+                        let error = if selection_field.name.as_ref() == "aggregate" {
+                            "enable the aggregate directive to use aggregates"
+                        } else {
+                            "unknown field in connection"
+                        }
+                        .to_string();
+                        return Err(error);
+                    }
                     Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
                         __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
                             f,
@@ -1454,20 +1495,51 @@ where
                             fragment_definitions,
                             variables,
                         )?),
-
-                        _ => match f.name().as_ref() {
-                            "totalCount" => ConnectionSelection::TotalCount {
-                                alias: alias_or_name(&selection_field),
-                            },
-                            "__typename" => ConnectionSelection::Typename {
-                                alias: alias_or_name(&selection_field),
-                                typename: xtype.name().expect("connection type should have a name"),
-                            },
-                            _ => return Err("unexpected field type on connection".to_string()),
-                        },
+                        __Type::Aggregate(_) => {
+                            ConnectionSelection::Aggregate(to_aggregate_builder(
+                                f,
+                                &selection_field,
+                                fragment_definitions,
+                                variables,
+                            )?)
+                        }
+                        __Type::Scalar(Scalar::Int) => {
+                            if selection_field.name.as_ref() == "totalCount" {
+                                ConnectionSelection::TotalCount {
+                                    alias: alias_or_name(&selection_field),
+                                }
+                            } else {
+                                return Err(format!(
+                                    "Unsupported field type for connection field {}",
+                                    selection_field.name.as_ref()
+                                ));
+                            }
+                        }
+                        __Type::Scalar(Scalar::String(None)) => {
+                            if selection_field.name.as_ref() == "__typename" {
+                                ConnectionSelection::Typename {
+                                    alias: alias_or_name(&selection_field),
+                                    typename: xtype
+                                        .name()
+                                        .expect("connection type should have a name"),
+                                }
+                            } else {
+                                return Err(format!(
+                                    "Unsupported field type for connection field {}",
+                                    selection_field.name.as_ref()
+                                ));
+                            }
+                        }
+                        _ => {
+                            return Err(format!(
+                                "unknown field type on connection: {}",
+                                selection_field.name.as_ref()
+                            ))
+                        }
                     }),
                 }
             }
+
             Ok(ConnectionBuilder {
                 alias,
                 source: ConnectionBuilderSource {
@@ -1490,6 +1562,146 @@ where
             type_.name()
         )),
     }
+}
+
+fn to_aggregate_builder<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
+) -> Result<AggregateBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
+{
+    let type_ = field.type_().unmodified_type();
+    let __Type::Aggregate(ref _agg_type) = type_ else {
+        return Err("Internal Error: Expected AggregateType in to_aggregate_builder".to_string());
+    };
+
+    let alias = alias_or_name(query_field);
+    let mut selections = Vec::new();
+    let field_map = field_map(&type_); // Get fields of the AggregateType (count, sum, avg, etc.)
+
+    let type_name = type_.name().ok_or("Aggregate type has no name")?;
+
+    let selection_fields = normalize_selection_set(
+        &query_field.selection_set,
+        fragment_definitions,
+        &type_name,
+        variables,
+    )?;
+
+    for selection_field in selection_fields {
+        let field_name = selection_field.name.as_ref();
+        let sub_field = field_map.get(field_name).ok_or(format!(
+            "Unknown field \"{}\" selected on type \"{}\"",
+            field_name, type_name
+        ))?;
+        let sub_alias = alias_or_name(&selection_field);
+
+        let col_selections = if field_name == "sum"
+            || field_name == "avg"
+            || field_name == "min"
+            || field_name == "max"
+        {
+            to_aggregate_column_builders(
+                sub_field,
+                &selection_field,
+                fragment_definitions,
+                variables,
+            )?
+        } else {
+            vec![]
+        };
+
+        selections.push(match field_name {
+            "count" => AggregateSelection::Count { alias: sub_alias },
+            "sum" => AggregateSelection::Sum {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "avg" => AggregateSelection::Avg {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "min" => AggregateSelection::Min {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "max" => AggregateSelection::Max {
+                alias: sub_alias,
+                column_builders: col_selections,
+            },
+            "__typename" => AggregateSelection::Typename {
+                alias: sub_alias,
+                typename: field
+                    .type_()
+                    .name()
+                    .ok_or("Name for aggregate field's type not found")?
+                    .to_string(),
+            },
+            _ => return Err(format!("Unknown aggregate field: {}", field_name)),
+        })
+    }
+
+    Ok(AggregateBuilder { alias, selections })
+}
+
+fn to_aggregate_column_builders<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
+) -> Result<Vec<ColumnBuilder>, String>
+where
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
+{
+    let type_ = field.type_().unmodified_type();
+    let __Type::AggregateNumeric(_) = type_ else {
+        return Err("Internal Error: Expected AggregateNumericType".to_string());
+    };
+    let mut column_builers = Vec::new();
+    let field_map = field_map(&type_);
+    let type_name = type_.name().ok_or("AggregateNumeric type has no name")?;
+    let selection_fields = normalize_selection_set(
+        &query_field.selection_set,
+        fragment_definitions,
+        &type_name,
+        variables,
+    )?;
+
+    for selection_field in selection_fields {
+        let col_name = selection_field.name.as_ref();
+        let sub_field = field_map.get(col_name).ok_or_else(|| {
+            format!(
+                "Unknown or invalid field \"{}\" selected on type \"{}\"",
+                col_name, type_name
+            )
+        })?;
+
+        let __Type::Scalar(_) = sub_field.type_().unmodified_type() else {
+            return Err(format!(
+                "Field \"{}\" on type \"{}\" is not a scalar column",
+                col_name, type_name
+            ));
+        };
+        let Some(NodeSQLType::Column(column)) = &sub_field.sql_type else {
+            return Err(format!(
+                "Internal error: Missing column info for aggregate field '{}'",
+                col_name
+            ));
+        };
+
+        let alias = alias_or_name(&selection_field);
+
+        column_builers.push(ColumnBuilder {
+            alias,
+            column: Arc::clone(column),
+        });
+    }
+    Ok(column_builers)
 }
 
 fn to_page_info_builder<'a, T>(

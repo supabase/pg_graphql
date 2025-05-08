@@ -531,6 +531,8 @@ pub enum __Type {
     // Modifiers
     List(ListType),
     NonNull(NonNullType),
+    Aggregate(AggregateType),
+    AggregateNumeric(AggregateNumericType),
 }
 
 #[cached(
@@ -605,6 +607,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.kind(),
             Self::List(x) => x.kind(),
             Self::NonNull(x) => x.kind(),
+            Self::Aggregate(x) => x.kind(),
+            Self::AggregateNumeric(x) => x.kind(),
         }
     }
 
@@ -640,6 +644,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.name(),
             Self::List(x) => x.name(),
             Self::NonNull(x) => x.name(),
+            Self::Aggregate(x) => x.name(),
+            Self::AggregateNumeric(x) => x.name(),
         }
     }
 
@@ -675,6 +681,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.description(),
             Self::List(x) => x.description(),
             Self::NonNull(x) => x.description(),
+            Self::Aggregate(x) => x.description(),
+            Self::AggregateNumeric(x) => x.description(),
         }
     }
 
@@ -711,6 +719,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.fields(_include_deprecated),
             Self::List(x) => x.fields(_include_deprecated),
             Self::NonNull(x) => x.fields(_include_deprecated),
+            Self::Aggregate(x) => x.fields(_include_deprecated),
+            Self::AggregateNumeric(x) => x.fields(_include_deprecated),
         }
     }
 
@@ -747,6 +757,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.interfaces(),
             Self::List(x) => x.interfaces(),
             Self::NonNull(x) => x.interfaces(),
+            Self::Aggregate(x) => x.interfaces(),
+            Self::AggregateNumeric(x) => x.interfaces(),
         }
     }
 
@@ -792,6 +804,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.enum_values(_include_deprecated),
             Self::List(x) => x.enum_values(_include_deprecated),
             Self::NonNull(x) => x.enum_values(_include_deprecated),
+            Self::Aggregate(x) => x.enum_values(_include_deprecated),
+            Self::AggregateNumeric(x) => x.enum_values(_include_deprecated),
         }
     }
 
@@ -828,6 +842,8 @@ impl ___Type for __Type {
             Self::__Directive(x) => x.input_fields(),
             Self::List(x) => x.input_fields(),
             Self::NonNull(x) => x.input_fields(),
+            Self::Aggregate(x) => x.input_fields(),
+            Self::AggregateNumeric(x) => x.input_fields(),
         }
     }
 
@@ -1676,39 +1692,44 @@ impl ___Type for ConnectionType {
     }
 
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
-        let mut fields = vec![
-            __Field {
-                name_: "edges".to_string(),
-                type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::List(ListType {
-                        type_: Box::new(__Type::NonNull(NonNullType {
-                            type_: Box::new(__Type::Edge(EdgeType {
-                                table: Arc::clone(&self.table),
-                                schema: Arc::clone(&self.schema),
-                            })),
-                        })),
-                    })),
-                }),
-                args: vec![],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            },
-            __Field {
-                name_: "pageInfo".to_string(),
-                type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::PageInfo(PageInfoType)),
-                }),
-                args: vec![],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            },
-        ];
+        let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
+        let edge_type = __Type::Edge(EdgeType {
+            table: Arc::clone(&self.table),
+            schema: self.schema.clone(),
+        });
 
-        if let Some(total_count) = self.table.directives.total_count.as_ref() {
-            if total_count.enabled {
-                let total_count_field = __Field {
+        let edge = __Field {
+            name_: "edges".to_string(),
+            type_: __Type::NonNull(NonNullType {
+                type_: Box::new(__Type::List(ListType {
+                    type_: Box::new(__Type::NonNull(NonNullType {
+                        type_: Box::new(edge_type),
+                    })),
+                })),
+            }),
+            args: vec![],
+            description: None,
+            deprecation_reason: None,
+            sql_type: None,
+        };
+
+        let page_info = __Field {
+            name_: "pageInfo".to_string(),
+            type_: __Type::NonNull(NonNullType {
+                type_: Box::new(__Type::PageInfo(PageInfoType)),
+            }),
+            args: vec![],
+            description: None,
+            deprecation_reason: None,
+            sql_type: None,
+        };
+
+        let mut fields = vec![edge, page_info];
+
+        // Conditionally add totalCount based on the directive
+        if let Some(total_count_directive) = self.table.directives.total_count.as_ref() {
+            if total_count_directive.enabled {
+                let total_count = __Field {
                     name_: "totalCount".to_string(),
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::Scalar(Scalar::Int)),
@@ -1720,9 +1741,30 @@ impl ___Type for ConnectionType {
                     deprecation_reason: None,
                     sql_type: None,
                 };
-                fields.push(total_count_field);
+                fields.push(total_count);
             }
         }
+
+        // Conditionally add aggregate based on the directive
+        if let Some(aggregate_directive) = self.table.directives.aggregate.as_ref() {
+            if aggregate_directive.enabled {
+                let aggregate = __Field {
+                    name_: "aggregate".to_string(),
+                    type_: __Type::Aggregate(AggregateType {
+                        table: Arc::clone(&self.table),
+                        schema: self.schema.clone(),
+                    }),
+                    args: vec![],
+                    description: Some(format!(
+                        "Aggregate functions calculated on the collection of `{table_base_type_name}`"
+                    )),
+                    deprecation_reason: None,
+                    sql_type: None,
+                };
+                fields.push(aggregate);
+            }
+        }
+
         Some(fields)
     }
 }
@@ -4182,6 +4224,53 @@ impl __Schema {
                     schema: Arc::clone(&schema_rc),
                 }));
             }
+
+            // Add Aggregate types if the table is selectable
+            if self.graphql_table_select_types_are_valid(table) {
+                // Only add aggregate types if the directive is enabled
+                if let Some(aggregate_directive) = table.directives.aggregate.as_ref() {
+                    if aggregate_directive.enabled {
+                        types_.push(__Type::Aggregate(AggregateType {
+                            table: Arc::clone(table),
+                            schema: Arc::clone(&schema_rc),
+                        }));
+                        // Check if there are any columns aggregatable by sum/avg
+                        if table
+                            .columns
+                            .iter()
+                            .any(|c| is_aggregatable(c, &AggregateOperation::Sum))
+                        {
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Sum,
+                            }));
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Avg,
+                            }));
+                        }
+                        // Check if there are any columns aggregatable by min/max
+                        if table
+                            .columns
+                            .iter()
+                            .any(|c| is_aggregatable(c, &AggregateOperation::Min))
+                        {
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Min,
+                            }));
+                            types_.push(__Type::AggregateNumeric(AggregateNumericType {
+                                table: Arc::clone(table),
+                                schema: Arc::clone(&schema_rc),
+                                aggregate_op: AggregateOperation::Max,
+                            }));
+                        }
+                    }
+                }
+            }
         }
 
         for (_, enum_) in self
@@ -4298,4 +4387,332 @@ impl __Schema {
             },
         ]
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct AggregateType {
+    pub table: Arc<Table>,
+    pub schema: Arc<__Schema>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct AggregateNumericType {
+    pub table: Arc<Table>,
+    pub schema: Arc<__Schema>,
+    pub aggregate_op: AggregateOperation,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub enum AggregateOperation {
+    Sum,
+    Avg,
+    Min,
+    Max,
+    // Count is handled directly in AggregateType
+}
+
+impl AggregateOperation {
+    // Helper for descriptive terms used in descriptions
+    fn descriptive_term(&self) -> &str {
+        match self {
+            AggregateOperation::Sum => "summation",
+            AggregateOperation::Avg => "average",
+            AggregateOperation::Min => "minimum",
+            AggregateOperation::Max => "maximum",
+        }
+    }
+
+    // Helper for capitalized descriptive terms used in field descriptions
+    fn capitalized_descriptive_term(&self) -> &str {
+        match self {
+            AggregateOperation::Sum => "Sum",
+            AggregateOperation::Avg => "Average",
+            AggregateOperation::Min => "Minimum",
+            AggregateOperation::Max => "Maximum",
+        }
+    }
+}
+
+impl std::fmt::Display for AggregateOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AggregateOperation::Sum => write!(f, "Sum"),
+            AggregateOperation::Avg => write!(f, "Avg"), // GraphQL schema uses "Avg" for the type name part
+            AggregateOperation::Min => write!(f, "Min"),
+            AggregateOperation::Max => write!(f, "Max"),
+        }
+    }
+}
+
+/// Determines if a column's type is suitable for a given aggregate operation.
+fn is_aggregatable(column: &Column, op: &AggregateOperation) -> bool {
+    let Some(ref type_) = column.type_ else {
+        return false;
+    };
+
+    // Removed duplicated closures, will use helper functions below
+
+    match op {
+        // Sum/Avg only make sense for numeric types
+        AggregateOperation::Sum | AggregateOperation::Avg => {
+            // Check category first for arrays/enums, then check name for base types
+            match type_.category {
+                TypeCategory::Other => is_pg_numeric_type(&type_.name),
+                _ => false, // Only allow sum/avg on base numeric types for now
+            }
+        }
+        // Min/Max can work on more types (numeric, string, date/time, etc.)
+        AggregateOperation::Min | AggregateOperation::Max => {
+            match type_.category {
+                TypeCategory::Other => {
+                    is_pg_numeric_type(&type_.name)
+                        || is_pg_string_type(&type_.name)
+                        || is_pg_datetime_type(&type_.name)
+                        || is_pg_boolean_type(&type_.name)
+                }
+                _ => false, // Don't allow min/max on composites, arrays, tables, pseudo
+            }
+        }
+    }
+}
+
+/// Returns the appropriate GraphQL scalar type for an aggregate result.
+fn aggregate_result_type(column: &Column, op: &AggregateOperation) -> Option<Scalar> {
+    let type_ = column.type_.as_ref()?;
+
+    match op {
+        AggregateOperation::Sum => {
+            // SUM of integers often results in bigint
+            // SUM of float/numeric results in bigfloat
+            // Let's simplify and return BigInt for int-like, BigFloat otherwise
+            if is_pg_small_integer_type(&type_.name) {
+                Some(Scalar::BigInt)
+            } else if is_pg_numeric_type(&type_.name) {
+                Some(Scalar::BigFloat)
+            } else {
+                None
+            }
+        }
+        AggregateOperation::Avg => {
+            if is_pg_numeric_type(&type_.name) {
+                Some(Scalar::BigFloat)
+            } else {
+                None
+            }
+        }
+        AggregateOperation::Min | AggregateOperation::Max => {
+            if is_pg_numeric_type(&type_.name) {
+                sql_type_to_scalar(&type_.name, column.max_characters)
+            } else if is_pg_string_type(&type_.name) {
+                Some(Scalar::String(column.max_characters))
+            } else if is_pg_datetime_type(&type_.name) {
+                sql_type_to_scalar(&type_.name, column.max_characters)
+            } else if is_pg_boolean_type(&type_.name) {
+                Some(Scalar::Boolean)
+            } else {
+                None
+            }
+        }
+    }
+}
+
+impl ___Type for AggregateType {
+    fn kind(&self) -> __TypeKind {
+        __TypeKind::OBJECT
+    }
+
+    fn name(&self) -> Option<String> {
+        let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
+        Some(format!("{table_base_type_name}Aggregate"))
+    }
+
+    fn description(&self) -> Option<String> {
+        let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
+        Some(format!("Aggregate results for `{table_base_type_name}`"))
+    }
+
+    fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
+        let mut fields = Vec::new();
+
+        // Count field (always present)
+        fields.push(__Field {
+            name_: "count".to_string(),
+            type_: __Type::NonNull(NonNullType {
+                type_: Box::new(__Type::Scalar(Scalar::Int)),
+            }),
+            args: vec![],
+            description: Some("The number of records matching the query".to_string()),
+            deprecation_reason: None,
+            sql_type: None,
+        });
+
+        // Add fields for Sum, Avg, Min, Max if there are any aggregatable columns
+        let has_sum_avgable = self
+            .table
+            .columns
+            .iter()
+            .any(|c| is_aggregatable(c, &AggregateOperation::Sum));
+        let has_min_maxable = self
+            .table
+            .columns
+            .iter()
+            .any(|c| is_aggregatable(c, &AggregateOperation::Min));
+
+        if has_sum_avgable {
+            fields.push(__Field {
+                name_: "sum".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Sum,
+                }),
+                args: vec![],
+                description: Some("Summation aggregates for numeric fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
+            fields.push(__Field {
+                name_: "avg".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Avg,
+                }),
+                args: vec![],
+                description: Some("Average aggregates for numeric fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
+        }
+
+        if has_min_maxable {
+            fields.push(__Field {
+                name_: "min".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Min,
+                }),
+                args: vec![],
+                description: Some("Minimum aggregates for comparable fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
+            fields.push(__Field {
+                name_: "max".to_string(),
+                type_: __Type::AggregateNumeric(AggregateNumericType {
+                    table: Arc::clone(&self.table),
+                    schema: Arc::clone(&self.schema),
+                    aggregate_op: AggregateOperation::Max,
+                }),
+                args: vec![],
+                description: Some("Maximum aggregates for comparable fields".to_string()),
+                deprecation_reason: None,
+                sql_type: None,
+            });
+        }
+        Some(fields)
+    }
+}
+
+impl ___Type for AggregateNumericType {
+    fn kind(&self) -> __TypeKind {
+        __TypeKind::OBJECT
+    }
+
+    fn name(&self) -> Option<String> {
+        let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
+        // Use Display trait for op_name
+        Some(format!(
+            "{table_base_type_name}{}AggregateResult",
+            self.aggregate_op
+        ))
+    }
+
+    fn description(&self) -> Option<String> {
+        let table_base_type_name = &self.schema.graphql_table_base_type_name(&self.table);
+        Some(format!(
+            "Result of {} aggregation for `{table_base_type_name}`",
+            self.aggregate_op.descriptive_term()
+        ))
+    }
+
+    fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
+        let mut fields = Vec::new();
+
+        for col in self.table.columns.iter() {
+            if is_aggregatable(col, &self.aggregate_op) {
+                if let Some(scalar_type) = aggregate_result_type(col, &self.aggregate_op) {
+                    let field_name = self.schema.graphql_column_field_name(col);
+                    fields.push(__Field {
+                        name_: field_name.clone(),
+                        type_: __Type::Scalar(scalar_type),
+                        args: vec![],
+                        description: Some(format!(
+                            "{} of {} across all matching records",
+                            self.aggregate_op.capitalized_descriptive_term(),
+                            field_name
+                        )),
+                        deprecation_reason: None,
+                        sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                    });
+                }
+            }
+        }
+        if fields.is_empty() {
+            None
+        } else {
+            Some(fields)
+        }
+    }
+}
+
+// Converts SQL type name to a GraphQL Scalar, needed for aggregate_result_type
+// This function might already exist or needs to be created/adapted.
+// Placeholder implementation:
+fn sql_type_to_scalar(sql_type_name: &str, typmod: Option<i32>) -> Option<Scalar> {
+    // Simplified mapping - adapt based on existing logic in sql_types.rs or elsewhere
+    match sql_type_name {
+        "int2" | "int4" => Some(Scalar::Int),
+        "int8" => Some(Scalar::BigInt),
+        "float4" | "float8" | "numeric" | "decimal" => Some(Scalar::BigFloat), // Use BigFloat for precision
+        "text" | "varchar" | "char" | "bpchar" | "name" => Some(Scalar::String(typmod)),
+        "bool" => Some(Scalar::Boolean),
+        "date" => Some(Scalar::Date),
+        "time" | "timetz" => Some(Scalar::Time),
+        "timestamp" | "timestamptz" => Some(Scalar::Datetime),
+        "uuid" => Some(Scalar::UUID),
+        "json" | "jsonb" => Some(Scalar::JSON),
+        _ => Some(Scalar::Opaque), // Fallback for unknown types
+    }
+}
+
+// Helper functions for PostgreSQL type checking (extracted to deduplicate)
+fn is_pg_numeric_type(name: &str) -> bool {
+    matches!(
+        name,
+        "int2" | "int4" | "int8" | "float4" | "float8" | "numeric" | "decimal" | "money"
+    )
+}
+
+fn is_pg_string_type(name: &str) -> bool {
+    matches!(
+        name,
+        "text" | "varchar" | "char" | "bpchar" | "name" | "citext"
+    )
+}
+
+fn is_pg_datetime_type(name: &str) -> bool {
+    matches!(
+        name,
+        "date" | "time" | "timetz" | "timestamp" | "timestamptz"
+    )
+}
+
+fn is_pg_boolean_type(name: &str) -> bool {
+    matches!(name, "bool")
+}
+
+fn is_pg_small_integer_type(name: &str) -> bool {
+    matches!(name, "int2" | "int4" | "int8")
 }

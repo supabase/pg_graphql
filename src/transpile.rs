@@ -813,12 +813,6 @@ pub struct FromFunction {
 }
 
 impl ConnectionBuilder {
-    fn requested_total(&self) -> bool {
-        self.selections
-            .iter()
-            .any(|x| matches!(&x, ConnectionSelection::TotalCount { alias: _ }))
-    }
-
     fn page_selections(&self) -> Vec<PageInfoSelection> {
         self.selections
             .iter()
@@ -875,13 +869,13 @@ impl ConnectionBuilder {
         let frags: Vec<String> = self
             .selections
             .iter()
-            .map(|x| {
+            .filter_map(|x| {
                 x.to_sql(
                     quoted_block_name,
                     &self.order_by,
                     &self.source.table,
                     param_context,
-                )
+                ).transpose()
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -917,6 +911,96 @@ impl ConnectionBuilder {
         }
     }
 
+    // Generates the *contents* of the aggregate jsonb_build_object
+    fn aggregate_select_list(&self, quoted_block_name: &str) -> Result<Option<String>, String> {
+        let Some(agg_builder) = self.selections.iter().find_map(|sel| match sel {
+            ConnectionSelection::Aggregate(builder) => Some(builder),
+            _ => None,
+        }) else {
+            return Ok(None);
+        };
+
+        let mut agg_selections = vec![];
+
+        for selection in &agg_builder.selections {
+            match selection {
+                AggregateSelection::Count { alias } => {
+                    // Produces: 'count_alias', count(*)
+                    agg_selections.push(format!("{}, count(*)", quote_literal(alias)));
+                }
+                AggregateSelection::Sum {
+                    alias,
+                    column_builders: selections,
+                }
+                | AggregateSelection::Avg {
+                    alias,
+                    column_builders: selections,
+                }
+                | AggregateSelection::Min {
+                    alias,
+                    column_builders: selections,
+                }
+                | AggregateSelection::Max {
+                    alias,
+                    column_builders: selections,
+                } => {
+                    let pg_func = match selection {
+                        AggregateSelection::Sum { .. } => "sum",
+                        AggregateSelection::Avg { .. } => "avg",
+                        AggregateSelection::Min { .. } => "min",
+                        AggregateSelection::Max { .. } => "max",
+                        AggregateSelection::Count { .. } => {
+                            unreachable!("Count should be handled by its own arm")
+                        }
+                        AggregateSelection::Typename { .. } => {
+                            unreachable!("Typename should be handled by its own arm")
+                        }
+                    };
+
+                    let mut field_selections = vec![];
+                    for col_builder in selections {
+                        let col_sql = col_builder.to_sql(quoted_block_name)?;
+                        let col_alias = &col_builder.alias;
+
+                        // Always cast avg input to numeric for precision
+                        let col_sql_casted = if pg_func == "avg" {
+                            format!("{}::numeric", col_sql)
+                        } else {
+                            col_sql
+                        };
+                        // Produces: 'col_alias', agg_func(col)
+                        field_selections.push(format!(
+                            "{}, {}({})",
+                            quote_literal(col_alias),
+                            pg_func,
+                            col_sql_casted
+                        ));
+                    }
+                    // Produces: 'agg_alias', jsonb_build_object('col_alias', agg_func(col), ...)
+                    agg_selections.push(format!(
+                        "{}, jsonb_build_object({})",
+                        quote_literal(alias),
+                        field_selections.join(", ")
+                    ));
+                }
+                AggregateSelection::Typename { alias, typename } => {
+                    // Produces: '__typename', 'AggregateTypeName'
+                    agg_selections.push(format!(
+                        "{}, {}",
+                        quote_literal(alias),
+                        quote_literal(typename)
+                    ));
+                }
+            }
+        }
+
+        if agg_selections.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(agg_selections.join(", ")))
+        }
+    }
+
     pub fn to_sql(
         &self,
         quoted_parent_block_name: Option<&str>,
@@ -946,7 +1030,6 @@ impl ConnectionBuilder {
             false => &order_by_clause,
         };
 
-        let requested_total = self.requested_total();
         let requested_next_page = self.requested_next_page();
         let requested_previous_page = self.requested_previous_page();
 
@@ -955,6 +1038,7 @@ impl ConnectionBuilder {
         let cursor = &self.before.clone().or_else(|| self.after.clone());
 
         let object_clause = self.object_clause(&quoted_block_name, param_context)?;
+        let aggregate_select_list = self.aggregate_select_list(&quoted_block_name)?;
 
         let selectable_columns_clause = self.source.table.to_selectable_columns_clause();
 
@@ -985,6 +1069,9 @@ impl ConnectionBuilder {
         let limit = self.limit_clause();
         let offset = self.offset.unwrap_or(0);
 
+        // Determine if aggregates are requested based on if we generated a select list
+        let requested_aggregates = aggregate_select_list.is_some();
+
         // initialized assuming forwards pagination
         let mut has_next_page_query = format!(
             "
@@ -1006,7 +1093,7 @@ impl ConnectionBuilder {
         "
         );
 
-        let mut has_prev_page_query =  format!("
+        let mut has_prev_page_query = format!("
             with page_minus_1 as (
                 select
                     not ({pkey_tuple_clause_from_block} = any( __records.seen )) is_pkey_in_records
@@ -1035,8 +1122,59 @@ impl ConnectionBuilder {
             has_prev_page_query = "select null".to_string()
         }
 
+        // Build aggregate CTE if requested
+        let aggregate_cte = if requested_aggregates {
+            let select_list_str = aggregate_select_list.unwrap_or_default();
+            format!(
+                r#"
+                ,__aggregates(agg_result) as (
+                     select
+                         jsonb_build_object({select_list_str})
+                    from
+                        {from_clause}
+                    where
+                        {join_clause}
+                        and {where_clause}
+                )
+                "#
+            )
+        } else {
+            r#"
+            ,__aggregates(agg_result) as (select null::jsonb)
+            "#
+            .to_string()
+        };
+
+        // Add helper cte to set page info correctly for empty collections
+        let has_records_cte = r#"
+        ,__has_records(has_records) as (select exists(select 1 from __records))
+        "#;
+
+        // Clause containing selections *not* including the aggregate
+        let base_object_clause = object_clause; // Renamed original object_clause
+
+        // Clause to merge the aggregate result if requested
+        let aggregate_merge_clause = if requested_aggregates {
+            let agg_alias = self
+                .selections
+                .iter()
+                .find_map(|sel| match sel {
+                    ConnectionSelection::Aggregate(builder) => Some(builder.alias.clone()),
+                    _ => None,
+                })
+                .ok_or(
+                    "Internal Error: Aggregate builder not found when requested_aggregates is true",
+                )?;
+            format!(
+                "|| jsonb_build_object({}, coalesce(__aggregates.agg_result, '{{}}'::jsonb))",
+                quote_literal(&agg_alias)
+            )
+        } else {
+            "".to_string()
+        };
+
         Ok(format!(
-            "
+            r#"
             (
                 with __records as (
                     select
@@ -1061,25 +1199,39 @@ impl ConnectionBuilder {
                     from
                         {from_clause}
                     where
-                        {requested_total} -- skips total when not requested
-                        and {join_clause}
+                        {join_clause}
                         and {where_clause}
                 ),
                 __has_next_page(___has_next_page) as (
                     {has_next_page_query}
-
                 ),
                 __has_previous_page(___has_previous_page) as (
                     {has_prev_page_query}
                 )
+                {has_records_cte}
+                {aggregate_cte},
+                __base_object as (
+                     select jsonb_build_object({base_object_clause}) as obj
+                     from
+                        __total_count
+                        cross join __has_next_page
+                        cross join __has_previous_page
+                        cross join __has_records
+                        left join __records {quoted_block_name} on true
+                     group by
+                        __total_count.___total_count,
+                        __has_next_page.___has_next_page,
+                        __has_previous_page.___has_previous_page,
+                        __has_records.has_records
+                )
                 select
-                    jsonb_build_object({object_clause}) -- sorted within edge
+                    coalesce(__base_object.obj, '{{}}'::jsonb) {aggregate_merge_clause}
                 from
-                    __records {quoted_block_name},
-                    __total_count,
-                    __has_next_page,
-                    __has_previous_page
-            )"
+                    (select 1) as __dummy_for_left_join
+                    left join __base_object on true
+                    cross join __aggregates
+            )
+            "#
         ))
     }
 }
@@ -1124,13 +1276,13 @@ impl PageInfoSelection {
         Ok(match self {
             Self::StartCursor { alias } => {
                 format!(
-                    "{}, (array_agg({cursor_clause} order by {order_by_clause}))[1]",
+                    "{}, case when __has_records.has_records then (array_agg({cursor_clause} order by {order_by_clause}))[1] else null end",
                     quote_literal(alias)
                 )
             }
             Self::EndCursor { alias } => {
                 format!(
-                    "{}, (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1]",
+                    "{}, case when __has_records.has_records then (array_agg({cursor_clause} order by {order_by_clause_reversed}))[1] else null end",
                     quote_literal(alias)
                 )
             }
@@ -1160,31 +1312,30 @@ impl ConnectionSelection {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> Result<Option<String>, String> {
         Ok(match self {
-            Self::Edge(x) => {
-                format!(
-                    "{}, {}",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, order_by, table, param_context)?
-                )
-            }
-            Self::PageInfo(x) => {
-                format!(
-                    "{}, {}",
-                    quote_literal(&x.alias),
-                    x.to_sql(block_name, order_by, table)?
-                )
-            }
-            Self::TotalCount { alias } => {
-                format!(
-                    "{}, coalesce(min(__total_count.___total_count), 0)",
-                    quote_literal(alias)
-                )
-            }
-            Self::Typename { alias, typename } => {
-                format!("{}, {}", quote_literal(alias), quote_literal(typename))
-            }
+            Self::Edge(x) => Some(format!(
+                "{}, {}",
+                quote_literal(&x.alias),
+                x.to_sql(block_name, order_by, table, param_context)?
+            )),
+            Self::PageInfo(x) => Some(format!(
+                "{}, {}",
+                quote_literal(&x.alias),
+                x.to_sql(block_name, order_by, table)?
+            )),
+            Self::TotalCount { alias } => Some(format!(
+                "{}, coalesce(__total_count.___total_count, 0)",
+                quote_literal(alias),
+            )),
+            Self::Typename { alias, typename } => Some(format!(
+                "{}, {}",
+                quote_literal(alias),
+                quote_literal(typename)
+            )),
+            // SQL generation is handled by ConnectionBuilder::aggregate_select_list
+            // and the results are merged in later in the process
+            Self::Aggregate(_) => None,
         })
     }
 }
@@ -1206,12 +1357,26 @@ impl EdgeBuilder {
         let x = frags.join(", ");
         let order_by_clause = order_by.to_order_by_clause(block_name);
 
+        // Get the first primary key column name to use in the filter
+        let first_pk_col = table.primary_key_columns().first().map(|col| &col.name);
+
+        // Create a filter clause that checks if any primary key column is not NULL
+        let filter_clause = if let Some(pk_col) = first_pk_col {
+            format!(
+                "filter (where {}.{} is not null)",
+                block_name,
+                quote_ident(pk_col)
+            )
+        } else {
+            "".to_string() // Fallback if no primary key columns (should be rare)
+        };
+
         Ok(format!(
             "coalesce(
                 jsonb_agg(
                     jsonb_build_object({x})
                     order by {order_by_clause}
-                ),
+                ) {filter_clause},
                 jsonb_build_array()
             )"
         ))

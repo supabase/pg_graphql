@@ -448,6 +448,11 @@ pub struct TableDirectiveTotalCount {
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct TableDirectiveAggregate {
+    pub enabled: bool,
+}
+
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TableDirectiveForeignKey {
     // Equivalent to ForeignKeyDirectives.local_name
     pub local_name: Option<String>,
@@ -470,6 +475,9 @@ pub struct TableDirectives {
 
     // @graphql({"totalCount": { "enabled": true } })
     pub total_count: Option<TableDirectiveTotalCount>,
+
+    // @graphql({"aggregate": { "enabled": true } })
+    pub aggregate: Option<TableDirectiveAggregate>,
 
     // @graphql({"primary_key_columns": ["id"]})
     pub primary_key_columns: Option<Vec<String>>,
