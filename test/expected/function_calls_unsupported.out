@@ -303,83 +303,98 @@ begin;
             }
         }
     } $$));
-                                  jsonb_pretty                                   
----------------------------------------------------------------------------------
- {                                                                              +
-     "data": {                                                                  +
-         "__schema": {                                                          +
-             "queryType": {                                                     +
-                 "fields": [                                                    +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "first",                               +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "last",                                +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "before",                              +
-                                 "type": {                                      +
-                                     "name": "Cursor"                           +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "after",                               +
-                                 "type": {                                      +
-                                     "name": "Cursor"                           +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "offset",                              +
-                                 "type": {                                      +
-                                     "name": "Int"                              +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "filter",                              +
-                                 "type": {                                      +
-                                     "name": "AccountFilter"                    +
-                                 }                                              +
-                             },                                                 +
-                             {                                                  +
-                                 "name": "orderBy",                             +
-                                 "type": {                                      +
-                                     "name": null                               +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "accountCollection",                           +
-                         "type": {                                              +
-                             "kind": "OBJECT"                                   +
-                         },                                                     +
-                         "description": "A pagable collection of type `Account`"+
-                     },                                                         +
-                     {                                                          +
-                         "args": [                                              +
-                             {                                                  +
-                                 "name": "nodeId",                              +
-                                 "type": {                                      +
-                                     "name": null                               +
-                                 }                                              +
-                             }                                                  +
-                         ],                                                     +
-                         "name": "node",                                        +
-                         "type": {                                              +
-                             "kind": "INTERFACE"                                +
-                         },                                                     +
-                         "description": "Retrieve a record by its `ID`"         +
-                     }                                                          +
-                 ]                                                              +
-             }                                                                  +
-         }                                                                      +
-     }                                                                          +
+                                          jsonb_pretty                                           
+-------------------------------------------------------------------------------------------------
+ {                                                                                              +
+     "data": {                                                                                  +
+         "__schema": {                                                                          +
+             "queryType": {                                                                     +
+                 "fields": [                                                                    +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "id",                                                  +
+                                 "type": {                                                      +
+                                     "name": null                                               +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "accountByPk",                                                 +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": "Retrieve a record of type `Account` by its primary key"+
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "first",                                               +
+                                 "type": {                                                      +
+                                     "name": "Int"                                              +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "last",                                                +
+                                 "type": {                                                      +
+                                     "name": "Int"                                              +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "before",                                              +
+                                 "type": {                                                      +
+                                     "name": "Cursor"                                           +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "after",                                               +
+                                 "type": {                                                      +
+                                     "name": "Cursor"                                           +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "offset",                                              +
+                                 "type": {                                                      +
+                                     "name": "Int"                                              +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "filter",                                              +
+                                 "type": {                                                      +
+                                     "name": "AccountFilter"                                    +
+                                 }                                                              +
+                             },                                                                 +
+                             {                                                                  +
+                                 "name": "orderBy",                                             +
+                                 "type": {                                                      +
+                                     "name": null                                               +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "accountCollection",                                           +
+                         "type": {                                                              +
+                             "kind": "OBJECT"                                                   +
+                         },                                                                     +
+                         "description": "A pagable collection of type `Account`"                +
+                     },                                                                         +
+                     {                                                                          +
+                         "args": [                                                              +
+                             {                                                                  +
+                                 "name": "nodeId",                                              +
+                                 "type": {                                                      +
+                                     "name": null                                               +
+                                 }                                                              +
+                             }                                                                  +
+                         ],                                                                     +
+                         "name": "node",                                                        +
+                         "type": {                                                              +
+                             "kind": "INTERFACE"                                                +
+                         },                                                                     +
+                         "description": "Retrieve a record by its `ID`"                         +
+                     }                                                                          +
+                 ]                                                                              +
+             }                                                                                  +
+         }                                                                                      +
+     }                                                                                          +
  }
 (1 row)
 

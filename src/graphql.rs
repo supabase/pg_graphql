@@ -1247,6 +1247,58 @@ impl ___Type for QueryType {
                 };
 
                 f.push(collection_entrypoint);
+
+                // Add single record query by primary key if the table has a primary key
+                if let Some(primary_key) = table.primary_key() {
+                    let node_type = NodeType {
+                        table: Arc::clone(table),
+                        fkey: None,
+                        reverse_reference: None,
+                        schema: Arc::clone(&self.schema),
+                    };
+
+                    // Create arguments for each primary key column
+                    let mut pk_args = Vec::new();
+                    for col_name in &primary_key.column_names {
+                        if let Some(col) = table.columns.iter().find(|c| &c.name == col_name) {
+                            let col_type = sql_column_to_graphql_type(col, &self.schema)
+                                .ok_or_else(|| {
+                                    format!(
+                                        "Could not determine GraphQL type for column {}",
+                                        col_name
+                                    )
+                                })
+                                .unwrap_or_else(|_| __Type::Scalar(Scalar::String(None)));
+
+                            // Use graphql_column_field_name to convert snake_case to camelCase if needed
+                            let arg_name = self.schema.graphql_column_field_name(col);
+
+                            pk_args.push(__InputValue {
+                                name_: arg_name,
+                                type_: __Type::NonNull(NonNullType {
+                                    type_: Box::new(col_type),
+                                }),
+                                description: Some(format!("The record's `{}` value", col_name)),
+                                default_value: None,
+                                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                            });
+                        }
+                    }
+
+                    let pk_entrypoint = __Field {
+                        name_: format!("{}ByPk", lowercase_first_letter(table_base_type_name)),
+                        type_: __Type::Node(node_type),
+                        args: pk_args,
+                        description: Some(format!(
+                            "Retrieve a record of type `{}` by its primary key",
+                            table_base_type_name
+                        )),
+                        deprecation_reason: None,
+                        sql_type: None,
+                    };
+
+                    f.push(pk_entrypoint);
+                }
             }
         }
 
