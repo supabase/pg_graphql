@@ -53,4 +53,4 @@ select graphql.resolve($$
 }
 $$);
 
-rollback; 
+rollback;

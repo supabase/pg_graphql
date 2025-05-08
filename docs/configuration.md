@@ -103,7 +103,7 @@ The `aggregate` field is an opt-in field that extends a table's Connection type.
 type BlogPostConnection {
   edges: [BlogPostEdge!]!
   pageInfo: PageInfo!
-  
+
   """Aggregate functions calculated on the collection of `BlogPost`"""
   aggregate: BlogPostAggregate # this field
 }
