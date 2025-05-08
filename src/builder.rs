@@ -1472,7 +1472,15 @@ where
 
             for selection_field in selection_fields {
                 match field_map.get(selection_field.name.as_ref()) {
-                    None => return Err("unknown field in connection".to_string()),
+                    None => {
+                        let error = if selection_field.name.as_ref() == "aggregate" {
+                            "enable the aggregate directive to use aggregates"
+                        } else {
+                            "unknown field in connection"
+                        }
+                        .to_string();
+                        return Err(error);
+                    }
                     Some(f) => builder_fields.push(match &f.type_.unmodified_type() {
                         __Type::Edge(_) => ConnectionSelection::Edge(to_edge_builder(
                             f,

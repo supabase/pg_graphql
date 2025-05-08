@@ -21,9 +21,9 @@ select graphql.resolve($$
   }
 }
 $$);
-                                resolve                                 
-------------------------------------------------------------------------
- {"data": null, "errors": [{"message": "unknown field in connection"}]}
+                                           resolve                                           
+---------------------------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "enable the aggregate directive to use aggregates"}]}
 (1 row)
 
 -- Enable aggregates
