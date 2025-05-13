@@ -576,6 +576,18 @@ impl Table {
             .collect::<Vec<&Arc<Column>>>()
     }
 
+    pub fn has_supported_pk_types_for_by_pk(&self) -> bool {
+        let pk_columns = self.primary_key_columns();
+        if pk_columns.is_empty() {
+            return false;
+        }
+
+        // Check that all primary key columns have supported types
+        pk_columns.iter().all(|col| {
+            SupportedPrimaryKeyType::from_type_name(&col.type_name).is_some()
+        })
+    }
+
     pub fn is_any_column_selectable(&self) -> bool {
         self.columns.iter().any(|x| x.permissions.is_selectable)
     }
@@ -594,6 +606,41 @@ impl Table {
     /// If neither is set, use the global default(set in load_sql_context.sql)
     pub fn max_rows(&self, schema: &Schema) -> u64 {
         self.directives.max_rows.unwrap_or(schema.directives.max_rows)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SupportedPrimaryKeyType {
+    // Integer types
+    Int,      // int, int4, integer
+    BigInt,   // bigint, int8
+    SmallInt, // smallint, int2
+    // String types
+    Text,     // text
+    VarChar,  // varchar
+    Char,     // char, bpchar
+    CiText,   // citext
+    // UUID
+    UUID,     // uuid
+}
+
+impl SupportedPrimaryKeyType {
+    fn from_type_name(type_name: &str) -> Option<Self> {
+        match type_name {
+            // Integer types
+            "int" | "int4" | "integer" => Some(Self::Int),
+            "bigint" | "int8" => Some(Self::BigInt),
+            "smallint" | "int2" => Some(Self::SmallInt),
+            // String types
+            "text" => Some(Self::Text),
+            "varchar" => Some(Self::VarChar),
+            "char" | "bpchar" => Some(Self::Char),
+            "citext" => Some(Self::CiText),
+            // UUID
+            "uuid" => Some(Self::UUID),
+            // Any other type is not supported
+            _ => None,
+        }
     }
 }
 

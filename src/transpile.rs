@@ -1589,9 +1589,7 @@ impl NodeIdInstance {
         param_context: &mut ParamContext,
     ) -> Result<String, String> {
         // Validate that nodeId belongs to the table being queried
-        if self.schema_name != table.schema || self.table_name != table.name {
-            return Err("nodeId belongs to a different collection".to_string());
-        }
+        self.validate(table)?;
 
         let pkey = table
             .primary_key()

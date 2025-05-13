@@ -1022,6 +1022,16 @@ pub struct NodeIdInstance {
     pub values: Vec<serde_json::Value>,
 }
 
+impl NodeIdInstance {
+    pub fn validate(&self, table: &Table) -> Result<(), String> {
+        // Validate that nodeId belongs to the table being queried
+        if self.schema_name != table.schema || self.table_name != table.name {
+            return Err("nodeId belongs to a different collection".to_string());
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct NodeIdBuilder {
     pub alias: String,
