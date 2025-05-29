@@ -1423,13 +1423,13 @@ where
                 }
             };
 
-            let max_rows: u64 = xtype
+            let max_rows = xtype
                 .schema
                 .context
                 .schemas
                 .values()
                 .find(|s| s.oid == xtype.table.schema_oid)
-                .map(|x| x.directives.max_rows)
+                .map(|schema| xtype.table.max_rows(schema))
                 .unwrap_or(30);
 
             let before: Option<Cursor> = read_argument_cursor(

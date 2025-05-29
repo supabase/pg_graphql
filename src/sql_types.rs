@@ -591,7 +591,7 @@ impl Table {
     /// Get the effective max_rows value for this table.
     /// If table-specific max_rows is set, use that.
     /// Otherwise, fall back to schema-level max_rows.
-    /// If neither is set, use the global default.
+    /// If neither is set, use the global default(set in load_sql_context.sql)
     pub fn max_rows(&self, schema: &Schema) -> u64 {
         self.directives.max_rows.unwrap_or(schema.directives.max_rows)
     }
