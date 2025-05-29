@@ -265,7 +265,8 @@ select
                                             )
                                         ),
                                         'primary_key_columns', d.directive -> 'primary_key_columns',
-                                        'foreign_keys', d.directive -> 'foreign_keys'
+                                        'foreign_keys', d.directive -> 'foreign_keys',
+                                        'max_rows', (d.directive ->> 'max_rows')::int
                                     )
                                 from
                                     directives d
