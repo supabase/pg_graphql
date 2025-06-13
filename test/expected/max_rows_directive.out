@@ -2,9 +2,15 @@ begin;
     create table account(
         id int primary key
     );
+    create view "accountView" as
+    select * from account;
+    comment on view "accountView" is e'@graphql({"primary_key_columns": ["id"]})';
+    create view "accountViewWrapper" as
+    select * from "accountView";
+    comment on view "accountViewWrapper" is e'@graphql({"primary_key_columns": ["id"]})';
     insert into public.account(id)
     select * from generate_series(1, 100);
-    -- expect default 30 rows on first page
+    -- expect 30 rows on first page because of fallback to default
     select graphql.resolve($$
       {
         accountCollection
@@ -22,8 +28,42 @@ begin;
  {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}, {"node": {"id": 6}}, {"node": {"id": 7}}, {"node": {"id": 8}}, {"node": {"id": 9}}, {"node": {"id": 10}}, {"node": {"id": 11}}, {"node": {"id": 12}}, {"node": {"id": 13}}, {"node": {"id": 14}}, {"node": {"id": 15}}, {"node": {"id": 16}}, {"node": {"id": 17}}, {"node": {"id": 18}}, {"node": {"id": 19}}, {"node": {"id": 20}}, {"node": {"id": 21}}, {"node": {"id": 22}}, {"node": {"id": 23}}, {"node": {"id": 24}}, {"node": {"id": 25}}, {"node": {"id": 26}}, {"node": {"id": 27}}, {"node": {"id": 28}}, {"node": {"id": 29}}, {"node": {"id": 30}}]}}}
 (1 row)
 
+    -- expect 30 rows on first page because of fallback to default
+    select graphql.resolve($$
+      {
+        accountViewCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    $$);
+                                                                                                                                                                                                                                                                                                                                                           resolve                                                                                                                                                                                                                                                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountViewCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}, {"node": {"id": 6}}, {"node": {"id": 7}}, {"node": {"id": 8}}, {"node": {"id": 9}}, {"node": {"id": 10}}, {"node": {"id": 11}}, {"node": {"id": 12}}, {"node": {"id": 13}}, {"node": {"id": 14}}, {"node": {"id": 15}}, {"node": {"id": 16}}, {"node": {"id": 17}}, {"node": {"id": 18}}, {"node": {"id": 19}}, {"node": {"id": 20}}, {"node": {"id": 21}}, {"node": {"id": 22}}, {"node": {"id": 23}}, {"node": {"id": 24}}, {"node": {"id": 25}}, {"node": {"id": 26}}, {"node": {"id": 27}}, {"node": {"id": 28}}, {"node": {"id": 29}}, {"node": {"id": 30}}]}}}
+(1 row)
+
+    -- expect 30 rows on first page because of fallback to default
+    select graphql.resolve($$
+      {
+        accountViewWrapperCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    $$);
+                                                                                                                                                                                                                                                                                                                                                              resolve                                                                                                                                                                                                                                                                                                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountViewWrapperCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}, {"node": {"id": 6}}, {"node": {"id": 7}}, {"node": {"id": 8}}, {"node": {"id": 9}}, {"node": {"id": 10}}, {"node": {"id": 11}}, {"node": {"id": 12}}, {"node": {"id": 13}}, {"node": {"id": 14}}, {"node": {"id": 15}}, {"node": {"id": 16}}, {"node": {"id": 17}}, {"node": {"id": 18}}, {"node": {"id": 19}}, {"node": {"id": 20}}, {"node": {"id": 21}}, {"node": {"id": 22}}, {"node": {"id": 23}}, {"node": {"id": 24}}, {"node": {"id": 25}}, {"node": {"id": 26}}, {"node": {"id": 27}}, {"node": {"id": 28}}, {"node": {"id": 29}}, {"node": {"id": 30}}]}}}
+(1 row)
+
     comment on schema public is e'@graphql({"max_rows": 5})';
-    -- expect 5 rows on first page
+    -- expect 5 rows on first page because of fallback to schema max_rows
     select graphql.resolve($$
       {
         accountCollection
@@ -41,8 +81,42 @@ begin;
  {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}]}}}
 (1 row)
 
+    -- expect 5 rows on first page because of fallback to schema max_rows
+    select graphql.resolve($$
+      {
+        accountViewCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    $$);
+                                                                          resolve                                                                          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountViewCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}]}}}
+(1 row)
+
+    -- expect 5 rows on first page because of fallback to schema max_rows
+    select graphql.resolve($$
+      {
+        accountViewWrapperCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    $$);
+                                                                             resolve                                                                              
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountViewWrapperCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}]}}}
+(1 row)
+
     comment on schema public is e'@graphql({"max_rows": 40})';
-    -- expect 40 rows on first page
+    -- expect 40 rows on first page because of fallback to schema max_rows
     select graphql.resolve($$
       {
         accountCollection
@@ -60,9 +134,43 @@ begin;
  {"data": {"accountCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}, {"node": {"id": 6}}, {"node": {"id": 7}}, {"node": {"id": 8}}, {"node": {"id": 9}}, {"node": {"id": 10}}, {"node": {"id": 11}}, {"node": {"id": 12}}, {"node": {"id": 13}}, {"node": {"id": 14}}, {"node": {"id": 15}}, {"node": {"id": 16}}, {"node": {"id": 17}}, {"node": {"id": 18}}, {"node": {"id": 19}}, {"node": {"id": 20}}, {"node": {"id": 21}}, {"node": {"id": 22}}, {"node": {"id": 23}}, {"node": {"id": 24}}, {"node": {"id": 25}}, {"node": {"id": 26}}, {"node": {"id": 27}}, {"node": {"id": 28}}, {"node": {"id": 29}}, {"node": {"id": 30}}, {"node": {"id": 31}}, {"node": {"id": 32}}, {"node": {"id": 33}}, {"node": {"id": 34}}, {"node": {"id": 35}}, {"node": {"id": 36}}, {"node": {"id": 37}}, {"node": {"id": 38}}, {"node": {"id": 39}}, {"node": {"id": 40}}]}}}
 (1 row)
 
+    -- expect 40 rows on first page because of fallback to schema max_rows
+    select graphql.resolve($$
+      {
+        accountViewCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    $$);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                         resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountViewCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}, {"node": {"id": 6}}, {"node": {"id": 7}}, {"node": {"id": 8}}, {"node": {"id": 9}}, {"node": {"id": 10}}, {"node": {"id": 11}}, {"node": {"id": 12}}, {"node": {"id": 13}}, {"node": {"id": 14}}, {"node": {"id": 15}}, {"node": {"id": 16}}, {"node": {"id": 17}}, {"node": {"id": 18}}, {"node": {"id": 19}}, {"node": {"id": 20}}, {"node": {"id": 21}}, {"node": {"id": 22}}, {"node": {"id": 23}}, {"node": {"id": 24}}, {"node": {"id": 25}}, {"node": {"id": 26}}, {"node": {"id": 27}}, {"node": {"id": 28}}, {"node": {"id": 29}}, {"node": {"id": 30}}, {"node": {"id": 31}}, {"node": {"id": 32}}, {"node": {"id": 33}}, {"node": {"id": 34}}, {"node": {"id": 35}}, {"node": {"id": 36}}, {"node": {"id": 37}}, {"node": {"id": 38}}, {"node": {"id": 39}}, {"node": {"id": 40}}]}}}
+(1 row)
+
+    -- expect 40 rows on first page because of fallback to schema max_rows
+    select graphql.resolve($$
+      {
+        accountViewWrapperCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    $$);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"data": {"accountViewWrapperCollection": {"edges": [{"node": {"id": 1}}, {"node": {"id": 2}}, {"node": {"id": 3}}, {"node": {"id": 4}}, {"node": {"id": 5}}, {"node": {"id": 6}}, {"node": {"id": 7}}, {"node": {"id": 8}}, {"node": {"id": 9}}, {"node": {"id": 10}}, {"node": {"id": 11}}, {"node": {"id": 12}}, {"node": {"id": 13}}, {"node": {"id": 14}}, {"node": {"id": 15}}, {"node": {"id": 16}}, {"node": {"id": 17}}, {"node": {"id": 18}}, {"node": {"id": 19}}, {"node": {"id": 20}}, {"node": {"id": 21}}, {"node": {"id": 22}}, {"node": {"id": 23}}, {"node": {"id": 24}}, {"node": {"id": 25}}, {"node": {"id": 26}}, {"node": {"id": 27}}, {"node": {"id": 28}}, {"node": {"id": 29}}, {"node": {"id": 30}}, {"node": {"id": 31}}, {"node": {"id": 32}}, {"node": {"id": 33}}, {"node": {"id": 34}}, {"node": {"id": 35}}, {"node": {"id": 36}}, {"node": {"id": 37}}, {"node": {"id": 38}}, {"node": {"id": 39}}, {"node": {"id": 40}}]}}}
+(1 row)
+
     -- table-specific max_rows
     comment on table account is e'@graphql({"max_rows": 5})';
-    -- expect 5 rows on first page
+    -- expect 5 rows on first page because of table max_rows
     select graphql.resolve($$
       {
         accountCollection {
@@ -80,10 +188,8 @@ begin;
 (1 row)
 
     -- view-specific max_rows
-    create view "accountView" as
-    select * from account;
     comment on view "accountView" is e'@graphql({"primary_key_columns": ["id"], "max_rows": 3})';
-    -- expect 3 rows on first page
+    -- expect 3 rows on first page because of view max_rows
     select graphql.resolve($$
       {
         accountViewCollection {
@@ -101,10 +207,8 @@ begin;
 (1 row)
 
     -- nested view with max_rows
-    create view "accountViewWrapper" as
-    select * from "accountView";
     comment on view "accountViewWrapper" is e'@graphql({"primary_key_columns": ["id"], "max_rows": 2})';
-    -- expect 2 rows on first page
+    -- expect 2 rows on first page because of view max_rows
     select graphql.resolve($$
       {
         accountViewWrapperCollection {
