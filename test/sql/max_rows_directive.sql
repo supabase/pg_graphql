@@ -69,14 +69,14 @@ begin;
     $$);
 
     -- view-specific max_rows
-    create view person as
+    create view "accountView" as
     select * from account;
-    comment on view person is e'@graphql({"primary_key_columns": ["id"], "max_rows": 3})';
+    comment on view "accountView" is e'@graphql({"primary_key_columns": ["id"], "max_rows": 3})';
 
     -- expect 3 rows on first page
     select graphql.resolve($$
       {
-        personCollection {
+        accountViewCollection {
           edges {
             node {
               id
@@ -87,14 +87,14 @@ begin;
     $$);
 
     -- nested view with max_rows
-    create view parent as
-    select * from person;
-    comment on view parent is e'@graphql({"primary_key_columns": ["id"], "max_rows": 2})';
+    create view "accountViewWrapper" as
+    select * from "accountView";
+    comment on view "accountViewWrapper" is e'@graphql({"primary_key_columns": ["id"], "max_rows": 2})';
 
     -- expect 2 rows on first page
     select graphql.resolve($$
       {
-        parentCollection {
+        accountViewWrapperCollection {
           edges {
             node {
               id
