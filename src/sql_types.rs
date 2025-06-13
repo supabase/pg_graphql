@@ -482,6 +482,9 @@ pub struct TableDirectives {
     // @graphql({"primary_key_columns": ["id"]})
     pub primary_key_columns: Option<Vec<String>>,
 
+    // @graphql({"max_rows": 20})
+    pub max_rows: Option<u64>,
+
     /*
     @graphql(
       {
@@ -576,12 +579,21 @@ impl Table {
     pub fn is_any_column_selectable(&self) -> bool {
         self.columns.iter().any(|x| x.permissions.is_selectable)
     }
+
     pub fn is_any_column_insertable(&self) -> bool {
         self.columns.iter().any(|x| x.permissions.is_insertable)
     }
 
     pub fn is_any_column_updatable(&self) -> bool {
         self.columns.iter().any(|x| x.permissions.is_updatable)
+    }
+
+    /// Get the effective max_rows value for this table.
+    /// If table-specific max_rows is set, use that.
+    /// Otherwise, fall back to schema-level max_rows.
+    /// If neither is set, use the global default(set in load_sql_context.sql)
+    pub fn max_rows(&self, schema: &Schema) -> u64 {
+        self.directives.max_rows.unwrap_or(schema.directives.max_rows)
     }
 }
 
