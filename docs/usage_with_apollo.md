@@ -60,7 +60,7 @@ import {
 } from '@apollo/client'
 import { setContext } from '@apollo/client/link/context'
 import { relayStylePagination } from '@apollo/client/utilities'
-import supabase from './supabase'
+import supabase, { SUPABASE_ANON_KEY } from './supabase'
 
 const cache = new InMemoryCache({
   dataIdFromObject(responseObject) {
@@ -100,6 +100,7 @@ const authLink = setContext(async (_, { headers }) => {
     headers: {
       ...headers,
       Authorization: token ? `Bearer ${token}` : '',
+      apikey: SUPABASE_ANON_KEY,
     },
   }
 })
