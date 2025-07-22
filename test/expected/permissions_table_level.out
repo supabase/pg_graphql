@@ -22,6 +22,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  },                             +
                  {                              +
@@ -97,6 +100,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  },                             +
                  {                              +
@@ -139,6 +145,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  },                             +
                  {                              +
@@ -180,6 +189,9 @@ begin;
      "data": {                                  +
          "__type": {                            +
              "fields": [                        +
+                 {                              +
+                     "name": "accountByPk"      +
+                 },                             +
                  {                              +
                      "name": "accountCollection"+
                  },                             +

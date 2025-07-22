@@ -32,7 +32,13 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "blogByPk"         +
                  },                             +
                  {                              +
                      "name": "blogCollection"   +
@@ -70,13 +76,22 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "blogByPk"         +
                  },                             +
                  {                              +
                      "name": "blogCollection"   +
                  },                             +
                  {                              +
                      "name": "node"             +
+                 },                             +
+                 {                              +
+                     "name": "personByPk"       +
                  },                             +
                  {                              +
                      "name": "personCollection" +

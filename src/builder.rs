@@ -992,6 +992,19 @@ pub struct NodeBuilder {
 }
 
 #[derive(Clone, Debug)]
+pub struct NodeByPkBuilder {
+    // args - map of column name to value
+    pub pk_values: HashMap<String, serde_json::Value>,
+
+    pub _alias: String,
+
+    // metadata
+    pub table: Arc<Table>,
+
+    pub selections: Vec<NodeSelection>,
+}
+
+#[derive(Clone, Debug)]
 pub enum NodeSelection {
     Connection(ConnectionBuilder),
     Node(NodeBuilder),
@@ -1007,6 +1020,16 @@ pub struct NodeIdInstance {
     pub table_name: String,
     // Vec matching length of "columns" representing primary key values
     pub values: Vec<serde_json::Value>,
+}
+
+impl NodeIdInstance {
+    pub fn validate(&self, table: &Table) -> Result<(), String> {
+        // Validate that nodeId belongs to the table being queried
+        if self.schema_name != table.schema || self.table_name != table.name {
+            return Err("nodeId belongs to a different collection".to_string());
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -2026,6 +2049,188 @@ where
         reverse_reference: xtype.reverse_reference,
         selections: builder_fields,
     })
+}
+
+pub fn to_node_by_pk_builder<'a, T>(
+    field: &__Field,
+    query_field: &graphql_parser::query::Field<'a, T>,
+    fragment_definitions: &Vec<FragmentDefinition<'a, T>>,
+    variables: &serde_json::Value,
+    variable_definitions: &Vec<VariableDefinition<'a, T>>,
+) -> Result<NodeByPkBuilder, String>
+where
+    T: Text<'a> + Eq + AsRef<str> + Clone,
+    T::Value: Hash,
+{
+    let type_ = field.type_().unmodified_type();
+    let alias = alias_or_name(query_field);
+
+    match type_ {
+        __Type::Node(xtype) => {
+            let type_name = xtype
+                .name()
+                .ok_or("Encountered type without name in node_by_pk builder")?;
+
+            let field_map = field_map(&__Type::Node(xtype.clone()));
+
+            // Get primary key columns from the table
+            let pkey = xtype
+                .table
+                .primary_key()
+                .ok_or("Table has no primary key".to_string())?;
+
+            // Create a map of expected field arguments based on the field's arg definitions
+            let mut pk_arg_map = HashMap::new();
+            for arg in field.args() {
+                if let Some(NodeSQLType::Column(col)) = &arg.sql_type {
+                    pk_arg_map.insert(arg.name().to_string(), col.name.clone());
+                }
+            }
+
+            let mut pk_values = HashMap::new();
+
+            // Process each argument in the query
+            for arg in &query_field.arguments {
+                let arg_name = arg.0.as_ref();
+
+                // Find the corresponding column name from our argument map
+                if let Some(col_name) = pk_arg_map.get(arg_name) {
+                    let value = to_gson(&arg.1, variables, variable_definitions)?;
+                    let json_value = gson::gson_to_json(&value)?;
+                    pk_values.insert(col_name.clone(), json_value);
+                }
+            }
+
+            // Need values for all primary key columns
+            if pk_values.len() != pkey.column_names.len() {
+                return Err("All primary key columns must be provided".to_string());
+            }
+
+            let mut builder_fields = vec![];
+            let selection_fields = normalize_selection_set(
+                &query_field.selection_set,
+                fragment_definitions,
+                &type_name,
+                variables,
+            )?;
+
+            for selection_field in selection_fields {
+                match field_map.get(selection_field.name.as_ref()) {
+                    None => {
+                        return Err(format!(
+                            "Unknown field '{}' on type '{}'",
+                            selection_field.name.as_ref(),
+                            &type_name
+                        ))
+                    }
+                    Some(f) => {
+                        let alias = alias_or_name(&selection_field);
+
+                        let node_selection = match &f.sql_type {
+                            Some(node_sql_type) => match node_sql_type {
+                                NodeSQLType::Column(col) => NodeSelection::Column(ColumnBuilder {
+                                    alias,
+                                    column: Arc::clone(col),
+                                }),
+                                NodeSQLType::Function(func) => {
+                                    let function_selection = match &f.type_() {
+                                        __Type::Scalar(_) => FunctionSelection::ScalarSelf,
+                                        __Type::List(_) => FunctionSelection::Array,
+                                        __Type::Node(_) => {
+                                            let node_builder = to_node_builder(
+                                                f,
+                                                &selection_field,
+                                                fragment_definitions,
+                                                variables,
+                                                &[],
+                                                variable_definitions,
+                                            )?;
+                                            FunctionSelection::Node(node_builder)
+                                        }
+                                        __Type::Connection(_) => {
+                                            let connection_builder = to_connection_builder(
+                                                f,
+                                                &selection_field,
+                                                fragment_definitions,
+                                                variables,
+                                                &[],
+                                                variable_definitions,
+                                            )?;
+                                            FunctionSelection::Connection(connection_builder)
+                                        }
+                                        _ => {
+                                            return Err(
+                                                "invalid return type from function".to_string()
+                                            )
+                                        }
+                                    };
+                                    NodeSelection::Function(FunctionBuilder {
+                                        alias,
+                                        function: Arc::clone(func),
+                                        table: Arc::clone(&xtype.table),
+                                        selection: function_selection,
+                                    })
+                                }
+                                NodeSQLType::NodeId(pkey_columns) => {
+                                    NodeSelection::NodeId(NodeIdBuilder {
+                                        alias,
+                                        columns: pkey_columns.clone(),
+                                        table_name: xtype.table.name.clone(),
+                                        schema_name: xtype.table.schema.clone(),
+                                    })
+                                }
+                            },
+                            _ => match f.name().as_ref() {
+                                "__typename" => NodeSelection::Typename {
+                                    alias: alias_or_name(&selection_field),
+                                    typename: xtype.name().expect("node type should have a name"),
+                                },
+                                _ => match f.type_().unmodified_type() {
+                                    __Type::Connection(_) => {
+                                        let con_builder = to_connection_builder(
+                                            f,
+                                            &selection_field,
+                                            fragment_definitions,
+                                            variables,
+                                            &[],
+                                            variable_definitions,
+                                        );
+                                        NodeSelection::Connection(con_builder?)
+                                    }
+                                    __Type::Node(_) => {
+                                        let node_builder = to_node_builder(
+                                            f,
+                                            &selection_field,
+                                            fragment_definitions,
+                                            variables,
+                                            &[],
+                                            variable_definitions,
+                                        );
+                                        NodeSelection::Node(node_builder?)
+                                    }
+                                    _ => {
+                                        return Err(format!(
+                                            "unexpected field type on node {}",
+                                            f.name()
+                                        ));
+                                    }
+                                },
+                            },
+                        };
+                        builder_fields.push(node_selection);
+                    }
+                }
+            }
+
+            Ok(NodeByPkBuilder {
+                pk_values,
+                _alias: alias,
+                table: Arc::clone(&xtype.table),
+                selections: builder_fields,
+            })
+        }
+        _ => Err("cannot build query for non-node type".to_string()),
+    }
 }
 
 // Introspection
