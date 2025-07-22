@@ -60,12 +60,20 @@ For more fine grained adjustments to reflected names, see [renaming](#renaming).
 
 ### Max Rows
 
-The default page size for collections is 30 entries. To adjust the number of entries on each page, set a `max_rows` directive on the relevant schema entity.
+The default page size for collections is 30 entries. To adjust the number of entries on each page, set a `max_rows` directive on the relevant schema entity, table or view.
 
 For example, to increase the max rows per page for each table in the `public` schema:
 ```sql
 comment on schema public is e'@graphql({"max_rows": 100})';
 ```
+
+To limit the max rows per page for the `blog_post` table and `Person` view:
+```sql
+comment on table blog_post is e'@graphql({"max_rows": 20})';
+comment on view "Person" is e'@graphql({"primary_key_columns": ["id"], "max_rows": 10})';
+```
+
+The `max_rows` value falls back to the parent object if it is missing on the current object. For example, if a table doesn't have `max_rows` set, the value set on the table's schema will be used. If the schema also doesn't have `max_rows` set, then it falls back to default value 30. The parent object of a view is the schema, not the table on which the view is created.
 
 ### totalCount
 

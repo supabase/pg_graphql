@@ -96,3 +96,4 @@
 
 ## master
 - feature: Add support for aggregate functions (count, sum, avg, min, max) on collection types
+- feature: Add support for per table and view `max_row` directives
