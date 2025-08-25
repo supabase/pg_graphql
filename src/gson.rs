@@ -6,6 +6,8 @@ were not provided by the user.
 */
 use std::collections::HashMap;
 
+use crate::error::{GraphQLError, GraphQLResult};
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Absent,
@@ -29,7 +31,7 @@ pub enum Number {
     Float(f64),
 }
 
-pub fn json_to_gson(val: &serde_json::Value) -> Result<Value, String> {
+pub fn json_to_gson(val: &serde_json::Value) -> GraphQLResult<Value> {
     use serde_json::Value as JsonValue;
 
     let v = match val {
@@ -52,9 +54,9 @@ pub fn json_to_gson(val: &serde_json::Value) -> Result<Value, String> {
                     Value::Number(i_val)
                 }
                 None => {
-                    let f_val: f64 = x
-                        .as_f64()
-                        .ok_or("Failed to handle numeric user input".to_string())?;
+                    let f_val: f64 = x.as_f64().ok_or_else(|| {
+                        GraphQLError::type_error("Failed to handle numeric user input")
+                    })?;
                     Value::Number(Number::Float(f_val))
                 }
             }
@@ -71,12 +73,12 @@ pub fn json_to_gson(val: &serde_json::Value) -> Result<Value, String> {
     Ok(v)
 }
 
-pub fn gson_to_json(val: &Value) -> Result<serde_json::Value, String> {
+pub fn gson_to_json(val: &Value) -> GraphQLResult<serde_json::Value> {
     use serde_json::Value as JsonValue;
 
     let v = match val {
         Value::Absent => {
-            return Err("Encounterd `Absent` value while transforming between GraphQL intermediate object notation and JSON".to_string())
+            return Err(GraphQLError::internal("Encountered `Absent` value while transforming between GraphQL intermediate object notation and JSON"))
         },
         Value::Null => JsonValue::Null,
         Value::Boolean(x) => JsonValue::Bool(x.to_owned()),

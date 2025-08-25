@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 
 use crate::builder::*;
+use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::*;
 use crate::omit::*;
 use crate::parser_util::*;
@@ -92,7 +93,9 @@ where
             Err(message) => {
                 return GraphQLResponse {
                     data: Omit::Omitted,
-                    errors: Omit::Present(vec![ErrorMessage { message }]),
+                    errors: Omit::Present(vec![ErrorMessage {
+                        message: message.to_string(),
+                    }]),
                 }
             }
         }
@@ -220,9 +223,13 @@ where
                                     Ok(d) => {
                                         res_data[alias_or_name(selection)] = d;
                                     }
-                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                    Err(msg) => res_errors.push(ErrorMessage {
+                                        message: msg.to_string(),
+                                    }),
                                 },
-                                Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                Err(msg) => res_errors.push(ErrorMessage {
+                                    message: msg.to_string(),
+                                }),
                             }
                         }
                         __Type::NodeInterface(_) => {
@@ -240,9 +247,13 @@ where
                                     Ok(d) => {
                                         res_data[alias_or_name(selection)] = d;
                                     }
-                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                    Err(msg) => res_errors.push(ErrorMessage {
+                                        message: msg.to_string(),
+                                    }),
                                 },
-                                Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                Err(msg) => res_errors.push(ErrorMessage {
+                                    message: msg.to_string(),
+                                }),
                             }
                         }
                         __Type::__Type(_) => {
@@ -259,7 +270,9 @@ where
                                 Ok(builder) => {
                                     res_data[alias_or_name(selection)] = serde_json::json!(builder);
                                 }
-                                Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                Err(msg) => res_errors.push(ErrorMessage {
+                                    message: msg.to_string(),
+                                }),
                             }
                         }
                         __Type::__Schema(_) => {
@@ -275,7 +288,9 @@ where
                                 Ok(builder) => {
                                     res_data[alias_or_name(selection)] = serde_json::json!(builder);
                                 }
-                                Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                Err(msg) => res_errors.push(ErrorMessage {
+                                    message: msg.to_string(),
+                                }),
                             }
                         }
                         _ => match field_def.name().as_ref() {
@@ -308,12 +323,14 @@ where
                                             Ok(d) => {
                                                 res_data[alias_or_name(selection)] = d;
                                             }
-                                            Err(msg) => {
-                                                res_errors.push(ErrorMessage { message: msg })
-                                            }
+                                            Err(msg) => res_errors.push(ErrorMessage {
+                                                message: msg.to_string(),
+                                            }),
                                         }
                                     }
-                                    Err(msg) => res_errors.push(ErrorMessage { message: msg }),
+                                    Err(msg) => res_errors.push(ErrorMessage {
+                                        message: msg.to_string(),
+                                    }),
                                 }
                             }
                         },
@@ -403,9 +420,9 @@ where
 
     use pgrx::prelude::*;
 
-    let spi_result: Result<serde_json::Value, String> = Spi::connect(|mut conn| {
+    let spi_result: GraphQLResult<serde_json::Value> = Spi::connect(|mut conn| {
         let res_data: serde_json::Value = match selections[..] {
-            [] => Err("Selection set must not be empty".to_string())?,
+            [] => Err(GraphQLError::validation("Selection set must not be empty"))?,
             _ => {
                 let mut res_data = json!({});
                 // Key name to prepared statement name
@@ -414,9 +431,9 @@ where
                     let maybe_field_def = map.get(selection.name.as_ref());
 
                     conn = match maybe_field_def {
-                        None => Err(format!(
-                            "Unknown field {:?} on type {}",
-                            selection.name, mutation_type_name
+                        None => Err(GraphQLError::field_not_found(
+                            selection.name.as_ref(),
+                            &mutation_type_name
                         ))?,
                         Some(field_def) => match field_def.type_.unmodified_type() {
                             __Type::InsertResponse(_) => {
@@ -517,7 +534,11 @@ where
             errors: Omit::Omitted,
         },
         Err(err) => {
-            ereport!(ERROR, PgSqlErrorCode::ERRCODE_INTERNAL_ERROR, err);
+            ereport!(
+                ERROR,
+                PgSqlErrorCode::ERRCODE_INTERNAL_ERROR,
+                err.to_string()
+            );
         }
     }
 }
@@ -529,17 +550,17 @@ fn detect_fragment_cycles<'a, 'b, T>(
     visited: &mut HashSet<&'b str>,
     fragment_definitions: &'b [FragmentDefinition<'a, T>],
     stack_depth: u32,
-) -> Result<(), String>
+) -> GraphQLResult<()>
 where
     T: Text<'a>,
 {
     if stack_depth > STACK_DEPTH_LIMIT {
-        return Err(format!(
+        return Err(GraphQLError::validation(format!(
             "Fragment cycle depth is greater than {STACK_DEPTH_LIMIT}"
-        ));
+        )));
     }
     if visited.contains(fragment_definition.name.as_ref()) {
-        return Err("Found a cycle between fragments".to_string());
+        return Err(GraphQLError::validation("Found a cycle between fragments"));
     } else {
         visited.insert(fragment_definition.name.as_ref());
     }
@@ -559,14 +580,14 @@ fn detect_fragment_cycles_in_selection_set<'a, 'b, T>(
     visited: &mut HashSet<&'b str>,
     fragment_definitions: &'b [FragmentDefinition<'a, T>],
     stack_depth: u32,
-) -> Result<(), String>
+) -> GraphQLResult<()>
 where
     T: Text<'a>,
 {
     if stack_depth > STACK_DEPTH_LIMIT {
-        return Err(format!(
+        return Err(GraphQLError::validation(format!(
             "Fragment cycle depth is greater than {STACK_DEPTH_LIMIT}"
-        ));
+        )));
     }
     for selection in &selection_set.items {
         match selection {

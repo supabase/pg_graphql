@@ -3,6 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 use graphql_parser::query::{Field, Text, Value};
 use indexmap::IndexMap;
 
+use crate::error::{GraphQLError, GraphQLResult};
 use crate::parser_util::alias_or_name;
 
 /// Merges duplicates in a vector of fields. The fields in the vector are added to a
@@ -12,7 +13,7 @@ use crate::parser_util::alias_or_name;
 ///
 /// The map is an `IndexMap` to ensure iteration order of the fields is preserved.
 /// This prevents tests from being flaky due to field order changing between test runs.
-pub fn merge<'a, 'b, T>(fields: Vec<Field<'a, T>>) -> Result<Vec<Field<'a, T>>, String>
+pub fn merge<'a, 'b, T>(fields: Vec<Field<'a, T>>) -> GraphQLResult<Vec<Field<'a, T>>>
 where
     T: Text<'a> + Eq + AsRef<str>,
     T::Value: Hash,
@@ -41,23 +42,23 @@ where
     Ok(fields)
 }
 
-fn can_merge<'a, T>(field_a: &Field<'a, T>, field_b: &Field<'a, T>) -> Result<bool, String>
+fn can_merge<'a, T>(field_a: &Field<'a, T>, field_b: &Field<'a, T>) -> GraphQLResult<bool>
 where
     T: Text<'a> + Eq + AsRef<str>,
     T::Value: Hash,
 {
     if field_a.name != field_b.name {
-        return Err(format!(
+        return Err(GraphQLError::validation(format!(
             "Fields `{}` and `{}` are different",
             field_a.name.as_ref(),
             field_b.name.as_ref(),
-        ));
+        )));
     }
     if !same_arguments(&field_a.arguments, &field_b.arguments) {
-        return Err(format!(
+        return Err(GraphQLError::validation(format!(
             "Two fields named `{}` have different arguments",
             field_a.name.as_ref(),
-        ));
+        )));
     }
 
     Ok(true)

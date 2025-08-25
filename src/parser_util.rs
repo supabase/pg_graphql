@@ -1,3 +1,4 @@
+use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::{EnumSource, __InputValue, __Type, ___Type};
 use crate::{gson, merge::merge};
 use graphql_parser::query::*;
@@ -20,7 +21,7 @@ pub fn normalize_selection_set<'a, 'b, T>(
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
-) -> Result<Vec<Field<'a, T>>, String>
+) -> GraphQLResult<Vec<Field<'a, T>>>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
     T::Value: Hash,
@@ -42,7 +43,7 @@ where
 pub fn selection_is_skipped<'a, 'b, T>(
     query_selection: &'b Selection<'a, T>,
     variables: &serde_json::Value,
-) -> Result<bool, String>
+) -> GraphQLResult<bool>
 where
     T: Text<'a> + Eq + AsRef<str>,
 {
@@ -58,11 +59,16 @@ where
             match directive_name {
                 "skip" => {
                     if directive.arguments.len() != 1 {
-                        return Err("Incorrect arguments to directive @skip".to_string());
+                        return Err(GraphQLError::validation(
+                            "Incorrect arguments to directive @skip",
+                        ));
                     }
                     let arg = &directive.arguments[0];
                     if arg.0.as_ref() != "if" {
-                        return Err(format!("Unknown argument to @skip: {}", arg.0.as_ref()));
+                        return Err(GraphQLError::validation(format!(
+                            "Unknown argument to @skip: {}",
+                            arg.0.as_ref()
+                        )));
                     }
 
                     // the argument to @skip(if: <value>)
@@ -82,8 +88,9 @@ where
                                     }
                                 }
                                 _ => {
-                                    return Err("Value for \"if\" in @skip directive is required"
-                                        .to_string());
+                                    return Err(GraphQLError::validation(
+                                        "Value for \"if\" in @skip directive is required",
+                                    ));
                                 }
                             }
                         }
@@ -92,11 +99,16 @@ where
                 }
                 "include" => {
                     if directive.arguments.len() != 1 {
-                        return Err("Incorrect arguments to directive @include".to_string());
+                        return Err(GraphQLError::validation(
+                            "Incorrect arguments to directive @include",
+                        ));
                     }
                     let arg = &directive.arguments[0];
                     if arg.0.as_ref() != "if" {
-                        return Err(format!("Unknown argument to @include: {}", arg.0.as_ref()));
+                        return Err(GraphQLError::validation(format!(
+                            "Unknown argument to @include: {}",
+                            arg.0.as_ref()
+                        )));
                     }
 
                     // the argument to @include(if: <value>)
@@ -115,17 +127,21 @@ where
                                     }
                                 }
                                 _ => {
-                                    return Err(
-                                        "Value for \"if\" in @include directive is required"
-                                            .to_string(),
-                                    );
+                                    return Err(GraphQLError::validation(
+                                        "Value for \"if\" in @include directive is required",
+                                    ));
                                 }
                             }
                         }
                         _ => (),
                     }
                 }
-                _ => return Err(format!("Unknown directive {}", directive_name)),
+                _ => {
+                    return Err(GraphQLError::validation(format!(
+                        "Unknown directive {}",
+                        directive_name
+                    )))
+                }
             }
         }
     }
@@ -138,7 +154,7 @@ pub fn normalize_selection<'a, 'b, T>(
     fragment_definitions: &'b Vec<FragmentDefinition<'a, T>>,
     type_name: &String,            // for inline fragments
     variables: &serde_json::Value, // for directives
-) -> Result<Vec<Field<'a, T>>, String>
+) -> GraphQLResult<Vec<Field<'a, T>>>
 where
     T: Text<'a> + Eq + AsRef<str> + Clone,
     T::Value: Hash,
@@ -168,11 +184,11 @@ where
                 }) {
                 Some(frag) => frag,
                 None => {
-                    return Err(format!(
+                    return Err(GraphQLError::validation(format!(
                         "no fragment named {} on type {}",
                         frag_name.as_ref(),
                         type_name
-                    ))
+                    )))
                 }
             };
 
@@ -215,7 +231,7 @@ pub fn to_gson<'a, T>(
     graphql_value: &Value<'a, T>,
     variables: &serde_json::Value,
     variable_definitions: &Vec<VariableDefinition<'a, T>>,
-) -> Result<gson::Value, String>
+) -> GraphQLResult<gson::Value>
 where
     T: Text<'a> + AsRef<str>,
 {
@@ -229,7 +245,7 @@ where
                     let i_val = gson::Number::Integer(num);
                     gson::Value::Number(i_val)
                 }
-                None => return Err("Invalid Int input".to_string()),
+                None => return Err(GraphQLError::type_error("Invalid Int input")),
             }
         }
         Value::Float(x) => {
@@ -276,7 +292,7 @@ where
     Ok(result)
 }
 
-pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gson::Value, String> {
+pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> GraphQLResult<gson::Value> {
     use crate::graphql::Scalar;
     use crate::gson::Number as GsonNumber;
     use crate::gson::Value as GsonValue;
@@ -286,7 +302,12 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
             match scalar {
                 Scalar::String(None) => match value {
                     GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                    _ => {
+                        return Err(GraphQLError::type_error(format!(
+                            "Invalid input for {:?} type",
+                            scalar
+                        )))
+                    }
                 },
                 Scalar::String(Some(max_length)) => match value {
                     GsonValue::Absent | GsonValue::Null => value.clone(),
@@ -294,51 +315,86 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                         match string_content.len() as i32 > *max_length {
                             false => value.clone(),
                             true => {
-                                return Err(format!(
+                                return Err(GraphQLError::type_error(format!(
                                     "Invalid input for {} type. Maximum character length {}",
                                     scalar.name().unwrap_or("String".to_string()),
                                     max_length
-                                ))
+                                )))
                             }
                         }
                     }
-                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                    _ => {
+                        return Err(GraphQLError::type_error(format!(
+                            "Invalid input for {:?} type",
+                            scalar
+                        )))
+                    }
                 },
                 Scalar::Int => match value {
                     GsonValue::Absent => value.clone(),
                     GsonValue::Null => value.clone(),
                     GsonValue::Number(GsonNumber::Integer(_)) => value.clone(),
-                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                    _ => {
+                        return Err(GraphQLError::type_error(format!(
+                            "Invalid input for {:?} type",
+                            scalar
+                        )))
+                    }
                 },
                 Scalar::Float => match value {
                     GsonValue::Absent => value.clone(),
                     GsonValue::Null => value.clone(),
                     GsonValue::Number(_) => value.clone(),
-                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                    _ => {
+                        return Err(GraphQLError::type_error(format!(
+                            "Invalid input for {:?} type",
+                            scalar
+                        )))
+                    }
                 },
                 Scalar::Boolean => match value {
                     GsonValue::Absent | GsonValue::Null | GsonValue::Boolean(_) => value.clone(),
-                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                    _ => {
+                        return Err(GraphQLError::type_error(format!(
+                            "Invalid input for {:?} type",
+                            scalar
+                        )))
+                    }
                 },
                 Scalar::Date => {
                     match value {
                         // XXX: future - validate date here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::Time => {
                     match value {
                         // XXX: future - validate time here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::Datetime => {
                     match value {
                         // XXX: future - validate datetime here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::BigInt => match value {
@@ -346,43 +402,68 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                     | GsonValue::Null
                     | GsonValue::String(_)
                     | GsonValue::Number(_) => value.clone(),
-                    _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                    _ => {
+                        return Err(GraphQLError::type_error(format!(
+                            "Invalid input for {:?} type",
+                            scalar
+                        )))
+                    }
                 },
                 Scalar::UUID => {
                     match value {
                         // XXX: future - validate uuid here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::JSON => {
                     match value {
                         // XXX: future - validate json here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::Cursor => {
                     match value {
                         // XXX: future - validate cursor here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::ID => {
                     match value {
                         // XXX: future - validate cursor here
                         GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
-                        _ => return Err(format!("Invalid input for {:?} type", scalar)),
+                        _ => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {:?} type",
+                                scalar
+                            )))
+                        }
                     }
                 }
                 Scalar::BigFloat => match value {
                     GsonValue::Absent | GsonValue::Null | GsonValue::String(_) => value.clone(),
                     _ => {
-                        return Err(format!(
+                        return Err(GraphQLError::type_error(format!(
                             "Invalid input for {:?} type. String required",
                             scalar
-                        ))
+                        )))
                     }
                 },
                 // No validation possible for unknown types. Lean on postgres for parsing
@@ -414,10 +495,20 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                                 EnumSource::FilterIs => value.clone(),
                             }
                         }
-                        None => return Err(format!("Invalid input for {} type", enum_name)),
+                        None => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {} type",
+                                enum_name
+                            )))
+                        }
                     }
                 }
-                _ => return Err(format!("Invalid input for {} type", enum_name)),
+                _ => {
+                    return Err(GraphQLError::type_error(format!(
+                        "Invalid input for {} type",
+                        enum_name
+                    )))
+                }
             }
         }
         __Type::OrderBy(enum_) => {
@@ -433,10 +524,20 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
                         .find(|x| x.name().as_str() == user_input_string);
                     match matches_enum_value {
                         Some(_) => value.clone(),
-                        None => return Err(format!("Invalid input for {} type", enum_name)),
+                        None => {
+                            return Err(GraphQLError::type_error(format!(
+                                "Invalid input for {} type",
+                                enum_name
+                            )))
+                        }
                     }
                 }
-                _ => return Err(format!("Invalid input for {} type", enum_name)),
+                _ => {
+                    return Err(GraphQLError::type_error(format!(
+                        "Invalid input for {} type",
+                        enum_name
+                    )))
+                }
             }
         }
         __Type::List(list_type) => {
@@ -464,7 +565,7 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
             let out_elem = validate_arg_from_type(&inner_type, value)?;
             match out_elem {
                 GsonValue::Absent | GsonValue::Null => {
-                    return Err("Invalid input for NonNull type".to_string())
+                    return Err(GraphQLError::type_error("Invalid input for NonNull type"))
                 }
                 _ => out_elem,
             }
@@ -475,10 +576,10 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
         __Type::FilterType(_) => validate_arg_from_input_object(type_, value)?,
         __Type::FilterEntity(_) => validate_arg_from_input_object(type_, value)?,
         _ => {
-            return Err(format!(
+            return Err(GraphQLError::type_error(format!(
                 "Invalid Type used as input argument {}",
                 type_.name().unwrap_or_default()
-            ))
+            )))
         }
     };
     Ok(res)
@@ -487,14 +588,17 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> Result<gso
 pub fn validate_arg_from_input_object(
     input_type: &__Type,
     value: &gson::Value,
-) -> Result<gson::Value, String> {
+) -> GraphQLResult<gson::Value> {
     use crate::graphql::__TypeKind;
     use crate::gson::Value as GsonValue;
 
     let input_type_name = input_type.name().unwrap_or_default();
 
     if input_type.kind() != __TypeKind::INPUT_OBJECT {
-        return Err(format!("Invalid input type {}", input_type_name));
+        return Err(GraphQLError::type_error(format!(
+            "Invalid input type {}",
+            input_type_name
+        )));
     }
 
     let res: GsonValue = match value {
@@ -513,10 +617,10 @@ pub fn validate_arg_from_input_object(
                 }
             }
             if !extra_input_keys.is_empty() {
-                return Err(format!(
+                return Err(GraphQLError::validation(format!(
                     "Input for type {} contains extra keys {:?}",
                     input_type_name, extra_input_keys
-                ));
+                )));
             }
 
             for obj_field in type_input_fields {
@@ -535,7 +639,12 @@ pub fn validate_arg_from_input_object(
             }
             GsonValue::Object(out_map)
         }
-        _ => return Err(format!("Invalid input for {} type", input_type_name)),
+        _ => {
+            return Err(GraphQLError::type_error(format!(
+                "Invalid input for {} type",
+                input_type_name
+            )))
+        }
     };
     Ok(res)
 }

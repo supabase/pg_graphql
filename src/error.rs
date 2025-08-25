@@ -3,11 +3,11 @@ use thiserror::Error;
 
 /// Central error type for all pg_graphql operations.
 /// This replaces string-based error handling with strongly-typed variants.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum GraphQLError {
     /// GraphQL query parsing errors
     #[error("Parse error: {0}")]
-    Parse(#[from] GraphQLParseError),
+    Parse(String),
 
     /// Field resolution errors
     #[error("Field not found: {field} on type {type_name}")]
@@ -18,7 +18,36 @@ pub enum GraphQLError {
     Operation { context: String, message: String },
 }
 
+impl From<GraphQLParseError> for GraphQLError {
+    fn from(err: GraphQLParseError) -> Self {
+        Self::Parse(err.to_string())
+    }
+}
+
+impl From<String> for GraphQLError {
+    fn from(err: String) -> Self {
+        Self::Operation {
+            context: "Error".to_string(),
+            message: err,
+        }
+    }
+}
+
+impl From<&str> for GraphQLError {
+    fn from(err: &str) -> Self {
+        Self::Operation {
+            context: "Error".to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
 impl GraphQLError {
+    /// Creates a parse error
+    pub fn parse(message: impl Into<String>) -> Self {
+        Self::Parse(message.into())
+    }
+
     /// Creates a field not found error
     pub fn field_not_found(field: impl Into<String>, type_name: impl Into<String>) -> Self {
         Self::FieldNotFound {

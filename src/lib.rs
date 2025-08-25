@@ -58,7 +58,9 @@ fn resolve(
                 }
                 Err(err) => GraphQLResponse {
                     data: Omit::Omitted,
-                    errors: Omit::Present(vec![ErrorMessage { message: err }]),
+                    errors: Omit::Present(vec![ErrorMessage {
+                        message: err.to_string(),
+                    }]),
                 },
             }
         }
