@@ -11,7 +11,7 @@ export PGDATABASE=postgres
 export PGTZ=UTC
 export PG_COLOR=auto
 
-# PATH=~/.pgrx/15.1/pgrx-install/bin/:$PATH
+PATH=~/.pgrx/16.10/pgrx-install/bin/:$PATH
 
 ####################
 # Ensure Clean Env #
