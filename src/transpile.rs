@@ -51,7 +51,7 @@ pub trait MutationEntrypoint<'conn> {
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
-                return Err(GraphQLError::sql_generation(format!("Mutation SQL generation error: {}", err)));
+                return Err(err.clone());
             }
         };
 
@@ -84,7 +84,7 @@ pub trait QueryEntrypoint {
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
-                return Err(GraphQLError::sql_generation(format!("Query SQL generation error: {}", err)));
+                return Err(err.clone());
             }
         };
 

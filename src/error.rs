@@ -10,11 +10,11 @@ pub enum GraphQLError {
     Parse(String),
 
     /// Field resolution errors
-    #[error("Field not found: {field} on type {type_name}")]
+    #[error("Unknown field \"{field}\" on type {type_name}")]
     FieldNotFound { field: String, type_name: String },
 
     /// General operation errors with context
-    #[error("{context}: {message}")]
+    #[error("{message}")]
     Operation { context: String, message: String },
 }
 
@@ -43,11 +43,6 @@ impl From<&str> for GraphQLError {
 }
 
 impl GraphQLError {
-    /// Creates a parse error
-    pub fn parse(message: impl Into<String>) -> Self {
-        Self::Parse(message.into())
-    }
-
     /// Creates a field not found error
     pub fn field_not_found(field: impl Into<String>, type_name: impl Into<String>) -> Self {
         Self::FieldNotFound {
@@ -104,14 +99,6 @@ impl GraphQLError {
         }
     }
 
-    /// Creates an authorization error
-    pub fn authorization(message: impl Into<String>) -> Self {
-        Self::Operation {
-            context: "Authorization error".to_string(),
-            message: message.into(),
-        }
-    }
-
     /// Creates an internal error
     pub fn internal(message: impl Into<String>) -> Self {
         Self::Operation {
@@ -120,21 +107,6 @@ impl GraphQLError {
         }
     }
 
-    /// Creates an unsupported operation error
-    pub fn unsupported_operation(operation: impl Into<String>) -> Self {
-        Self::Operation {
-            context: "Operation not supported".to_string(),
-            message: operation.into(),
-        }
-    }
-
-    /// Creates a configuration error
-    pub fn configuration(message: impl Into<String>) -> Self {
-        Self::Operation {
-            context: "Configuration error".to_string(),
-            message: message.into(),
-        }
-    }
 }
 
 /// Type alias for Results that use GraphQLError
