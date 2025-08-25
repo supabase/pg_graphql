@@ -19,3 +19,4 @@ perf.txt
 query.txt
 schema.graphql
 target/
+bin/installcheck
