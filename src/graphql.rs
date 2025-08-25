@@ -1,3 +1,4 @@
+use crate::constants::{aggregate, args, connection, introspection, mutation, page_info, pagination};
 use crate::sql_types::*;
 use cached::proc_macro::cached;
 use cached::SizedCache;
@@ -547,9 +548,9 @@ pub fn field_map(type_: &__Type) -> HashMap<String, __Field> {
         hmap.insert(field.name(), field);
     }
     hmap.insert(
-        "__typename".to_string(),
+        introspection::TYPENAME.to_string(),
         __Field {
-            name_: "__typename".to_string(),
+            name_: introspection::TYPENAME.to_string(),
             description: None,
             type_: __Type::Scalar(Scalar::String(None)),
             args: vec![],
@@ -1028,21 +1029,21 @@ impl ConnectionType {
     fn get_connection_input_args(&self) -> Vec<__InputValue> {
         vec![
             __InputValue {
-                name_: "first".to_string(),
+                name_: pagination::FIRST.to_string(),
                 type_: __Type::Scalar(Scalar::Int),
                 description: Some("Query the first `n` records in the collection".to_string()),
                 default_value: None,
                 sql_type: None,
             },
             __InputValue {
-                name_: "last".to_string(),
+                name_: pagination::LAST.to_string(),
                 type_: __Type::Scalar(Scalar::Int),
                 description: Some("Query the last `n` records in the collection".to_string()),
                 default_value: None,
                 sql_type: None,
             },
             __InputValue {
-                name_: "before".to_string(),
+                name_: pagination::BEFORE.to_string(),
                 type_: __Type::Scalar(Scalar::Cursor),
                 description: Some(
                     "Query values in the collection before the provided cursor".to_string(),
@@ -1051,7 +1052,7 @@ impl ConnectionType {
                 sql_type: None,
             },
             __InputValue {
-                name_: "after".to_string(),
+                name_: pagination::AFTER.to_string(),
                 type_: __Type::Scalar(Scalar::Cursor),
                 description: Some(
                     "Query values in the collection after the provided cursor".to_string(),
@@ -1060,7 +1061,7 @@ impl ConnectionType {
                 sql_type: None,
             },
             __InputValue {
-                name_: "offset".to_string(),
+                name_: pagination::OFFSET.to_string(),
                 type_: __Type::Scalar(Scalar::Int),
                 description: Some(
                     "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.".to_string(),
@@ -1069,7 +1070,7 @@ impl ConnectionType {
                 sql_type: None,
             },
             __InputValue {
-                name_: "filter".to_string(),
+                name_: args::FILTER.to_string(),
                 type_: __Type::FilterEntity(FilterEntityType {
                     table: Arc::clone(&self.table),
                     schema: self.schema.clone(),
@@ -1082,7 +1083,7 @@ impl ConnectionType {
                 sql_type: None,
             },
             __InputValue {
-                name_: "orderBy".to_string(),
+                name_: args::ORDER_BY.to_string(),
                 type_: __Type::List(ListType {
                     type_: Box::new(__Type::NonNull(NonNullType {
                         type_: Box::new(__Type::OrderByEntity(OrderByEntityType {
@@ -1197,12 +1198,12 @@ impl ___Type for QueryType {
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
         let mut f = Vec::new();
         let single_entrypoint = __Field {
-            name_: "node".to_string(),
+            name_: connection::NODE.to_string(),
             type_: __Type::NodeInterface(NodeInterfaceType {
                 schema: Arc::clone(&self.schema),
             }),
             args: vec![__InputValue {
-                name_: "nodeId".to_string(),
+                name_: args::NODE_ID.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::ID)),
                 }),
@@ -1266,10 +1267,10 @@ impl ___Type for QueryType {
         // Default fields always preset
         f.extend(vec![
             __Field {
-                name_: "__type".to_string(),
+                name_: introspection::TYPE.to_string(),
                 type_: __Type::__Type(__TypeType),
                 args: vec![__InputValue {
-                    name_: "name".to_string(),
+                    name_: args::NAME.to_string(),
                     type_: __Type::Scalar(Scalar::String(None)),
                     description: None,
                     default_value: None,
@@ -1280,7 +1281,7 @@ impl ___Type for QueryType {
                 sql_type: None,
             },
             __Field {
-                name_: "__schema".to_string(),
+                name_: introspection::SCHEMA.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::__Schema(__SchemaType)),
                 }),
@@ -1435,7 +1436,7 @@ impl ___Type for MutationType {
                         schema: Arc::clone(&self.schema),
                     }),
                     args: vec![__InputValue {
-                        name_: "objects".to_string(),
+                        name_: args::OBJECTS.to_string(),
                         type_: __Type::NonNull(NonNullType {
                             type_: Box::new(__Type::List(ListType {
                                 type_: Box::new(__Type::NonNull(NonNullType {
@@ -1470,7 +1471,7 @@ impl ___Type for MutationType {
                     }),
                     args: vec![
                         __InputValue {
-                            name_: "set".to_string(),
+                            name_: args::SET.to_string(),
                             type_: __Type::NonNull(NonNullType {
                                 type_: Box::new(__Type::UpdateInput(UpdateInputType {
                                     table: Arc::clone(table),
@@ -1482,7 +1483,7 @@ impl ___Type for MutationType {
                             sql_type: None,
                         },
                         __InputValue {
-                            name_: "filter".to_string(),
+                            name_: args::FILTER.to_string(),
                             type_: __Type::FilterEntity(FilterEntityType {
                                 table: Arc::clone(table),
                                 schema: Arc::clone(&self.schema),
@@ -1492,7 +1493,7 @@ impl ___Type for MutationType {
                             sql_type: None,
                         },
                         __InputValue {
-                            name_: "atMost".to_string(),
+                            name_: args::AT_MOST.to_string(),
                             type_: __Type::NonNull(NonNullType {
                                 type_: Box::new(__Type::Scalar(Scalar::Int)),
                             }),
@@ -1521,7 +1522,7 @@ impl ___Type for MutationType {
                     }),
                     args: vec![
                         __InputValue {
-                            name_: "filter".to_string(),
+                            name_: args::FILTER.to_string(),
                             type_: __Type::FilterEntity(FilterEntityType {
                                 table: Arc::clone(table),
                                 schema: Arc::clone(&self.schema),
@@ -1534,7 +1535,7 @@ impl ___Type for MutationType {
                             sql_type: None,
                         },
                         __InputValue {
-                            name_: "atMost".to_string(),
+                            name_: args::AT_MOST.to_string(),
                             type_: __Type::NonNull(NonNullType {
                                 type_: Box::new(__Type::Scalar(Scalar::Int)),
                             }),
@@ -1699,7 +1700,7 @@ impl ___Type for ConnectionType {
         });
 
         let edge = __Field {
-            name_: "edges".to_string(),
+            name_: connection::EDGES.to_string(),
             type_: __Type::NonNull(NonNullType {
                 type_: Box::new(__Type::List(ListType {
                     type_: Box::new(__Type::NonNull(NonNullType {
@@ -1714,7 +1715,7 @@ impl ___Type for ConnectionType {
         };
 
         let page_info = __Field {
-            name_: "pageInfo".to_string(),
+            name_: connection::PAGE_INFO.to_string(),
             type_: __Type::NonNull(NonNullType {
                 type_: Box::new(__Type::PageInfo(PageInfoType)),
             }),
@@ -1730,7 +1731,7 @@ impl ___Type for ConnectionType {
         if let Some(total_count_directive) = self.table.directives.total_count.as_ref() {
             if total_count_directive.enabled {
                 let total_count = __Field {
-                    name_: "totalCount".to_string(),
+                    name_: connection::TOTAL_COUNT.to_string(),
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::Scalar(Scalar::Int)),
                     }),
@@ -1830,7 +1831,7 @@ impl ___Type for EdgeType {
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
         Some(vec![
             __Field {
-                name_: "cursor".to_string(),
+                name_: connection::CURSOR.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::String(None))),
                 }),
@@ -1840,7 +1841,7 @@ impl ___Type for EdgeType {
                 sql_type: None,
             },
             __Field {
-                name_: "node".to_string(),
+                name_: connection::NODE.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Node(NodeType {
                         table: Arc::clone(&self.table),
@@ -2062,7 +2063,7 @@ impl ___Type for NodeType {
 
         if self.table.primary_key().is_some() {
             let node_id = __Field {
-                name_: "nodeId".to_string(),
+                name_: args::NODE_ID.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::ID)),
                 }),
@@ -2292,7 +2293,7 @@ impl ___Type for PageInfoType {
     fn fields(&self, _include_deprecated: bool) -> Option<Vec<__Field>> {
         Some(vec![
             __Field {
-                name_: "endCursor".to_string(),
+                name_: page_info::END_CURSOR.to_string(),
                 type_: __Type::Scalar(Scalar::String(None)),
                 args: vec![],
                 description: None,
@@ -2300,7 +2301,7 @@ impl ___Type for PageInfoType {
                 sql_type: None,
             },
             __Field {
-                name_: "hasNextPage".to_string(),
+                name_: page_info::HAS_NEXT_PAGE.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::Boolean)),
                 }),
@@ -2310,7 +2311,7 @@ impl ___Type for PageInfoType {
                 sql_type: None,
             },
             __Field {
-                name_: "hasPreviousPage".to_string(),
+                name_: page_info::HAS_PREVIOUS_PAGE.to_string(),
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::Boolean)),
                 }),
@@ -2320,7 +2321,7 @@ impl ___Type for PageInfoType {
                 sql_type: None,
             },
             __Field {
-                name_: "startCursor".to_string(),
+                name_: page_info::START_CURSOR.to_string(),
                 type_: __Type::Scalar(Scalar::String(None)),
                 args: vec![],
                 description: None,
@@ -2635,7 +2636,7 @@ impl ___Type for __InputValueType {
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
-                    name_: "name".to_string(),
+                    name_: args::NAME.to_string(),
                     args: vec![],
                     description: None,
                     deprecation_reason: None,
@@ -2711,7 +2712,7 @@ impl ___Type for __TypeType {
             vec![
                 __Field {
                     type_: __Type::Scalar(Scalar::String(None)),
-                    name_: "name".to_string(),
+                    name_: args::NAME.to_string(),
                     args: vec![],
                     description: None,
                     deprecation_reason: None,
@@ -2859,7 +2860,7 @@ impl ___Type for __FieldType {
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
-                    name_: "name".to_string(),
+                    name_: args::NAME.to_string(),
                     args: vec![],
                     description: None,
                     deprecation_reason: None,
@@ -2949,7 +2950,7 @@ impl ___Type for __EnumValueType {
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
-                    name_: "name".to_string(),
+                    name_: args::NAME.to_string(),
                     args: vec![],
                     description: None,
                     deprecation_reason: None,
@@ -3009,7 +3010,7 @@ impl ___Type for __DirectiveType {
                     type_: __Type::NonNull(NonNullType {
                         type_: Box::new(__Type::Scalar(Scalar::String(None))),
                     }),
-                    name_: "name".to_string(),
+                    name_: args::NAME.to_string(),
                     args: vec![],
                     description: None,
                     deprecation_reason: None,
@@ -3164,7 +3165,7 @@ impl ___Type for InsertResponseType {
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::Int)),
                 }),
-                name_: "affectedCount".to_string(),
+                name_: mutation::AFFECTED_COUNT.to_string(),
                 args: vec![],
                 description: Some("Count of the records impacted by the mutation".to_string()),
                 deprecation_reason: None,
@@ -3183,7 +3184,7 @@ impl ___Type for InsertResponseType {
                         })),
                     })),
                 }),
-                name_: "records".to_string(),
+                name_: mutation::RECORDS.to_string(),
                 args: vec![],
                 description: Some("Array of records impacted by the mutation".to_string()),
                 deprecation_reason: None,
@@ -3251,7 +3252,7 @@ impl ___Type for UpdateResponseType {
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::Int)),
                 }),
-                name_: "affectedCount".to_string(),
+                name_: mutation::AFFECTED_COUNT.to_string(),
                 args: vec![],
                 description: Some("Count of the records impacted by the mutation".to_string()),
                 deprecation_reason: None,
@@ -3270,7 +3271,7 @@ impl ___Type for UpdateResponseType {
                         })),
                     })),
                 }),
-                name_: "records".to_string(),
+                name_: mutation::RECORDS.to_string(),
                 args: vec![],
                 description: Some("Array of records impacted by the mutation".to_string()),
                 deprecation_reason: None,
@@ -3298,7 +3299,7 @@ impl ___Type for DeleteResponseType {
                 type_: __Type::NonNull(NonNullType {
                     type_: Box::new(__Type::Scalar(Scalar::Int)),
                 }),
-                name_: "affectedCount".to_string(),
+                name_: mutation::AFFECTED_COUNT.to_string(),
                 args: vec![],
                 description: Some("Count of the records impacted by the mutation".to_string()),
                 deprecation_reason: None,
@@ -3317,7 +3318,7 @@ impl ___Type for DeleteResponseType {
                         })),
                     })),
                 }),
-                name_: "records".to_string(),
+                name_: mutation::RECORDS.to_string(),
                 args: vec![],
                 description: Some("Array of records impacted by the mutation".to_string()),
                 deprecation_reason: None,
@@ -3804,7 +3805,7 @@ impl ___Type for FilterEntityType {
                 .collect();
 
             f.push(__InputValue {
-                name_: "nodeId".to_string(),
+                name_: args::NODE_ID.to_string(),
                 type_: __Type::FilterType(FilterTypeType {
                     entity: FilterableType::Scalar(Scalar::ID),
                     schema: Arc::clone(&self.schema),
@@ -4536,7 +4537,7 @@ impl ___Type for AggregateType {
 
         // Count field (always present)
         fields.push(__Field {
-            name_: "count".to_string(),
+            name_: aggregate::COUNT.to_string(),
             type_: __Type::NonNull(NonNullType {
                 type_: Box::new(__Type::Scalar(Scalar::Int)),
             }),
@@ -4560,7 +4561,7 @@ impl ___Type for AggregateType {
 
         if has_sum_avgable {
             fields.push(__Field {
-                name_: "sum".to_string(),
+                name_: aggregate::SUM.to_string(),
                 type_: __Type::AggregateNumeric(AggregateNumericType {
                     table: Arc::clone(&self.table),
                     schema: Arc::clone(&self.schema),
@@ -4572,7 +4573,7 @@ impl ___Type for AggregateType {
                 sql_type: None,
             });
             fields.push(__Field {
-                name_: "avg".to_string(),
+                name_: aggregate::AVG.to_string(),
                 type_: __Type::AggregateNumeric(AggregateNumericType {
                     table: Arc::clone(&self.table),
                     schema: Arc::clone(&self.schema),
@@ -4587,7 +4588,7 @@ impl ___Type for AggregateType {
 
         if has_min_maxable {
             fields.push(__Field {
-                name_: "min".to_string(),
+                name_: aggregate::MIN.to_string(),
                 type_: __Type::AggregateNumeric(AggregateNumericType {
                     table: Arc::clone(&self.table),
                     schema: Arc::clone(&self.schema),
@@ -4599,7 +4600,7 @@ impl ___Type for AggregateType {
                 sql_type: None,
             });
             fields.push(__Field {
-                name_: "max".to_string(),
+                name_: aggregate::MAX.to_string(),
                 type_: __Type::AggregateNumeric(AggregateNumericType {
                     table: Arc::clone(&self.table),
                     schema: Arc::clone(&self.schema),

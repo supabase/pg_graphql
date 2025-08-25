@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 
 use crate::builder::*;
+use crate::constants::introspection;
 use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::*;
 use crate::omit::*;
@@ -294,7 +295,7 @@ where
                             }
                         }
                         _ => match field_def.name().as_ref() {
-                            "__typename" => {
+                            introspection::TYPENAME => {
                                 res_data[alias_or_name(selection)] =
                                     serde_json::json!(query_type.name())
                             }
@@ -492,7 +493,7 @@ where
                                 conn
                             }
                             _ => match field_def.name().as_ref() {
-                                "__typename" => {
+                                introspection::TYPENAME => {
                                     res_data[alias_or_name(selection)] =
                                         serde_json::json!(mutation_type.name());
                                     conn

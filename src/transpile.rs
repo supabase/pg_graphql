@@ -1,4 +1,5 @@
 use crate::builder::*;
+use crate::constants::aggregate;
 use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
@@ -959,10 +960,10 @@ impl ConnectionBuilder {
                     column_builders: selections,
                 } => {
                     let pg_func = match selection {
-                        AggregateSelection::Sum { .. } => "sum",
-                        AggregateSelection::Avg { .. } => "avg",
-                        AggregateSelection::Min { .. } => "min",
-                        AggregateSelection::Max { .. } => "max",
+                        AggregateSelection::Sum { .. } => aggregate::SUM,
+                        AggregateSelection::Avg { .. } => aggregate::AVG,
+                        AggregateSelection::Min { .. } => aggregate::MIN,
+                        AggregateSelection::Max { .. } => aggregate::MAX,
                         AggregateSelection::Count { .. } => {
                             unreachable!("Count should be handled by its own arm")
                         }
