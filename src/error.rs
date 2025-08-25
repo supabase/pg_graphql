@@ -1,0 +1,113 @@
+use graphql_parser::query::ParseError as GraphQLParseError;
+use thiserror::Error;
+
+/// Central error type for all pg_graphql operations.
+/// This replaces string-based error handling with strongly-typed variants.
+#[derive(Debug, Error, Clone)]
+pub enum GraphQLError {
+    /// GraphQL query parsing errors
+    #[error("Parse error: {0}")]
+    Parse(String),
+
+    /// Field resolution errors
+    #[error("Unknown field \"{field}\" on type {type_name}")]
+    FieldNotFound { field: String, type_name: String },
+
+    /// General operation errors with context
+    #[error("{message}")]
+    Operation { context: String, message: String },
+}
+
+impl From<GraphQLParseError> for GraphQLError {
+    fn from(err: GraphQLParseError) -> Self {
+        Self::Parse(err.to_string())
+    }
+}
+
+impl From<String> for GraphQLError {
+    fn from(err: String) -> Self {
+        Self::Operation {
+            context: "Error".to_string(),
+            message: err,
+        }
+    }
+}
+
+impl From<&str> for GraphQLError {
+    fn from(err: &str) -> Self {
+        Self::Operation {
+            context: "Error".to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
+impl GraphQLError {
+    /// Creates a field not found error
+    pub fn field_not_found(field: impl Into<String>, type_name: impl Into<String>) -> Self {
+        Self::FieldNotFound {
+            field: field.into(),
+            type_name: type_name.into(),
+        }
+    }
+
+    /// Creates a validation error
+    pub fn validation(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "Validation error".to_string(),
+            message: message.into(),
+        }
+    }
+
+    /// Creates a schema error
+    pub fn schema(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "Schema error".to_string(),
+            message: message.into(),
+        }
+    }
+
+    /// Creates a type error
+    pub fn type_error(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "Type error".to_string(),
+            message: message.into(),
+        }
+    }
+
+    /// Creates an argument error
+    pub fn argument(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "Argument error".to_string(),
+            message: message.into(),
+        }
+    }
+
+    /// Creates a SQL generation error
+    pub fn sql_generation(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "SQL generation error".to_string(),
+            message: message.into(),
+        }
+    }
+
+    /// Creates a SQL execution error
+    pub fn sql_execution(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "SQL execution error".to_string(),
+            message: message.into(),
+        }
+    }
+
+    /// Creates an internal error
+    pub fn internal(message: impl Into<String>) -> Self {
+        Self::Operation {
+            context: "Internal error".to_string(),
+            message: message.into(),
+        }
+    }
+
+}
+
+/// Type alias for Results that use GraphQLError
+pub type GraphQLResult<T> = Result<T, GraphQLError>;

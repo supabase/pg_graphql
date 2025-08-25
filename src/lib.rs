@@ -6,6 +6,7 @@ use resolve::resolve_inner;
 use serde_json::json;
 
 mod builder;
+mod error;
 mod graphql;
 mod gson;
 mod merge;
@@ -57,7 +58,9 @@ fn resolve(
                 }
                 Err(err) => GraphQLResponse {
                     data: Omit::Omitted,
-                    errors: Omit::Present(vec![ErrorMessage { message: err }]),
+                    errors: Omit::Present(vec![ErrorMessage {
+                        message: err.to_string(),
+                    }]),
                 },
             }
         }

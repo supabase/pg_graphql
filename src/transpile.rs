@@ -1,4 +1,5 @@
 use crate::builder::*;
+use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
@@ -39,32 +40,34 @@ pub fn rand_block_name() -> String {
 }
 
 pub trait MutationEntrypoint<'conn> {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String>;
 
     fn execute(
         &self,
         mut conn: SpiClient<'conn>,
-    ) -> Result<(serde_json::Value, SpiClient<'conn>), String> {
+    ) -> GraphQLResult<(serde_json::Value, SpiClient<'conn>)> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
-                return Err(err.to_string());
+                return Err(err.clone());
             }
         };
 
         let res_q = conn
             .update(sql, None, Some(param_context.params))
-            .map_err(|_| "Internal Error: Failed to execute transpiled query".to_string())?;
+            .map_err(|_| {
+                GraphQLError::sql_execution("Internal Error: Failed to execute transpiled query")
+            })?;
 
         let res: pgrx::JsonB = match res_q.first().get::<JsonB>(1) {
             Ok(Some(dat)) => dat,
             Ok(None) => JsonB(serde_json::Value::Null),
             Err(e) => {
-                return Err(format!(
+                return Err(GraphQLError::sql_generation(format!(
                     "Internal Error: Failed to load result from transpiled query: {e}"
-                ));
+                )));
             }
         };
 
@@ -73,15 +76,15 @@ pub trait MutationEntrypoint<'conn> {
 }
 
 pub trait QueryEntrypoint {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String>;
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String>;
 
-    fn execute(&self) -> Result<serde_json::Value, String> {
+    fn execute(&self) -> GraphQLResult<serde_json::Value> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
             Ok(sql) => sql,
             Err(err) => {
-                return Err(err.to_string());
+                return Err(err.clone());
             }
         };
 
@@ -98,7 +101,9 @@ pub trait QueryEntrypoint {
         match spi_result {
             Ok(Some(jsonb)) => Ok(jsonb.0),
             Ok(None) => Ok(serde_json::Value::Null),
-            _ => Err("Internal Error: Failed to execute transpiled query".to_string()),
+            _ => Err(GraphQLError::internal(
+                "Internal Error: Failed to execute transpiled query",
+            )),
         }
     }
 }
@@ -149,7 +154,7 @@ impl Table {
         cursor: &Cursor,
         param_context: &mut ParamContext,
         allow_equality: bool,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         // When paginating, allowe_equality should be false because we don't want to
         // include the cursor's record in the page
         //
@@ -172,7 +177,9 @@ impl Table {
         let cursor_elem = next_cursor.elems.remove(0);
 
         if order_by.elems.is_empty() {
-            return Err("orderBy clause incompatible with pagination cursor".to_string());
+            return Err(GraphQLError::validation(
+                "orderBy clause incompatible with pagination cursor",
+            ));
         }
         let mut next_order_by = order_by.clone();
         let order_elem = next_order_by.elems.remove(0);
@@ -212,7 +219,7 @@ impl Table {
         reverse_reference: bool,
         quoted_block_name: &str,
         quoted_parent_block_name: &str,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let mut equality_clauses = vec!["true".to_string()];
 
         let table_ref: &ForeignKeyTableInfo;
@@ -254,7 +261,7 @@ impl Table {
 }
 
 impl MutationEntrypoint<'_> for InsertBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -331,7 +338,7 @@ impl InsertSelection {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let r = match self {
             Self::AffectedCount { alias } => {
                 format!("{}, count(*)", quote_literal(alias))
@@ -356,7 +363,7 @@ impl UpdateSelection {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let r = match self {
             Self::AffectedCount { alias } => {
                 format!("{}, count(*)", quote_literal(alias))
@@ -381,7 +388,7 @@ impl DeleteSelection {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let r = match self {
             Self::AffectedCount { alias } => {
                 format!("{}, count(*)", quote_literal(alias))
@@ -403,7 +410,7 @@ impl DeleteSelection {
 }
 
 impl MutationEntrypoint<'_> for UpdateBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -487,7 +494,7 @@ impl MutationEntrypoint<'_> for UpdateBuilder {
 }
 
 impl MutationEntrypoint<'_> for DeleteBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -549,7 +556,7 @@ impl MutationEntrypoint<'_> for DeleteBuilder {
 }
 
 impl FunctionCallBuilder {
-    fn to_sql(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         let mut arg_clauses = vec![];
         for (arg, arg_value) in &self.args_builder.args {
             if let Some(arg) = arg {
@@ -596,13 +603,13 @@ impl FunctionCallBuilder {
 }
 
 impl MutationEntrypoint<'_> for FunctionCallBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         self.to_sql(param_context)
     }
 }
 
 impl QueryEntrypoint for FunctionCallBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         self.to_sql(param_context)
     }
 }
@@ -626,7 +633,7 @@ impl OrderByBuilder {
     }
 }
 
-pub fn json_to_text_datum(val: &serde_json::Value) -> Result<Option<pg_sys::Datum>, String> {
+pub fn json_to_text_datum(val: &serde_json::Value) -> GraphQLResult<Option<pg_sys::Datum>> {
     use serde_json::Value;
     let null: Option<i32> = None;
     match val {
@@ -643,10 +650,14 @@ pub fn json_to_text_datum(val: &serde_json::Value) -> Result<Option<pg_sys::Datu
                     Value::String(x) => Some(x.to_string()),
                     Value::Number(x) => Some(x.to_string()),
                     Value::Array(_) => {
-                        return Err("Unexpected array in input value array".to_string());
+                        return Err(GraphQLError::type_error(
+                            "Unexpected array in input value array",
+                        ));
                     }
                     Value::Object(_) => {
-                        return Err("Unexpected object in input value array".to_string());
+                        return Err(GraphQLError::validation(
+                            "Unexpected object in input value array",
+                        ));
                     }
                 };
                 inner_vals.push(str_elem);
@@ -654,7 +665,7 @@ pub fn json_to_text_datum(val: &serde_json::Value) -> Result<Option<pg_sys::Datu
             Ok(inner_vals.into_datum())
         }
         // Should this ever happen? json input is escaped so it would be a string.
-        Value::Object(_) => Err("Unexpected object in input value".to_string()),
+        Value::Object(_) => Err(GraphQLError::validation("Unexpected object in input value")),
     }
 }
 
@@ -665,7 +676,7 @@ pub struct ParamContext {
 impl ParamContext {
     // Pushes a parameter into the context and returns a SQL clause to reference it
     //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
-    fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> Result<String, String> {
+    fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> GraphQLResult<String> {
         let type_oid = match type_name.ends_with("[]") {
             true => PgOid::BuiltIn(PgBuiltInOids::TEXTARRAYOID),
             false => PgOid::BuiltIn(PgBuiltInOids::TEXTOID),
@@ -683,7 +694,7 @@ impl FilterBuilderElem {
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         match self {
             Self::Column { column, op, value } => {
                 let frag = match op {
@@ -697,16 +708,16 @@ impl FilterBuilderElem {
                                         "NULL" => "is null",
                                         "NOT_NULL" => "is not null",
                                         _ => {
-                                            return Err(
-                                                "Error transpiling Is filter value".to_string()
-                                            )
+                                            return Err(GraphQLError::sql_generation(
+                                                "Error transpiling Is filter value",
+                                            ))
                                         }
                                     }
                                 }
                                 _ => {
-                                    return Err(
-                                        "Error transpiling Is filter value type".to_string()
-                                    );
+                                    return Err(GraphQLError::sql_generation(
+                                        "Error transpiling Is filter value type",
+                                    ));
                                 }
                             }
                         )
@@ -742,7 +753,9 @@ impl FilterBuilderElem {
                                 FilterOp::ContainedBy => "<@",
                                 FilterOp::Overlap => "&&",
                                 FilterOp::Is => {
-                                    return Err("Error transpiling Is filter".to_string());
+                                    return Err(GraphQLError::sql_generation(
+                                        "Error transpiling Is filter",
+                                    ));
                                 }
                             },
                             val_clause
@@ -765,7 +778,7 @@ impl CompoundFilterBuilder {
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         Ok(match self {
             CompoundFilterBuilder::And(elements) => {
                 let bool_expressions = elements
@@ -794,7 +807,7 @@ impl FilterBuilder {
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let mut frags = vec!["true".to_string()];
 
         for elem in &self.elems {
@@ -845,7 +858,7 @@ impl ConnectionBuilder {
         &self,
         quoted_block_name: &str,
         quoted_parent_block_name: &Option<&str>,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         match &self.source.fkey {
             Some(fkey) => {
                 let quoted_parent_block_name = quoted_parent_block_name
@@ -865,7 +878,7 @@ impl ConnectionBuilder {
         &self,
         quoted_block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let frags: Vec<String> = self
             .selections
             .iter()
@@ -875,7 +888,8 @@ impl ConnectionBuilder {
                     &self.order_by,
                     &self.source.table,
                     param_context,
-                ).transpose()
+                )
+                .transpose()
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -912,7 +926,7 @@ impl ConnectionBuilder {
     }
 
     // Generates the *contents* of the aggregate jsonb_build_object
-    fn aggregate_select_list(&self, quoted_block_name: &str) -> Result<Option<String>, String> {
+    fn aggregate_select_list(&self, quoted_block_name: &str) -> GraphQLResult<Option<String>> {
         let Some(agg_builder) = self.selections.iter().find_map(|sel| match sel {
             ConnectionSelection::Aggregate(builder) => Some(builder),
             _ => None,
@@ -1007,7 +1021,7 @@ impl ConnectionBuilder {
         param_context: &mut ParamContext,
         from_func: Option<FromFunction>,
         from_clause: Option<String>,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let quoted_block_name = rand_block_name();
 
         let from_clause = match from_clause {
@@ -1237,7 +1251,7 @@ impl ConnectionBuilder {
 }
 
 impl QueryEntrypoint for ConnectionBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         self.to_sql(None, param_context, None, None)
     }
 }
@@ -1248,7 +1262,7 @@ impl PageInfoBuilder {
         _block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let frags: Vec<String> = self
             .selections
             .iter()
@@ -1267,7 +1281,7 @@ impl PageInfoSelection {
         block_name: &str,
         order_by: &OrderByBuilder,
         table: &Table,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let order_by_clause = order_by.to_order_by_clause(block_name);
         let order_by_clause_reversed = order_by.reverse().to_order_by_clause(block_name);
 
@@ -1312,7 +1326,7 @@ impl ConnectionSelection {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<Option<String>, String> {
+    ) -> GraphQLResult<Option<String>> {
         Ok(match self {
             Self::Edge(x) => Some(format!(
                 "{}, {}",
@@ -1347,7 +1361,7 @@ impl EdgeBuilder {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let frags: Vec<String> = self
             .selections
             .iter()
@@ -1390,7 +1404,7 @@ impl EdgeSelection {
         order_by: &OrderByBuilder,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         Ok(match self {
             Self::Cursor { alias } => {
                 let cursor_clause = table.to_cursor_clause(block_name, order_by);
@@ -1413,7 +1427,7 @@ impl NodeBuilder {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let frags: Vec<String> = self
             .selections
             .iter()
@@ -1436,7 +1450,7 @@ impl NodeBuilder {
         &self,
         parent_block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -1481,7 +1495,7 @@ impl NodeBuilder {
 }
 
 impl QueryEntrypoint for NodeBuilder {
-    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> Result<String, String> {
+    fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String> {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
@@ -1515,11 +1529,13 @@ impl NodeIdInstance {
         block_name: &str,
         table: &Table,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         // TODO: abstract this logical check into builder. It is not related to
         // transpiling and should not be in this module
         if (&self.schema_name, &self.table_name) != (&table.schema, &table.name) {
-            return Err("nodeId belongs to a different collection".to_string());
+            return Err(GraphQLError::validation(
+                "nodeId belongs to a different collection",
+            ));
         }
 
         let mut col_val_pairs: Vec<String> = vec![];
@@ -1552,7 +1568,7 @@ impl NodeSelection {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         Ok(match self {
             // TODO need to provide alias when called from node builder.
             Self::Connection(builder) => format!(
@@ -1597,7 +1613,7 @@ impl NodeSelection {
 }
 
 impl ColumnBuilder {
-    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+    pub fn to_sql(&self, block_name: &str) -> GraphQLResult<String> {
         let col = format!("{}.{}", &block_name, quote_ident(&self.column.name));
         let maybe_enum = self.column.type_.as_ref().and_then(|t| match t.details {
             Some(TypeDetails::Enum(ref enum_)) => Some(enum_),
@@ -1627,7 +1643,7 @@ impl ColumnBuilder {
 }
 
 impl NodeIdBuilder {
-    pub fn to_sql(&self, block_name: &str) -> Result<String, String> {
+    pub fn to_sql(&self, block_name: &str) -> GraphQLResult<String> {
         let column_selects: Vec<String> = self
             .columns
             .iter()
@@ -1647,7 +1663,7 @@ impl FunctionBuilder {
         &self,
         block_name: &str,
         param_context: &mut ParamContext,
-    ) -> Result<String, String> {
+    ) -> GraphQLResult<String> {
         let schema_name = quote_ident(&self.function.schema_name);
         let function_name = quote_ident(&self.function.name);
 

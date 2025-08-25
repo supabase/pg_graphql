@@ -4,6 +4,8 @@ use cached::SizedCache;
 use lazy_static::lazy_static;
 use pgrx::*;
 use serde::{Deserialize, Serialize};
+
+use crate::error::GraphQLResult;
 use std::cmp::Ordering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
@@ -593,7 +595,9 @@ impl Table {
     /// Otherwise, fall back to schema-level max_rows.
     /// If neither is set, use the global default(set in load_sql_context.sql)
     pub fn max_rows(&self, schema: &Schema) -> u64 {
-        self.directives.max_rows.unwrap_or(schema.directives.max_rows)
+        self.directives
+            .max_rows
+            .unwrap_or(schema.directives.max_rows)
     }
 }
 
@@ -823,11 +827,11 @@ pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
 }
 
 #[cached(
-    type = "SizedCache<u64, Result<Arc<Context>, String>>",
+    type = "SizedCache<u64, GraphQLResult<Arc<Context>>>",
     create = "{ SizedCache::with_size(250) }",
     convert = r#"{ calculate_hash(_config) }"#
 )]
-pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
+pub fn load_sql_context(_config: &Config) -> GraphQLResult<Arc<Context>> {
     // cache value for next query
     let query = include_str!("../sql/load_sql_context.sql");
     let sql_result: serde_json::Value = get_one_readonly::<JsonB>(query)
@@ -989,9 +993,9 @@ pub fn load_sql_context(_config: &Config) -> Result<Arc<Context>, String> {
         .map(populate_table_functions)
         .map(Arc::new)
         .map_err(|e| {
-            format!(
+            crate::error::GraphQLError::schema(format!(
                 "Error while loading schema, check comment directives. {}",
                 e
-            )
+            ))
         })
 }
