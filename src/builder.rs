@@ -1,3 +1,4 @@
+use crate::constants::{aggregate, args, connection, introspection, mutation, page_info, pagination};
 use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::*;
 use crate::gson;
@@ -122,7 +123,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let at_most: gson::Value = read_argument(
-        "atMost",
+        args::AT_MOST,
         field,
         query_field,
         variables,
@@ -217,7 +218,7 @@ where
 {
     // nodeId is a base64 encoded string of [schema, table, pkey_val1, pkey_val2, ...]
     let node_id_base64_encoded_json_string: gson::Value = read_argument(
-        "nodeId",
+        args::NODE_ID,
         field,
         query_field,
         variables,
@@ -238,7 +239,7 @@ where
 {
     // [{"name": "bob", "email": "a@b.com"}, {..}]
     let validated: gson::Value = read_argument(
-        "objects",
+        args::OBJECTS,
         field,
         query_field,
         variables,
@@ -247,7 +248,7 @@ where
 
     // [<Table>OrderBy!]
     let insert_type: InsertInputType = match field
-        .get_arg("objects")
+        .get_arg(args::OBJECTS)
         .expect("failed to get `objects` argument")
         .type_()
         .unmodified_type()
@@ -337,7 +338,7 @@ where
     match &type_ {
         __Type::InsertResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["objects"], query_field)?;
+            restrict_allowed_arguments(&[args::OBJECTS], query_field)?;
 
             let objects: Vec<InsertRowBuilder> =
                 read_argument_objects(field, query_field, variables, variable_definitions)?;
@@ -355,10 +356,10 @@ where
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err(GraphQLError::validation("unknown field in insert")),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
-                        "affectedCount" => InsertSelection::AffectedCount {
+                        mutation::AFFECTED_COUNT => InsertSelection::AffectedCount {
                             alias: alias_or_name(&selection_field),
                         },
-                        "records" => {
+                        mutation::RECORDS => {
                             let node_builder = to_node_builder(
                                 f,
                                 &selection_field,
@@ -369,7 +370,7 @@ where
                             );
                             InsertSelection::Records(node_builder?)
                         }
-                        "__typename" => InsertSelection::Typename {
+                        introspection::TYPENAME => InsertSelection::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: xtype
                                 .name()
@@ -434,10 +435,10 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let validated: gson::Value =
-        read_argument("set", field, query_field, variables, variable_definitions)?;
+        read_argument(args::SET, field, query_field, variables, variable_definitions)?;
 
     let update_type: UpdateInputType = match field
-        .get_arg("set")
+        .get_arg(args::SET)
         .expect("failed to get `set` argument")
         .type_()
         .unmodified_type()
@@ -506,7 +507,7 @@ where
     match &type_ {
         __Type::UpdateResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["set", "filter", "atMost"], query_field)?;
+            restrict_allowed_arguments(&[args::SET, args::FILTER, args::AT_MOST], query_field)?;
 
             let set: SetBuilder =
                 read_argument_set(field, query_field, variables, variable_definitions)?;
@@ -528,10 +529,10 @@ where
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err(GraphQLError::validation("unknown field in update")),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
-                        "affectedCount" => UpdateSelection::AffectedCount {
+                        mutation::AFFECTED_COUNT => UpdateSelection::AffectedCount {
                             alias: alias_or_name(&selection_field),
                         },
-                        "records" => {
+                        mutation::RECORDS => {
                             let node_builder = to_node_builder(
                                 f,
                                 &selection_field,
@@ -542,7 +543,7 @@ where
                             );
                             UpdateSelection::Records(node_builder?)
                         }
-                        "__typename" => UpdateSelection::Typename {
+                        introspection::TYPENAME => UpdateSelection::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: xtype
                                 .name()
@@ -612,7 +613,7 @@ where
     match &type_ {
         __Type::DeleteResponse(xtype) => {
             // Raise for disallowed arguments
-            restrict_allowed_arguments(&["filter", "atMost"], query_field)?;
+            restrict_allowed_arguments(&[args::FILTER, args::AT_MOST], query_field)?;
 
             let filter: FilterBuilder =
                 read_argument_filter(field, query_field, variables, variable_definitions)?;
@@ -632,10 +633,10 @@ where
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err(GraphQLError::validation("unknown field in delete")),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
-                        "affectedCount" => DeleteSelection::AffectedCount {
+                        mutation::AFFECTED_COUNT => DeleteSelection::AffectedCount {
                             alias: alias_or_name(&selection_field),
                         },
-                        "records" => {
+                        mutation::RECORDS => {
                             let node_builder = to_node_builder(
                                 f,
                                 &selection_field,
@@ -646,7 +647,7 @@ where
                             );
                             DeleteSelection::Records(node_builder?)
                         }
-                        "__typename" => DeleteSelection::Typename {
+                        introspection::TYPENAME => DeleteSelection::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: xtype
                                 .name()
@@ -1118,7 +1119,7 @@ where
     T: Text<'a> + Eq + AsRef<str>,
 {
     let validated: gson::Value = read_argument(
-        "filter",
+        args::FILTER,
         field,
         query_field,
         variables,
@@ -1126,7 +1127,7 @@ where
     )?;
 
     let filter_type = field
-        .get_arg("filter")
+        .get_arg(args::FILTER)
         .expect("failed to get filter argument")
         .type_()
         .unmodified_type();
@@ -1284,7 +1285,7 @@ where
 {
     // [{"id": "DescNullsLast"}]
     let validated: gson::Value = read_argument(
-        "orderBy",
+        args::ORDER_BY,
         field,
         query_field,
         variables,
@@ -1293,7 +1294,7 @@ where
 
     // [<Table>OrderBy!]
     let order_type: OrderByEntityType = match field
-        .get_arg("orderBy")
+        .get_arg(args::ORDER_BY)
         .expect("failed to get orderBy argument")
         .type_()
         .unmodified_type()
@@ -1449,14 +1450,14 @@ where
         __Type::Connection(xtype) => {
             // Raise for disallowed arguments
             let mut allowed_args = vec![
-                "first", "last", "before", "after", "offset", "filter", "orderBy",
+                pagination::FIRST, pagination::LAST, pagination::BEFORE, pagination::AFTER, pagination::OFFSET, args::FILTER, args::ORDER_BY,
             ];
             allowed_args.extend(extra_allowed_args);
             restrict_allowed_arguments(&allowed_args, query_field)?;
 
             // TODO: only one of first/last, before/after provided
             let first: gson::Value =
-                read_argument("first", field, query_field, variables, variable_definitions)?;
+                read_argument(pagination::FIRST, field, query_field, variables, variable_definitions)?;
             let first: Option<u64> = match first {
                 gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
@@ -1473,7 +1474,7 @@ where
             };
 
             let last: gson::Value =
-                read_argument("last", field, query_field, variables, variable_definitions)?;
+                read_argument(pagination::LAST, field, query_field, variables, variable_definitions)?;
             let last: Option<u64> = match last {
                 gson::Value::Absent | gson::Value::Null => None,
                 gson::Value::Number(gson::Number::Integer(n)) if n < 0 => {
@@ -1521,14 +1522,14 @@ where
                 .unwrap_or(30);
 
             let before: Option<Cursor> = read_argument_cursor(
-                "before",
+                pagination::BEFORE,
                 field,
                 query_field,
                 variables,
                 variable_definitions,
             )?;
             let after: Option<Cursor> =
-                read_argument_cursor("after", field, query_field, variables, variable_definitions)?;
+                read_argument_cursor(pagination::AFTER, field, query_field, variables, variable_definitions)?;
 
             // Validate compatible input arguments
             if first.is_some() && last.is_some() {
@@ -1602,7 +1603,7 @@ where
                             )?)
                         }
                         __Type::Scalar(Scalar::Int) => {
-                            if selection_field.name.as_ref() == "totalCount" {
+                            if selection_field.name.as_ref() == connection::TOTAL_COUNT {
                                 ConnectionSelection::TotalCount {
                                     alias: alias_or_name(&selection_field),
                                 }
@@ -1614,7 +1615,7 @@ where
                             }
                         }
                         __Type::Scalar(Scalar::String(None)) => {
-                            if selection_field.name.as_ref() == "__typename" {
+                            if selection_field.name.as_ref() == introspection::TYPENAME {
                                 ConnectionSelection::Typename {
                                     alias: alias_or_name(&selection_field),
                                     typename: xtype
@@ -1700,10 +1701,10 @@ where
         ))?;
         let sub_alias = alias_or_name(&selection_field);
 
-        let col_selections = if field_name == "sum"
-            || field_name == "avg"
-            || field_name == "min"
-            || field_name == "max"
+        let col_selections = if field_name == aggregate::SUM
+            || field_name == aggregate::AVG
+            || field_name == aggregate::MIN
+            || field_name == aggregate::MAX
         {
             to_aggregate_column_builders(
                 sub_field,
@@ -1716,24 +1717,24 @@ where
         };
 
         selections.push(match field_name {
-            "count" => AggregateSelection::Count { alias: sub_alias },
-            "sum" => AggregateSelection::Sum {
+            aggregate::COUNT => AggregateSelection::Count { alias: sub_alias },
+            aggregate::SUM => AggregateSelection::Sum {
                 alias: sub_alias,
                 column_builders: col_selections,
             },
-            "avg" => AggregateSelection::Avg {
+            aggregate::AVG => AggregateSelection::Avg {
                 alias: sub_alias,
                 column_builders: col_selections,
             },
-            "min" => AggregateSelection::Min {
+            aggregate::MIN => AggregateSelection::Min {
                 alias: sub_alias,
                 column_builders: col_selections,
             },
-            "max" => AggregateSelection::Max {
+            aggregate::MAX => AggregateSelection::Max {
                 alias: sub_alias,
                 column_builders: col_selections,
             },
-            "__typename" => AggregateSelection::Typename {
+            introspection::TYPENAME => AggregateSelection::Typename {
                 alias: sub_alias,
                 typename: field
                     .type_()
@@ -1844,19 +1845,19 @@ where
                 match field_map.get(selection_field.name.as_ref()) {
                     None => return Err(GraphQLError::validation("unknown field in pageInfo")),
                     Some(f) => builder_fields.push(match f.name().as_ref() {
-                        "startCursor" => PageInfoSelection::StartCursor {
+                        page_info::START_CURSOR => PageInfoSelection::StartCursor {
                             alias: alias_or_name(&selection_field),
                         },
-                        "endCursor" => PageInfoSelection::EndCursor {
+                        page_info::END_CURSOR => PageInfoSelection::EndCursor {
                             alias: alias_or_name(&selection_field),
                         },
-                        "hasPreviousPage" => PageInfoSelection::HasPreviousPage {
+                        page_info::HAS_PREVIOUS_PAGE => PageInfoSelection::HasPreviousPage {
                             alias: alias_or_name(&selection_field),
                         },
-                        "hasNextPage" => PageInfoSelection::HasNextPage {
+                        page_info::HAS_NEXT_PAGE => PageInfoSelection::HasNextPage {
                             alias: alias_or_name(&selection_field),
                         },
-                        "__typename" => PageInfoSelection::Typename {
+                        introspection::TYPENAME => PageInfoSelection::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: xtype.name().expect("page info type should have a name"),
                         },
@@ -1925,10 +1926,10 @@ where
                             EdgeSelection::Node(node_builder)
                         }
                         _ => match f.name().as_ref() {
-                            "cursor" => EdgeSelection::Cursor {
+                            connection::CURSOR => EdgeSelection::Cursor {
                                 alias: alias_or_name(&selection_field),
                             },
-                            "__typename" => EdgeSelection::Typename {
+                            introspection::TYPENAME => EdgeSelection::Typename {
                                 alias: alias_or_name(&selection_field),
                                 typename: xtype.name().expect("edge type should have a name"),
                             },
@@ -1974,7 +1975,7 @@ where
             xtype.clone()
         }
         __Type::NodeInterface(node_interface) => {
-            restrict_allowed_arguments(&["nodeId"], query_field)?;
+            restrict_allowed_arguments(&[args::NODE_ID], query_field)?;
             // The nodeId argument is only valid on the entrypoint field for Node
             // relationships to "node" e.g. within edges, do not have any arguments
             let node_id: NodeIdInstance =
@@ -2014,13 +2015,13 @@ where
     let field_map = field_map(&__Type::Node(xtype.clone()));
 
     let mut builder_fields = vec![];
-    let mut allowed_args = vec!["nodeId"];
+    let mut allowed_args = vec![args::NODE_ID];
     allowed_args.extend(extra_allowed_args);
     restrict_allowed_arguments(&allowed_args, query_field)?;
 
     // The nodeId argument is only valid on the entrypoint field for Node
     // relationships to "node" e.g. within edges, do not have any arguments
-    let node_id: Option<NodeIdInstance> = match field.get_arg("nodeId").is_some() {
+    let node_id: Option<NodeIdInstance> = match field.get_arg(args::NODE_ID).is_some() {
         true => Some(read_argument_node_id(
             field,
             query_field,
@@ -2105,7 +2106,7 @@ where
                         }
                     },
                     _ => match f.name().as_ref() {
-                        "__typename" => NodeSelection::Typename {
+                        introspection::TYPENAME => NodeSelection::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: xtype.name().expect("node type should have a name"),
                         },
@@ -2334,7 +2335,7 @@ impl __Schema {
                 "description" => __EnumValueField::Description,
                 "isDeprecated" => __EnumValueField::IsDeprecated,
                 "deprecationReason" => __EnumValueField::DeprecationReason,
-                "__typename" => __EnumValueField::Typename {
+                introspection::TYPENAME => __EnumValueField::Typename {
                     alias: alias_or_name(&selection_field),
                     typename: enum_value.name(),
                 },
@@ -2400,7 +2401,7 @@ impl __Schema {
                 "defaultValue" => __InputValueField::DefaultValue,
                 "isDeprecated" => __InputValueField::IsDeprecated,
                 "deprecationReason" => __InputValueField::DeprecationReason,
-                "__typename" => __InputValueField::Typename {
+                introspection::TYPENAME => __InputValueField::Typename {
                     alias: alias_or_name(&selection_field),
                     typename: input_value.name(),
                 },
@@ -2481,7 +2482,7 @@ impl __Schema {
                 }
                 "isDeprecated" => __FieldField::IsDeprecated,
                 "deprecationReason" => __FieldField::DeprecationReason,
-                "__typename" => __FieldField::Typename {
+                introspection::TYPENAME => __FieldField::Typename {
                     alias: alias_or_name(&selection_field),
                     typename: field.name(),
                 },
@@ -2525,7 +2526,7 @@ impl __Schema {
         }
 
         let name_arg_result: GraphQLResult<gson::Value> =
-            read_argument("name", field, query_field, variables, variable_definitions);
+            read_argument(args::NAME, field, query_field, variables, variable_definitions);
         let name_arg: Option<String> = match name_arg_result {
             // This builder (too) is overloaded and the arg is not present in all uses
             Err(_) => None,
@@ -2612,7 +2613,7 @@ impl __Schema {
                                     let mut f_builders: Vec<__FieldBuilder> = vec![];
 
                                     for vec_field in vec_fields {
-                                        if ["__type".to_string(), "__schema".to_string()]
+                                        if [introspection::TYPE.to_string(), introspection::SCHEMA.to_string()]
                                             .contains(&vec_field.name())
                                         {
                                             continue;
@@ -2743,7 +2744,7 @@ impl __Schema {
                             };
                             __TypeField::OfType(unwrapped_type_builder)
                         }
-                        "__typename" => __TypeField::Typename {
+                        introspection::TYPENAME => __TypeField::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: type_.name(),
                         },
@@ -2809,7 +2810,7 @@ impl __Schema {
                     __DirectiveField::Args(builders)
                 }
                 "isRepeatable" => __DirectiveField::IsRepeatable,
-                "__typename" => __DirectiveField::Typename {
+                introspection::TYPENAME => __DirectiveField::Typename {
                     alias: alias_or_name(&selection_field),
                     typename: __Directive::TYPE.to_string(),
                 },
@@ -2946,7 +2947,7 @@ impl __Schema {
                                             .collect::<Result<Vec<_>, _>>()?;
                                         __SchemaField::Directives(builders)
                                     }
-                                    "__typename" => __SchemaField::Typename {
+                                    introspection::TYPENAME => __SchemaField::Typename {
                                         alias: alias_or_name(&selection_field),
                                         typename: field.name(),
                                     },

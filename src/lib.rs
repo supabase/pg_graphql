@@ -6,6 +6,7 @@ use resolve::resolve_inner;
 use serde_json::json;
 
 mod builder;
+mod constants;
 mod error;
 mod graphql;
 mod gson;
