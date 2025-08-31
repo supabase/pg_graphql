@@ -4,6 +4,7 @@ use crate::error::{GraphQLError, GraphQLResult};
 use crate::graphql::*;
 use crate::sql_types::{Column, ForeignKey, ForeignKeyTableInfo, Function, Table, TypeDetails};
 use itertools::Itertools;
+use pgrx::datum::DatumWithOid;
 use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
 use pgrx::spi::SpiClient;
@@ -43,10 +44,10 @@ pub fn rand_block_name() -> String {
 pub trait MutationEntrypoint<'conn> {
     fn to_sql_entrypoint(&self, param_context: &mut ParamContext) -> GraphQLResult<String>;
 
-    fn execute(
+    fn execute<'c>(
         &self,
-        mut conn: SpiClient<'conn>,
-    ) -> GraphQLResult<(serde_json::Value, SpiClient<'conn>)> {
+        conn: &'c mut SpiClient<'conn>,
+    ) -> GraphQLResult<(serde_json::Value, &'c mut SpiClient<'conn>)> {
         let mut param_context = ParamContext { params: vec![] };
         let sql = &self.to_sql_entrypoint(&mut param_context);
         let sql = match sql {
@@ -56,11 +57,9 @@ pub trait MutationEntrypoint<'conn> {
             }
         };
 
-        let res_q = conn
-            .update(sql, None, Some(param_context.params))
-            .map_err(|_| {
-                GraphQLError::sql_execution("Internal Error: Failed to execute transpiled query")
-            })?;
+        let res_q = conn.update(sql, None, &param_context.params).map_err(|_| {
+            GraphQLError::sql_execution("Internal Error: Failed to execute transpiled query")
+        })?;
 
         let res: pgrx::JsonB = match res_q.first().get::<JsonB>(1) {
             Ok(Some(dat)) => dat,
@@ -90,7 +89,7 @@ pub trait QueryEntrypoint {
         };
 
         let spi_result: Result<Option<pgrx::JsonB>, spi::Error> = Spi::connect(|c| {
-            let val = c.select(sql, Some(1), Some(param_context.params))?;
+            let val = c.select(sql, Some(1), &param_context.params)?;
             // Get a value from the query
             if val.is_empty() {
                 Ok(None)
@@ -670,11 +669,11 @@ pub fn json_to_text_datum(val: &serde_json::Value) -> GraphQLResult<Option<pg_sy
     }
 }
 
-pub struct ParamContext {
-    pub params: Vec<(PgOid, Option<pg_sys::Datum>)>,
+pub struct ParamContext<'src> {
+    pub params: Vec<DatumWithOid<'src>>,
 }
 
-impl ParamContext {
+impl<'src> ParamContext<'src> {
     // Pushes a parameter into the context and returns a SQL clause to reference it
     //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
     fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> GraphQLResult<String> {
@@ -684,7 +683,8 @@ impl ParamContext {
         };
 
         let val_datum = json_to_text_datum(value)?;
-        self.params.push((type_oid, val_datum));
+        let datum_with_oid = unsafe { DatumWithOid::new(val_datum, type_oid.value()) };
+        self.params.push(datum_with_oid);
         Ok(format!("(${}::{})", self.params.len(), type_name))
     }
 }

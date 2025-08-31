@@ -806,7 +806,7 @@ impl Context {
 pub(crate) fn get_one_readonly<A: FromDatum + IntoDatum>(
     query: &str,
 ) -> std::result::Result<Option<A>, pgrx::spi::Error> {
-    Spi::connect(|client| client.select(query, Some(1), None)?.first().get_one())
+    Spi::connect(|client| client.select(query, Some(1), &[])?.first().get_one())
 }
 
 pub fn load_sql_config() -> Config {

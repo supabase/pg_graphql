@@ -43,7 +43,7 @@ jobs:
         package_name:
           - pg-graphql
         pgrx_version:
-          - 0.12.9
+          - 0.16.0
         postgres: [14, 15, 16, 17]
         box:
           - { runner: ubuntu-latest, arch: amd64 }
