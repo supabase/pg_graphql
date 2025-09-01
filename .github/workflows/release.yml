@@ -47,7 +47,7 @@ jobs:
         postgres: [14, 15, 16, 17]
         box:
           - { runner: ubuntu-latest, arch: amd64 }
-          - { runner: arm-runner, arch: arm64 }
+          - { runner: u22-arm-runner, arch: arm64 }
     runs-on: ${{ matrix.box.runner }}
     timeout-minutes: 90
     steps:
