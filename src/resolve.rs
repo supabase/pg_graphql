@@ -421,7 +421,7 @@ where
 
     use pgrx::prelude::*;
 
-    let spi_result: GraphQLResult<serde_json::Value> = Spi::connect(|mut conn| {
+    let spi_result: GraphQLResult<serde_json::Value> = Spi::connect_mut(|mut conn| {
         let res_data: serde_json::Value = match selections[..] {
             [] => Err(GraphQLError::validation("Selection set must not be empty"))?,
             _ => {
@@ -434,7 +434,7 @@ where
                     conn = match maybe_field_def {
                         None => Err(GraphQLError::field_not_found(
                             selection.name.as_ref(),
-                            &mutation_type_name
+                            &mutation_type_name,
                         ))?,
                         Some(field_def) => match field_def.type_.unmodified_type() {
                             __Type::InsertResponse(_) => {

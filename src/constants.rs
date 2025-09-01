@@ -1,7 +1,6 @@
 /// GraphQL field and argument name constants used throughout the codebase
 ///
 /// This module centralizes all magic strings to prevent typos and make refactoring easier.
-
 /// GraphQL introspection field names
 pub mod introspection {
     pub const TYPENAME: &str = "__typename";
@@ -40,8 +39,6 @@ pub mod args {
     pub const OBJECTS: &str = "objects";
     pub const SET: &str = "set";
     pub const AT_MOST: &str = "atMost";
-    pub const AT: &str = "at";
-    pub const DELETE_USING_NODE_ID: &str = "deleteUsingNodeId";
     pub const NODE_ID: &str = "nodeId";
     pub const NAME: &str = "name";
 }

@@ -1,4 +1,6 @@
-use crate::constants::{aggregate, args, connection, introspection, mutation, page_info, pagination};
+use crate::constants::{
+    aggregate, args, connection, introspection, mutation, page_info, pagination,
+};
 use crate::sql_types::*;
 use cached::proc_macro::cached;
 use cached::SizedCache;
@@ -936,11 +938,6 @@ pub struct ListType {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct NonNullType {
     pub type_: Box<__Type>,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct SchemaType {
-    pub schema: Arc<__Schema>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
