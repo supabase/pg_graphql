@@ -6,6 +6,8 @@ services:
     build:
         context: .
         dockerfile: ./dockerfiles/db/Dockerfile
+        args:
+          PG_VERSION: 17
     volumes:
         - ./dockerfiles/db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
     ports:

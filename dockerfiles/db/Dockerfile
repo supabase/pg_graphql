@@ -1,4 +1,4 @@
-ARG PG_VERSION=15
+ARG PG_VERSION=17
 FROM postgres:${PG_VERSION}
 RUN apt-get update
 
@@ -35,6 +35,6 @@ RUN cargo pgrx init --pg${PG_MAJOR} $(which pg_config)
 USER root
 
 COPY . .
-RUN cargo pgrx install
+RUN cargo pgrx install --release --features pg${PG_MAJOR}
 
 USER postgres
