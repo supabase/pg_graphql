@@ -2,8 +2,7 @@
 <html lang="en">
   <head>
     <title>GraphiQL - pg_graphql</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/graphiql@3.0.6/graphiql.min.css" />
   </head>
 
   <body style="margin: 0">
@@ -18,16 +17,57 @@
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql/graphiql.min.js"
+      src="https://unpkg.com/graphiql@3.0.6/graphiql.min.js"
     ></script>
     <script>
-      const fetcher = GraphiQL.createFetcher({
-        url: "http://localhost:3001/rpc/graphql",
-      });
-      ReactDOM.render(
-        React.createElement(GraphiQL, { fetcher: fetcher }),
-        document.getElementById("graphiql")
-      );
+      // Custom fetcher for PostgREST GraphQL function
+      const fetcher = async (graphQLParams) => {
+        const response = await fetch("http://localhost:3001/rpc/graphql", {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.pgrst.object+json;nulls=stripped',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            query: graphQLParams.query,
+            variables: graphQLParams.variables || {},
+            operationName: graphQLParams.operationName || null,
+            extensions: null
+          })
+        });
+
+        return response.json();
+      };
+
+      const defaultQuery = `# Welcome to pg_graphql!
+# Try this query:
+
+query {
+  accountCollection {
+    edges {
+      node {
+        id
+        email
+        createdAt
+        blogCollection {
+          edges {
+            node {
+              id
+              name
+              description
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+      root.render(React.createElement(GraphiQL, {
+        fetcher: fetcher,
+        query: defaultQuery
+      }));
     </script>
   </body>
 </html>
