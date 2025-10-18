@@ -236,7 +236,7 @@ create table "Post"(
     body text
 );
 
-comment on constraint post_owner_id_fkey
+comment on constraint post_account_id_fkey
   on "Post"
   is E'@graphql({"foreign_name": "author", "local_name": "posts"})';
 ```
