@@ -44,7 +44,7 @@ jobs:
           rustup component add llvm-tools-preview
           cargo install cargo-llvm-cov
           cargo install cargo-pgrx --version 0.16.1 --locked
-          cargo pgrx init --pg16=/usr/lib/postgresql/18/bin/pg_config
+          cargo pgrx init --pg18=/usr/lib/postgresql/18/bin/pg_config
 
           sudo chmod a+rw /usr/share/postgresql/18/extension
           sudo chmod a+rw /usr/lib/postgresql/18/lib/
