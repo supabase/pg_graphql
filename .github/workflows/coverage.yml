@@ -28,10 +28,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends clang libclang-dev gcc tree
 
           # Install requested postgres version
-          sudo apt install -y postgresql-16 postgresql-server-dev-16 -y
+          sudo apt install -y postgresql-18 postgresql-server-dev-18 -y
 
           # Ensure installed pg_config is first on path
-          export PATH=$PATH:/usr/lib/postgresql/16/bin
+          export PATH=$PATH:/usr/lib/postgresql/18/bin
 
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain stable && \
             rustup --version && \
@@ -44,16 +44,16 @@ jobs:
           rustup component add llvm-tools-preview
           cargo install cargo-llvm-cov
           cargo install cargo-pgrx --version 0.16.1 --locked
-          cargo pgrx init --pg16=/usr/lib/postgresql/16/bin/pg_config
+          cargo pgrx init --pg16=/usr/lib/postgresql/18/bin/pg_config
 
-          sudo chmod a+rw /usr/share/postgresql/16/extension
-          sudo chmod a+rw /usr/lib/postgresql/16/lib/
+          sudo chmod a+rw /usr/share/postgresql/18/extension
+          sudo chmod a+rw /usr/lib/postgresql/18/lib/
 
           cargo pgrx install
           source <(cargo llvm-cov show-env --export-prefix)
           cargo llvm-cov clean --workspace
           cargo build
-          cp ./target/debug/libpg_graphql.so /usr/lib/postgresql/16/lib/pg_graphql.so
+          cp ./target/debug/libpg_graphql.so /usr/lib/postgresql/18/lib/pg_graphql.so
           ./bin/installcheck
           cargo llvm-cov report --lcov --output-path lcov.info
 
