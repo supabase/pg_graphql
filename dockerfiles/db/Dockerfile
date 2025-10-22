@@ -1,4 +1,4 @@
-ARG PG_VERSION=17
+ARG PG_VERSION=18
 FROM postgres:${PG_VERSION}
 RUN apt-get update
 
@@ -28,7 +28,7 @@ RUN \
   cargo --version
 
 # PGRX
-RUN cargo install cargo-pgrx --version 0.16.0 --locked
+RUN cargo install cargo-pgrx --version 0.16.1 --locked
 
 RUN cargo pgrx init --pg${PG_MAJOR} $(which pg_config)
 

@@ -11,7 +11,7 @@ jobs:
     name: Run tests
     strategy:
       matrix:
-        postgres: [14, 15, 16, 17]
+        postgres: [14, 15, 16, 17, 18]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

@@ -19,3 +19,8 @@ perf.txt
 query.txt
 schema.graphql
 target/
+
+# Ignore aider AI tool internal files, and keep any config.
+.aider*
+!.aider.conf.yml
+!.aiderignore.aider*
