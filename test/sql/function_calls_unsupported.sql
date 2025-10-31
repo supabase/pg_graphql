@@ -179,6 +179,11 @@ begin;
                     description
                     type {
                         kind
+                        name
+                        ofType {
+                            kind
+                            name
+                        }
                     }
                     args {
                         name
