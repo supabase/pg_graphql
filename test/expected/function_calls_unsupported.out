@@ -292,6 +292,11 @@ begin;
                     description
                     type {
                         kind
+                        name
+                        ofType {
+                            kind
+                            name
+                        }
                     }
                     args {
                         name
@@ -357,7 +362,12 @@ begin;
                          ],                                                     +
                          "name": "accountCollection",                           +
                          "type": {                                              +
-                             "kind": "OBJECT"                                   +
+                             "kind": "NON_NULL",                                +
+                             "name": null,                                      +
+                             "ofType": {                                        +
+                                 "kind": "OBJECT",                              +
+                                 "name": "AccountConnection"                    +
+                             }                                                  +
                          },                                                     +
                          "description": "A pagable collection of type `Account`"+
                      },                                                         +
@@ -372,7 +382,9 @@ begin;
                          ],                                                     +
                          "name": "node",                                        +
                          "type": {                                              +
-                             "kind": "INTERFACE"                                +
+                             "kind": "INTERFACE",                               +
+                             "name": "Node",                                    +
+                             "ofType": null                                     +
                          },                                                     +
                          "description": "Retrieve a record by its `ID`"         +
                      }                                                          +

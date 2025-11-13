@@ -1234,7 +1234,9 @@ impl ___Type for QueryType {
 
                 let collection_entrypoint = __Field {
                     name_: format!("{}Collection", lowercase_first_letter(table_base_type_name)),
-                    type_: __Type::Connection(connection_type),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::Connection(connection_type)),
+                    }),
                     args: connection_args,
                     description: Some(format!(
                         "A pagable collection of type `{}`",
