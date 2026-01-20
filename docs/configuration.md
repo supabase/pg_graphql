@@ -184,6 +184,25 @@ type Account {
 }
 ```
 
+#### Column's Not Null
+
+Use the `"not_null"` JSON key to mark a column as non-nullable. This is particularly useful for [views](views.md#not-null-columns) where PostgreSQL does not preserve `NOT NULL` constraints from underlying tables.
+
+```sql
+create view "Person" as
+    select id, name from "Account";
+
+comment on column "Person".id is
+e'@graphql({"not_null": true})';
+```
+
+results in:
+```graphql
+type Person {
+  id: Int! # would be "Int" without the directive
+}
+```
+
 #### Computed Field
 
 Use the `"name"` JSON key to override a [computed field's](computed_fields.md) name.
