@@ -395,7 +395,7 @@ where
                             .columns
                             .iter()
                             .filter(|c| c.permissions.is_updatable && !c.is_generated && !c.is_serial)
-                            .find(|c| &schema.graphql_column_field_name(c) == graphql_col_name)
+                            .find(|c| schema.graphql_column_field_name(c).as_str() == graphql_col_name.as_str())
                             .ok_or_else(|| {
                                 GraphQLError::validation(format!(
                                     "Invalid column in updateFields: {}",

@@ -71,7 +71,7 @@ impl __Schema {
         schema.map(|s| s.directives.inflect_names).unwrap_or(false)
     }
 
-    fn graphql_column_field_name(&self, column: &Column) -> String {
+    pub fn graphql_column_field_name(&self, column: &Column) -> String {
         if let Some(override_name) = &column.directives.name {
             return override_name.clone();
         }
@@ -614,6 +614,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.kind(),
             Self::Aggregate(x) => x.kind(),
             Self::AggregateNumeric(x) => x.kind(),
+            Self::OnConflictInput(x) => x.kind(),
         }
     }
 
@@ -652,6 +653,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.name(),
             Self::Aggregate(x) => x.name(),
             Self::AggregateNumeric(x) => x.name(),
+            Self::OnConflictInput(x) => x.name(),
         }
     }
 
@@ -690,6 +692,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.description(),
             Self::Aggregate(x) => x.description(),
             Self::AggregateNumeric(x) => x.description(),
+            Self::OnConflictInput(x) => x.description(),
         }
     }
 
@@ -728,6 +731,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.fields(_include_deprecated),
             Self::Aggregate(x) => x.fields(_include_deprecated),
             Self::AggregateNumeric(x) => x.fields(_include_deprecated),
+            Self::OnConflictInput(x) => x.fields(_include_deprecated),
         }
     }
 
@@ -767,6 +771,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.interfaces(),
             Self::Aggregate(x) => x.interfaces(),
             Self::AggregateNumeric(x) => x.interfaces(),
+            Self::OnConflictInput(x) => x.interfaces(),
         }
     }
 
@@ -815,6 +820,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.enum_values(_include_deprecated),
             Self::Aggregate(x) => x.enum_values(_include_deprecated),
             Self::AggregateNumeric(x) => x.enum_values(_include_deprecated),
+            Self::OnConflictInput(x) => x.enum_values(_include_deprecated),
         }
     }
 
@@ -854,6 +860,7 @@ impl ___Type for __Type {
             Self::NonNull(x) => x.input_fields(),
             Self::Aggregate(x) => x.input_fields(),
             Self::AggregateNumeric(x) => x.input_fields(),
+            Self::OnConflictInput(x) => x.input_fields(),
         }
     }
 
