@@ -1668,11 +1668,11 @@ impl ___Type for EnumType {
             }
             EnumSource::FilterIs => Some("FilterIs".to_string()),
             EnumSource::TableColumns(table) => Some(format!(
-                "{}UpdateColumn",
+                "{}Field",
                 self.schema.graphql_table_base_type_name(table)
             )),
             EnumSource::OnConflictTarget(table) => Some(format!(
-                "{}Constraint",
+                "{}OnConflictConstraint",
                 self.schema.graphql_table_base_type_name(table)
             )),
         }
@@ -3327,7 +3327,7 @@ impl ___Type for OnConflictType {
         });
 
         fields.push(__InputValue {
-            name_: "updateColumns".to_string(),
+            name_: "updateFields".to_string(),
             type_: __Type::NonNull(NonNullType {
                 type_: Box::new(__Type::List(ListType {
                     type_: Box::new(__Type::NonNull(NonNullType {
@@ -3338,7 +3338,7 @@ impl ___Type for OnConflictType {
                     })),
                 })),
             }),
-            description: Some("The columns to update when a conflict occurs".to_string()),
+            description: Some("Fields to be updated if conflict occurs".to_string()),
             default_value: None,
             sql_type: None,
         });

@@ -324,10 +324,10 @@ impl MutationEntrypoint<'_> for InsertBuilder {
             Some(on_conflict) => {
                 let constraint_name = quote_ident(&on_conflict.constraint.name);
 
-                let mut update_cols_vec: Vec<&Arc<Column>> =
-                    on_conflict.update_columns.iter().collect();
-                update_cols_vec.sort_by_key(|c| &c.name);
-                let update_columns_clause = update_cols_vec
+                let mut update_fields_vec: Vec<&Arc<Column>> =
+                    on_conflict.update_fields.iter().collect();
+                update_fields_vec.sort_by_key(|c| &c.name);
+                let update_fields_clause = update_fields_vec
                     .iter()
                     .map(|col| {
                         let quoted_col = quote_ident(&col.name);
@@ -342,12 +342,12 @@ impl MutationEntrypoint<'_> for InsertBuilder {
                     param_context,
                 )?;
 
-                if update_columns_clause.is_empty() {
+                if update_fields_clause.is_empty() {
                     format!("on conflict on constraint {} do nothing", constraint_name)
                 } else {
                     format!(
                         "on conflict on constraint {} do update set {} where {}",
-                        constraint_name, update_columns_clause, where_clause
+                        constraint_name, update_fields_clause, where_clause
                     )
                 }
             }

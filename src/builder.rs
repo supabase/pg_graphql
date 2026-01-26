@@ -63,7 +63,7 @@ pub struct InsertBuilder {
 #[derive(Clone, Debug)]
 pub struct OnConflictBuilder {
     pub constraint: Index,
-    pub update_columns: HashSet<Arc<Column>>,
+    pub update_fields: HashSet<Arc<Column>>,
     pub filter: FilterBuilder,
 }
 
@@ -378,16 +378,16 @@ where
                 .find(|idx| &idx.name == constraint_name)
                 .ok_or(GraphQLError::validation("Invalid constraint name"))?;
 
-            let update_columns_val = obj
-                .get("updateColumns")
-                .ok_or(GraphQLError::validation("updateColumns is required"))?;
-            let update_columns_arr = match update_columns_val {
+            let update_fields_val = obj
+                .get("updateFields")
+                .ok_or(GraphQLError::validation("updateFields is required"))?;
+            let update_fields_arr = match update_fields_val {
                 gson::Value::Array(arr) => arr,
-                _ => return Err(GraphQLError::validation("updateColumns must be an array")),
+                _ => return Err(GraphQLError::validation("updateFields must be an array")),
             };
 
-            let mut update_columns = HashSet::new();
-            for val in update_columns_arr {
+            let mut update_fields = HashSet::new();
+            for val in update_fields_arr {
                 match val {
                     gson::Value::String(graphql_col_name) => {
                         // Map GraphQL column name back to actual Column
@@ -398,15 +398,15 @@ where
                             .find(|c| &schema.graphql_column_field_name(c) == graphql_col_name)
                             .ok_or_else(|| {
                                 GraphQLError::validation(format!(
-                                    "Invalid column in updateColumns: {}",
+                                    "Invalid column in updateFields: {}",
                                     graphql_col_name
                                 ))
                             })?;
-                        update_columns.insert(Arc::clone(column));
+                        update_fields.insert(Arc::clone(column));
                     }
                     _ => {
                         return Err(GraphQLError::validation(
-                            "updateColumns elements must be strings",
+                            "updateFields elements must be strings",
                         ))
                     }
                 }
@@ -426,7 +426,7 @@ where
 
             Ok(Some(OnConflictBuilder {
                 constraint: (*constraint).clone(),
-                update_columns,
+                update_fields,
                 filter: filter.unwrap_or(FilterBuilder { elems: vec![] }),
             }))
         }

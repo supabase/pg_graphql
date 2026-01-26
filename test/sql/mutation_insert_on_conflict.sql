@@ -90,7 +90,7 @@ begin;
         objects: [{ id: 3, email: "charlie@example.com", name: "Charlie" }]
         onConflict: {
           constraint: account_pkey
-          updateColumns: [email, name]
+          updateFields: [email, name]
         }
       ) {
         affectedCount
@@ -114,7 +114,7 @@ begin;
         objects: [{ id: 1, email: "alice_updated@example.com", name: "Alice Updated" }]
         onConflict: {
           constraint: account_pkey
-          updateColumns: [email, name]
+          updateFields: [email, name]
         }
       ) {
         affectedCount
@@ -141,7 +141,7 @@ begin;
         objects: [{ id: 2, email: "bob_new@example.com", name: "Bob New Name", status: "inactive" }]
         onConflict: {
           constraint: account_pkey
-          updateColumns: [name]
+          updateFields: [name]
         }
       ) {
         affectedCount
@@ -172,7 +172,7 @@ begin;
         objects: [{ id: 2, email: "should_not_update@example.com", name: "Should Not Update" }]
         onConflict: {
           constraint: account_pkey
-          updateColumns: [email, name]
+          updateFields: [email, name]
           filter: { status: { eq: "pending" } }
         }
       ) {
@@ -196,7 +196,7 @@ begin;
         objects: [{ id: 2, email: "bob_filtered@example.com", name: "Bob Filtered" }]
         onConflict: {
           constraint: account_pkey
-          updateColumns: [email, name]
+          updateFields: [email, name]
           filter: { status: { eq: "active" } }
         }
       ) {
@@ -223,7 +223,7 @@ begin;
         objects: [{ accountId: 1, settingKey: "theme", settingValue: "light" }]
         onConflict: {
           constraint: account_setting_pkey
-          updateColumns: [settingValue]
+          updateFields: [settingValue]
         }
       ) {
         affectedCount
@@ -249,7 +249,7 @@ begin;
         objects: [{ id: 10, sku: "SKU001", name: "Widget Pro", price: 14.99 }]
         onConflict: {
           constraint: product_sku_key
-          updateColumns: [name, price]
+          updateFields: [name, price]
         }
       ) {
         affectedCount
@@ -271,12 +271,12 @@ begin;
     */
 
     select graphql.resolve($$
-    mutation UpsertAccount($id: Int!, $email: String!, $name: String, $constraint: AccountConstraint!, $cols: [AccountUpdateColumn!]!) {
+    mutation UpsertAccount($id: Int!, $email: String!, $name: String, $constraint: AccountOnConflictConstraint!, $cols: [AccountField!]!) {
       insertIntoAccountCollection(
         objects: [{ id: $id, email: $email, name: $name }]
         onConflict: {
           constraint: $constraint
-          updateColumns: $cols
+          updateFields: $cols
         }
       ) {
         affectedCount
@@ -307,7 +307,7 @@ begin;
         ]
         onConflict: {
           constraint: account_pkey
-          updateColumns: [email, name]
+          updateFields: [email, name]
         }
       ) {
         affectedCount
@@ -331,7 +331,7 @@ begin;
         objects: [{ id: 1, email: "test@test.com" }]
         onConflict: {
           constraint: invalid_constraint_name
-          updateColumns: [email]
+          updateFields: [email]
         }
       ) {
         affectedCount
@@ -339,14 +339,14 @@ begin;
     }
     $$);
 
-    -- Empty updateColumns (should still work - do nothing on conflict effectively)
+    -- Empty updateFields (should still work - do nothing on conflict effectively)
     select graphql.resolve($$
     mutation {
       insertIntoAccountCollection(
         objects: [{ id: 1, email: "test@test.com" }]
         onConflict: {
           constraint: account_pkey
-          updateColumns: []
+          updateFields: []
         }
       ) {
         affectedCount
