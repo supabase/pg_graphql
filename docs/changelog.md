@@ -127,3 +127,5 @@
 - feature: Add support for Postgres 18
 
 ## master
+
+- feature: Add support for single record queries by primary key
