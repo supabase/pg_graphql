@@ -267,6 +267,7 @@ impl MutationEntrypoint<'_> for InsertBuilder {
         let quoted_block_name = rand_block_name();
         let quoted_schema = quote_ident(&self.table.schema);
         let quoted_table = quote_ident(&self.table.name);
+        let table_alias = rand_block_name();
 
         let frags: Vec<String> = self
             .selections
@@ -319,11 +320,46 @@ impl MutationEntrypoint<'_> for InsertBuilder {
 
         let values_clause = values_rows_clause.join(", ");
 
+        let on_conflict_clause = match &self.on_conflict {
+            Some(on_conflict) => {
+                let constraint_name = quote_ident(&on_conflict.constraint.name);
+
+                let mut update_fields_vec: Vec<&Arc<Column>> =
+                    on_conflict.update_fields.iter().collect();
+                update_fields_vec.sort_by_key(|c| &c.name);
+                let update_fields_clause = update_fields_vec
+                    .iter()
+                    .map(|col| {
+                        let quoted_col = quote_ident(&col.name);
+                        format!("{} = excluded.{}", quoted_col, quoted_col)
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+
+                let where_clause = on_conflict.filter.to_where_clause(
+                    &table_alias,
+                    &self.table,
+                    param_context,
+                )?;
+
+                if update_fields_clause.is_empty() {
+                    format!("on conflict on constraint {} do nothing", constraint_name)
+                } else {
+                    format!(
+                        "on conflict on constraint {} do update set {} where {}",
+                        constraint_name, update_fields_clause, where_clause
+                    )
+                }
+            }
+            None => "".to_string(),
+        };
+
         Ok(format!(
             "
         with affected as (
-            insert into {quoted_schema}.{quoted_table}({referenced_columns_clause})
+            insert into {quoted_schema}.{quoted_table} as {table_alias}({referenced_columns_clause})
             values {values_clause}
+            {on_conflict_clause}
             returning {selectable_columns_clause}
         )
         select

@@ -493,6 +493,8 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> GraphQLRes
                                     .map(|val| GsonValue::String(val.clone()))
                                     .unwrap_or_else(|| value.clone()),
                                 EnumSource::FilterIs => value.clone(),
+                                EnumSource::TableColumns(_) => value.clone(),
+                                EnumSource::OnConflictTarget(_) => value.clone(),
                             }
                         }
                         None => {
