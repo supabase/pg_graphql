@@ -26,10 +26,13 @@ tells pg_graphql to treat `"Person".id` as the primary key for the `Person` enti
 ```graphql
 type Person {
   nodeId: ID!
-  id: Int!
-  name: String!
+  id: Int
+  name: String
 }
 ```
+
+!!! note
+    View columns are nullable by default because PostgreSQL does not preserve `NOT NULL` constraints from underlying tables. See [Not Null Columns](#not-null-columns) to learn how to mark view columns as non-nullable.
 
 !!! warning
     Values of the primary key column/s must be unique within the table. If they are not unique, you will experience inconsistent behavior with `ID!` types, sorting, and pagination.
@@ -122,5 +125,53 @@ type EmailAddress {
   address: String!
   accountId: Int!
   account: Account!
+}
+```
+
+## Not Null Columns
+
+PostgreSQL views do not preserve `NOT NULL` constraints from their underlying tables. This means view columns appear as nullable in the GraphQL schema even when the source table columns are `NOT NULL`. To mark a view column as non-nullable, use the `not_null` [comment directive](configuration.md#comment-directives) on the column:
+
+```json
+{"not_null": true}
+```
+
+For example:
+
+```sql
+create table "Account"(
+  id serial primary key,
+  name text not null
+);
+
+create view "Person" as
+  select
+    id,
+    name
+  from
+    "Account";
+
+comment on view "Person" is e'@graphql({"primary_key_columns": ["id"]})';
+comment on column "Person".id is e'@graphql({"not_null": true})';
+comment on column "Person".name is e'@graphql({"not_null": true})';
+```
+
+Without the `not_null` directives, the GraphQL type would have nullable fields:
+
+```graphql
+type Person {
+  nodeId: ID!
+  id: Int
+  name: String
+}
+```
+
+With the `not_null` directives applied, the fields become non-nullable:
+
+```graphql
+type Person {
+  nodeId: ID!
+  id: Int!
+  name: String!
 }
 ```

@@ -2031,7 +2031,7 @@ pub fn sql_column_to_graphql_type(col: &Column, schema: &Arc<__Schema>) -> Optio
     let maybe_type_w_list_mod = sql_type.to_graphql_type(col.max_characters, false, schema);
     match maybe_type_w_list_mod {
         None => None,
-        Some(type_with_list_mod) => match col.is_not_null {
+        Some(type_with_list_mod) => match col.is_not_null() {
             true => Some(__Type::NonNull(NonNullType {
                 type_: Box::new(type_with_list_mod),
             })),
@@ -2051,7 +2051,7 @@ impl NodeType {
             self.table
                 .columns
                 .iter()
-                .any(|c| &c.name == colname && c.is_not_null)
+                .any(|c| &c.name == colname && c.is_not_null())
                 && !fkey.referenced_table_meta.is_rls_enabled
                 && !is_reverse_reference
         }) {

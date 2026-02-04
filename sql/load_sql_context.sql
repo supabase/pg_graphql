@@ -346,7 +346,8 @@ select
                                                 select
                                                     jsonb_build_object(
                                                         'name', d.directive ->> 'name',
-                                                        'description', d.directive -> 'description'
+                                                        'description', d.directive -> 'description',
+                                                        'not_null', (d.directive ->> 'not_null')::boolean
                                                     )
                                                 from
                                                     directives d
