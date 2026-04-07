@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Add postgres package repo
         run: |
@@ -27,7 +27,7 @@ jobs:
           wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
 
       - name: Cache APT packages
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         id: apt-cache
         with:
           path: ~/apt-cache
@@ -47,12 +47,12 @@ jobs:
           cp /var/cache/apt/archives/*.deb ~/apt-cache/ 2>/dev/null || true
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
           components: llvm-tools-preview
 
       - name: Cache cargo binaries
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         id: cargo-bins
         with:
           path: ${{ github.workspace }}/.cargo-bin-cache
@@ -72,7 +72,7 @@ jobs:
           cp ~/.cargo/bin/cargo-llvm-cov ~/.cargo/bin/cargo-pgrx ${{ github.workspace }}/.cargo-bin-cache/
 
       - name: Cache pgrx init
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         id: pgrx-init
         with:
           path: ~/.pgrx
@@ -84,7 +84,7 @@ jobs:
           cargo pgrx init --pg${{ env.PG_VERSION }}=/usr/lib/postgresql/${{ env.PG_VERSION }}/bin/pg_config
 
       - name: Cache Rust build
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       - name: Build and run coverage
         run: |
@@ -102,7 +102,7 @@ jobs:
           cargo llvm-cov report --lcov --output-path lcov.info
 
       - name: Coveralls upload
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: lcov.info
