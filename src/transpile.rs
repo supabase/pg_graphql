@@ -9,6 +9,7 @@ use pgrx::pg_sys::PgBuiltInOids;
 use pgrx::prelude::*;
 use pgrx::spi::SpiClient;
 use pgrx::{JsonB, direct_function_call};
+use rand::distr::Alphanumeric;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::cmp;
 use std::collections::HashSet;
@@ -29,10 +30,9 @@ pub fn quote_literal(ident: &str) -> String {
 }
 
 pub fn rand_block_name() -> String {
-    use rand::distributions::Alphanumeric;
-    use rand::{Rng, thread_rng};
+    use rand::Rng;
     quote_ident(
-        &thread_rng()
+        &rand::rng()
             .sample_iter(&Alphanumeric)
             .take(7)
             .map(char::from)
@@ -1560,7 +1560,9 @@ impl NodeByPkBuilder {
                     .columns
                     .iter()
                     .find(|c| &c.name == column_name)
-                    .ok_or_else(|| GraphQLError::internal(format!("Column {} not found", column_name)))?
+                    .ok_or_else(|| {
+                        GraphQLError::internal(format!("Column {} not found", column_name))
+                    })?
                     .type_name,
             )?;
 
@@ -1634,7 +1636,12 @@ impl NodeIdInstance {
                 .columns
                 .iter()
                 .find(|c| &c.name == column_name)
-                .ok_or_else(|| GraphQLError::validation(format!("Primary key column {} not found", column_name)))?;
+                .ok_or_else(|| {
+                    GraphQLError::validation(format!(
+                        "Primary key column {} not found",
+                        column_name
+                    ))
+                })?;
 
             let value_clause = param_context.clause_for(value, &column.type_name)?;
 
