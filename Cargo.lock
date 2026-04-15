@@ -1144,7 +1144,7 @@ dependencies = [
  "lazy_static",
  "pgrx",
  "pgrx-tests",
- "rand 0.8.5",
+ "rand 0.9.0",
  "serde",
  "serde_json",
  "thiserror 2.0.16",
