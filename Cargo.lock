@@ -1144,7 +1144,7 @@ dependencies = [
  "lazy_static",
  "pgrx",
  "pgrx-tests",
- "rand 0.9.0",
+ "rand 0.9.3",
  "serde",
  "serde_json",
  "thiserror 2.0.16",
@@ -1269,7 +1269,7 @@ dependencies = [
  "pgrx-pg-config",
  "postgres",
  "proptest",
- "rand 0.9.0",
+ "rand 0.9.3",
  "regex",
  "serde",
  "serde_json",
@@ -1337,7 +1337,7 @@ dependencies = [
  "hmac",
  "md-5",
  "memchr",
- "rand 0.9.0",
+ "rand 0.9.3",
  "sha2",
  "stringprep",
 ]
@@ -1425,13 +1425,12 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.9.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3779b94aeb87e8bd4e834cee3650289ee9e0d5677f976ecdb6d219e5f4f6cd94"
+checksum = "7ec095654a25171c2124e9e3393a930bddbffdc939556c914957a4c3e0a87166"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.0",
- "zerocopy 0.8.14",
 ]
 
 [[package]]
@@ -1900,7 +1899,7 @@ dependencies = [
  "pin-project-lite",
  "postgres-protocol",
  "postgres-types",
- "rand 0.9.0",
+ "rand 0.9.3",
  "socket2",
  "tokio",
  "tokio-util",
