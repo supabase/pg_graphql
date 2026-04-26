@@ -415,6 +415,7 @@ pub struct Composite {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Index {
+    pub name: String,
     pub table_oid: u32,
     pub column_names: Vec<String>,
     pub is_unique: bool,
@@ -553,6 +554,7 @@ impl Table {
                 None
             } else {
                 Some(Index {
+                    name: "primary_key_directive".to_string(),
                     table_oid: self.oid,
                     column_names: column_names.clone(),
                     is_unique: true,
@@ -562,6 +564,28 @@ impl Table {
         } else {
             None
         }
+    }
+
+    pub fn on_conflict_indexes(&self) -> Vec<&Index> {
+        // Only unique indexes with insertable, non-generated, non-serial columns
+        self.indexes
+            .iter()
+            .filter(|x| x.is_unique)
+            .filter(|uix| {
+                uix.column_names.iter().all(|col_name| {
+                    self.columns.iter().any(|c| {
+                        &c.name == col_name
+                            && c.permissions.is_insertable
+                            && !c.is_generated
+                            && !c.is_serial
+                    })
+                })
+            })
+            .collect()
+    }
+
+    pub fn has_upsert_support(&self) -> bool {
+        !self.on_conflict_indexes().is_empty()
     }
 
     pub fn primary_key_columns(&self) -> Vec<&Arc<Column>> {
