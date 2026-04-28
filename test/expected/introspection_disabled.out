@@ -182,4 +182,275 @@ begin;
  }
 (1 row)
 
+    -- 6) Per-schema filtering across two schemas.
+    -- Set up a second schema with its own table and add it to search_path.
+    create schema priv;
+    create table priv.secret(
+        id serial primary key,
+        token text not null
+    );
+    insert into priv.secret(token) values ('s1');
+    grant usage on schema priv to public;
+    grant select on priv.secret to public;
+    set local search_path = public, priv;
+    -- 6a) public=on, priv=on: both schemas' types and Query fields are visible.
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
+    comment on schema priv   is e'@graphql({"inflect_names": true, "introspection": true})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Account") { name kind }
+            }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "Account"+
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Secret") { name kind }
+            }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "Secret" +
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            { __schema { queryType { fields { name } } } }
+        $$)::jsonb,
+        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(account|secret)Collection$")'
+    );
+          jsonb_path_query_array           
+-------------------------------------------
+ ["accountCollection", "secretCollection"]
+(1 row)
+
+    -- 6b) public=on, priv=off: priv's types/fields hidden, public still visible.
+    -- Runtime queries against priv.secret still resolve.
+    comment on schema priv is e'@graphql({"inflect_names": true, "introspection": false})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Account") { name kind }
+            }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "Account"+
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Secret") { name kind }
+            }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
+
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            { __schema { queryType { fields { name } } } }
+        $$)::jsonb,
+        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(account|secret)Collection$")'
+    );
+ jsonb_path_query_array 
+------------------------
+ ["accountCollection"]
+(1 row)
+
+    -- Runtime data query against the disabled schema still works.
+    select jsonb_pretty(
+        graphql.resolve($$
+            { secretCollection { edges { node { id token } } } }
+        $$)
+    );
+             jsonb_pretty              
+---------------------------------------
+ {                                    +
+     "data": {                        +
+         "secretCollection": {        +
+             "edges": [               +
+                 {                    +
+                     "node": {        +
+                         "id": 1,     +
+                         "token": "s1"+
+                     }                +
+                 }                    +
+             ]                        +
+         }                            +
+     }                                +
+ }
+(1 row)
+
+    -- 6c) public=off, priv=on: only priv's types/fields visible.
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": false})';
+    comment on schema priv   is e'@graphql({"inflect_names": true, "introspection": true})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Account") { name kind }
+            }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Secret") { name kind }
+            }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "Secret" +
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            { __schema { queryType { fields { name } } } }
+        $$)::jsonb,
+        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(account|secret)Collection$")'
+    );
+ jsonb_path_query_array 
+------------------------
+ ["secretCollection"]
+(1 row)
+
+    -- 6d) public=off, priv=off: top-level __schema/__type blocked entirely.
+    -- Runtime queries against either schema still resolve.
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": false})';
+    comment on schema priv   is e'@graphql({"inflect_names": true, "introspection": false})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema { queryType { name } }
+            }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": null,                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Account") { name }
+            }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            { accountCollection { edges { node { id } } } }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            { secretCollection { edges { node { id } } } }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "secretCollection": {  +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
 rollback;
