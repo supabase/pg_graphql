@@ -2869,9 +2869,10 @@ impl __Schema {
                                         // that has not opted into introspection.
                                         if let Some(oid) =
                                             vec_field.type_.unmodified_type().schema_oid()
-                                            && !self.is_schema_introspection_enabled(oid) {
-                                                continue;
-                                            }
+                                            && !self.is_schema_introspection_enabled(oid)
+                                        {
+                                            continue;
+                                        }
 
                                         let f_builder = self.to_field_builder(
                                             &vec_field,
