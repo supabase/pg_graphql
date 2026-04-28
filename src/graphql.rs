@@ -71,6 +71,21 @@ impl __Schema {
         schema.map(|s| s.directives.inflect_names).unwrap_or(false)
     }
 
+    pub fn introspection_enabled(&self) -> bool {
+        self.context
+            .schemas
+            .values()
+            .any(|s| s.directives.introspection_enabled)
+    }
+
+    pub fn is_schema_introspection_enabled(&self, schema_oid: u32) -> bool {
+        self.context
+            .schemas
+            .get(&schema_oid)
+            .map(|s| s.directives.introspection_enabled)
+            .unwrap_or(false)
+    }
+
     fn graphql_column_field_name(&self, column: &Column) -> String {
         if let Some(override_name) = &column.directives.name {
             return override_name.clone();
@@ -886,6 +901,29 @@ impl __Type {
             t => t,
         }
     }
+
+    pub fn schema_oid(&self) -> Option<u32> {
+        match self {
+            __Type::Node(t) => Some(t.table.schema_oid),
+            __Type::Connection(t) => Some(t.table.schema_oid),
+            __Type::Edge(t) => Some(t.table.schema_oid),
+            __Type::InsertInput(t) => Some(t.table.schema_oid),
+            __Type::InsertResponse(t) => Some(t.table.schema_oid),
+            __Type::UpdateInput(t) => Some(t.table.schema_oid),
+            __Type::UpdateResponse(t) => Some(t.table.schema_oid),
+            __Type::DeleteResponse(t) => Some(t.table.schema_oid),
+            __Type::FilterEntity(t) => Some(t.table.schema_oid),
+            __Type::OrderByEntity(t) => Some(t.table.schema_oid),
+            __Type::Enum(t) => match &t.enum_ {
+                EnumSource::Enum(e) => Some(e.schema_oid),
+                EnumSource::FilterIs => None,
+            },
+            __Type::FuncCallResponse(t) => Some(t.function.schema_oid),
+            __Type::Aggregate(t) => Some(t.table.schema_oid),
+            __Type::AggregateNumeric(t) => Some(t.table.schema_oid),
+            _ => None,
+        }
+    }
 }
 
 #[allow(clippy::upper_case_acronyms)]
@@ -1318,33 +1356,36 @@ impl ___Type for QueryType {
                 .filter(|ff| !existing_fields.contains(&ff.name())),
         );
 
-        // Default fields always preset
-        f.extend(vec![
-            __Field {
-                name_: introspection::TYPE.to_string(),
-                type_: __Type::__Type(__TypeType),
-                args: vec![__InputValue {
-                    name_: args::NAME.to_string(),
-                    type_: __Type::Scalar(Scalar::String(None)),
+        // Introspection meta-fields are exposed only when at least one schema
+        // has opted into introspection via @graphql({"introspection": true}).
+        if self.schema.introspection_enabled() {
+            f.extend(vec![
+                __Field {
+                    name_: introspection::TYPE.to_string(),
+                    type_: __Type::__Type(__TypeType),
+                    args: vec![__InputValue {
+                        name_: args::NAME.to_string(),
+                        type_: __Type::Scalar(Scalar::String(None)),
+                        description: None,
+                        default_value: None,
+                        sql_type: None,
+                    }],
                     description: None,
-                    default_value: None,
+                    deprecation_reason: None,
                     sql_type: None,
-                }],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            },
-            __Field {
-                name_: introspection::SCHEMA.to_string(),
-                type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::__Schema(__SchemaType)),
-                }),
-                args: vec![],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            },
-        ]);
+                },
+                __Field {
+                    name_: introspection::SCHEMA.to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::__Schema(__SchemaType)),
+                    }),
+                    args: vec![],
+                    description: None,
+                    deprecation_reason: None,
+                    sql_type: None,
+                },
+            ]);
+        }
 
         f.sort_by_key(|a| a.name());
         Some(f)
@@ -4351,6 +4392,19 @@ impl __Schema {
 
         types_.sort_by_key(|a| a.name());
         types_
+    }
+
+    // Like `types()` but filtered by per-schema introspection opt-in.
+    // Used only by introspection (`__schema { types }` and `__type(name)`)
+    // — runtime resolution must still see every type via `types()`.
+    pub fn introspectable_types(&self) -> Vec<__Type> {
+        self.types()
+            .into_iter()
+            .filter(|t| match t.schema_oid() {
+                Some(oid) => self.is_schema_introspection_enabled(oid),
+                None => true,
+            })
+            .collect()
     }
 
     pub fn mutations_exist(&self) -> bool {

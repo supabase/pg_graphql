@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create function both_args_optional(
         a smallint default null,
         b integer default null

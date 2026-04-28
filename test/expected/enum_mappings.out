@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create type my_enum as enum ('test', 'valid value', 'another value');
     comment on type my_enum is E'@graphql({"mappings": {"valid value": "valid_value", "another value": "another_value"}})';
     create table enums (

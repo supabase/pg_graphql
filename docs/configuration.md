@@ -75,6 +75,32 @@ comment on view "Person" is e'@graphql({"primary_key_columns": ["id"], "max_rows
 
 The `max_rows` value falls back to the parent object if it is missing on the current object. For example, if a table doesn't have `max_rows` set, the value set on the table's schema will be used. If the schema also doesn't have `max_rows` set, then it falls back to default value 30. The parent object of a view is the schema, not the table on which the view is created.
 
+### Introspection
+
+GraphQL introspection (`__schema`, `__type`) is **disabled by default** to reduce the attack surface exposed to clients. Tools like GraphiQL, code generators, Apollo DevTools, and the Relay compiler rely on introspection — opt in per schema when you need them.
+
+To enable introspection for a schema:
+```sql
+comment on schema public is e'@graphql({"introspection": true})';
+```
+
+To explicitly disable it (same as the default):
+```sql
+comment on schema public is e'@graphql({"introspection": false})';
+```
+
+Composes with other schema-level directives:
+```sql
+comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
+```
+
+When no exposed schema has opted in, `__schema` and `__type` selections resolve to:
+```json
+{ "errors": [{ "message": "Unknown field \"__schema\" on type Query" }] }
+```
+
+The directive is **per schema**. With multiple schemas exposed via `search_path`, introspection results are filtered: types and Query/Mutation fields tied to a disabled-schema entity are hidden, while built-in scalars and meta-types remain visible. Runtime queries against disabled-schema entities still execute — only the introspection listing is filtered.
+
 ### totalCount
 
 `totalCount` is an opt-in field that extends a table's Connection type. It provides a count of the rows that match the query's filters, and ignores pagination arguments.

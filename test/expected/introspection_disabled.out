@@ -1,0 +1,185 @@
+begin;
+    -- The fixture sets `inflect_names: true` on `public` but no `introspection`.
+    -- Reset the comment to start from a clean default-disabled state.
+    comment on schema public is null;
+    create table account(
+        id serial primary key,
+        email text not null
+    );
+    -- 1) Default state: __schema and __type both blocked
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                queryType { name }
+              }
+            }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": null,                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Query") { name }
+            }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    -- 2) Normal data queries unaffected by introspection being off
+    insert into account(email) values ('a@x.com');
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              accountCollection {
+                edges { node { id email } }
+              }
+            }
+        $$)
+    );
+                jsonb_pretty                
+--------------------------------------------
+ {                                         +
+     "data": {                             +
+         "accountCollection": {            +
+             "edges": [                    +
+                 {                         +
+                     "node": {             +
+                         "id": 1,          +
+                         "email": "a@x.com"+
+                     }                     +
+                 }                         +
+             ]                             +
+         }                                 +
+     }                                     +
+ }
+(1 row)
+
+    -- 3) Opt in: introspection visible, type is reachable by its un-inflected name
+    comment on schema public is e'@graphql({"introspection": true})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                queryType { name }
+              }
+            }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "__schema": {          +
+             "queryType": {     +
+                 "name": "Query"+
+             }                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "account") { name kind }
+            }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "account"+
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    -- 4) Composition: directive merges with inflect_names; type name is now "Account"
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Account") { name kind }
+            }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "Account"+
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    -- 5) Explicit opt-out: blocked again
+    comment on schema public is e'@graphql({"introspection": false})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                queryType { name }
+              }
+            }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": null,                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Account") { name }
+            }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+rollback;

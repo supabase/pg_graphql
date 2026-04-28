@@ -1,6 +1,7 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create schema xyz;
-    comment on schema xyz is '@graphql({"inflect_names": true})';
+    comment on schema xyz is '@graphql({"inflect_names": true, "introspection": true})';
     create type xyz.light as enum ('red');
     -- expect nothing b/c not in search_path
     select jsonb_pretty(
