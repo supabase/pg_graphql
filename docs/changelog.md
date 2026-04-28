@@ -95,6 +95,7 @@
 ## 1.5.3
 
 - bugfix: computed field returning a composite type was always null
+  https://github.com/supabase/pg_graphql/pull/628/changes#diff-db5e7414132a655933586eff9be9622f680697577730114376c3f80fb023b0cd
 
 ## 1.5.4
 
@@ -129,3 +130,4 @@
 ## master
 
 - feature: Add support for single record queries by primary key
+- **breaking**: GraphQL introspection (`__schema`, `__type`) is now disabled by default. Opt in per schema with `comment on schema <name> is e'@graphql({"introspection": true})'`. Tools that rely on introspection (GraphiQL, codegen, Apollo DevTools, Relay compiler) will see `Unknown field "__schema" on type Query` errors after upgrading until the directive is added. Runtime queries and mutations are unaffected. See [configuration → Introspection](configuration.md#introspection).
