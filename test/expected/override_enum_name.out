@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create type account_priority as enum ('high', 'standard');
     comment on type public.account_priority is E'@graphql({"name": "CustomerValue"})';
     select jsonb_pretty(

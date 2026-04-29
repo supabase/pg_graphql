@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     -- Create a new non-superuser role to manipulate permissions
     create role api;
     grant usage on schema graphql to api;

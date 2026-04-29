@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     -- https://github.com/supabase/pg_graphql/issues/370
     -- citext is common enough that we should handle treating it as a string
     create extension citext;

@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
 
     create function "someFunc" (arg uuid)
         returns int

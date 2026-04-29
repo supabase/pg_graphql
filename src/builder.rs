@@ -2212,12 +2212,16 @@ where
     // This function is only called for Node types from resolve_selection_set
     let xtype = match type_ {
         __Type::Node(node_type) => node_type,
-        _ => return Err(GraphQLError::internal("to_node_by_pk_builder called with non-Node type")),
+        _ => {
+            return Err(GraphQLError::internal(
+                "to_node_by_pk_builder called with non-Node type",
+            ));
+        }
     };
 
-    let type_name = xtype
-        .name()
-        .ok_or_else(|| GraphQLError::internal("Encountered type without name in node_by_pk builder"))?;
+    let type_name = xtype.name().ok_or_else(|| {
+        GraphQLError::internal("Encountered type without name in node_by_pk builder")
+    })?;
 
     let field_map = field_map(&__Type::Node(xtype.clone()));
 
@@ -2258,7 +2262,11 @@ where
             .collect();
         return Err(GraphQLError::argument(format!(
             "Missing primary key column(s): {}",
-            missing_cols.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+            missing_cols
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         )));
     }
 
@@ -2275,8 +2283,8 @@ where
             None => {
                 return Err(GraphQLError::field_not_found(
                     selection_field.name.as_ref(),
-                    &type_name
-                ))
+                    &type_name,
+                ));
             }
             Some(f) => {
                 let alias = alias_or_name(&selection_field);
@@ -2315,8 +2323,8 @@ where
                                 }
                                 _ => {
                                     return Err(GraphQLError::type_error(
-                                        "invalid return type from function"
-                                    ))
+                                        "invalid return type from function",
+                                    ));
                                 }
                             };
                             NodeSelection::Function(FunctionBuilder {
@@ -2326,14 +2334,12 @@ where
                                 selection: function_selection,
                             })
                         }
-                        NodeSQLType::NodeId(pkey_columns) => {
-                            NodeSelection::NodeId(NodeIdBuilder {
-                                alias,
-                                columns: pkey_columns.clone(),
-                                table_name: xtype.table.name.clone(),
-                                schema_name: xtype.table.schema.clone(),
-                            })
-                        }
+                        NodeSQLType::NodeId(pkey_columns) => NodeSelection::NodeId(NodeIdBuilder {
+                            alias,
+                            columns: pkey_columns.clone(),
+                            table_name: xtype.table.name.clone(),
+                            schema_name: xtype.table.schema.clone(),
+                        }),
                     },
                     _ => match f.name().as_ref() {
                         "__typename" => NodeSelection::Typename {
@@ -2780,7 +2786,11 @@ impl __Schema {
             type_name.ok_or_else(|| GraphQLError::validation("no name found for __type"))?;
 
         let type_map = type_map(self);
-        let requested_type: Option<&__Type> = type_map.get(&type_name);
+        let requested_type: Option<&__Type> =
+            type_map.get(&type_name).filter(|t| match t.schema_oid() {
+                Some(oid) => self.is_schema_introspection_enabled(oid),
+                None => true,
+            });
 
         match requested_type {
             Some(requested_type) => {
@@ -2851,6 +2861,15 @@ impl __Schema {
                                             introspection::SCHEMA.to_string(),
                                         ]
                                         .contains(&vec_field.name())
+                                        {
+                                            continue;
+                                        }
+
+                                        // Hide fields whose return type belongs to a schema
+                                        // that has not opted into introspection.
+                                        if let Some(oid) =
+                                            vec_field.type_.unmodified_type().schema_oid()
+                                            && !self.is_schema_introspection_enabled(oid)
                                         {
                                             continue;
                                         }
@@ -3117,7 +3136,7 @@ impl __Schema {
                                     "description" => __SchemaField::Description,
                                     "types" => {
                                         let builders = self
-                                            .types()
+                                            .introspectable_types()
                                             .iter()
                                             // Filter out intropsection meta-types
                                             //.filter(|x| {

@@ -13,7 +13,7 @@ begin;
     $$;
 
     -- Inflection off, Overrides: off
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     select jsonb_pretty(
         graphql.resolve($$
         {
@@ -45,7 +45,7 @@ begin;
     rollback to savepoint a;
 
     -- Inflection on, Overrides: off
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     select jsonb_pretty(
         graphql.resolve($$
         {

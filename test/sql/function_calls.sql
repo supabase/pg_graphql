@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
 
     savepoint a;
     -- Only volatilve functions appear on the mutation object
@@ -27,7 +28,7 @@ begin;
         }
     $$));
 
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
 
     create function add_bigints(a bigint, b bigint)
         returns bigint language sql volatile
@@ -39,7 +40,7 @@ begin;
         }
     $$));
 
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
 
     create function add_reals(a real, b real)
         returns real language sql volatile
@@ -475,7 +476,7 @@ begin;
         }
     $$));
 
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
 
     create function returns_account_with_id(id_to_search int)
         returns account language sql stable
@@ -499,7 +500,7 @@ begin;
         }
     $$));
 
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
 
     select jsonb_pretty(graphql.resolve($$
         query {
@@ -651,6 +652,7 @@ begin;
     create schema if not exists graphql_public;
     -- functions in the counter_example schema should be visible
     create schema if not exists counter_example;
+    comment on schema counter_example is e'@graphql({"introspection": true})';
 
     -- Create a function in each excluded schema to confirm it isn't visible
     create function graphql.should_be_invisible_one()

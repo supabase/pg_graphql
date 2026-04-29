@@ -1,7 +1,7 @@
 begin;
     savepoint a;
     -- Inflection true, Overrides: off, Ends with '_id'
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create table account_holder (
         id int primary key,
         author_id int,
@@ -47,7 +47,7 @@ begin;
 
     -- Inflection true, Overrides: off, does not end with '_id'
     rollback to savepoint a;
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create table account_holder (
         id int primary key,
         author int,
@@ -93,7 +93,7 @@ begin;
 
     -- Inflection true, Overrides: true
     rollback to savepoint a;
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create table account_holder (
         id int primary key,
         account_id int,
@@ -142,7 +142,7 @@ begin;
 
     -- Inflection false, Overrides: off, Ends with 'Id'
     rollback to savepoint a;
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table "AccountHolder" (
         id int primary key,
         "authorId" int,
@@ -188,7 +188,7 @@ begin;
 
     -- Inflection false, Overrides: off, does not end with 'Id'
     rollback to savepoint a;
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table "AccountHolder" (
         id int primary key,
         author int,
@@ -234,7 +234,7 @@ begin;
 
     -- Inflection false, Overrides: true
     rollback to savepoint a;
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table "AccountHolder"(
         id int primary key,
         "accountId" int,

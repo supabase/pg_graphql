@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     savepoint a;
     -- Set up test tables with different primary key configurations
     -- Table with single column integer primary key

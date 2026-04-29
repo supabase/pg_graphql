@@ -354,7 +354,7 @@ begin;
     rollback to savepoint a;
 
     -- columns named `and`, `or` and `not`, all compound filters will be disabled
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table clashes(
         "and" serial primary key,
         "or" varchar(255) not null,
@@ -387,7 +387,7 @@ begin;
     rollback to savepoint a;
 
     -- column named `and`. `and` compound filter will be disabled, others should work
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table clashes(
         "and" serial primary key,
         email varchar(255) not null,
@@ -428,7 +428,7 @@ begin;
     rollback to savepoint a;
 
     -- column named `or`. `or` compound filter will be disabled, others should work
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table clashes(
         id serial primary key,
         "or" varchar(255) not null,
@@ -465,7 +465,7 @@ begin;
     rollback to savepoint a;
 
     -- column named `not`. `not` compound filter will be disabled, others should work
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
     create table clashes(
         id serial primary key,
         email varchar(255) not null,
@@ -505,7 +505,7 @@ begin;
     rollback to savepoint a;
 
     -- column named `and` updates the entity's <Entity>Filter introspection schema's type
-    comment on schema public is e'@graphql({"inflect_names": false})';
+    comment on schema public is e'@graphql({"inflect_names": false, "introspection": true})';
 
     create table clashes(
         id serial primary key,

@@ -272,9 +272,13 @@ where
                                     Ok(d) => {
                                         res_data[alias_or_name(selection)] = d;
                                     }
-                                    Err(msg) => res_errors.push(ErrorMessage { message: msg.to_string() }),
+                                    Err(msg) => res_errors.push(ErrorMessage {
+                                        message: msg.to_string(),
+                                    }),
                                 },
-                                Err(msg) => res_errors.push(ErrorMessage { message: msg.to_string() }),
+                                Err(msg) => res_errors.push(ErrorMessage {
+                                    message: msg.to_string(),
+                                }),
                             }
                         }
                         __Type::__Type(_) => {
