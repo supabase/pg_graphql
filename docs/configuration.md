@@ -120,7 +120,7 @@ create table private.account(id serial primary key, email text not null);
 set search_path = public, private;
 ```
 
-`__schema` and `__type` will not return an error because _at least one_ schema (`public`) has introspection enabled. If neither schema had it enabled, both fields would return `Unknown field "__schema" on type Query`.
+`__schema` and `__type` will not return an error because at least one schema (`public`) has introspection enabled. If neither schema had it enabled, both fields would return `Unknown field "__schema" on type Query`.
 
 `__type` field returns a correct response for types in the `public` schema:
 
