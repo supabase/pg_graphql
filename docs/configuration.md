@@ -81,7 +81,7 @@ The `max_rows` value falls back to the parent object if it is missing on the cur
 
 ### Introspection
 
-GraphQL introspection is disabled by default to reduce the attack surface exposed to clients. Tools like GraphiQL, code generators, Apollo DevTools, and the Relay compiler rely on introspection. Opt in per schema when you need them.
+GraphQL introspection is disabled by default to reduce the potential for API enumeration. Tools like GraphiQL, code generators, Apollo DevTools, and the Relay compiler rely on introspection. Opt in per schema when you need them.
 
 To enable introspection on `public` schema:
 
@@ -105,7 +105,7 @@ When no exposed schema has opted in, `__schema` and `__type` selections return a
 
 !!!note "disable introspection for all schemas"
 
-    It is recommended to disable introspection for all schemas to avoid the complexities of dealing with enabling it for only some schemas.
+    It is recommended to disable introspection for all schemas in production.
 
 The introspection directive is per schema. If two exposed schemas have introspection enabled for one but disabled for another, instead of returning `Unknown field...` errors, disabled schema's types are hidden from introspection fields.
 
@@ -156,7 +156,7 @@ But it returns `null` for types in the `private` schema:
     { "data": { "__type": null } }
     ```
 
-Any non-existent types in the `private` schema also return null, so an attacker cannot tell whether the requested type is a hidden type in a disabled schema or simply doesn't exist at all. The two responses are indistinguishable:
+Any non-existent types in the `private` schema also return null. In that case the introspecting user does not have visibility into if the requested type is in a schema without introspection, or if it doesn't exist. The two responses are indistinguishable:
 
 === "Query"
 
