@@ -1,40 +1,80 @@
 begin;
     -- Mirrors the "Introspection" section of docs/configuration.md.
     -- The fixture sets `inflect_names: true` on `public` with no `introspection`.
-    -- Reset to match the docs setup exactly.
+    -- Reset to a clean default-disabled state.
     comment on schema public is null;
 
-    -- Enabling introspection for a schema (docs first example).
+    create table public.blog(id serial primary key, content text not null);
+    insert into public.blog(content) values ('hello');
+
+    -- 1) Default state: __schema and __type are both blocked.
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __schema { queryType { name } } }
+        $$)
+    );
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Query") { name } }
+        $$)
+    );
+
+    -- 2) Normal data queries are unaffected by introspection being off.
+    select jsonb_pretty(
+        graphql.resolve($$
+            { blogCollection { edges { node { id content } } } }
+        $$)
+    );
+
+    -- 3) Enabling introspection for a schema (docs first example).
+    -- Without inflect_names, the type is reachable by its un-inflected name.
     comment on schema public is e'@graphql({"introspection": true})';
     select jsonb_pretty(
         graphql.resolve($$
             { __schema { queryType { name } } }
         $$)
     );
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "blog") { kind name } }
+        $$)
+    );
 
-    -- Explicitly disabling it (docs second example).
+    -- 4) Composition: the directive merges with inflect_names; the type
+    -- is now reachable as "Blog".
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Blog") { kind name } }
+        $$)
+    );
+
+    -- 5) Explicitly disabling it (docs second example).
     comment on schema public is e'@graphql({"introspection": false})';
     select jsonb_pretty(
         graphql.resolve($$
             { __schema { queryType { name } } }
         $$)
     );
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Blog") { kind name } }
+        $$)
+    );
 
-    -- "Enabling introspection on selective schemas" — full setup from the docs.
+    -- 6) "Enabling introspection on selective schemas" — full setup from the docs.
     create schema private;
 
     comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
     comment on schema private is e'@graphql({"inflect_names": true, "introspection": false})';
 
-    create table public.blog(id serial primary key, content text not null);
     create table private.account(id serial primary key, email text not null);
 
     grant usage on schema private to public;
     grant select, insert on private.account to public;
     grant usage, select on sequence private.account_id_seq to public;
 
-    insert into public.blog(content)    values ('hello');
-    insert into private.account(email)  values ('alice@example.com');
+    insert into private.account(email) values ('alice@example.com');
 
     set local search_path = public, private;
 
@@ -53,8 +93,9 @@ begin;
         $$)
     );
 
-    -- Non-existent types also return null, so an attacker cannot enumerate
-    -- types by guessing.
+    -- Non-existent types also return null, so an attacker cannot tell
+    -- whether "Account" is a hidden type in a disabled schema or simply
+    -- doesn't exist at all. The two responses must be indistinguishable.
     select jsonb_pretty(
         graphql.resolve($$
             { __type(name: "User") { kind name } }
