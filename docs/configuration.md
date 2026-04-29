@@ -101,7 +101,7 @@ When no exposed schema has opted in, `__schema` and `__type` selections return a
 { "errors": [{ "message": "Unknown field \"__schema\" on type Query" }] }
 ```
 
-#### Enabling introspection on selective schemas
+#### Partial introspection accross multiple schemas
 
 The introspection directive is per schema. If two exposed schemas have introspection enabled for one but disabled for another, instead of returning "Unknown field..." errors, disabled-schema's types are hidden for introspection fields.
 
