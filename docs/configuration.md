@@ -83,7 +83,7 @@ The `max_rows` value falls back to the parent object if it is missing on the cur
 
 GraphQL introspection is disabled by default to reduce the attack surface exposed to clients. Tools like GraphiQL, code generators, Apollo DevTools, and the Relay compiler rely on introspection. Opt in per schema when you need them.
 
-To enable introspection for a schema:
+To enable introspection on `public` schema:
 
 ```sql
 comment on schema public is e'@graphql({"introspection": true})';
