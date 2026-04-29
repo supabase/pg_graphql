@@ -122,7 +122,7 @@ set search_path = public, private;
 
 `__schema` and `__type` will not return an error because at least one schema (`public`) has introspection enabled. If neither schema had it enabled, both fields would return `Unknown field "__schema" on type Query`.
 
-`__type` field returns a correct response for types in the `public` schema:
+The `__type` field successfully resolves types belonging to the public schema:
 
 === "Query"
 
