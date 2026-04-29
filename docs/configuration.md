@@ -156,7 +156,7 @@ But it returns `null` for types in the `private` schema:
     { "data": { "__type": null } }
     ```
 
-Any non-existent types in the `private` schema also return null, to make it impossible for an attacker to enumerate types by guessing:
+Any non-existent types in the `private` schema also return null, so an attacker cannot tell whether the requested type is a hidden type in a disabled schema or simply doesn't exist at all. The two responses are indistinguishable:
 
 === "Query"
 
@@ -291,7 +291,7 @@ Non-introspection queries are not affected by disabling introspection. `accountC
         edges {
           node {
             id
-            token
+            email
           }
         }
       }
