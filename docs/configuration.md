@@ -103,6 +103,10 @@ When no exposed schema has opted in, `__schema` and `__type` selections return a
 
 #### Partial introspection accross multiple schemas
 
+!!!note "disable introspection for all schemas"
+
+    It is recommended to disable introspection for all schemas to avoid the complexities of dealing with enabling it for only some schemas.
+
 The introspection directive is per schema. If two exposed schemas have introspection enabled for one but disabled for another, instead of returning `Unknown field...` errors, disabled schema's types are hidden from introspection fields.
 
 Consider a setup with two schemas, where `public` has introspection enabled and `private` has it disabled:
@@ -275,9 +279,9 @@ Same for the the Mutation type's field listing, `Blog`'s mutation fields appear,
     }
     ```
 
-**Non-introspection Queries**
+#### Non-introspection Queries
 
-Non-introspection queries are not affected by the directive. `accountCollection`, `insertIntoAccountCollection`, etc. continue to resolve normally as long as the role has the underlying SQL privileges:
+Non-introspection queries are not affected by disabling introspection. `accountCollection`, `insertIntoAccountCollection`, etc. continue to resolve normally as long as the role has the underlying SQL privileges:
 
 === "Query"
 
