@@ -1,175 +1,15 @@
 begin;
-    -- Mirrors the "Introspection" section of docs/configuration.md.
-    -- The fixture sets `inflect_names: true` on `public` with no `introspection`.
-    -- Reset to a clean default-disabled state.
-    comment on schema public is null;
-    create table public.blog(id serial primary key, content text not null);
-    insert into public.blog(content) values ('hello');
-    -- 1) Default state: __schema and __type are both blocked.
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __schema { queryType { name } } }
-        $$)
-    );
-                           jsonb_pretty                            
--------------------------------------------------------------------
- {                                                                +
-     "data": null,                                                +
-     "errors": [                                                  +
-         {                                                        +
-             "message": "Unknown field \"__schema\" on type Query"+
-         }                                                        +
-     ]                                                            +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "blog") { name } }
-        $$)
-    );
-                          jsonb_pretty                           
------------------------------------------------------------------
- {                                                              +
-     "data": null,                                              +
-     "errors": [                                                +
-         {                                                      +
-             "message": "Unknown field \"__type\" on type Query"+
-         }                                                      +
-     ]                                                          +
- }
-(1 row)
-
-    -- 2) Normal data queries are unaffected by introspection being off.
-    select jsonb_pretty(
-        graphql.resolve($$
-            { blogCollection { edges { node { id content } } } }
-        $$)
-    );
-                jsonb_pretty                
---------------------------------------------
- {                                         +
-     "data": {                             +
-         "blogCollection": {               +
-             "edges": [                    +
-                 {                         +
-                     "node": {             +
-                         "id": 1,          +
-                         "content": "hello"+
-                     }                     +
-                 }                         +
-             ]                             +
-         }                                 +
-     }                                     +
- }
-(1 row)
-
-    -- 3) Enabling introspection for a schema (docs first example).
-    -- Without inflect_names, the type is reachable by its un-inflected name.
-    comment on schema public is e'@graphql({"introspection": true})';
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __schema { queryType { name } } }
-        $$)
-    );
-          jsonb_pretty           
----------------------------------
- {                              +
-     "data": {                  +
-         "__schema": {          +
-             "queryType": {     +
-                 "name": "Query"+
-             }                  +
-         }                      +
-     }                          +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "blog") { kind name } }
-        $$)
-    );
-         jsonb_pretty          
--------------------------------
- {                            +
-     "data": {                +
-         "__type": {          +
-             "kind": "OBJECT",+
-             "name": "blog"   +
-         }                    +
-     }                        +
- }
-(1 row)
-
-    -- 4) Composition: the directive merges with inflect_names; the type
-    -- is now reachable as "Blog".
-    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Blog") { kind name } }
-        $$)
-    );
-         jsonb_pretty          
--------------------------------
- {                            +
-     "data": {                +
-         "__type": {          +
-             "kind": "OBJECT",+
-             "name": "Blog"   +
-         }                    +
-     }                        +
- }
-(1 row)
-
-    -- 5) Explicitly disabling it (docs second example).
-    comment on schema public is e'@graphql({"introspection": false})';
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __schema { queryType { name } } }
-        $$)
-    );
-                           jsonb_pretty                            
--------------------------------------------------------------------
- {                                                                +
-     "data": null,                                                +
-     "errors": [                                                  +
-         {                                                        +
-             "message": "Unknown field \"__schema\" on type Query"+
-         }                                                        +
-     ]                                                            +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Blog") { kind name } }
-        $$)
-    );
-                          jsonb_pretty                           
------------------------------------------------------------------
- {                                                              +
-     "data": null,                                              +
-     "errors": [                                                +
-         {                                                      +
-             "message": "Unknown field \"__type\" on type Query"+
-         }                                                      +
-     ]                                                          +
- }
-(1 row)
-
-    -- 6) "Enabling introspection on selective schemas" — full setup from the docs.
+    savepoint a;
+    -- Introspection enabled on one schema and disabled on another
     create schema private;
     comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
     comment on schema private is e'@graphql({"inflect_names": true, "introspection": false})';
+    create table public.blog(id serial primary key, content text not null);
     create table private.account(id serial primary key, email text not null);
-    grant usage on schema private to public;
-    grant select, insert on private.account to public;
-    grant usage, select on sequence private.account_id_seq to public;
-    insert into private.account(email) values ('alice@example.com');
+    insert into public.blog(id, content) values (1, 'hello, world');
+    insert into private.account(id, email) values (1, 'alice@example.com');
     set local search_path = public, private;
-    -- __schema and __type are available because at least one exposed schema
-    -- (public) has introspection enabled.
+    -- The `__type` field successfully resolves types belonging to the `public` schema:
     select jsonb_pretty(
         graphql.resolve($$
             { __type(name: "Blog") { kind name } }
@@ -187,7 +27,7 @@ begin;
  }
 (1 row)
 
-    -- Types in the disabled `private` schema return null.
+    -- But it returns `null` for types in the `private` schema:
     select jsonb_pretty(
         graphql.resolve($$
             { __type(name: "Account") { kind name } }
@@ -202,9 +42,7 @@ begin;
  }
 (1 row)
 
-    -- Non-existent types also return null, so an attacker cannot tell
-    -- whether "Account" is a hidden type in a disabled schema or simply
-    -- doesn't exist at all. The two responses must be indistinguishable.
+    -- Any non-existent types in the `private` schema also return null, to make it impossible for an attacker to enumerate types by guessing:
     select jsonb_pretty(
         graphql.resolve($$
             { __type(name: "User") { kind name } }
@@ -219,57 +57,305 @@ begin;
  }
 (1 row)
 
-    -- __schema.types lists Blog and its derived types but not Account's.
-    select jsonb_path_query_array(
+    -- Built in types and Blog types, not Account types
+    select jsonb_pretty(
         graphql.resolve($$
             { __schema { types { kind name } } }
-        $$)::jsonb,
-        '$.data.__schema.types[*] ? (@.name like_regex "^(Blog|Account)")'
+        $$)
     );
-                                                                                                                                                                                                                                   jsonb_path_query_array                                                                                                                                                                                                                                    
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"kind": "OBJECT", "name": "Blog"}, {"kind": "OBJECT", "name": "BlogConnection"}, {"kind": "OBJECT", "name": "BlogDeleteResponse"}, {"kind": "OBJECT", "name": "BlogEdge"}, {"kind": "INPUT_OBJECT", "name": "BlogFilter"}, {"kind": "INPUT_OBJECT", "name": "BlogInsertInput"}, {"kind": "OBJECT", "name": "BlogInsertResponse"}, {"kind": "INPUT_OBJECT", "name": "BlogOrderBy"}, {"kind": "INPUT_OBJECT", "name": "BlogUpdateInput"}, {"kind": "OBJECT", "name": "BlogUpdateResponse"}]
+                   jsonb_pretty                    
+---------------------------------------------------
+ {                                                +
+     "data": {                                    +
+         "__schema": {                            +
+             "types": [                           +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "BigFloat"           +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BigFloatFilter"     +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BigFloatListFilter" +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "BigInt"             +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BigIntFilter"       +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BigIntListFilter"   +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "Blog"               +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogConnection"     +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogDeleteResponse" +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogEdge"           +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogFilter"         +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogInsertInput"    +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogInsertResponse" +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogOrderBy"        +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BlogUpdateInput"    +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "BlogUpdateResponse" +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Boolean"            +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BooleanFilter"      +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "BooleanListFilter"  +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Cursor"             +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Date"               +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "DateFilter"         +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "DateListFilter"     +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Datetime"           +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "DatetimeFilter"     +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "DatetimeListFilter" +
+                 },                               +
+                 {                                +
+                     "kind": "ENUM",              +
+                     "name": "FilterIs"           +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Float"              +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "FloatFilter"        +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "FloatListFilter"    +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "ID"                 +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "IDFilter"           +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Int"                +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "IntFilter"          +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "IntListFilter"      +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "JSON"               +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "Mutation"           +
+                 },                               +
+                 {                                +
+                     "kind": "INTERFACE",         +
+                     "name": "Node"               +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Opaque"             +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "OpaqueFilter"       +
+                 },                               +
+                 {                                +
+                     "kind": "ENUM",              +
+                     "name": "OrderByDirection"   +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "PageInfo"           +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "Query"              +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "String"             +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "StringFilter"       +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "StringListFilter"   +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "Time"               +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "TimeFilter"         +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "TimeListFilter"     +
+                 },                               +
+                 {                                +
+                     "kind": "SCALAR",            +
+                     "name": "UUID"               +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "UUIDFilter"         +
+                 },                               +
+                 {                                +
+                     "kind": "INPUT_OBJECT",      +
+                     "name": "UUIDListFilter"     +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__Directive"        +
+                 },                               +
+                 {                                +
+                     "kind": "ENUM",              +
+                     "name": "__DirectiveLocation"+
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__EnumValue"        +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__Field"            +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__InputValue"       +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__Schema"           +
+                 },                               +
+                 {                                +
+                     "kind": "OBJECT",            +
+                     "name": "__Type"             +
+                 },                               +
+                 {                                +
+                     "kind": "ENUM",              +
+                     "name": "__TypeKind"         +
+                 }                                +
+             ]                                    +
+         }                                        +
+     }                                            +
+ }
 (1 row)
 
-    -- Built-in scalars and meta-types continue to appear in __schema.types
-    -- regardless of which exposed schemas have introspection disabled.
-    select jsonb_path_query_array(
+    -- queryType and mutationType list Blog types, not Account types
+    select jsonb_pretty(
         graphql.resolve($$
-            { __schema { types { kind name } } }
-        $$)::jsonb,
-        '$.data.__schema.types[*] ? (@.name like_regex "^(Int|Float|String|Boolean|ID|Cursor|BigInt|BigFloat|Date|Datetime|Time|UUID|JSON|__Schema|__Type|__Field|__InputValue|__EnumValue|__Directive|__TypeKind|__DirectiveLocation)$")'
+            { __schema { mutationType { fields { name } } } }
+        $$)
     );
-                                                                                                                                                                                                                                                                                                                                                                                                               jsonb_path_query_array                                                                                                                                                                                                                                                                                                                                                                                                                
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"kind": "SCALAR", "name": "BigFloat"}, {"kind": "SCALAR", "name": "BigInt"}, {"kind": "SCALAR", "name": "Boolean"}, {"kind": "SCALAR", "name": "Cursor"}, {"kind": "SCALAR", "name": "Date"}, {"kind": "SCALAR", "name": "Datetime"}, {"kind": "SCALAR", "name": "Float"}, {"kind": "SCALAR", "name": "ID"}, {"kind": "SCALAR", "name": "Int"}, {"kind": "SCALAR", "name": "JSON"}, {"kind": "SCALAR", "name": "String"}, {"kind": "SCALAR", "name": "Time"}, {"kind": "SCALAR", "name": "UUID"}, {"kind": "OBJECT", "name": "__Directive"}, {"kind": "ENUM", "name": "__DirectiveLocation"}, {"kind": "OBJECT", "name": "__EnumValue"}, {"kind": "OBJECT", "name": "__Field"}, {"kind": "OBJECT", "name": "__InputValue"}, {"kind": "OBJECT", "name": "__Schema"}, {"kind": "OBJECT", "name": "__Type"}, {"kind": "ENUM", "name": "__TypeKind"}]
+                        jsonb_pretty                        
+------------------------------------------------------------
+ {                                                         +
+     "data": {                                             +
+         "__schema": {                                     +
+             "mutationType": {                             +
+                 "fields": [                               +
+                     {                                     +
+                         "name": "deleteFromBlogCollection"+
+                     },                                    +
+                     {                                     +
+                         "name": "insertIntoBlogCollection"+
+                     },                                    +
+                     {                                     +
+                         "name": "updateBlogCollection"    +
+                     }                                     +
+                 ]                                         +
+             }                                             +
+         }                                                 +
+     }                                                     +
+ }
 (1 row)
 
-    -- queryType.fields is filtered the same way: blogCollection appears,
-    -- accountCollection is hidden.
-    select jsonb_path_query_array(
-        graphql.resolve($$
-            { __schema { queryType { fields { name } } } }
-        $$)::jsonb,
-        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(blog|account)Collection$")'
-    );
- jsonb_path_query_array 
-------------------------
- ["blogCollection"]
-(1 row)
-
-    -- Non-introspection queries are not affected by the directive:
-    -- accountCollection still resolves normally.
+    -- non-introspection queries continue to work
     select jsonb_pretty(
         graphql.resolve($$
             {
-              accountCollection {
-                edges {
-                  node {
-                    id
-                    email
-                  }
+                accountCollection {
+                    edges {
+                        node {
+                            id
+                            email
+                        }
+                    }
                 }
-              }
             }
         $$)
     );
@@ -291,658 +377,67 @@ begin;
  }
 (1 row)
 
-    -- ============================================================
-    -- Field-by-field coverage of every introspection type:
-    --   __Schema, __Type, __Field, __InputValue, __EnumValue,
-    --   __Directive, __TypeKind, __DirectiveLocation.
-    -- Setup at this point: public=on, private=off, Blog table.
-    -- ============================================================
-    -- __Schema: description, queryType, mutationType, subscriptionType.
-    -- (`types` is exercised above.)
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __schema {
-                description
-                queryType { name }
-                mutationType { name }
-                subscriptionType { name }
-              }
-            }
-        $$)
-    );
-                                jsonb_pretty                                 
------------------------------------------------------------------------------
- {                                                                          +
-     "data": {                                                              +
-         "__schema": {                                                      +
-             "queryType": {                                                 +
-                 "name": "Query"                                            +
-             },                                                             +
-             "description": "Represents the GraphQL schema of the database",+
-             "mutationType": {                                              +
-                 "name": "Mutation"                                         +
-             },                                                             +
-             "subscriptionType": null                                       +
-         }                                                                  +
-     }                                                                      +
- }
-(1 row)
-
-    -- __Schema.directives covers every __Directive field
-    -- (name, description, isRepeatable, locations, args) and every
-    -- __InputValue field on the directive arguments.
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __schema {
-                directives {
-                  name
-                  description
-                  isRepeatable
-                  locations
-                  args {
-                    name
-                    description
-                    defaultValue
-                    isDeprecated
-                    deprecationReason
-                    type { kind name ofType { kind name } }
-                  }
-                }
-              }
-            }
-        $$)
-    );
-                                                    jsonb_pretty                                                    
---------------------------------------------------------------------------------------------------------------------
- {                                                                                                                 +
-     "data": {                                                                                                     +
-         "__schema": {                                                                                             +
-             "directives": [                                                                                       +
-                 {                                                                                                 +
-                     "args": [                                                                                     +
-                         {                                                                                         +
-                             "name": "if",                                                                         +
-                             "type": {                                                                             +
-                                 "kind": "NON_NULL",                                                               +
-                                 "name": null,                                                                     +
-                                 "ofType": {                                                                       +
-                                     "kind": "SCALAR",                                                             +
-                                     "name": "Boolean"                                                             +
-                                 }                                                                                 +
-                             },                                                                                    +
-                             "description": "Included when true",                                                  +
-                             "defaultValue": null,                                                                 +
-                             "isDeprecated": false,                                                                +
-                             "deprecationReason": null                                                             +
-                         }                                                                                         +
-                     ],                                                                                            +
-                     "name": "include",                                                                            +
-                     "locations": [                                                                                +
-                         "FIELD",                                                                                  +
-                         "FRAGMENT_SPREAD",                                                                        +
-                         "INLINE_FRAGMENT"                                                                         +
-                     ],                                                                                            +
-                     "description": "This field or fragment will be included only when the `if` argument is true.",+
-                     "isRepeatable": false                                                                         +
-                 },                                                                                                +
-                 {                                                                                                 +
-                     "args": [                                                                                     +
-                         {                                                                                         +
-                             "name": "if",                                                                         +
-                             "type": {                                                                             +
-                                 "kind": "NON_NULL",                                                               +
-                                 "name": null,                                                                     +
-                                 "ofType": {                                                                       +
-                                     "kind": "SCALAR",                                                             +
-                                     "name": "Boolean"                                                             +
-                                 }                                                                                 +
-                             },                                                                                    +
-                             "description": "Skipped when true",                                                   +
-                             "defaultValue": null,                                                                 +
-                             "isDeprecated": false,                                                                +
-                             "deprecationReason": null                                                             +
-                         }                                                                                         +
-                     ],                                                                                            +
-                     "name": "skip",                                                                               +
-                     "locations": [                                                                                +
-                         "FIELD",                                                                                  +
-                         "FRAGMENT_SPREAD",                                                                        +
-                         "INLINE_FRAGMENT"                                                                         +
-                     ],                                                                                            +
-                     "description": "This field or fragment will be skipped when the `if` argument is true.",      +
-                     "isRepeatable": false                                                                         +
-                 }                                                                                                 +
-             ]                                                                                                     +
-         }                                                                                                         +
-     }                                                                                                             +
- }
-(1 row)
-
-    -- __Type basic and collection-typed fields on an OBJECT type.
-    -- Covers description, interfaces, possibleTypes, enumValues,
-    -- inputFields. (`specifiedByURL` is declared on __Type in the
-    -- schema but the resolver does not currently handle it.)
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __type(name: "Blog") {
-                kind
-                name
-                description
-                interfaces { name }
-                possibleTypes { name }
-                enumValues { name }
-                inputFields { name }
-              }
-            }
-        $$)
-    );
-            jsonb_pretty            
-------------------------------------
- {                                 +
-     "data": {                     +
-         "__type": {               +
-             "kind": "OBJECT",     +
-             "name": "Blog",       +
-             "enumValues": [       +
-             ],                    +
-             "interfaces": [       +
-                 {                 +
-                     "name": "Node"+
-                 }                 +
-             ],                    +
-             "description": null,  +
-             "inputFields": null,  +
-             "possibleTypes": null +
-         }                         +
-     }                             +
- }
-(1 row)
-
-    -- __Type.fields covers every __Field field, including the
-    -- nested __Type returned by `type` and the __InputValue list
-    -- returned by `args`. Filter to id/content for stable output.
-    select jsonb_path_query_array(
-        graphql.resolve($$
-            {
-              __type(name: "Blog") {
-                fields {
-                  name
-                  description
-                  isDeprecated
-                  deprecationReason
-                  type { kind name ofType { kind name } }
-                  args {
-                    name
-                    description
-                    defaultValue
-                    isDeprecated
-                    deprecationReason
-                    type { kind name ofType { kind name } }
-                  }
-                }
-              }
-            }
-        $$)::jsonb,
-        '$.data.__type.fields[*] ? (@.name == "id" || @.name == "content")'
-    );
-                                                                                                                                                                                      jsonb_path_query_array                                                                                                                                                                                      
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"args": [], "name": "id", "type": {"kind": "NON_NULL", "name": null, "ofType": {"kind": "SCALAR", "name": "Int"}}, "description": null, "isDeprecated": false, "deprecationReason": null}, {"args": [], "name": "content", "type": {"kind": "NON_NULL", "name": null, "ofType": {"kind": "SCALAR", "name": "String"}}, "description": null, "isDeprecated": false, "deprecationReason": null}]
-(1 row)
-
-    -- __Type.inputFields covers every __InputValue field against
-    -- an INPUT_OBJECT type (BlogInsertInput).
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __type(name: "BlogInsertInput") {
-                kind
-                name
-                inputFields {
-                  name
-                  description
-                  defaultValue
-                  isDeprecated
-                  deprecationReason
-                  type { kind name ofType { kind name } }
-                }
-              }
-            }
-        $$)
-    );
-                 jsonb_pretty                  
------------------------------------------------
- {                                            +
-     "data": {                                +
-         "__type": {                          +
-             "kind": "INPUT_OBJECT",          +
-             "name": "BlogInsertInput",       +
-             "inputFields": [                 +
-                 {                            +
-                     "name": "content",       +
-                     "type": {                +
-                         "kind": "SCALAR",    +
-                         "name": "String",    +
-                         "ofType": null       +
-                     },                       +
-                     "description": null,     +
-                     "defaultValue": null,    +
-                     "isDeprecated": false,   +
-                     "deprecationReason": null+
-                 }                            +
-             ]                                +
-         }                                    +
-     }                                        +
- }
-(1 row)
-
-    -- __Type.enumValues covers every __EnumValue field against
-    -- a built-in ENUM type (OrderByDirection).
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __type(name: "OrderByDirection") {
-                kind
-                name
-                description
-                enumValues {
-                  name
-                  description
-                  isDeprecated
-                  deprecationReason
-                }
-              }
-            }
-        $$)
-    );
-                            jsonb_pretty                             
----------------------------------------------------------------------
- {                                                                  +
-     "data": {                                                      +
-         "__type": {                                                +
-             "kind": "ENUM",                                        +
-             "name": "OrderByDirection",                            +
-             "enumValues": [                                        +
-                 {                                                  +
-                     "name": "AscNullsFirst",                       +
-                     "description": "Ascending order, nulls first", +
-                     "isDeprecated": false,                         +
-                     "deprecationReason": null                      +
-                 },                                                 +
-                 {                                                  +
-                     "name": "AscNullsLast",                        +
-                     "description": "Ascending order, nulls last",  +
-                     "isDeprecated": false,                         +
-                     "deprecationReason": null                      +
-                 },                                                 +
-                 {                                                  +
-                     "name": "DescNullsFirst",                      +
-                     "description": "Descending order, nulls first",+
-                     "isDeprecated": false,                         +
-                     "deprecationReason": null                      +
-                 },                                                 +
-                 {                                                  +
-                     "name": "DescNullsLast",                       +
-                     "description": "Descending order, nulls last", +
-                     "isDeprecated": false,                         +
-                     "deprecationReason": null                      +
-                 }                                                  +
-             ],                                                     +
-             "description": "Defines a per-field sorting order"     +
-         }                                                          +
-     }                                                              +
- }
-(1 row)
-
-    -- __Type.ofType is exercised by walking the wrapping types
-    -- around the `blogCollection` field on Query.
-    select jsonb_path_query_first(
-        graphql.resolve($$
-            {
-              __schema {
-                queryType {
-                  fields {
-                    name
-                    type { kind name ofType { kind name ofType { kind name } } }
-                  }
-                }
-              }
-            }
-        $$)::jsonb,
-        '$.data.__schema.queryType.fields[*] ? (@.name == "blogCollection")'
-    );
-                                                             jsonb_path_query_first                                                             
-------------------------------------------------------------------------------------------------------------------------------------------------
- {"name": "blogCollection", "type": {"kind": "NON_NULL", "name": null, "ofType": {"kind": "OBJECT", "name": "BlogConnection", "ofType": null}}}
-(1 row)
-
-    -- All values of the __TypeKind enum.
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __type(name: "__TypeKind") {
-                kind
-                name
-                description
-                enumValues { name description isDeprecated deprecationReason }
-              }
-            }
-        $$)
-    );
-                                      jsonb_pretty                                      
-----------------------------------------------------------------------------------------
- {                                                                                     +
-     "data": {                                                                         +
-         "__type": {                                                                   +
-             "kind": "ENUM",                                                           +
-             "name": "__TypeKind",                                                     +
-             "enumValues": [                                                           +
-                 {                                                                     +
-                     "name": "SCALAR",                                                 +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "OBJECT",                                                 +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "INTERFACE",                                              +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "UNION",                                                  +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "ENUM",                                                   +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "INPUT_OBJECT",                                           +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "LIST",                                                   +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 },                                                                    +
-                 {                                                                     +
-                     "name": "NON_NULL",                                               +
-                     "description": null,                                              +
-                     "isDeprecated": false,                                            +
-                     "deprecationReason": null                                         +
-                 }                                                                     +
-             ],                                                                        +
-             "description": "An enum describing what kind of type a given `__Type` is."+
-         }                                                                             +
-     }                                                                                 +
- }
-(1 row)
-
-    -- All values of the __DirectiveLocation enum.
-    select jsonb_pretty(
-        graphql.resolve($$
-            {
-              __type(name: "__DirectiveLocation") {
-                kind
-                name
-                enumValues { name description }
-              }
-            }
-        $$)
-    );
-                                        jsonb_pretty                                         
----------------------------------------------------------------------------------------------
- {                                                                                          +
-     "data": {                                                                              +
-         "__type": {                                                                        +
-             "kind": "ENUM",                                                                +
-             "name": "__DirectiveLocation",                                                 +
-             "enumValues": [                                                                +
-                 {                                                                          +
-                     "name": "QUERY",                                                       +
-                     "description": "Location adjacent to a query operation."               +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "MUTATION",                                                    +
-                     "description": "Location adjacent to a mutation operation."            +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "SUBSCRIPTION",                                                +
-                     "description": "Location adjacent to a subscription operation."        +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "FIELD",                                                       +
-                     "description": "Location adjacent to a field."                         +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "FRAGMENT_DEFINITION",                                         +
-                     "description": "Location adjacent to a fragment definition."           +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "FRAGMENT_SPREAD",                                             +
-                     "description": "Location adjacent to a fragment spread."               +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "INLINE_FRAGMENT",                                             +
-                     "description": "Location adjacent to an inline fragment."              +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "VARIABLE_DEFINITION",                                         +
-                     "description": "Location adjacent to a variable definition."           +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "SCHEMA",                                                      +
-                     "description": "Location adjacent to a schema definition."             +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "SCALAR",                                                      +
-                     "description": "Location adjacent to a scalar definition."             +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "OBJECT",                                                      +
-                     "description": "Location adjacent to an object type definition."       +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "FIELD_DEFINITION",                                            +
-                     "description": "Location adjacent to a field definition."              +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "ARGUMENT_DEFINITION",                                         +
-                     "description": "Location adjacent to an argument definition."          +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "INTERFACE",                                                   +
-                     "description": "Location adjacent to an interface definition."         +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "UNION",                                                       +
-                     "description": "Location adjacent to a union definition."              +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "ENUM",                                                        +
-                     "description": "Location adjacent to an enum definition."              +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "ENUM_VALUE",                                                  +
-                     "description": "Location adjacent to an enum value definition."        +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "INPUT_OBJECT",                                                +
-                     "description": "Location adjacent to an input object type definition." +
-                 },                                                                         +
-                 {                                                                          +
-                     "name": "INPUT_FIELD_DEFINITION",                                      +
-                     "description": "Location adjacent to an input object field definition."+
-                 }                                                                          +
-             ]                                                                              +
-         }                                                                                  +
-     }                                                                                      +
- }
-(1 row)
-
-    -- Truth table from the docs: four combinations across the two schemas.
-    -- Row 1: public=on, private=on → __schema/__type available, both types visible.
-    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
-    comment on schema private is e'@graphql({"inflect_names": true, "introspection": true})';
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Blog") { kind name } }
-        $$)
-    );
-         jsonb_pretty          
--------------------------------
- {                            +
-     "data": {                +
-         "__type": {          +
-             "kind": "OBJECT",+
-             "name": "Blog"   +
-         }                    +
-     }                        +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Account") { kind name } }
-        $$)
-    );
-         jsonb_pretty          
--------------------------------
- {                            +
-     "data": {                +
-         "__type": {          +
-             "kind": "OBJECT",+
-             "name": "Account"+
-         }                    +
-     }                        +
- }
-(1 row)
-
-    select jsonb_path_query_array(
-        graphql.resolve($$
-            { __schema { queryType { fields { name } } } }
-        $$)::jsonb,
-        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(blog|account)Collection$")'
-    );
-         jsonb_path_query_array          
------------------------------------------
- ["accountCollection", "blogCollection"]
-(1 row)
-
-    -- Row 2: public=on, private=off → Blog visible, Account hidden.
-    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
-    comment on schema private is e'@graphql({"inflect_names": true, "introspection": false})';
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Blog") { kind name } }
-        $$)
-    );
-         jsonb_pretty          
--------------------------------
- {                            +
-     "data": {                +
-         "__type": {          +
-             "kind": "OBJECT",+
-             "name": "Blog"   +
-         }                    +
-     }                        +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Account") { kind name } }
-        $$)
-    );
-      jsonb_pretty      
-------------------------
- {                     +
-     "data": {         +
-         "__type": null+
-     }                 +
- }
-(1 row)
-
-    select jsonb_path_query_array(
-        graphql.resolve($$
-            { __schema { queryType { fields { name } } } }
-        $$)::jsonb,
-        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(blog|account)Collection$")'
-    );
- jsonb_path_query_array 
-------------------------
- ["blogCollection"]
-(1 row)
-
-    -- Row 3: public=off, private=on → Account visible, Blog hidden.
-    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": false})';
-    comment on schema private is e'@graphql({"inflect_names": true, "introspection": true})';
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Blog") { kind name } }
-        $$)
-    );
-      jsonb_pretty      
-------------------------
- {                     +
-     "data": {         +
-         "__type": null+
-     }                 +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { __type(name: "Account") { kind name } }
-        $$)
-    );
-         jsonb_pretty          
--------------------------------
- {                            +
-     "data": {                +
-         "__type": {          +
-             "kind": "OBJECT",+
-             "name": "Account"+
-         }                    +
-     }                        +
- }
-(1 row)
-
-    select jsonb_path_query_array(
-        graphql.resolve($$
-            { __schema { queryType { fields { name } } } }
-        $$)::jsonb,
-        '$.data.__schema.queryType.fields[*].name ? (@ like_regex "^(blog|account)Collection$")'
-    );
- jsonb_path_query_array 
-------------------------
- ["accountCollection"]
-(1 row)
-
-    -- Row 4: public=off, private=off → __schema/__type blocked entirely with
-    -- "Unknown field" errors. Non-introspection queries continue unchanged.
+    -- Introspection disabled on both schemas
     comment on schema public  is e'@graphql({"inflect_names": true, "introspection": false})';
     comment on schema private is e'@graphql({"inflect_names": true, "introspection": false})';
+    -- The `__type` field returns error for types belonging to the `public` schema:
     select jsonb_pretty(
         graphql.resolve($$
-            { __schema { queryType { name } } }
+            { __type(name: "Blog") { kind name } }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    -- and for the `private` schema:
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Account") { kind name } }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    -- same for any non-existent types
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "User") { kind name } }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    -- The `__schema` field also returns an error
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __schema { types { kind name } } }
         $$)
     );
                            jsonb_pretty                            
@@ -957,6 +452,66 @@ begin;
  }
 (1 row)
 
+    -- same for queryType and mutationType
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __schema { mutationType { fields { name } } } }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": null,                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    -- non-introspection queries continue to work
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                accountCollection {
+                    edges {
+                        node {
+                            id
+                            email
+                        }
+                    }
+                }
+            }
+        $$)
+    );
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "accountCollection": {                      +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "email": "alice@example.com"+
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- By default introspection is disabled
+    create schema private;
+    create table public.blog(id serial primary key, content text not null);
+    create table private.account(id serial primary key, email text not null);
+    insert into public.blog(id, content) values (1, 'hello, world');
+    insert into private.account(id, email) values (1, 'alice@example.com');
+    set local search_path = public, private;
+    -- both `__type` and `__schema` queries error out
     select jsonb_pretty(
         graphql.resolve($$
             { __type(name: "Blog") { kind name } }
@@ -976,47 +531,18 @@ begin;
 
     select jsonb_pretty(
         graphql.resolve($$
-            { blogCollection { edges { node { id content } } } }
+            { __schema { types { kind name } } }
         $$)
     );
-                jsonb_pretty                
---------------------------------------------
- {                                         +
-     "data": {                             +
-         "blogCollection": {               +
-             "edges": [                    +
-                 {                         +
-                     "node": {             +
-                         "id": 1,          +
-                         "content": "hello"+
-                     }                     +
-                 }                         +
-             ]                             +
-         }                                 +
-     }                                     +
- }
-(1 row)
-
-    select jsonb_pretty(
-        graphql.resolve($$
-            { accountCollection { edges { node { id email } } } }
-        $$)
-    );
-                     jsonb_pretty                     
-------------------------------------------------------
- {                                                   +
-     "data": {                                       +
-         "accountCollection": {                      +
-             "edges": [                              +
-                 {                                   +
-                     "node": {                       +
-                         "id": 1,                    +
-                         "email": "alice@example.com"+
-                     }                               +
-                 }                                   +
-             ]                                       +
-         }                                           +
-     }                                               +
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": null,                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
  }
 (1 row)
 
