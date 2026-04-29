@@ -104,6 +104,188 @@ begin;
         $$)
     );
 
+    -- ============================================================
+    -- Field-by-field coverage of every introspection type:
+    --   __Schema, __Type, __Field, __InputValue, __EnumValue,
+    --   __Directive, __TypeKind, __DirectiveLocation.
+    -- Setup at this point: public=on, private=off, Blog table.
+    -- ============================================================
+
+    -- __Schema: description, queryType, mutationType, subscriptionType.
+    -- (`types` is exercised above.)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                description
+                queryType { name }
+                mutationType { name }
+                subscriptionType { name }
+              }
+            }
+        $$)
+    );
+
+    -- __Schema.directives covers every __Directive field
+    -- (name, description, isRepeatable, locations, args) and every
+    -- __InputValue field on the directive arguments.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                directives {
+                  name
+                  description
+                  isRepeatable
+                  locations
+                  args {
+                    name
+                    description
+                    defaultValue
+                    isDeprecated
+                    deprecationReason
+                    type { kind name ofType { kind name } }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- __Type basic and collection-typed fields on an OBJECT type.
+    -- Covers description, interfaces, possibleTypes, enumValues,
+    -- inputFields. (`specifiedByURL` is declared on __Type in the
+    -- schema but the resolver does not currently handle it.)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Blog") {
+                kind
+                name
+                description
+                interfaces { name }
+                possibleTypes { name }
+                enumValues { name }
+                inputFields { name }
+              }
+            }
+        $$)
+    );
+
+    -- __Type.fields covers every __Field field, including the
+    -- nested __Type returned by `type` and the __InputValue list
+    -- returned by `args`. Filter to id/content for stable output.
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            {
+              __type(name: "Blog") {
+                fields {
+                  name
+                  description
+                  isDeprecated
+                  deprecationReason
+                  type { kind name ofType { kind name } }
+                  args {
+                    name
+                    description
+                    defaultValue
+                    isDeprecated
+                    deprecationReason
+                    type { kind name ofType { kind name } }
+                  }
+                }
+              }
+            }
+        $$)::jsonb,
+        '$.data.__type.fields[*] ? (@.name == "id" || @.name == "content")'
+    );
+
+    -- __Type.inputFields covers every __InputValue field against
+    -- an INPUT_OBJECT type (BlogInsertInput).
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "BlogInsertInput") {
+                kind
+                name
+                inputFields {
+                  name
+                  description
+                  defaultValue
+                  isDeprecated
+                  deprecationReason
+                  type { kind name ofType { kind name } }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- __Type.enumValues covers every __EnumValue field against
+    -- a built-in ENUM type (OrderByDirection).
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "OrderByDirection") {
+                kind
+                name
+                description
+                enumValues {
+                  name
+                  description
+                  isDeprecated
+                  deprecationReason
+                }
+              }
+            }
+        $$)
+    );
+
+    -- __Type.ofType is exercised by walking the wrapping types
+    -- around the `blogCollection` field on Query.
+    select jsonb_path_query_first(
+        graphql.resolve($$
+            {
+              __schema {
+                queryType {
+                  fields {
+                    name
+                    type { kind name ofType { kind name ofType { kind name } } }
+                  }
+                }
+              }
+            }
+        $$)::jsonb,
+        '$.data.__schema.queryType.fields[*] ? (@.name == "blogCollection")'
+    );
+
+    -- All values of the __TypeKind enum.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "__TypeKind") {
+                kind
+                name
+                description
+                enumValues { name description isDeprecated deprecationReason }
+              }
+            }
+        $$)
+    );
+
+    -- All values of the __DirectiveLocation enum.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "__DirectiveLocation") {
+                kind
+                name
+                enumValues { name description }
+              }
+            }
+        $$)
+    );
+
     -- Truth table from the docs: four combinations across the two schemas.
 
     -- Row 1: public=on, private=on → __schema/__type available, both types visible.

@@ -176,6 +176,512 @@ begin;
  }
 (1 row)
 
+    -- ============================================================
+    -- Field-by-field coverage of every introspection type:
+    --   __Schema, __Type, __Field, __InputValue, __EnumValue,
+    --   __Directive, __TypeKind, __DirectiveLocation.
+    -- Setup at this point: public=on, private=off, Blog table.
+    -- ============================================================
+    -- __Schema: description, queryType, mutationType, subscriptionType.
+    -- (`types` is exercised above.)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                description
+                queryType { name }
+                mutationType { name }
+                subscriptionType { name }
+              }
+            }
+        $$)
+    );
+                                jsonb_pretty                                 
+-----------------------------------------------------------------------------
+ {                                                                          +
+     "data": {                                                              +
+         "__schema": {                                                      +
+             "queryType": {                                                 +
+                 "name": "Query"                                            +
+             },                                                             +
+             "description": "Represents the GraphQL schema of the database",+
+             "mutationType": {                                              +
+                 "name": "Mutation"                                         +
+             },                                                             +
+             "subscriptionType": null                                       +
+         }                                                                  +
+     }                                                                      +
+ }
+(1 row)
+
+    -- __Schema.directives covers every __Directive field
+    -- (name, description, isRepeatable, locations, args) and every
+    -- __InputValue field on the directive arguments.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __schema {
+                directives {
+                  name
+                  description
+                  isRepeatable
+                  locations
+                  args {
+                    name
+                    description
+                    defaultValue
+                    isDeprecated
+                    deprecationReason
+                    type { kind name ofType { kind name } }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+                                                    jsonb_pretty                                                    
+--------------------------------------------------------------------------------------------------------------------
+ {                                                                                                                 +
+     "data": {                                                                                                     +
+         "__schema": {                                                                                             +
+             "directives": [                                                                                       +
+                 {                                                                                                 +
+                     "args": [                                                                                     +
+                         {                                                                                         +
+                             "name": "if",                                                                         +
+                             "type": {                                                                             +
+                                 "kind": "NON_NULL",                                                               +
+                                 "name": null,                                                                     +
+                                 "ofType": {                                                                       +
+                                     "kind": "SCALAR",                                                             +
+                                     "name": "Boolean"                                                             +
+                                 }                                                                                 +
+                             },                                                                                    +
+                             "description": "Included when true",                                                  +
+                             "defaultValue": null,                                                                 +
+                             "isDeprecated": false,                                                                +
+                             "deprecationReason": null                                                             +
+                         }                                                                                         +
+                     ],                                                                                            +
+                     "name": "include",                                                                            +
+                     "locations": [                                                                                +
+                         "FIELD",                                                                                  +
+                         "FRAGMENT_SPREAD",                                                                        +
+                         "INLINE_FRAGMENT"                                                                         +
+                     ],                                                                                            +
+                     "description": "This field or fragment will be included only when the `if` argument is true.",+
+                     "isRepeatable": false                                                                         +
+                 },                                                                                                +
+                 {                                                                                                 +
+                     "args": [                                                                                     +
+                         {                                                                                         +
+                             "name": "if",                                                                         +
+                             "type": {                                                                             +
+                                 "kind": "NON_NULL",                                                               +
+                                 "name": null,                                                                     +
+                                 "ofType": {                                                                       +
+                                     "kind": "SCALAR",                                                             +
+                                     "name": "Boolean"                                                             +
+                                 }                                                                                 +
+                             },                                                                                    +
+                             "description": "Skipped when true",                                                   +
+                             "defaultValue": null,                                                                 +
+                             "isDeprecated": false,                                                                +
+                             "deprecationReason": null                                                             +
+                         }                                                                                         +
+                     ],                                                                                            +
+                     "name": "skip",                                                                               +
+                     "locations": [                                                                                +
+                         "FIELD",                                                                                  +
+                         "FRAGMENT_SPREAD",                                                                        +
+                         "INLINE_FRAGMENT"                                                                         +
+                     ],                                                                                            +
+                     "description": "This field or fragment will be skipped when the `if` argument is true.",      +
+                     "isRepeatable": false                                                                         +
+                 }                                                                                                 +
+             ]                                                                                                     +
+         }                                                                                                         +
+     }                                                                                                             +
+ }
+(1 row)
+
+    -- __Type basic and collection-typed fields on an OBJECT type.
+    -- Covers description, interfaces, possibleTypes, enumValues,
+    -- inputFields. (`specifiedByURL` is declared on __Type in the
+    -- schema but the resolver does not currently handle it.)
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Blog") {
+                kind
+                name
+                description
+                interfaces { name }
+                possibleTypes { name }
+                enumValues { name }
+                inputFields { name }
+              }
+            }
+        $$)
+    );
+            jsonb_pretty            
+------------------------------------
+ {                                 +
+     "data": {                     +
+         "__type": {               +
+             "kind": "OBJECT",     +
+             "name": "Blog",       +
+             "enumValues": [       +
+             ],                    +
+             "interfaces": [       +
+                 {                 +
+                     "name": "Node"+
+                 }                 +
+             ],                    +
+             "description": null,  +
+             "inputFields": null,  +
+             "possibleTypes": null +
+         }                         +
+     }                             +
+ }
+(1 row)
+
+    -- __Type.fields covers every __Field field, including the
+    -- nested __Type returned by `type` and the __InputValue list
+    -- returned by `args`. Filter to id/content for stable output.
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            {
+              __type(name: "Blog") {
+                fields {
+                  name
+                  description
+                  isDeprecated
+                  deprecationReason
+                  type { kind name ofType { kind name } }
+                  args {
+                    name
+                    description
+                    defaultValue
+                    isDeprecated
+                    deprecationReason
+                    type { kind name ofType { kind name } }
+                  }
+                }
+              }
+            }
+        $$)::jsonb,
+        '$.data.__type.fields[*] ? (@.name == "id" || @.name == "content")'
+    );
+                                                                                                                                                                                      jsonb_path_query_array                                                                                                                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"args": [], "name": "id", "type": {"kind": "NON_NULL", "name": null, "ofType": {"kind": "SCALAR", "name": "Int"}}, "description": null, "isDeprecated": false, "deprecationReason": null}, {"args": [], "name": "content", "type": {"kind": "NON_NULL", "name": null, "ofType": {"kind": "SCALAR", "name": "String"}}, "description": null, "isDeprecated": false, "deprecationReason": null}]
+(1 row)
+
+    -- __Type.inputFields covers every __InputValue field against
+    -- an INPUT_OBJECT type (BlogInsertInput).
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "BlogInsertInput") {
+                kind
+                name
+                inputFields {
+                  name
+                  description
+                  defaultValue
+                  isDeprecated
+                  deprecationReason
+                  type { kind name ofType { kind name } }
+                }
+              }
+            }
+        $$)
+    );
+                 jsonb_pretty                  
+-----------------------------------------------
+ {                                            +
+     "data": {                                +
+         "__type": {                          +
+             "kind": "INPUT_OBJECT",          +
+             "name": "BlogInsertInput",       +
+             "inputFields": [                 +
+                 {                            +
+                     "name": "content",       +
+                     "type": {                +
+                         "kind": "SCALAR",    +
+                         "name": "String",    +
+                         "ofType": null       +
+                     },                       +
+                     "description": null,     +
+                     "defaultValue": null,    +
+                     "isDeprecated": false,   +
+                     "deprecationReason": null+
+                 }                            +
+             ]                                +
+         }                                    +
+     }                                        +
+ }
+(1 row)
+
+    -- __Type.enumValues covers every __EnumValue field against
+    -- a built-in ENUM type (OrderByDirection).
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "OrderByDirection") {
+                kind
+                name
+                description
+                enumValues {
+                  name
+                  description
+                  isDeprecated
+                  deprecationReason
+                }
+              }
+            }
+        $$)
+    );
+                            jsonb_pretty                             
+---------------------------------------------------------------------
+ {                                                                  +
+     "data": {                                                      +
+         "__type": {                                                +
+             "kind": "ENUM",                                        +
+             "name": "OrderByDirection",                            +
+             "enumValues": [                                        +
+                 {                                                  +
+                     "name": "AscNullsFirst",                       +
+                     "description": "Ascending order, nulls first", +
+                     "isDeprecated": false,                         +
+                     "deprecationReason": null                      +
+                 },                                                 +
+                 {                                                  +
+                     "name": "AscNullsLast",                        +
+                     "description": "Ascending order, nulls last",  +
+                     "isDeprecated": false,                         +
+                     "deprecationReason": null                      +
+                 },                                                 +
+                 {                                                  +
+                     "name": "DescNullsFirst",                      +
+                     "description": "Descending order, nulls first",+
+                     "isDeprecated": false,                         +
+                     "deprecationReason": null                      +
+                 },                                                 +
+                 {                                                  +
+                     "name": "DescNullsLast",                       +
+                     "description": "Descending order, nulls last", +
+                     "isDeprecated": false,                         +
+                     "deprecationReason": null                      +
+                 }                                                  +
+             ],                                                     +
+             "description": "Defines a per-field sorting order"     +
+         }                                                          +
+     }                                                              +
+ }
+(1 row)
+
+    -- __Type.ofType is exercised by walking the wrapping types
+    -- around the `blogCollection` field on Query.
+    select jsonb_path_query_first(
+        graphql.resolve($$
+            {
+              __schema {
+                queryType {
+                  fields {
+                    name
+                    type { kind name ofType { kind name ofType { kind name } } }
+                  }
+                }
+              }
+            }
+        $$)::jsonb,
+        '$.data.__schema.queryType.fields[*] ? (@.name == "blogCollection")'
+    );
+                                                             jsonb_path_query_first                                                             
+------------------------------------------------------------------------------------------------------------------------------------------------
+ {"name": "blogCollection", "type": {"kind": "NON_NULL", "name": null, "ofType": {"kind": "OBJECT", "name": "BlogConnection", "ofType": null}}}
+(1 row)
+
+    -- All values of the __TypeKind enum.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "__TypeKind") {
+                kind
+                name
+                description
+                enumValues { name description isDeprecated deprecationReason }
+              }
+            }
+        $$)
+    );
+                                      jsonb_pretty                                      
+----------------------------------------------------------------------------------------
+ {                                                                                     +
+     "data": {                                                                         +
+         "__type": {                                                                   +
+             "kind": "ENUM",                                                           +
+             "name": "__TypeKind",                                                     +
+             "enumValues": [                                                           +
+                 {                                                                     +
+                     "name": "SCALAR",                                                 +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "OBJECT",                                                 +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "INTERFACE",                                              +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "UNION",                                                  +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "ENUM",                                                   +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "INPUT_OBJECT",                                           +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "LIST",                                                   +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 },                                                                    +
+                 {                                                                     +
+                     "name": "NON_NULL",                                               +
+                     "description": null,                                              +
+                     "isDeprecated": false,                                            +
+                     "deprecationReason": null                                         +
+                 }                                                                     +
+             ],                                                                        +
+             "description": "An enum describing what kind of type a given `__Type` is."+
+         }                                                                             +
+     }                                                                                 +
+ }
+(1 row)
+
+    -- All values of the __DirectiveLocation enum.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "__DirectiveLocation") {
+                kind
+                name
+                enumValues { name description }
+              }
+            }
+        $$)
+    );
+                                        jsonb_pretty                                         
+---------------------------------------------------------------------------------------------
+ {                                                                                          +
+     "data": {                                                                              +
+         "__type": {                                                                        +
+             "kind": "ENUM",                                                                +
+             "name": "__DirectiveLocation",                                                 +
+             "enumValues": [                                                                +
+                 {                                                                          +
+                     "name": "QUERY",                                                       +
+                     "description": "Location adjacent to a query operation."               +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "MUTATION",                                                    +
+                     "description": "Location adjacent to a mutation operation."            +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "SUBSCRIPTION",                                                +
+                     "description": "Location adjacent to a subscription operation."        +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "FIELD",                                                       +
+                     "description": "Location adjacent to a field."                         +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "FRAGMENT_DEFINITION",                                         +
+                     "description": "Location adjacent to a fragment definition."           +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "FRAGMENT_SPREAD",                                             +
+                     "description": "Location adjacent to a fragment spread."               +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "INLINE_FRAGMENT",                                             +
+                     "description": "Location adjacent to an inline fragment."              +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "VARIABLE_DEFINITION",                                         +
+                     "description": "Location adjacent to a variable definition."           +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "SCHEMA",                                                      +
+                     "description": "Location adjacent to a schema definition."             +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "SCALAR",                                                      +
+                     "description": "Location adjacent to a scalar definition."             +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "OBJECT",                                                      +
+                     "description": "Location adjacent to an object type definition."       +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "FIELD_DEFINITION",                                            +
+                     "description": "Location adjacent to a field definition."              +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "ARGUMENT_DEFINITION",                                         +
+                     "description": "Location adjacent to an argument definition."          +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "INTERFACE",                                                   +
+                     "description": "Location adjacent to an interface definition."         +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "UNION",                                                       +
+                     "description": "Location adjacent to a union definition."              +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "ENUM",                                                        +
+                     "description": "Location adjacent to an enum definition."              +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "ENUM_VALUE",                                                  +
+                     "description": "Location adjacent to an enum value definition."        +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "INPUT_OBJECT",                                                +
+                     "description": "Location adjacent to an input object type definition." +
+                 },                                                                         +
+                 {                                                                          +
+                     "name": "INPUT_FIELD_DEFINITION",                                      +
+                     "description": "Location adjacent to an input object field definition."+
+                 }                                                                          +
+             ]                                                                              +
+         }                                                                                  +
+     }                                                                                      +
+ }
+(1 row)
+
     -- Truth table from the docs: four combinations across the two schemas.
     -- Row 1: public=on, private=on → __schema/__type available, both types visible.
     comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
