@@ -15,7 +15,7 @@ begin;
     );
     select jsonb_pretty(
         graphql.resolve($$
-            { __type(name: "Query") { name } }
+            { __type(name: "blog") { name } }
         $$)
     );
 
