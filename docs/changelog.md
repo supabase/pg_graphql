@@ -95,7 +95,6 @@
 ## 1.5.3
 
 - bugfix: computed field returning a composite type was always null
-  https://github.com/supabase/pg_graphql/pull/628/changes#diff-db5e7414132a655933586eff9be9622f680697577730114376c3f80fb023b0cd
 
 ## 1.5.4
 
