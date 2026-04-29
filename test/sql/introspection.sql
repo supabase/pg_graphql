@@ -69,6 +69,15 @@ begin;
         '$.data.__schema.types[*] ? (@.name like_regex "^(Blog|Account)")'
     );
 
+    -- Built-in scalars and meta-types continue to appear in __schema.types
+    -- regardless of which exposed schemas have introspection disabled.
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            { __schema { types { kind name } } }
+        $$)::jsonb,
+        '$.data.__schema.types[*] ? (@.name like_regex "^(Int|Float|String|Boolean|ID|Cursor|BigInt|BigFloat|Date|Datetime|Time|UUID|JSON|__Schema|__Type|__Field|__InputValue|__EnumValue|__Directive|__TypeKind|__DirectiveLocation)$")'
+    );
+
     -- queryType.fields is filtered the same way: blogCollection appears,
     -- accountCollection is hidden.
     select jsonb_path_query_array(

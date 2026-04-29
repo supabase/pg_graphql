@@ -116,6 +116,19 @@ begin;
  [{"kind": "OBJECT", "name": "Blog"}, {"kind": "OBJECT", "name": "BlogConnection"}, {"kind": "OBJECT", "name": "BlogDeleteResponse"}, {"kind": "OBJECT", "name": "BlogEdge"}, {"kind": "INPUT_OBJECT", "name": "BlogFilter"}, {"kind": "INPUT_OBJECT", "name": "BlogInsertInput"}, {"kind": "OBJECT", "name": "BlogInsertResponse"}, {"kind": "INPUT_OBJECT", "name": "BlogOrderBy"}, {"kind": "INPUT_OBJECT", "name": "BlogUpdateInput"}, {"kind": "OBJECT", "name": "BlogUpdateResponse"}]
 (1 row)
 
+    -- Built-in scalars and meta-types continue to appear in __schema.types
+    -- regardless of which exposed schemas have introspection disabled.
+    select jsonb_path_query_array(
+        graphql.resolve($$
+            { __schema { types { kind name } } }
+        $$)::jsonb,
+        '$.data.__schema.types[*] ? (@.name like_regex "^(Int|Float|String|Boolean|ID|Cursor|BigInt|BigFloat|Date|Datetime|Time|UUID|JSON|__Schema|__Type|__Field|__InputValue|__EnumValue|__Directive|__TypeKind|__DirectiveLocation)$")'
+    );
+                                                                                                                                                                                                                                                                                                                                                                                                               jsonb_path_query_array                                                                                                                                                                                                                                                                                                                                                                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"kind": "SCALAR", "name": "BigFloat"}, {"kind": "SCALAR", "name": "BigInt"}, {"kind": "SCALAR", "name": "Boolean"}, {"kind": "SCALAR", "name": "Cursor"}, {"kind": "SCALAR", "name": "Date"}, {"kind": "SCALAR", "name": "Datetime"}, {"kind": "SCALAR", "name": "Float"}, {"kind": "SCALAR", "name": "ID"}, {"kind": "SCALAR", "name": "Int"}, {"kind": "SCALAR", "name": "JSON"}, {"kind": "SCALAR", "name": "String"}, {"kind": "SCALAR", "name": "Time"}, {"kind": "SCALAR", "name": "UUID"}, {"kind": "OBJECT", "name": "__Directive"}, {"kind": "ENUM", "name": "__DirectiveLocation"}, {"kind": "OBJECT", "name": "__EnumValue"}, {"kind": "OBJECT", "name": "__Field"}, {"kind": "OBJECT", "name": "__InputValue"}, {"kind": "OBJECT", "name": "__Schema"}, {"kind": "OBJECT", "name": "__Type"}, {"kind": "ENUM", "name": "__TypeKind"}]
+(1 row)
+
     -- queryType.fields is filtered the same way: blogCollection appears,
     -- accountCollection is hidden.
     select jsonb_path_query_array(
