@@ -139,6 +139,16 @@ begin;
             }
         $$)
     );
+    -- A non-existent type also returns null, so an attacker cannot tell
+    -- whether "Secret" is a hidden type in a disabled schema or simply
+    -- doesn't exist at all. The two responses must be indistinguishable.
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "NonExistentType") { name kind }
+            }
+        $$)
+    );
     select jsonb_path_query_array(
         graphql.resolve($$
             { __schema { queryType { fields { name } } } }
