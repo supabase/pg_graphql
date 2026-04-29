@@ -103,7 +103,7 @@ When no exposed schema has opted in, `__schema` and `__type` selections return a
 
 #### Partial introspection accross multiple schemas
 
-The introspection directive is per schema. If two exposed schemas have introspection enabled for one but disabled for another, instead of returning "Unknown field..." errors, disabled-schema's types are hidden for introspection fields.
+The introspection directive is per schema. If two exposed schemas have introspection enabled for one but disabled for another, instead of returning `Unknown field...` errors, disabled schema's types are hidden from introspection fields.
 
 Consider a setup with two schemas, where `public` has introspection enabled and `private` has it disabled:
 
@@ -121,6 +121,8 @@ set search_path = public, private;
 ```
 
 `__schema` and `__type` will not return an error because at least one schema (`public`) has introspection enabled. If neither schema had it enabled, both fields would return `Unknown field "__schema" on type Query`.
+
+**`__type` Field Queries**
 
 The `__type` field successfully resolves types belonging to the `public` schema:
 
@@ -164,6 +166,8 @@ Any non-existent types in the `private` schema also return null, to make it impo
     { "data": { "__type": null } }
     ```
 
+**`__schema` Field Queries**
+
 `__schema` field also filters out types from the private schema. `Blog` and its derived types (`BlogEdge`, `BlogConnection`, `BlogFilter`, `BlogOrderBy`, etc.) appear in the list, while `Account` and its derivatives are absent:
 
 === "Query"
@@ -184,18 +188,41 @@ Any non-existent types in the `private` schema also return null, to make it impo
             { "kind": "OBJECT", "name": "BlogEdge" },
             { "kind": "INPUT_OBJECT", "name": "BlogFilter" },
             { "kind": "INPUT_OBJECT", "name": "BlogOrderBy" },
-            // built-in scalars and meta-types continue to appear
-            { "kind": "SCALAR", "name": "Int" },
-            { "kind": "OBJECT", "name": "Query" },
-            { "kind": "OBJECT", "name": "__Schema" }
-            // no Account, AccountEdge, AccountConnection, AccountFilter, AccountOrderBy, ...
+            // no Account, AccountConnection, AccountEdge, AccountFilter, AccountOrderBy, ...
           ]
         }
       }
     }
     ```
 
-The Query type's field listing is filtered the same way. `blogCollection` appears; `accountCollection` is hidden:
+Note that built-in scalars and meta-types continue to appear:
+
+=== "Query"
+
+    ```graphql
+    { __schema { types { kind name } } }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "__schema": {
+          "types": [
+            { "kind": "SCALAR", "name": "Boolean" },
+            { "kind": "SCALAR", "name": "Int" },
+            { "kind": "SCALAR", "name": "Float" },
+            { "kind": "OBJECT", "name": "__Schema" }
+            { "kind": "OBJECT", "name": "__Field" }
+            // ... other fields omitted for brevity
+          ]
+        }
+      }
+    }
+    ```
+
+The Query type's field listing is filtered the same way. `blogCollection` appears, `accountCollection` is hidden:
 
 === "Query"
 
@@ -220,6 +247,35 @@ The Query type's field listing is filtered the same way. `blogCollection` appear
       }
     }
     ```
+
+Same for the the Mutation type's field listing, `Blog`'s mutation fields appear, `Account`'s are hidden:
+
+=== "Query"
+
+    ```graphql
+    { __schema { mutationType { fields { name } } } }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "__schema": {
+          "mutationType": {
+            "fields": [
+              { "name": "insertIntoBlogCollection" },
+              { "name": "updateBlogCollection" },
+              { "name": "deleteFromBlogCollection" }
+              // no insertIntoAccountCollection, updateAccountCollection, deleteFromAccountCollection
+            ]
+          }
+        }
+      }
+    }
+    ```
+
+**Non-introspection Queries**
 
 Non-introspection queries are not affected by the directive. `accountCollection`, `insertIntoAccountCollection`, etc. continue to resolve normally as long as the role has the underlying SQL privileges:
 
