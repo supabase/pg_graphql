@@ -281,7 +281,7 @@ Same for the the Mutation type's field listing, `Blog`'s mutation fields appear,
 
 #### Non-introspection Queries
 
-Non-introspection queries are not affected by disabling introspection. `accountCollection`, `insertIntoAccountCollection`, etc. continue to resolve normally as long as the role has the underlying SQL privileges:
+Non-introspection queries run in isolation are not affected by disabling introspection. `accountCollection`, `insertIntoAccountCollection`, etc. continue to resolve normally as long as the role has the underlying SQL privileges:
 
 === "Query"
 
@@ -309,6 +309,27 @@ Non-introspection queries are not affected by disabling introspection. `accountC
           ]
         }
       }
+    }
+    ```
+
+!!! warning "Mixing introspection and data fields in the same query"
+
+    If a query contains both an introspection field (`__schema`, `__type`) and a data
+    field, and introspection is disabled, the **entire `data` response becomes `null`** —
+    not just the introspection field. The data field executes successfully but its result
+    is discarded because the query produced an error.
+
+    ```graphql
+    {
+      __schema { types { name } }
+      blogCollection { edges { node { id } } }
+    }
+    ```
+
+    ```json
+    {
+      "data": null,
+      "errors": [{ "message": "Unknown field \"__schema\" on type Query" }]
     }
     ```
 

@@ -148,4 +148,87 @@ begin;
             { __schema { types { kind name } } }
         $$)
     );
+
+    rollback to savepoint a;
+
+    -- off/on: public=OFF, private=ON
+    -- introspection_enabled() uses any(), so introspection is available when
+    -- private opts in. public types must still be hidden.
+
+    create schema private;
+
+    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": false})';
+    comment on schema private is e'@graphql({"inflect_names": true, "introspection": true})';
+
+    create table public.blog(id serial primary key, content text not null);
+    create table private.account(id serial primary key, email text not null);
+
+    insert into public.blog(id, content) values (1, 'hello, world');
+    insert into private.account(id, email) values (1, 'alice@example.com');
+
+    set local search_path = public, private;
+
+    -- public schema type returns null (public=OFF)
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Blog") { kind name } }
+        $$)
+    );
+
+    -- private schema type returns data (private=ON)
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Account") { kind name } }
+        $$)
+    );
+
+    -- __schema lists private types but not public types
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __schema { mutationType { fields { name } } } }
+        $$)
+    );
+
+    rollback to savepoint a;
+
+    -- named fragment spread containing introspection fields
+    -- fragment expansion happens before the field_map lookup so the same
+    -- "Unknown field" error must fire as for an inline introspection query
+
+    create table public.blog(id serial primary key, content text not null);
+    set local search_path = public;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            fragment IntrospectSchema on Query { __schema { types { kind name } } }
+            { ...IntrospectSchema }
+        $$)
+    );
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            fragment IntrospectType on Query { __type(name: "blog") { kind name } }
+            { ...IntrospectType }
+        $$)
+    );
+
+    rollback to savepoint a;
+
+    -- mixed query: introspection field + data field with introspection disabled
+    -- when any field errors the entire data object becomes null, so
+    -- blogCollection result is lost even though it executed successfully
+
+    create table public.blog(id serial primary key, content text not null);
+    insert into public.blog(id, content) values (1, 'hello, world');
+    set local search_path = public;
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { types { name } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
 rollback;
