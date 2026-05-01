@@ -546,4 +546,600 @@ begin;
  }
 (1 row)
 
+    rollback to savepoint a;
+    -- off/on: public=OFF, private=ON
+    -- introspection_enabled() uses any(), so introspection is available when
+    -- private opts in. public types must still be hidden.
+    create schema private;
+    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": false})';
+    comment on schema private is e'@graphql({"inflect_names": true, "introspection": true})';
+    create table public.blog(id serial primary key, content text not null);
+    create table private.account(id serial primary key, email text not null);
+    insert into public.blog(id, content) values (1, 'hello, world');
+    insert into private.account(id, email) values (1, 'alice@example.com');
+    set local search_path = public, private;
+    -- public schema type returns null (public=OFF)
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Blog") { kind name } }
+        $$)
+    );
+      jsonb_pretty      
+------------------------
+ {                     +
+     "data": {         +
+         "__type": null+
+     }                 +
+ }
+(1 row)
+
+    -- private schema type returns data (private=ON)
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __type(name: "Account") { kind name } }
+        $$)
+    );
+         jsonb_pretty          
+-------------------------------
+ {                            +
+     "data": {                +
+         "__type": {          +
+             "kind": "OBJECT",+
+             "name": "Account"+
+         }                    +
+     }                        +
+ }
+(1 row)
+
+    -- __schema lists private types but not public types
+    select jsonb_pretty(
+        graphql.resolve($$
+            { __schema { mutationType { fields { name } } } }
+        $$)
+    );
+                         jsonb_pretty                          
+---------------------------------------------------------------
+ {                                                            +
+     "data": {                                                +
+         "__schema": {                                        +
+             "mutationType": {                                +
+                 "fields": [                                  +
+                     {                                        +
+                         "name": "deleteFromAccountCollection"+
+                     },                                       +
+                     {                                        +
+                         "name": "insertIntoAccountCollection"+
+                     },                                       +
+                     {                                        +
+                         "name": "updateAccountCollection"    +
+                     }                                        +
+                 ]                                            +
+             }                                                +
+         }                                                    +
+     }                                                        +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- named fragment spread containing introspection fields
+    -- fragment expansion happens before the field_map lookup so the same
+    -- "Unknown field" error must fire as for an inline introspection query
+    create table public.blog(id serial primary key, content text not null);
+    set local search_path = public;
+    select jsonb_pretty(
+        graphql.resolve($$
+            fragment IntrospectSchema on Query { __schema { types { kind name } } }
+            { ...IntrospectSchema }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": null,                                                +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            fragment IntrospectType on Query { __type(name: "blog") { kind name } }
+            { ...IntrospectType }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": null,                                              +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- mixed query: introspection field + data field with introspection disabled
+    -- the introspection field errors but the data field still resolves; only
+    -- __schema/__type entries are dropped, blogCollection is preserved
+    create table public.blog(id serial primary key, content text not null);
+    insert into public.blog(id, content) values (1, 'hello, world');
+    set local search_path = public;
+    -- just __schema field with a data field
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { types { name } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": {                                                    +
+         "blogCollection": {                                      +
+             "edges": [                                           +
+                 {                                                +
+                     "node": {                                    +
+                         "id": 1,                                 +
+                         "content": "hello, world"                +
+                     }                                            +
+                 }                                                +
+             ]                                                    +
+         }                                                        +
+     },                                                           +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    -- just __type field with a data field
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __type(name: "Blog") { kind name }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                          jsonb_pretty                           
+-----------------------------------------------------------------
+ {                                                              +
+     "data": {                                                  +
+         "blogCollection": {                                    +
+             "edges": [                                         +
+                 {                                              +
+                     "node": {                                  +
+                         "id": 1,                               +
+                         "content": "hello, world"              +
+                     }                                          +
+                 }                                              +
+             ]                                                  +
+         }                                                      +
+     },                                                         +
+     "errors": [                                                +
+         {                                                      +
+             "message": "Unknown field \"__type\" on type Query"+
+         }                                                      +
+     ]                                                          +
+ }
+(1 row)
+
+    -- both __schema and __type fields with a data field
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { types { name } }
+                __type(name: "Blog") { kind name }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                           jsonb_pretty                            
+-------------------------------------------------------------------
+ {                                                                +
+     "data": {                                                    +
+         "blogCollection": {                                      +
+             "edges": [                                           +
+                 {                                                +
+                     "node": {                                    +
+                         "id": 1,                                 +
+                         "content": "hello, world"                +
+                     }                                            +
+                 }                                                +
+             ]                                                    +
+         }                                                        +
+     },                                                           +
+     "errors": [                                                  +
+         {                                                        +
+             "message": "Unknown field \"__schema\" on type Query"+
+         },                                                       +
+         {                                                        +
+             "message": "Unknown field \"__type\" on type Query"  +
+         }                                                        +
+     ]                                                            +
+ }
+(1 row)
+
+    rollback to savepoint a;
+    -- mixed query: introspection + data fields, one schema enabled, other disabled.
+    -- introspection succeeds with filtered results (only entities from the enabled
+    -- schema appear) and the data field resolves; no errors expected.
+    create schema private;
+    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
+    comment on schema private is e'@graphql({"inflect_names": true, "introspection": false})';
+    create table public.blog(id serial primary key, content text not null);
+    create table private.account(id serial primary key, email text not null);
+    insert into public.blog(id, content) values (1, 'hello, world');
+    insert into private.account(id, email) values (1, 'alice@example.com');
+    set local search_path = public, private;
+    -- __schema lists Blog types but not Account types, and accountCollection and blogCollection still resolve
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { types { name } }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__schema": {                               +
+             "types": [                              +
+                 {                                   +
+                     "name": "BigFloat"              +
+                 },                                  +
+                 {                                   +
+                     "name": "BigFloatFilter"        +
+                 },                                  +
+                 {                                   +
+                     "name": "BigFloatListFilter"    +
+                 },                                  +
+                 {                                   +
+                     "name": "BigInt"                +
+                 },                                  +
+                 {                                   +
+                     "name": "BigIntFilter"          +
+                 },                                  +
+                 {                                   +
+                     "name": "BigIntListFilter"      +
+                 },                                  +
+                 {                                   +
+                     "name": "Blog"                  +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogConnection"        +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogDeleteResponse"    +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogEdge"              +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogFilter"            +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogInsertInput"       +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogInsertResponse"    +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogOrderBy"           +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogUpdateInput"       +
+                 },                                  +
+                 {                                   +
+                     "name": "BlogUpdateResponse"    +
+                 },                                  +
+                 {                                   +
+                     "name": "Boolean"               +
+                 },                                  +
+                 {                                   +
+                     "name": "BooleanFilter"         +
+                 },                                  +
+                 {                                   +
+                     "name": "BooleanListFilter"     +
+                 },                                  +
+                 {                                   +
+                     "name": "Cursor"                +
+                 },                                  +
+                 {                                   +
+                     "name": "Date"                  +
+                 },                                  +
+                 {                                   +
+                     "name": "DateFilter"            +
+                 },                                  +
+                 {                                   +
+                     "name": "DateListFilter"        +
+                 },                                  +
+                 {                                   +
+                     "name": "Datetime"              +
+                 },                                  +
+                 {                                   +
+                     "name": "DatetimeFilter"        +
+                 },                                  +
+                 {                                   +
+                     "name": "DatetimeListFilter"    +
+                 },                                  +
+                 {                                   +
+                     "name": "FilterIs"              +
+                 },                                  +
+                 {                                   +
+                     "name": "Float"                 +
+                 },                                  +
+                 {                                   +
+                     "name": "FloatFilter"           +
+                 },                                  +
+                 {                                   +
+                     "name": "FloatListFilter"       +
+                 },                                  +
+                 {                                   +
+                     "name": "ID"                    +
+                 },                                  +
+                 {                                   +
+                     "name": "IDFilter"              +
+                 },                                  +
+                 {                                   +
+                     "name": "Int"                   +
+                 },                                  +
+                 {                                   +
+                     "name": "IntFilter"             +
+                 },                                  +
+                 {                                   +
+                     "name": "IntListFilter"         +
+                 },                                  +
+                 {                                   +
+                     "name": "JSON"                  +
+                 },                                  +
+                 {                                   +
+                     "name": "Mutation"              +
+                 },                                  +
+                 {                                   +
+                     "name": "Node"                  +
+                 },                                  +
+                 {                                   +
+                     "name": "Opaque"                +
+                 },                                  +
+                 {                                   +
+                     "name": "OpaqueFilter"          +
+                 },                                  +
+                 {                                   +
+                     "name": "OrderByDirection"      +
+                 },                                  +
+                 {                                   +
+                     "name": "PageInfo"              +
+                 },                                  +
+                 {                                   +
+                     "name": "Query"                 +
+                 },                                  +
+                 {                                   +
+                     "name": "String"                +
+                 },                                  +
+                 {                                   +
+                     "name": "StringFilter"          +
+                 },                                  +
+                 {                                   +
+                     "name": "StringListFilter"      +
+                 },                                  +
+                 {                                   +
+                     "name": "Time"                  +
+                 },                                  +
+                 {                                   +
+                     "name": "TimeFilter"            +
+                 },                                  +
+                 {                                   +
+                     "name": "TimeListFilter"        +
+                 },                                  +
+                 {                                   +
+                     "name": "UUID"                  +
+                 },                                  +
+                 {                                   +
+                     "name": "UUIDFilter"            +
+                 },                                  +
+                 {                                   +
+                     "name": "UUIDListFilter"        +
+                 },                                  +
+                 {                                   +
+                     "name": "__Directive"           +
+                 },                                  +
+                 {                                   +
+                     "name": "__DirectiveLocation"   +
+                 },                                  +
+                 {                                   +
+                     "name": "__EnumValue"           +
+                 },                                  +
+                 {                                   +
+                     "name": "__Field"               +
+                 },                                  +
+                 {                                   +
+                     "name": "__InputValue"          +
+                 },                                  +
+                 {                                   +
+                     "name": "__Schema"              +
+                 },                                  +
+                 {                                   +
+                     "name": "__Type"                +
+                 },                                  +
+                 {                                   +
+                     "name": "__TypeKind"            +
+                 }                                   +
+             ]                                       +
+         },                                          +
+         "blogCollection": {                         +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "content": "hello, world"   +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         },                                          +
+         "accountCollection": {                      +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "email": "alice@example.com"+
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
+(1 row)
+
+    -- __type resolves the public Blog type and accountCollection and blogCollection still resolve
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __type(name: "Blog") { kind name }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": {                                 +
+             "kind": "OBJECT",                       +
+             "name": "Blog"                          +
+         },                                          +
+         "blogCollection": {                         +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "content": "hello, world"   +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         },                                          +
+         "accountCollection": {                      +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "email": "alice@example.com"+
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
+(1 row)
+
+    -- __type returns null for the private Account type while accountCollection and blogCollection resolve
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __type(name: "Account") { kind name }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                     jsonb_pretty                     
+------------------------------------------------------
+ {                                                   +
+     "data": {                                       +
+         "__type": null,                             +
+         "blogCollection": {                         +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "content": "hello, world"   +
+                     }                               +
+                 }                                   +
+             ]                                       +
+         },                                          +
+         "accountCollection": {                      +
+             "edges": [                              +
+                 {                                   +
+                     "node": {                       +
+                         "id": 1,                    +
+                         "email": "alice@example.com"+
+                     }                               +
+                 }                                   +
+             ]                                       +
+         }                                           +
+     }                                               +
+ }
+(1 row)
+
+    -- __schema + __type + data field together: filtered introspection, no errors
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { mutationType { fields { name } } }
+                __type(name: "Blog") { kind name }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+                        jsonb_pretty                        
+------------------------------------------------------------
+ {                                                         +
+     "data": {                                             +
+         "__type": {                                       +
+             "kind": "OBJECT",                             +
+             "name": "Blog"                                +
+         },                                                +
+         "__schema": {                                     +
+             "mutationType": {                             +
+                 "fields": [                               +
+                     {                                     +
+                         "name": "deleteFromBlogCollection"+
+                     },                                    +
+                     {                                     +
+                         "name": "insertIntoBlogCollection"+
+                     },                                    +
+                     {                                     +
+                         "name": "updateBlogCollection"    +
+                     }                                     +
+                 ]                                         +
+             }                                             +
+         },                                                +
+         "blogCollection": {                               +
+             "edges": [                                    +
+                 {                                         +
+                     "node": {                             +
+                         "id": 1,                          +
+                         "content": "hello, world"         +
+                     }                                     +
+                 }                                         +
+             ]                                             +
+         },                                                +
+         "accountCollection": {                            +
+             "edges": [                                    +
+                 {                                         +
+                     "node": {                             +
+                         "id": 1,                          +
+                         "email": "alice@example.com"      +
+                     }                                     +
+                 }                                         +
+             ]                                             +
+         }                                                 +
+     }                                                     +
+ }
+(1 row)
+
 rollback;

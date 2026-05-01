@@ -279,6 +279,95 @@ Same for the the Mutation type's field listing, `Blog`'s mutation fields appear,
     }
     ```
 
+**Mixed Field Queries**
+
+If a query contains both an introspection field (`__schema`, `__type`) and a data
+field, and introspection is disabled, only the introspection fields return an error, the data field is resolved correctly:
+
+=== "Query"
+
+    ```graphql
+    {
+      __schema { types { name } }
+      blogCollection { edges { node { id } } }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "blogCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "content": "hello, world"
+              }
+            }
+          ]
+        }
+      },
+      "errors": [
+        {
+          "message": "Unknown field \"__schema\" on type Query"
+        }
+      ]
+    }
+    ```
+
+If there are two schemas with introspection enabled only on one schema, there is no error on the instrospection fields but entities from the introspection disabled schema are filtered out:
+
+=== "Query"
+
+    ```graphql
+    {
+        __schema { types { name } }
+        accountCollection { edges { node { id email } } }
+        blogCollection { edges { node { id content } } }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+       "data": {
+         "__schema": {
+           "queryType": {
+             "fields": [
+               { "name": "blogCollection" },
+               { "name": "node" }
+               // no accountCollection
+             ]
+           }
+         },
+         "blogCollection": {
+           "edges": [
+             {
+               "node": {
+                 "id": 1,
+                 "content": "hello, world"
+               }
+             }
+           ]
+         },
+        "accountCollection": {
+          "edges": [
+            {
+              "node": {
+                "id": 1,
+                "email": "alice@example.com"
+              }
+            }
+          ]
+        }
+      },
+      // no errors
+    }
+    ```
+
 #### Non-introspection Queries
 
 Non-introspection queries are not affected by disabling introspection. `accountCollection`, `insertIntoAccountCollection`, etc. continue to resolve normally as long as the role has the underlying SQL privileges:
