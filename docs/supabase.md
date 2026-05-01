@@ -51,6 +51,12 @@ To explore the API visually, select the docs icon shown below and navigate throu
 
 ![graphiql](./assets/supabase_graphiql_explore.png)
 
+The schema explorer relies on GraphQL introspection. From pg_graphql 1.6.0, introspection is disabled by default and must be enabled per schema:
+
+```sql
+comment on schema public is e'@graphql({"introspection": true})';
+```
+
 pg_graphql mirrors the structure of the project's SQL schema in the GraphQL API. If your project is new and empty, the GraphQL API will be empty as well, with the exception of basic introspection types. For a more interesting result, go to the SQL or table editor and create a table.
 
 ![graphiql](./assets/supabase_sql_editor.png)
@@ -103,7 +109,13 @@ For an example integration, check out the [Relay guide](usage_with_relay.md), co
 
 ### GraphiQL
 
-If you'd prefer to connect to Supabase GraphQL using an external IDE like GraphiQL, save the HTML snippet below as `supabase_graphiql.html` and open it in your browser. Be sure to substitute in your [PROJECT_REF](#project-reference-project_ref) and [API_KEY](#api-key-api_key) beneath the `EDIT BELOW` comment:
+If you'd prefer to connect to Supabase GraphQL using an external IDE like GraphiQL, save the HTML snippet below as `supabase_graphiql.html` and open it in your browser. Be sure to substitute in your [PROJECT_REF](#project-reference-project_ref) and [API_KEY](#api-key-api_key) beneath the `EDIT BELOW` comment.
+
+GraphiQL uses introspection to display your schema and provide autocomplete. From pg_graphql 1.6.0, introspection is disabled by default — enable it before connecting:
+
+```sql
+comment on schema public is e'@graphql({"introspection": true})';
+```
 
 
 ```html
@@ -203,7 +215,7 @@ create extension pg_graphql; -- install default version 1.2.0
 
 To upgrade your GraphQL API with 0 downtime.
 
-When making a decision to upgrade, you can review features of the upgraded version in the [changelog](changelog.md).
+When making a decision to upgrade, you can review features of the upgraded version in the [changelog](changelog.md). If upgrading to 1.6.0, note that introspection is now disabled by default — enable it per schema if your project relies on schema exploration tools.
 
 Always test a new version of pg_graphql extensively on a development or staging instance before updating your production instance. pg_graphql follows SemVer, which makes API backwards compatibility relatively safe for minor and patch updates. Even so, it's critical to verify that changes do not negatively impact the specifics of your project's API in other ways, e.g. requests/sec or CPU load.
 
