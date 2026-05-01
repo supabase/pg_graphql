@@ -91,4 +91,4 @@ values
     ((SELECT id FROM blog WHERE name = 'B: Blog 3'), 'Post 2 in B Blog 3', 'Content for post 2 in B Blog 3', '{"coding", "tutorial"}', 'PENDING', NOW());
 
 
-comment on schema public is '@graphql({"inflect_names": true})';
+comment on schema public is '@graphql({"inflect_names": true, "introspection": true})';

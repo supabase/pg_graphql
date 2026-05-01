@@ -196,6 +196,44 @@ begin;
         $$)
     );
 
+    -- Test 11a: Introspection of byPk argument types must not double-wrap NON_NULL.
+    -- Regression test for issue #633 where the `id` argument's type was returned as
+    -- NON_NULL → NON_NULL → SCALAR instead of NON_NULL → SCALAR, causing
+    -- "Expected <Scalar>! to be a GraphQL nullable type." in clients like GraphiQL
+    -- and codegen tools.
+    select jsonb_pretty(
+        (select jsonb_agg(field order by field->>'name')
+         from jsonb_array_elements(
+             graphql.resolve($$
+                 {
+                   __schema {
+                     queryType {
+                       fields {
+                         name
+                         args {
+                           name
+                           type {
+                             kind
+                             name
+                             ofType {
+                               kind
+                               name
+                               ofType {
+                                 kind
+                                 name
+                               }
+                             }
+                           }
+                         }
+                       }
+                     }
+                   }
+                 }
+             $$)->'data'->'__schema'->'queryType'->'fields'
+         ) as field
+         where field->>'name' in ('personByPk', 'itemByPk', 'documentByPk'))
+    );
+
     rollback to savepoint b;
 
     -- Set up tables with relationships for connection and function tests

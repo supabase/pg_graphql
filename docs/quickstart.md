@@ -17,7 +17,7 @@ cd pg_graphql
 Next, launch the demo with docker-compose.
 
 ```shell
-docker-compose up
+docker-compose up -d --build
 ```
 
 Finally, access GraphiQL at `http://localhost:4000/`.

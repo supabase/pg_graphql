@@ -1311,14 +1311,27 @@ impl ___Type for QueryType {
                                 })
                                 .unwrap_or(__Type::Scalar(Scalar::String(None)));
 
+                            // Primary key arguments are always required, so wrap the column
+                            // type in NonNull. sql_column_to_graphql_type may already return
+                            // a NonNull when the column is NOT NULL (the usual case for table
+                            // primary keys); strip that first to avoid producing
+                            // NonNull(NonNull(T)), which is not a valid GraphQL type
+                            // (issue #633). For views, the column may come back unwrapped, in
+                            // which case we still need to wrap it once here.
+                            let inner_type = match col_type {
+                                __Type::NonNull(nn) => *nn.type_,
+                                other => other,
+                            };
+                            let arg_type = __Type::NonNull(NonNullType {
+                                type_: Box::new(inner_type),
+                            });
+
                             // Use graphql_column_field_name to convert snake_case to camelCase if needed
                             let arg_name = self.schema.graphql_column_field_name(col);
 
                             pk_args.push(__InputValue {
                                 name_: arg_name,
-                                type_: __Type::NonNull(NonNullType {
-                                    type_: Box::new(col_type),
-                                }),
+                                type_: arg_type,
                                 description: Some(format!("The record's `{}` value", col_name)),
                                 default_value: None,
                                 sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
