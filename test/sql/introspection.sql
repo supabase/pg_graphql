@@ -215,17 +215,103 @@ begin;
     rollback to savepoint a;
 
     -- mixed query: introspection field + data field with introspection disabled
-    -- when any field errors the entire data object becomes null, so
-    -- blogCollection result is lost even though it executed successfully
+    -- the introspection field errors but the data field still resolves; only
+    -- __schema/__type entries are dropped, blogCollection is preserved
 
     create table public.blog(id serial primary key, content text not null);
     insert into public.blog(id, content) values (1, 'hello, world');
     set local search_path = public;
 
+    -- just __schema field with a data field
     select jsonb_pretty(
         graphql.resolve($$
             {
                 __schema { types { name } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
+    -- just __type field with a data field
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __type(name: "Blog") { kind name }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
+    -- both __schema and __type fields with a data field
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { types { name } }
+                __type(name: "Blog") { kind name }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
+    rollback to savepoint a;
+
+    -- mixed query: introspection + data fields, one schema enabled, other disabled.
+    -- introspection succeeds with filtered results (only entities from the enabled
+    -- schema appear) and the data field resolves; no errors expected.
+
+    create schema private;
+
+    comment on schema public  is e'@graphql({"inflect_names": true, "introspection": true})';
+    comment on schema private is e'@graphql({"inflect_names": true, "introspection": false})';
+
+    create table public.blog(id serial primary key, content text not null);
+    create table private.account(id serial primary key, email text not null);
+
+    insert into public.blog(id, content) values (1, 'hello, world');
+    insert into private.account(id, email) values (1, 'alice@example.com');
+
+    set local search_path = public, private;
+
+    -- __schema lists Blog types but not Account types, and accountCollection and blogCollection still resolve
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { types { name } }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
+    -- __type resolves the public Blog type and accountCollection and blogCollection still resolve
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __type(name: "Blog") { kind name }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
+    -- __type returns null for the private Account type while accountCollection and blogCollection resolve
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __type(name: "Account") { kind name }
+                accountCollection { edges { node { id email } } }
+                blogCollection { edges { node { id content } } }
+            }
+        $$)
+    );
+
+    -- __schema + __type + data field together: filtered introspection, no errors
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+                __schema { mutationType { fields { name } } }
+                __type(name: "Blog") { kind name }
+                accountCollection { edges { node { id email } } }
                 blogCollection { edges { node { id content } } }
             }
         $$)
