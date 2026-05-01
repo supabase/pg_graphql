@@ -317,7 +317,7 @@ field, and introspection is disabled, only the introspection fields return an er
     }
     ```
 
-If there are two schemas with introspection enabled only on one schema, there is no error on the instrospection fields but entities from the introspection disabled schema are filtered out:
+If there are two schemas with introspection enabled only on one schema, there is no error on the introspection fields but entities from the introspection disabled schema are filtered out:
 
 === "Query"
 
