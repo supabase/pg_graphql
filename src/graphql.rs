@@ -1314,11 +1314,15 @@ impl ___Type for QueryType {
                             // Use graphql_column_field_name to convert snake_case to camelCase if needed
                             let arg_name = self.schema.graphql_column_field_name(col);
 
+                            // sql_column_to_graphql_type already wraps NOT NULL columns in NonNull.
+                            // For view columns (always nullable in PG), we must add it ourselves.
+                            let non_null_col_type = match col_type {
+                                __Type::NonNull(_) => col_type,
+                                t => __Type::NonNull(NonNullType { type_: Box::new(t) }),
+                            };
                             pk_args.push(__InputValue {
                                 name_: arg_name,
-                                type_: __Type::NonNull(NonNullType {
-                                    type_: Box::new(col_type),
-                                }),
+                                type_: non_null_col_type,
                                 description: Some(format!("The record's `{}` value", col_name)),
                                 default_value: None,
                                 sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
