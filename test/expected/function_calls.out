@@ -2058,8 +2058,8 @@ begin;
                                      "kind": "NON_NULL",                                        +
                                      "name": null,                                              +
                                      "ofType": {                                                +
-                                         "kind": "NON_NULL",                                    +
-                                         "name": null                                           +
+                                         "kind": "SCALAR",                                      +
+                                         "name": "Int"                                          +
                                      }                                                          +
                                  }                                                              +
                              }                                                                  +

@@ -101,7 +101,7 @@ When no exposed schema has opted in, `__schema` and `__type` selections return a
 { "errors": [{ "message": "Unknown field \"__schema\" on type Query" }] }
 ```
 
-#### Partial introspection accross multiple schemas
+#### Partial introspection across multiple schemas
 
 !!!note "disable introspection for all schemas"
 

@@ -646,4 +646,66 @@ begin;
         $$)
     );
 
+    -- Test 31: ByPk argument types must be NON_NULL (regression: double NON_NULL wrapping)
+    -- Covers int (smallint), bigint, and each supported scalar PK type.
+    -- Expected: each arg has kind=NON_NULL wrapping a SCALAR directly (no double NON_NULL).
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Query") {
+                fields {
+                  name
+                  args {
+                    name
+                    type {
+                      kind
+                      name
+                      ofType {
+                        kind
+                        name
+                        ofType {
+                          kind
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
+    -- Test 32: View-backed byPk args must also be NON_NULL
+    -- PostgreSQL treats view columns as nullable even when the underlying table column is NOT NULL.
+    -- sql_column_to_graphql_type returns a plain Scalar for view columns, so the byPk arg
+    -- construction must explicitly wrap it in NonNull.
+    -- Expected: viewByPk has id arg with kind=NON_NULL wrapping SCALAR(Int), not just SCALAR(Int).
+    create table base_table(id int primary key, name text);
+    create view base_view as select * from base_table;
+    comment on view base_view is e'@graphql({"primary_key_columns": ["id"]})';
+
+    select jsonb_pretty(
+        graphql.resolve($$
+            {
+              __type(name: "Query") {
+                fields {
+                  name
+                  args {
+                    name
+                    type {
+                      kind
+                      name
+                      ofType {
+                        kind
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        $$)
+    );
+
 rollback;
