@@ -26,6 +26,7 @@ pub struct ColumnPermissions {
 pub struct ColumnDirectives {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub not_null: Option<bool>,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -44,6 +45,14 @@ pub struct Column {
     pub permissions: ColumnPermissions,
     pub comment: Option<String>,
     pub directives: ColumnDirectives,
+}
+
+impl Column {
+    /// Returns true if the column is not null, considering both the SQL constraint
+    /// and any directive override (useful for views where SQL doesn't preserve NOT NULL)
+    pub fn is_not_null(&self) -> bool {
+        self.directives.not_null.unwrap_or(self.is_not_null)
+    }
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
