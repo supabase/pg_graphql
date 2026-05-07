@@ -131,4 +131,8 @@
 - feature: Add support for single record queries by primary key
 - **breaking**: GraphQL introspection is now disabled by default. Opt in per schema with `comment on schema <name> is e'@graphql({"introspection": true})'`. After upgrading to this version, tools that rely on introspection (GraphiQL, codegen, Apollo DevTools, Relay compiler) will see either `Unknown field "__schema" on type Query` errors or types will be filtered out on disabled schemas. Non-introspection queries and mutations are unaffected. See [Introspection](configuration.md#introspection) for details.
 
+## 1.6.1
+
+- bugfix: Remove double NON_NULL wrapping on byPk argument types
+
 ## master
