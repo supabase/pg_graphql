@@ -362,10 +362,7 @@ where
                     },
                 }
             }
-            let any_field_succeeded = res_data
-                .as_object()
-                .map(|o| !o.is_empty())
-                .unwrap_or(false);
+            let any_field_succeeded = res_data.as_object().map(|o| !o.is_empty()).unwrap_or(false);
             GraphQLResponse {
                 data: if res_errors.is_empty() || any_field_succeeded {
                     Omit::Present(res_data)

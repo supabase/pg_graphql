@@ -29,6 +29,37 @@ schemas_(oid, name) as (
         -- filter to current schemas only
         join search_path_oids cur_schemas(oid)
             on pn.oid = cur_schemas.oid
+),
+
+function_referenced_type_oids(type_oid) as (
+    select distinct
+        unnest(array_append(pp.proargtypes::oid[], pp.prorettype))::oid
+    from
+        pg_catalog.pg_proc pp
+        join search_path_oids spo
+            on pp.pronamespace = spo.schema_oid
+),
+
+function_referenced_tables(oid) as (
+    select distinct
+        pc.oid
+    from
+        function_referenced_type_oids fto
+        join pg_type pt
+            on pt.oid = fto.type_oid
+        join pg_type base_pt
+            on base_pt.oid = coalesce(nullif(pt.typelem, 0::oid), pt.oid)
+        join pg_class pc
+            on base_pt.typrelid = pc.oid
+        join schemas_with_privilege swp
+            on pc.relnamespace = swp.oid
+    where
+        pc.relkind in (
+            'r', -- table
+            'v', -- view
+            'm', -- mat view
+            'f'  -- foreign table
+        )
 )
 
 select
@@ -241,7 +272,7 @@ select
                             'relkind', pc.relkind::text,
                             'reltype', pc.reltype::bigint,
                             'is_rls_enabled', pc.relrowsecurity,
-                            'schema', schemas_.name,
+                            'schema', table_schema.name,
                             'schema_oid', pc.relnamespace::bigint,
                             'comment', pg_catalog.obj_description(pc.oid, 'pg_class'),
                             'directives', (
@@ -315,7 +346,7 @@ select
                                             -- char, bpchar, varchar, char[], bpchar[], carchar[]
                                             -- the -4 removes the byte for the null terminated str
                                             'max_characters', nullif(pa.atttypmod, -1) - 4,
-                                            'schema_oid', schemas_.oid::bigint,
+                                            'schema_oid', table_schema.oid::bigint,
                                             'is_not_null', pa.attnotnull,
                                             'attribute_num', pa.attnum,
                                             'has_default', pd.adbin is not null, -- pg_get_expr(pd.adbin, pd.adrelid) shows expression
@@ -393,14 +424,18 @@ select
                     )
             from
                 pg_class pc
-                join schemas_
-                    on pc.relnamespace = schemas_.oid
+                join schemas_with_privilege table_schema
+                    on pc.relnamespace = table_schema.oid
             where
                 pc.relkind in (
                     'r', -- table
                     'v', -- view
                     'm', -- mat view
                     'f'  -- foreign table
+                )
+                and (
+                    pc.relnamespace in (select oid from schemas_)
+                    or pc.oid in (select oid from function_referenced_tables)
                 )
             ),
             jsonb_build_object()

@@ -86,6 +86,10 @@ impl __Schema {
             .unwrap_or(false)
     }
 
+    fn table_is_on_search_path(&self, table: &Table) -> bool {
+        self.context.schemas.contains_key(&table.schema_oid)
+    }
+
     fn graphql_column_field_name(&self, column: &Column) -> String {
         if let Some(override_name) = &column.directives.name {
             return override_name.clone();
@@ -1257,6 +1261,7 @@ impl ___Type for QueryType {
             .context
             .tables
             .values()
+            .filter(|table| self.schema.table_is_on_search_path(table))
             .filter(|table| self.schema.graphql_table_select_types_are_valid(table))
         {
             {
@@ -1524,7 +1529,13 @@ impl ___Type for MutationType {
         let mut f = Vec::new();
 
         // TODO, filter to types in type map in case any were filtered out
-        for table in self.schema.context.tables.values() {
+        for table in self
+            .schema
+            .context
+            .tables
+            .values()
+            .filter(|table| self.schema.table_is_on_search_path(table))
+        {
             let table_base_type_name = self.schema.graphql_table_base_type_name(table);
 
             if self.schema.graphql_table_insert_types_are_valid(table) {
@@ -4296,7 +4307,9 @@ impl __Schema {
                 schema: Arc::clone(&schema_rc),
             }));
 
-            if self.graphql_table_insert_types_are_valid(table) {
+            let table_is_on_search_path = self.table_is_on_search_path(table);
+
+            if table_is_on_search_path && self.graphql_table_insert_types_are_valid(table) {
                 types_.push(__Type::InsertInput(InsertInputType {
                     table: Arc::clone(table),
                     schema: Arc::clone(&schema_rc),
@@ -4307,7 +4320,7 @@ impl __Schema {
                 }));
             }
 
-            if self.graphql_table_update_types_are_valid(table) {
+            if table_is_on_search_path && self.graphql_table_update_types_are_valid(table) {
                 types_.push(__Type::UpdateInput(UpdateInputType {
                     table: Arc::clone(table),
                     schema: Arc::clone(&schema_rc),
@@ -4318,7 +4331,7 @@ impl __Schema {
                 }));
             }
 
-            if self.graphql_table_delete_types_are_valid(table) {
+            if table_is_on_search_path && self.graphql_table_delete_types_are_valid(table) {
                 types_.push(__Type::DeleteResponse(DeleteResponseType {
                     table: Arc::clone(table),
                     schema: Arc::clone(&schema_rc),
@@ -4326,7 +4339,7 @@ impl __Schema {
             }
 
             // Add Aggregate types if the table is selectable
-            if self.graphql_table_select_types_are_valid(table) {
+            if table_is_on_search_path && self.graphql_table_select_types_are_valid(table) {
                 // Only add aggregate types if the directive is enabled
                 if let Some(aggregate_directive) = table.directives.aggregate.as_ref()
                     && aggregate_directive.enabled
