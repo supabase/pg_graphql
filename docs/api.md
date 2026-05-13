@@ -1925,6 +1925,11 @@ The `Mutation` type is the entrypoint for mutations/edits.
 
 Each table has top level entry in the `Mutation` type for [inserting](#insert) `insertInto<Table>Collection`, [updating](#update) `update<Table>Collection` and [deleting](#delete) `deleteFrom<Table>Collection`.
 
+Columns that PostgreSQL generates, such as `serial` identity columns and
+`generated` columns, are omitted from `InsertInput` and `UpdateInput` types.
+PostgreSQL always computes those values, so clients cannot provide or override
+them through insert or update mutations.
+
 **SQL Setup**
 ```sql
 create table "Blog"(
