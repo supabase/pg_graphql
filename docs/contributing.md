@@ -83,6 +83,26 @@ $$);
 {"data": {"bookCollection": {"edges": [{"node": {"id": 1}}]}}, "errors": []}
 ```
 
+### Releases and builds
+
+Release artifacts are built by the GitHub Actions workflow in
+`.github/workflows/release.yml`. The workflow runs when a maintainer pushes a
+tag matching `v*`, creates a GitHub release, and uploads Debian packages for
+PostgreSQL 14 through 18 on `amd64` and `arm64`.
+
+The release workflow currently installs `cargo-pgrx`, initializes it with the
+target PostgreSQL version, and packages the extension with:
+
+```bash
+cargo pgrx package --pg-config /usr/lib/postgresql/<pg-version>/bin/pg_config --no-default-features --features pg<pg-version>
+```
+
+Community contributors usually do not need to create releases. After a PR is
+merged, watch for a matching `v*` tag or GitHub release to confirm that
+installable artifacts have been built. Supabase platform availability can lag
+the GitHub release; to check the version available in a Supabase project, use
+the version query documented in [Using pg_graphql with Supabase](supabase.md#upgrading).
+
 ## Documentation
 
 All public API must be documented. Building documentation requires python 3.6+
