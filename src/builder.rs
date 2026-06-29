@@ -2475,6 +2475,7 @@ pub enum __TypeField {
     EnumValues(Option<Vec<__EnumValueBuilder>>),
     PossibleTypes(Option<Vec<__TypeBuilder>>),
     OfType(Option<__TypeBuilder>),
+    SpecifiedByURL,
     Typename {
         alias: String,
         typename: Option<String>,
@@ -2999,6 +3000,7 @@ impl __Schema {
                             };
                             __TypeField::OfType(unwrapped_type_builder)
                         }
+                        "specifiedByURL" => __TypeField::SpecifiedByURL,
                         introspection::TYPENAME => __TypeField::Typename {
                             alias: alias_or_name(&selection_field),
                             typename: type_.name(),
