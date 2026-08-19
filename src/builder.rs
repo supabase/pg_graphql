@@ -394,8 +394,13 @@ where
                         let column = table
                             .columns
                             .iter()
-                            .filter(|c| c.permissions.is_updatable && !c.is_generated && !c.is_serial)
-                            .find(|c| schema.graphql_column_field_name(c).as_str() == graphql_col_name.as_str())
+                            .filter(|c| {
+                                c.permissions.is_updatable && !c.is_generated && !c.is_serial
+                            })
+                            .find(|c| {
+                                schema.graphql_column_field_name(c).as_str()
+                                    == graphql_col_name.as_str()
+                            })
                             .ok_or_else(|| {
                                 GraphQLError::validation(format!(
                                     "Invalid column in updateFields: {}",
@@ -407,7 +412,7 @@ where
                     _ => {
                         return Err(GraphQLError::validation(
                             "updateFields elements must be strings",
-                        ))
+                        ));
                     }
                 }
             }

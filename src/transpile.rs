@@ -336,15 +336,14 @@ impl MutationEntrypoint<'_> for InsertBuilder {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let where_clause = on_conflict.filter.to_where_clause(
-                    &table_alias,
-                    &self.table,
-                    param_context,
-                )?;
-
                 if update_fields_clause.is_empty() {
                     format!("on conflict on constraint {} do nothing", constraint_name)
                 } else {
+                    let where_clause = on_conflict.filter.to_where_clause(
+                        &table_alias,
+                        &self.table,
+                        param_context,
+                    )?;
                     format!(
                         "on conflict on constraint {} do update set {} where {}",
                         constraint_name, update_fields_clause, where_clause
