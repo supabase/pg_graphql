@@ -215,6 +215,10 @@ select
                                 'max_rows', coalesce(
                                     (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) ->> 'max_rows')::int,
                                     30
+                                ),
+                                'introspection_enabled', coalesce(
+                                    (graphql.comment_directive(pg_catalog.obj_description(pn.oid, 'pg_namespace')) -> 'introspection') = to_jsonb(true),
+                                    false
                                 )
                             )
                         )

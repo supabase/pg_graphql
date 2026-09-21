@@ -71,6 +71,22 @@ impl __Schema {
         schema.map(|s| s.directives.inflect_names).unwrap_or(false)
     }
 
+    pub fn introspection_enabled(&self) -> bool {
+        self.context
+            .schemas
+            .values()
+            .any(|s| s.directives.introspection_enabled)
+    }
+
+    pub fn is_schema_introspection_enabled(&self, schema_oid: u32) -> bool {
+        self.context
+            .schemas
+            .get(&schema_oid)
+            .map(|s| s.directives.introspection_enabled)
+            .unwrap_or(false)
+    }
+
+    // pub because the onConflict builder resolves updateColumns names from builder.rs.
     pub fn graphql_column_field_name(&self, column: &Column) -> String {
         if let Some(override_name) = &column.directives.name {
             return override_name.clone();
@@ -900,6 +916,29 @@ impl __Type {
             t => t,
         }
     }
+
+    pub fn schema_oid(&self) -> Option<u32> {
+        match self {
+            __Type::Node(t) => Some(t.table.schema_oid),
+            __Type::Connection(t) => Some(t.table.schema_oid),
+            __Type::Edge(t) => Some(t.table.schema_oid),
+            __Type::InsertInput(t) => Some(t.table.schema_oid),
+            __Type::InsertResponse(t) => Some(t.table.schema_oid),
+            __Type::UpdateInput(t) => Some(t.table.schema_oid),
+            __Type::UpdateResponse(t) => Some(t.table.schema_oid),
+            __Type::DeleteResponse(t) => Some(t.table.schema_oid),
+            __Type::FilterEntity(t) => Some(t.table.schema_oid),
+            __Type::OrderByEntity(t) => Some(t.table.schema_oid),
+            __Type::Enum(t) => match &t.enum_ {
+                EnumSource::Enum(e) => Some(e.schema_oid),
+                EnumSource::FilterIs => None,
+            },
+            __Type::FuncCallResponse(t) => Some(t.function.schema_oid),
+            __Type::Aggregate(t) => Some(t.table.schema_oid),
+            __Type::AggregateNumeric(t) => Some(t.table.schema_oid),
+            _ => None,
+        }
+    }
 }
 
 #[allow(clippy::upper_case_acronyms)]
@@ -1269,6 +1308,65 @@ impl ___Type for QueryType {
                 };
 
                 f.push(collection_entrypoint);
+
+                // Add single record query by primary key if the table has a primary key
+                // and the primary key types are supported (int, bigint, uuid, string)
+                if let Some(primary_key) = table.primary_key()
+                    && table.has_supported_pk_types_for_by_pk()
+                {
+                    let node_type = NodeType {
+                        table: Arc::clone(table),
+                        fkey: None,
+                        reverse_reference: None,
+                        schema: Arc::clone(&self.schema),
+                    };
+
+                    // Create arguments for each primary key column
+                    let mut pk_args = Vec::new();
+                    for col_name in &primary_key.column_names {
+                        if let Some(col) = table.columns.iter().find(|c| &c.name == col_name) {
+                            let col_type = sql_column_to_graphql_type(col, &self.schema)
+                                .ok_or_else(|| {
+                                    format!(
+                                        "Could not determine GraphQL type for column {}",
+                                        col_name
+                                    )
+                                })
+                                .unwrap_or(__Type::Scalar(Scalar::String(None)));
+
+                            // Use graphql_column_field_name to convert snake_case to camelCase if needed
+                            let arg_name = self.schema.graphql_column_field_name(col);
+
+                            // sql_column_to_graphql_type already wraps NOT NULL columns in NonNull.
+                            // For view columns (always nullable in PG), we must add it ourselves.
+                            let non_null_col_type = match col_type {
+                                __Type::NonNull(_) => col_type,
+                                t => __Type::NonNull(NonNullType { type_: Box::new(t) }),
+                            };
+                            pk_args.push(__InputValue {
+                                name_: arg_name,
+                                type_: non_null_col_type,
+                                description: Some(format!("The record's `{}` value", col_name)),
+                                default_value: None,
+                                sql_type: Some(NodeSQLType::Column(Arc::clone(col))),
+                            });
+                        }
+                    }
+
+                    let pk_entrypoint = __Field {
+                        name_: format!("{}ByPk", lowercase_first_letter(table_base_type_name)),
+                        type_: __Type::Node(node_type),
+                        args: pk_args,
+                        description: Some(format!(
+                            "Retrieve a record of type `{}` by its primary key",
+                            table_base_type_name
+                        )),
+                        deprecation_reason: None,
+                        sql_type: None,
+                    };
+
+                    f.push(pk_entrypoint);
+                }
             }
         }
 
@@ -1285,33 +1383,36 @@ impl ___Type for QueryType {
                 .filter(|ff| !existing_fields.contains(&ff.name())),
         );
 
-        // Default fields always preset
-        f.extend(vec![
-            __Field {
-                name_: introspection::TYPE.to_string(),
-                type_: __Type::__Type(__TypeType),
-                args: vec![__InputValue {
-                    name_: args::NAME.to_string(),
-                    type_: __Type::Scalar(Scalar::String(None)),
+        // Introspection meta-fields are exposed only when at least one schema
+        // has opted into introspection via @graphql({"introspection": true}).
+        if self.schema.introspection_enabled() {
+            f.extend(vec![
+                __Field {
+                    name_: introspection::TYPE.to_string(),
+                    type_: __Type::__Type(__TypeType),
+                    args: vec![__InputValue {
+                        name_: args::NAME.to_string(),
+                        type_: __Type::Scalar(Scalar::String(None)),
+                        description: None,
+                        default_value: None,
+                        sql_type: None,
+                    }],
                     description: None,
-                    default_value: None,
+                    deprecation_reason: None,
                     sql_type: None,
-                }],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            },
-            __Field {
-                name_: introspection::SCHEMA.to_string(),
-                type_: __Type::NonNull(NonNullType {
-                    type_: Box::new(__Type::__Schema(__SchemaType)),
-                }),
-                args: vec![],
-                description: None,
-                deprecation_reason: None,
-                sql_type: None,
-            },
-        ]);
+                },
+                __Field {
+                    name_: introspection::SCHEMA.to_string(),
+                    type_: __Type::NonNull(NonNullType {
+                        type_: Box::new(__Type::__Schema(__SchemaType)),
+                    }),
+                    args: vec![],
+                    description: None,
+                    deprecation_reason: None,
+                    sql_type: None,
+                },
+            ]);
+        }
 
         f.sort_by_key(|a| a.name());
         Some(f)
@@ -3567,7 +3668,7 @@ impl FromStr for FilterOp {
             "contains" => Ok(Self::Contains),
             "containedBy" => Ok(Self::ContainedBy),
             "overlaps" => Ok(Self::Overlap),
-            _ => Err("Invalid filter operation".to_string()),
+            other => Err(format!("Invalid filter operation: {}", other)),
         }
     }
 }
@@ -4430,6 +4531,19 @@ impl __Schema {
 
         types_.sort_by_key(|a| a.name());
         types_
+    }
+
+    // Like `types()` but filtered by per-schema introspection opt-in.
+    // Used only by introspection (`__schema { types }` and `__type(name)`)
+    // — runtime resolution must still see every type via `types()`.
+    pub fn introspectable_types(&self) -> Vec<__Type> {
+        self.types()
+            .into_iter()
+            .filter(|t| match t.schema_oid() {
+                Some(oid) => self.is_schema_introspection_enabled(oid),
+                None => true,
+            })
+            .collect()
     }
 
     pub fn mutations_exist(&self) -> bool {

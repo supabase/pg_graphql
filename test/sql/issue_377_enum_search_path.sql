@@ -1,7 +1,8 @@
 begin;
-    comment on schema public is '@graphql({"inflect_names": false})';
+    comment on schema public is '@graphql({"inflect_names": false, "introspection": true})';
 
     create schema salt;
+    comment on schema salt is '@graphql({"inflect_names": false, "introspection": true})';
     create type salt.encr as enum ('variant');
 
 

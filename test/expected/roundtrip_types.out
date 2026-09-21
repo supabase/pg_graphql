@@ -1,5 +1,5 @@
 begin;
-    comment on schema public is '@graphql({"inflect_names": false})';
+    comment on schema public is '@graphql({"inflect_names": false, "introspection": true})';
     create type "Color" as enum ('RED', 'GREEN');
     create table "MainType" (
         id serial primary key,

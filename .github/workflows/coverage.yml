@@ -9,56 +9,100 @@ on:
 permissions:
   contents: write
 
+env:
+  PG_VERSION: 18
+  PGRX_VERSION: 0.19.2
+
 jobs:
   code-coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - run: |
-          # Add postgres package repo
+      - name: Add postgres package repo
+        run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
 
+      - name: Cache APT packages
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        id: apt-cache
+        with:
+          path: ~/apt-cache
+          key: apt-${{ runner.os }}-pg${{ env.PG_VERSION }}-v1
+
+      - name: Install system dependencies
+        run: |
+          if [ -d ~/apt-cache ]; then
+            sudo cp -r ~/apt-cache/*.deb /var/cache/apt/archives/ 2>/dev/null || true
+          fi
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends git build-essential libpq-dev curl libreadline6-dev zlib1g-dev pkg-config cmake
           sudo apt-get install -y --no-install-recommends libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache
           sudo apt-get install -y --no-install-recommends clang libclang-dev gcc tree
+          sudo apt-get install -y postgresql-${{ env.PG_VERSION }} postgresql-server-dev-${{ env.PG_VERSION }}
+          mkdir -p ~/apt-cache
+          cp /var/cache/apt/archives/*.deb ~/apt-cache/ 2>/dev/null || true
 
-          # Install requested postgres version
-          sudo apt install -y postgresql-18 postgresql-server-dev-18 -y
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: llvm-tools-preview
 
-          # Ensure installed pg_config is first on path
-          export PATH=$PATH:/usr/lib/postgresql/18/bin
+      - name: Cache cargo binaries
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        id: cargo-bins
+        with:
+          path: ${{ github.workspace }}/.cargo-bin-cache
+          key: cargo-bins-${{ runner.os }}-llvm-cov-pgrx-${{ env.PGRX_VERSION }}
 
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain stable && \
-            rustup --version && \
-            rustc --version && \
-            cargo --version
+      - name: Restore cargo binaries from cache
+        if: steps.cargo-bins.outputs.cache-hit == 'true'
+        run: |
+          cp ${{ github.workspace }}/.cargo-bin-cache/* ~/.cargo/bin/
 
-          # Ensure cargo/rust on path
-          source "$HOME/.cargo/env"
-
-          rustup component add llvm-tools-preview
+      - name: Install cargo binaries
+        if: steps.cargo-bins.outputs.cache-hit != 'true'
+        run: |
           cargo install cargo-llvm-cov
-          cargo install cargo-pgrx --version 0.16.1 --locked
-          cargo pgrx init --pg18=/usr/lib/postgresql/18/bin/pg_config
+          cargo install cargo-pgrx --version ${{ env.PGRX_VERSION }} --locked
+          mkdir -p ${{ github.workspace }}/.cargo-bin-cache
+          cp ~/.cargo/bin/cargo-llvm-cov ~/.cargo/bin/cargo-pgrx ${{ github.workspace }}/.cargo-bin-cache/
 
-          sudo chmod a+rw /usr/share/postgresql/18/extension
-          sudo chmod a+rw /usr/lib/postgresql/18/lib/
+      - name: Cache pgrx init
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        id: pgrx-init
+        with:
+          path: ~/.pgrx
+          key: pgrx-init-${{ runner.os }}-pg${{ env.PG_VERSION }}-${{ env.PGRX_VERSION }}
+
+      - name: Initialize pgrx
+        if: steps.pgrx-init.outputs.cache-hit != 'true'
+        run: |
+          cargo pgrx init --pg${{ env.PG_VERSION }}=/usr/lib/postgresql/${{ env.PG_VERSION }}/bin/pg_config
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      - name: Build and run coverage
+        run: |
+          export PATH=$PATH:/usr/lib/postgresql/${{ env.PG_VERSION }}/bin
+
+          sudo chmod a+rw /usr/share/postgresql/${{ env.PG_VERSION }}/extension
+          sudo chmod a+rw /usr/lib/postgresql/${{ env.PG_VERSION }}/lib/
 
           cargo pgrx install
-          source <(cargo llvm-cov show-env --export-prefix)
+          source <(cargo llvm-cov show-env --sh)
           cargo llvm-cov clean --workspace
           cargo build
-          cp ./target/debug/libpg_graphql.so /usr/lib/postgresql/18/lib/pg_graphql.so
+          cp ./target/debug/libpg_graphql.so /usr/lib/postgresql/${{ env.PG_VERSION }}/lib/pg_graphql.so
           ./bin/installcheck
           cargo llvm-cov report --lcov --output-path lcov.info
 
       - name: Coveralls upload
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: lcov.info

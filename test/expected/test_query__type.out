@@ -1,8 +1,11 @@
-select graphql.resolve(
-    query:='query Abc { __type(name: "Int") { name kind description } }'
-);
+begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
+    select graphql.resolve(
+        query:='query Abc { __type(name: "Int") { name kind description } }'
+    );
                                                  resolve                                                  
 ----------------------------------------------------------------------------------------------------------
  {"data": {"__type": {"kind": "SCALAR", "name": "Int", "description": "A scalar integer up to 32 bits"}}}
 (1 row)
 
+rollback;

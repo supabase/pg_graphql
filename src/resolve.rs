@@ -109,24 +109,93 @@ where
                 message: "Operation not found".to_string(),
             }]),
         },
-        Some(op) => match op {
-            OperationDefinition::Query(query) => {
-                resolve_query(query, schema, variables, fragment_defs)
+        Some(op) => {
+            // Limit the depth complexity of a query to prevent DoS attacks
+            let depth_check = match &op {
+                OperationDefinition::Query(query) => {
+                    validate_selection_depth(&query.selection_set, &fragment_defs, 1)
+                }
+                OperationDefinition::SelectionSet(selection_set) => {
+                    validate_selection_depth(selection_set, &fragment_defs, 1)
+                }
+                OperationDefinition::Mutation(mutation) => {
+                    validate_selection_depth(&mutation.selection_set, &fragment_defs, 1)
+                }
+                OperationDefinition::Subscription(_) => Ok(()),
+            };
+
+            if let Err(err) = depth_check {
+                return GraphQLResponse {
+                    data: Omit::Omitted,
+                    errors: Omit::Present(vec![ErrorMessage {
+                        message: err.to_string(),
+                    }]),
+                };
             }
-            OperationDefinition::SelectionSet(selection_set) => {
-                resolve_selection_set(selection_set, schema, variables, fragment_defs, &vec![])
+
+            match op {
+                OperationDefinition::Query(query) => {
+                    resolve_query(query, schema, variables, fragment_defs)
+                }
+                OperationDefinition::SelectionSet(selection_set) => {
+                    resolve_selection_set(selection_set, schema, variables, fragment_defs, &vec![])
+                }
+                OperationDefinition::Mutation(mutation) => {
+                    resolve_mutation(mutation, schema, variables, fragment_defs)
+                }
+                OperationDefinition::Subscription(_) => GraphQLResponse {
+                    data: Omit::Omitted,
+                    errors: Omit::Present(vec![ErrorMessage {
+                        message: "Subscriptions are not supported".to_string(),
+                    }]),
+                },
             }
-            OperationDefinition::Mutation(mutation) => {
-                resolve_mutation(mutation, schema, variables, fragment_defs)
-            }
-            OperationDefinition::Subscription(_) => GraphQLResponse {
-                data: Omit::Omitted,
-                errors: Omit::Present(vec![ErrorMessage {
-                    message: "Subscriptions are not supported".to_string(),
-                }]),
-            },
-        },
+        }
     }
+}
+
+/// Maximum depth of nested field selections allowed in a single operation.
+const MAX_SELECTION_DEPTH: u32 = 32;
+
+/// Validate that the depth of the query doesn't exceed [`MAX_SELECTION_DEPTH`].
+/// Each nested field adds one to the depth score. Nested fields in fragment
+/// spreads or inline fragments are also counted.
+fn validate_selection_depth<'a, 'b, T>(
+    selection_set: &'b SelectionSet<'a, T>,
+    fragment_definitions: &'b [FragmentDefinition<'a, T>],
+    depth: u32,
+) -> GraphQLResult<()>
+where
+    T: Text<'a>,
+{
+    if depth > MAX_SELECTION_DEPTH {
+        return Err(GraphQLError::validation(format!(
+            "Query selection depth exceeds the maximum allowed depth of {MAX_SELECTION_DEPTH}"
+        )));
+    }
+    for selection in &selection_set.items {
+        match selection {
+            Selection::Field(field) => {
+                validate_selection_depth(&field.selection_set, fragment_definitions, depth + 1)?;
+            }
+            Selection::FragmentSpread(fragment_spread) => {
+                for fd in fragment_definitions {
+                    if fd.name == fragment_spread.fragment_name {
+                        validate_selection_depth(&fd.selection_set, fragment_definitions, depth)?;
+                        break;
+                    }
+                }
+            }
+            Selection::InlineFragment(inline_fragment) => {
+                validate_selection_depth(
+                    &inline_fragment.selection_set,
+                    fragment_definitions,
+                    depth,
+                )?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn resolve_query<'a, 'b, T>(
@@ -257,6 +326,30 @@ where
                                 }),
                             }
                         }
+                        __Type::Node(_) => {
+                            // Node types at Query level are *ByPk fields with primary key column args
+                            let node_by_pk_builder = to_node_by_pk_builder(
+                                field_def,
+                                selection,
+                                &fragment_definitions,
+                                variables,
+                                variable_definitions,
+                            );
+
+                            match node_by_pk_builder {
+                                Ok(builder) => match builder.execute() {
+                                    Ok(d) => {
+                                        res_data[alias_or_name(selection)] = d;
+                                    }
+                                    Err(msg) => res_errors.push(ErrorMessage {
+                                        message: msg.to_string(),
+                                    }),
+                                },
+                                Err(msg) => res_errors.push(ErrorMessage {
+                                    message: msg.to_string(),
+                                }),
+                            }
+                        }
                         __Type::__Type(_) => {
                             let __type_builder = schema_type.to_type_builder(
                                 field_def,
@@ -338,10 +431,12 @@ where
                     },
                 }
             }
+            let any_field_succeeded = res_data.as_object().map(|o| !o.is_empty()).unwrap_or(false);
             GraphQLResponse {
-                data: match res_errors.len() {
-                    0 => Omit::Present(res_data),
-                    _ => Omit::Present(serde_json::Value::Null),
+                data: if res_errors.is_empty() || any_field_succeeded {
+                    Omit::Present(res_data)
+                } else {
+                    Omit::Present(serde_json::Value::Null)
                 },
                 errors: match res_errors.len() {
                     0 => Omit::Omitted,
@@ -619,4 +714,175 @@ where
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod selection_depth_tests {
+    use super::*;
+    use graphql_parser::query::parse_query;
+
+    fn run_test_case(query: &str, accept_query: bool) {
+        let doc = parse_query::<&str>(query).expect("query parses");
+        let mut selection_set = None;
+        let mut fragment_defs = vec![];
+        for def in doc.definitions {
+            match def {
+                Definition::Operation(OperationDefinition::SelectionSet(s)) => {
+                    selection_set = Some(s)
+                }
+                Definition::Fragment(fd) => fragment_defs.push(fd),
+                _ => {}
+            }
+        }
+        let selection_set = selection_set.expect("anonymous selection set operation");
+        let result = validate_selection_depth(&selection_set, &fragment_defs, 1);
+        if accept_query {
+            assert!(result.is_ok());
+        } else {
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn test_queries_below_max_depth_are_accepted() {
+        for depth in 1..MAX_SELECTION_DEPTH {
+            let query = &generate_nested_query(depth);
+            run_test_case(query, true);
+        }
+    }
+
+    #[test]
+    fn test_queries_above_max_depth_are_rejected() {
+        let query = &generate_nested_query(MAX_SELECTION_DEPTH);
+        run_test_case(query, false);
+
+        let query = &generate_nested_query(MAX_SELECTION_DEPTH + 1);
+        run_test_case(query, false);
+    }
+
+    #[test]
+    fn test_fragment_spread_nesting_counts_towards_depth() {
+        // Every split of the combined depth between aField and fragField:
+        // total just below the limit is accepted, ...
+        let accepted_total = MAX_SELECTION_DEPTH - 1;
+        for a_field_depth in 1..accepted_total {
+            let frag_field_depth = accepted_total - a_field_depth;
+            let query = &generate_nested_query_via_fragment_spread(a_field_depth, frag_field_depth);
+            run_test_case(query, true);
+        }
+
+        // ... and total at the limit is rejected, regardless of the split.
+        let rejected_total = MAX_SELECTION_DEPTH;
+        for a_field_depth in 1..rejected_total {
+            let frag_field_depth = rejected_total - a_field_depth;
+            let query = &generate_nested_query_via_fragment_spread(a_field_depth, frag_field_depth);
+            run_test_case(query, false);
+        }
+    }
+
+    #[test]
+    fn test_inline_fragment_nesting_counts_towards_depth() {
+        let accepted_total = MAX_SELECTION_DEPTH - 1;
+        for a_field_depth in 1..accepted_total {
+            let frag_field_depth = accepted_total - a_field_depth;
+            let query = &generate_nested_query_via_inline_fragment(a_field_depth, frag_field_depth);
+            run_test_case(query, true);
+        }
+
+        let rejected_total = MAX_SELECTION_DEPTH;
+        for a_field_depth in 1..rejected_total {
+            let frag_field_depth = rejected_total - a_field_depth;
+            let query = &generate_nested_query_via_inline_fragment(a_field_depth, frag_field_depth);
+            run_test_case(query, false);
+        }
+    }
+
+    #[test]
+    fn test_fragment_spread_and_inline_fragment_nesting_counts_towards_depth() {
+        let accepted_total = MAX_SELECTION_DEPTH - 1;
+        for a_field_depth in 1..accepted_total {
+            let frag_field_depth = accepted_total - a_field_depth;
+            let query = &generate_nested_query_via_fragment_and_inline_fragment(
+                a_field_depth,
+                frag_field_depth,
+            );
+            run_test_case(query, true);
+        }
+
+        let rejected_total = MAX_SELECTION_DEPTH;
+        for a_field_depth in 1..rejected_total {
+            let frag_field_depth = rejected_total - a_field_depth;
+            let query = &generate_nested_query_via_fragment_and_inline_fragment(
+                a_field_depth,
+                frag_field_depth,
+            );
+            run_test_case(query, false);
+        }
+    }
+
+    fn generate_nested_query(depth: u32) -> String {
+        let mut inner = "{ aField }".to_string();
+        for _ in 0..depth - 1 {
+            inner = format!("{{ aField {inner} }}");
+        }
+        inner
+    }
+
+    fn generate_nested_fragment_body(depth: u32) -> String {
+        let mut inner = "{ fragField }".to_string();
+        for _ in 0..depth - 1 {
+            inner = format!("{{ fragField {inner} }}");
+        }
+        inner
+    }
+
+    // Wraps `inner` in `count` layers of `{ field_name { fieldName ... } }`.
+    fn wrap_field(field_name: &str, count: u32, inner: &str) -> String {
+        let mut result = inner.to_string();
+        for _ in 0..count {
+            result = format!("{{ {field_name} {result} }}");
+        }
+        result
+    }
+
+    // query { aField { aField { ... { ...fragFields } ... } } }
+    // fragment fragFields on Frag { fragField { fragField { ... } } }
+    fn generate_nested_query_via_fragment_spread(
+        a_field_depth: u32,
+        frag_field_depth: u32,
+    ) -> String {
+        format!(
+            "{} fragment fragFields on Frag {}",
+            wrap_field("aField", a_field_depth, "{ ...fragFields }"),
+            generate_nested_fragment_body(frag_field_depth)
+        )
+    }
+
+    // query { aField { aField { ... { ... on Frag { fragField { ... } } } ... } } }
+    fn generate_nested_query_via_inline_fragment(
+        a_field_depth: u32,
+        frag_field_depth: u32,
+    ) -> String {
+        wrap_field(
+            "aField",
+            a_field_depth,
+            &format!(
+                "{{ ... on Frag {} }}",
+                generate_nested_fragment_body(frag_field_depth)
+            ),
+        )
+    }
+
+    // query { aField { aField { ... { ...fragFields } ... } } }
+    // fragment fragFields on Frag { ... on Frag { fragField { ... } } }
+    fn generate_nested_query_via_fragment_and_inline_fragment(
+        a_field_depth: u32,
+        frag_field_depth: u32,
+    ) -> String {
+        format!(
+            "{} fragment fragFields on Frag {{ ... on Frag {} }}",
+            wrap_field("aField", a_field_depth, "{ ...fragFields }"),
+            generate_nested_fragment_body(frag_field_depth)
+        )
+    }
 }

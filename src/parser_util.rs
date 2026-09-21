@@ -29,11 +29,12 @@ where
     let mut selections: Vec<Field<'a, T>> = vec![];
 
     for selection in &selection_set.items {
-        let sel = selection;
-        match normalize_selection(sel, fragment_definitions, type_name, variables) {
-            Ok(sels) => selections.extend(sels),
-            Err(err) => return Err(err),
-        }
+        selections.extend(normalize_selection(
+            selection,
+            fragment_definitions,
+            type_name,
+            variables,
+        )?)
     }
     let selections = merge(selections)?;
     Ok(selections)
@@ -199,10 +200,7 @@ where
                 type_name,
                 variables,
             );
-            match frag_selections {
-                Ok(sels) => selections.extend(sels),
-                Err(err) => return Err(err),
-            };
+            selections.extend(frag_selections?)
         }
         Selection::InlineFragment(inline_fragment) => {
             let inline_fragment_applies: bool = match &inline_fragment.type_condition {
@@ -613,7 +611,7 @@ pub fn validate_arg_from_input_object(
 
             // Confirm that there are no extra keys
             let mut extra_input_keys = vec![];
-            for (k, _) in input_obj.iter() {
+            for k in input_obj.keys() {
                 if !type_input_fields.iter().map(|x| x.name()).any(|x| x == *k) {
                     extra_input_keys.push(k);
                 }

@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create role api;
     grant usage on schema graphql to api;
     grant execute on function graphql.resolve to api;

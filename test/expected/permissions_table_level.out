@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create table account(
         id serial primary key,
         encrypted_password varchar(255) not null,
@@ -21,6 +22,9 @@ begin;
      "data": {                                  +
          "__type": {                            +
              "fields": [                        +
+                 {                              +
+                     "name": "accountByPk"      +
+                 },                             +
                  {                              +
                      "name": "accountCollection"+
                  },                             +
@@ -97,6 +101,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  },                             +
                  {                              +
@@ -139,6 +146,9 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
                  },                             +
                  {                              +
@@ -180,6 +190,9 @@ begin;
      "data": {                                  +
          "__type": {                            +
              "fields": [                        +
+                 {                              +
+                     "name": "accountByPk"      +
+                 },                             +
                  {                              +
                      "name": "accountCollection"+
                  },                             +

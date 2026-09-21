@@ -154,4 +154,130 @@ begin;
  }
 (1 row)
 
+    -- Reset data for byPk tests
+    insert into public.account(id, parent_id)
+    values
+        (1, 1),
+        (2, 1);
+    -- Test __typename with byPk query
+    select jsonb_pretty(
+        graphql.resolve($$
+    query {
+      accountByPk(id: 1) {
+        __typename
+        id
+        parent {
+          __typename
+          id
+        }
+      }
+    }
+        $$)
+    );
+              jsonb_pretty               
+-----------------------------------------
+ {                                      +
+     "data": {                          +
+         "accountByPk": {               +
+             "id": 1,                   +
+             "parent": {                +
+                 "id": 1,               +
+                 "__typename": "Account"+
+             },                         +
+             "__typename": "Account"    +
+         }                              +
+     }                                  +
+ }
+(1 row)
+
+    -- Test __typename with multi-column primary key
+    create table order_item(
+        order_id int,
+        item_id int,
+        quantity int,
+        primary key (order_id, item_id)
+    );
+    insert into public.order_item(order_id, item_id, quantity)
+    values
+        (100, 1, 5),
+        (100, 2, 3);
+    select jsonb_pretty(
+        graphql.resolve($$
+    query {
+      orderItemByPk(orderId: 100, itemId: 1) {
+        __typename
+        orderId
+        itemId
+        quantity
+      }
+    }
+        $$)
+    );
+             jsonb_pretty              
+---------------------------------------
+ {                                    +
+     "data": {                        +
+         "orderItemByPk": {           +
+             "itemId": 1,             +
+             "orderId": 100,          +
+             "quantity": 5,           +
+             "__typename": "OrderItem"+
+         }                            +
+     }                                +
+ }
+(1 row)
+
+    -- Test __typename with non-int primary key
+    create table product(
+        sku text primary key,
+        name text
+    );
+    insert into public.product(sku, name)
+    values
+        ('PROD-001', 'Widget'),
+        ('PROD-002', 'Gadget');
+    select jsonb_pretty(
+        graphql.resolve($$
+    query {
+      productByPk(sku: "PROD-001") {
+        __typename
+        sku
+        name
+      }
+    }
+        $$)
+    );
+            jsonb_pretty             
+-------------------------------------
+ {                                  +
+     "data": {                      +
+         "productByPk": {           +
+             "sku": "PROD-001",     +
+             "name": "Widget",      +
+             "__typename": "Product"+
+         }                          +
+     }                              +
+ }
+(1 row)
+
+    -- Test __typename with byPk query returning null
+    select jsonb_pretty(
+        graphql.resolve($$
+    query {
+      accountByPk(id: 999) {
+        __typename
+        id
+      }
+    }
+        $$)
+    );
+        jsonb_pretty         
+-----------------------------
+ {                          +
+     "data": {              +
+         "accountByPk": null+
+     }                      +
+ }
+(1 row)
+
 rollback;

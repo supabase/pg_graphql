@@ -602,6 +602,18 @@ impl Table {
             .collect::<Vec<&Arc<Column>>>()
     }
 
+    pub fn has_supported_pk_types_for_by_pk(&self) -> bool {
+        let pk_columns = self.primary_key_columns();
+        if pk_columns.is_empty() {
+            return false;
+        }
+
+        // Check that all primary key columns have supported types
+        pk_columns
+            .iter()
+            .all(|col| SupportedPrimaryKeyType::from_type_name(&col.type_name).is_some())
+    }
+
     pub fn is_any_column_selectable(&self) -> bool {
         self.columns.iter().any(|x| x.permissions.is_selectable)
     }
@@ -625,12 +637,49 @@ impl Table {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub enum SupportedPrimaryKeyType {
+    // Integer types
+    Int,      // int, int4, integer
+    BigInt,   // bigint, int8
+    SmallInt, // smallint, int2
+    // String types
+    Text,    // text
+    VarChar, // varchar
+    Char,    // char, bpchar
+    CiText,  // citext
+    // UUID
+    Uuid, // uuid
+}
+
+impl SupportedPrimaryKeyType {
+    fn from_type_name(type_name: &str) -> Option<Self> {
+        match type_name {
+            // Integer types
+            "int" | "int4" | "integer" => Some(Self::Int),
+            "bigint" | "int8" => Some(Self::BigInt),
+            "smallint" | "int2" => Some(Self::SmallInt),
+            // String types
+            "text" => Some(Self::Text),
+            "varchar" => Some(Self::VarChar),
+            "char" | "bpchar" => Some(Self::Char),
+            "citext" => Some(Self::CiText),
+            // UUID
+            "uuid" => Some(Self::Uuid),
+            // Any other type is not supported
+            _ => None,
+        }
+    }
+}
+
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct SchemaDirectives {
     // @graphql({"inflect_names": true})
     pub inflect_names: bool,
     // @graphql({"max_rows": 20})
     pub max_rows: u64,
+    // @graphql({"introspection": true})
+    pub introspection_enabled: bool,
 }
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
@@ -977,7 +1026,7 @@ pub fn load_sql_context(_config: &Config) -> GraphQLResult<Arc<Context>> {
     /// This pass cross-reference column types
     fn column_types(mut context: Context) -> Context {
         // We process tables to cross-reference their columns' types
-        for (_oid, table) in context.tables.iter_mut() {
+        for table in context.tables.values_mut() {
             if let Some(mtable) = Arc::get_mut(table) {
                 // It should be possible to get a mutable reference to table at this point
                 // as there are no other references to this Arc at this point.

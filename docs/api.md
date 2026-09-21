@@ -1742,6 +1742,183 @@ The default order of results is defined by the underlying table's primary key co
 
 Note, only one key value pair may be provided to each element of the input array. For example, `[{name: AscNullsLast}, {id: AscNullFirst}]` is valid. Passing multiple key value pairs in a single element of the input array e.g. `[{name: AscNullsLast, id: AscNullFirst}]`, is invalid.
 
+### Primary Key Queries
+
+Each table has a top level field in the `Query` type for selecting a single record by primary key from that table. The field is named `<table>ByPk`
+
+**SQL Setup**
+```sql
+create table "Blog"(
+  id serial primary key,
+  name varchar(255) not null,
+  description varchar(255),
+  "createdAt" timestamp not null,
+  "updatedAt" timestamp not null
+);
+```
+
+**GraphQL Types**
+=== "QueryType"
+
+    ```graphql
+    """The root type for querying data"""
+    type Query {
+
+      """Retrieve a blog by its id"""
+      blogByPk(id: Int!): Blog
+
+    }
+    ```
+
+To query the table by primary key, pass the value of the primary key field to the field:
+
+**Example**
+=== "Query"
+
+    ```graphql
+    {
+      blogByPk(
+        id: 1
+      ) {
+        id
+        name
+        description
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "blogByPk": {
+          "id": 1,
+          "name": "Some Blog",
+          "description": "Description of Some Blog"
+        }
+      }
+    }
+    ```
+
+If a record with the give id doesn't exist, the field will return null:
+
+**Example**
+=== "Query"
+
+    ```graphql
+    {
+      blogByPk(
+        id: 999
+      ) {
+        id
+        name
+        description
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "blogByPk": null
+      }
+    }
+    ```
+
+If the key is a composite primary key, all the columns of the primary key should be sent in the query:
+
+
+
+**SQL Setup**
+```sql
+create table item(
+    item_id int,
+    product_id int,
+    quantity int,
+    price numeric(10,2),
+    primary key(item_id, product_id)
+);
+```
+
+**GraphQL Types**
+=== "QueryType"
+
+    ```graphql
+    """The root type for querying data"""
+    type Query {
+
+      """Retrieve an item by its item and product ids"""
+      itemByPk(itemId: Int!, productId: Int!): Item
+
+    }
+    ```
+**Example**
+=== "Query"
+
+    ```graphql
+    {
+      itemByPk(
+        itemId: 1, productId: 2
+      ) {
+        itemId
+        productId
+        quantity
+        price
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": {
+        "itemByPk": {
+          "itemId": 1,
+          "productId": 2,
+          "quantity": 1,
+          "price": "24.99"
+        }
+      }
+    }
+    ```
+
+Otherwise an error will be returned:
+
+**Example**
+=== "Query"
+
+    ```graphql
+    {
+      itemByPk(
+        itemId: 1
+      ) {
+        itemId
+        productId
+        quantity
+        price
+      }
+    }
+    ```
+
+=== "Response"
+
+    ```json
+    {
+      "data": null,
+      "errors": [
+        {
+          "message": "Missing primary key column(s): product_id"
+        }
+      ]
+    }
+    ```
+
+
+
 ## MutationType
 
 The `Mutation` type is the entrypoint for mutations/edits.

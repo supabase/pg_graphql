@@ -1,4 +1,5 @@
 begin;
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     create table account(
         id serial primary key,
         email varchar(255) not null
@@ -32,7 +33,13 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "blogByPk"         +
                  },                             +
                  {                              +
                      "name": "blogCollection"   +
@@ -70,13 +77,22 @@ begin;
          "__type": {                            +
              "fields": [                        +
                  {                              +
+                     "name": "accountByPk"      +
+                 },                             +
+                 {                              +
                      "name": "accountCollection"+
+                 },                             +
+                 {                              +
+                     "name": "blogByPk"         +
                  },                             +
                  {                              +
                      "name": "blogCollection"   +
                  },                             +
                  {                              +
                      "name": "node"             +
+                 },                             +
+                 {                              +
+                     "name": "personByPk"       +
                  },                             +
                  {                              +
                      "name": "personCollection" +

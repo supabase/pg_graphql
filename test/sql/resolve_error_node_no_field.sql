@@ -21,4 +21,14 @@ begin;
     }
     $$);
 
+    -- Test unknown field on byPk query
+    select graphql.resolve($$
+    {
+      accountByPk(id: 1) {
+        id
+        nonExistentField
+      }
+    }
+    $$);
+
 rollback;

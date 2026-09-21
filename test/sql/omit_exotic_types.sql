@@ -17,7 +17,7 @@ begin;
     );
 
     -- Inflection on, Overrides: off
-    comment on schema public is e'@graphql({"inflect_names": true})';
+    comment on schema public is e'@graphql({"inflect_names": true, "introspection": true})';
     select jsonb_pretty(
         jsonb_path_query(
             graphql.resolve($$
