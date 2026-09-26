@@ -167,7 +167,7 @@ impl Table {
         // [id asc, name desc]
         /*
         "(
-            ( id > x1  or ( id is not null and x1 is null and <nulls_first>))
+            ( id > x1  or ( id is not null and x1 is null and <nulls_first>) or ( id is null and x1 is not null and <nulls_last>))
             or (( id = x1 or ( id is null and x1 is null )) and  <recurse>)
 
         )"
@@ -202,6 +202,7 @@ impl Table {
         )?;
 
         let nulls_first: bool = order_elem.direction.nulls_first();
+        let nulls_last: bool = !nulls_first;
 
         let op = match order_elem.direction.is_asc() {
             true => ">",
@@ -209,7 +210,7 @@ impl Table {
         };
 
         Ok(format!("(
-            ( {block_name}.{quoted_col} {op} {val_clause}  or ( {block_name}.{quoted_col} is not null and {val_clause} is null and {nulls_first}))
+            ( {block_name}.{quoted_col} {op} {val_clause}  or ( {block_name}.{quoted_col} is not null and {val_clause} is null and {nulls_first}) or ( {block_name}.{quoted_col} is null and {val_clause} is not null and {nulls_last}))
             or (( {block_name}.{quoted_col} = {val_clause} or ( {block_name}.{quoted_col} is null and {val_clause} is null)) and  {recurse_clause})
 
         )"))
