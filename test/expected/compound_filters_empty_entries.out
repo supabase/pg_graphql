@@ -1,0 +1,209 @@
+begin;
+    create table account(
+        id serial primary key,
+        email varchar(255) not null
+    );
+    insert into public.account(email)
+    values
+        ('aardvark@x.com'),
+        ('bat@x.com'),
+        ('cat@x.com');
+    -- `or` with only an empty entry is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {or: [{}]}) {
+                edges { node { id } }
+            }
+        }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    -- `and` with only an empty entry is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {and: [{}]}) {
+                edges { node { id } }
+            }
+        }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    -- an `or` entry whose only operator comes from an omitted variable is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+        query AccountsByEmail($email: String) {
+            accountCollection(filter: {or: [{email: {eq: $email}}]}) {
+                edges { node { id } }
+            }
+        }
+        $$,
+        variables := '{}'
+        )
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    -- empty entries next to a real one still leave the real one in place
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {or: [{}, {id: {eq: 2}}]}) {
+                edges { node { id } }
+            }
+        }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    -- nested: `not` around an `or` of empty entries is ignored
+    select jsonb_pretty(
+        graphql.resolve($$
+        {
+            accountCollection(filter: {not: {or: [{}]}}) {
+                edges { node { id } }
+            }
+        }
+        $$)
+    );
+          jsonb_pretty           
+---------------------------------
+ {                              +
+     "data": {                  +
+         "accountCollection": { +
+             "edges": [         +
+                 {              +
+                     "node": {  +
+                         "id": 1+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 2+
+                     }          +
+                 },             +
+                 {              +
+                     "node": {  +
+                         "id": 3+
+                     }          +
+                 }              +
+             ]                  +
+         }                      +
+     }                          +
+ }
+(1 row)
+
+    -- same on a mutation filter: nothing is filtered out, so every row is updated
+    select jsonb_pretty(
+        graphql.resolve($$
+        mutation {
+            updateAccountCollection(set: {email: "x@x.com"}, filter: {or: [{}]}, atMost: 10) {
+                affectedCount
+            }
+        }
+        $$)
+    );
+             jsonb_pretty             
+--------------------------------------
+ {                                   +
+     "data": {                       +
+         "updateAccountCollection": {+
+             "affectedCount": 3      +
+         }                           +
+     }                               +
+ }
+(1 row)
+
+rollback;

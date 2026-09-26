@@ -1243,6 +1243,12 @@ fn create_filters(
                         }
                     }
 
+                    // Every entry was empty, so the whole `and`/`or` is ignored like an empty list.
+                    // Pushing it would transpile to `()`, which is invalid SQL
+                    if compound_filters.is_empty() {
+                        continue;
+                    }
+
                     let filter_builder = if k == AND_FILTER_NAME {
                         FilterBuilderElem::Compound(Box::new(CompoundFilterBuilder::And(
                             compound_filters,
