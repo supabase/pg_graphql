@@ -274,6 +274,12 @@ pub trait ___Type {
     fn of_type(&self) -> Option<__Type> {
         None
     }
+
+    // # SCALAR only
+    // specifiedByURL: String
+    fn specified_by_url(&self) -> Option<String> {
+        None
+    }
 }
 
 #[derive(Clone, Debug)]
