@@ -160,7 +160,7 @@ pg_graphql uses Postgres' `search_path` and permissions system to determine whic
 
 ### Remove a Table from the API
 
-To remove a table from the GraphQL API, you can revoke permission on that table from the the relevant role. For example, to remove table `foo` from the API for anonymous users you could run:
+To remove a table from the GraphQL API, you can revoke permission on that table from the relevant role. For example, to remove table `foo` from the API for anonymous users you could run:
 
 ```sql
 revoke all on table public.foo from anon;
