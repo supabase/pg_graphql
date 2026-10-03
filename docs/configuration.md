@@ -252,7 +252,7 @@ The Query type's field listing is filtered the same way. `blogCollection` appear
     }
     ```
 
-Same for the the Mutation type's field listing, `Blog`'s mutation fields appear, `Account`'s are hidden:
+Same for the Mutation type's field listing, `Blog`'s mutation fields appear, `Account`'s are hidden:
 
 === "Query"
 
