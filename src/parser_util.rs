@@ -26,6 +26,12 @@ where
     T: Text<'a> + Eq + AsRef<str> + Clone,
     T::Value: Hash,
 {
+    if selection_set.items.is_empty() {
+        return Err(GraphQLError::validation(format!(
+            "Selection set must not be empty for type '{type_name}'"
+        )));
+    }
+
     let mut selections: Vec<Field<'a, T>> = vec![];
 
     for selection in &selection_set.items {

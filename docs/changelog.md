@@ -136,3 +136,5 @@
 - bugfix: Remove double NON_NULL wrapping on byPk argument types
 
 ## master
+
+- bugfix: Reject queries that select a composite field without a subfield selection
