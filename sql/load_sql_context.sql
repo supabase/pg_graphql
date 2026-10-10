@@ -34,7 +34,12 @@ schemas_(oid, name) as (
 select
     jsonb_build_object(
         'config', jsonb_build_object(
-            'search_path', (select array_agg(schema_oid) from search_path_oids),
+            -- array_agg returns null when the search path is empty. Coalesce so
+            -- the context still deserializes into a (empty) sequence. Issue #650
+            'search_path', coalesce(
+                (select array_agg(schema_oid) from search_path_oids),
+                '{}'::oid[]
+            ),
             'role', current_role,
             'schema_version', graphql.get_schema_version()
         ),
