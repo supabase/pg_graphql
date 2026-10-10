@@ -1900,6 +1900,9 @@ impl Serialize for __TypeBuilder {
                 __TypeField::OfType(t_builder) => {
                     map.serialize_entry(&selection.alias, t_builder)?;
                 }
+                __TypeField::SpecifiedByURL => {
+                    map.serialize_entry(&selection.alias, &self.type_.specified_by_url())?;
+                }
                 __TypeField::Typename { alias, typename } => {
                     map.serialize_entry(&alias, typename)?;
                 }
