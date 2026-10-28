@@ -1,22 +1,21 @@
 repos:
-
--   repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.1.10
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.6
     hooks:
-    -   id: remove-tabs
+      - id: remove-tabs
         name: Tabs-to-Spaces
         exclude: ^test/expected
 
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
-    -   id: trailing-whitespace
+      - id: trailing-whitespace
         exclude: ^test/expected
-    -   id: end-of-file-fixer
+      - id: end-of-file-fixer
         exclude: ^test/expected
-    -   id: check-yaml
-    -   id: check-merge-conflict
-    -   id: check-added-large-files
-        args: ['--maxkb=500']
-    -   id: mixed-line-ending
-        args: ['--fix=lf']
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
