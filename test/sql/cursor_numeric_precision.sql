@@ -1,0 +1,48 @@
+begin;
+    create table item(
+        id int primary key,
+        val numeric not null
+    );
+
+    insert into public.item(id, val)
+    values
+        (1, 0.10000000000000000001),
+        (2, 0.10000000000000000002),
+        (3, 0.3);
+
+    select graphql.resolve($$
+        {
+          itemCollection(first: 1, orderBy: [{val: AscNullsLast}]) {
+            pageInfo {
+              endCursor
+            }
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+    $$) #>> '{data, itemCollection, pageInfo, endCursor}' as end_cursor \gset
+
+    -- The cursor holds the numeric value as text
+    select convert_from(decode(:'end_cursor', 'base64'), 'utf-8');
+
+    -- The page after the first row starts with id 2
+    select jsonb_pretty(
+        graphql.resolve($$
+            query NextPage($after: Cursor) {
+              itemCollection(first: 1, after: $after, orderBy: [{val: AscNullsLast}]) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+        $$,
+        variables := jsonb_build_object('after', :'end_cursor')
+        )
+    );
+
+rollback;
