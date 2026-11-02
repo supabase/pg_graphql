@@ -135,6 +135,8 @@
 
 - bugfix: Remove double NON_NULL wrapping on byPk argument types
 
-## master
+## 1.6.3
 
 - bugfix: quote primary key column names when building `nodeId`
+
+## master
