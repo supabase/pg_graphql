@@ -1756,7 +1756,7 @@ impl NodeIdBuilder {
         let column_selects: Vec<String> = self
             .columns
             .iter()
-            .map(|col| format!("{}.{}", block_name, col.name))
+            .map(|col| format!("{}.{}", block_name, quote_ident(&col.name)))
             .collect();
         let column_clause = column_selects.join(", ");
         let schema_name = quote_literal(&self.schema_name);
