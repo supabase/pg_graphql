@@ -140,3 +140,5 @@
 - bugfix: quote primary key column names when building `nodeId`
 
 ## master
+
+- bugfix: Reject queries that select a composite field without a subfield selection
