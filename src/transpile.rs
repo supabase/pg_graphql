@@ -137,7 +137,13 @@ impl Table {
             .iter()
             .map(|x| {
                 let quoted_col_name = quote_ident(&x.column.name);
-                format!("to_jsonb({block_name}.{quoted_col_name})")
+                // numeric is stored as text: parsing the cursor reads JSON numbers as f64
+                let cast = if x.column.type_oid == 1700 {
+                    "::text"
+                } else {
+                    ""
+                };
+                format!("to_jsonb({block_name}.{quoted_col_name}{cast})")
             })
             .collect();
 
