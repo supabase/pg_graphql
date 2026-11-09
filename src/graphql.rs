@@ -4754,7 +4754,8 @@ impl ___Type for AggregateNumericType {
         let mut fields = Vec::new();
 
         for col in self.table.columns.iter() {
-            if is_aggregatable(col, &self.aggregate_op)
+            if col.permissions.is_selectable
+                && is_aggregatable(col, &self.aggregate_op)
                 && let Some(scalar_type) = aggregate_result_type(col, &self.aggregate_op)
             {
                 let field_name = self.schema.graphql_column_field_name(col);
