@@ -398,8 +398,10 @@ pub fn validate_arg_from_type(type_: &__Type, value: &gson::Value) -> GraphQLRes
                 Scalar::BigInt => match value {
                     GsonValue::Absent
                     | GsonValue::Null
-                    | GsonValue::String(_)
-                    | GsonValue::Number(_) => value.clone(),
+                    | GsonValue::Number(GsonNumber::Integer(_)) => value.clone(),
+                    // Decimal integers only, as every supported Postgres version reads them.
+                    // Postgres 16 and later also accept 0x10 or 1_000, older versions do not
+                    GsonValue::String(x) if x.trim_ascii().parse::<i64>().is_ok() => value.clone(),
                     _ => {
                         return Err(GraphQLError::type_error(format!(
                             "Invalid input for {:?} type",

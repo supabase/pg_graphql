@@ -64,6 +64,75 @@ begin;
  {"data": {"blogPostCollection": {"edges": [{"node": {"id": "1", "parent": {"id": "1", "parentId": "1"}, "parentId": "1"}}], "totalCount": 1}}}
 (1 row)
 
+    -- BigInt input must be a decimal integer in the int8 range
+    select
+        v,
+        graphql.resolve(
+            $$query ($v: BigInt) { blogPostCollection(filter: {parentId: {eq: $v}}) { totalCount } }$$,
+            variables := jsonb_build_object('v', v)
+        )
+    from (
+        values
+            ('"not-an-int"'::jsonb),
+            ('"1.5"'),
+            ('1.5'),
+            ('"0x10"'),
+            ('"1_000"'),
+            ('"9223372036854775808"'),
+            ('"-9223372036854775809"'),
+            ('9223372036854775808'),
+            ('"9223372036854775807"'),
+            ('"-9223372036854775808"'),
+            ('"1"'),
+            ('" 1 "'),
+            ('1')
+    ) t(v);
+           v            |                                 resolve                                  
+------------------------+--------------------------------------------------------------------------
+ "not-an-int"           | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ "1.5"                  | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ 1.5                    | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ "0x10"                 | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ "1_000"                | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ "9223372036854775808"  | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ "-9223372036854775809" | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ 9223372036854775808    | {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+ "9223372036854775807"  | {"data": {"blogPostCollection": {"totalCount": 0}}}
+ "-9223372036854775808" | {"data": {"blogPostCollection": {"totalCount": 0}}}
+ "1"                    | {"data": {"blogPostCollection": {"totalCount": 1}}}
+ " 1 "                  | {"data": {"blogPostCollection": {"totalCount": 1}}}
+ 1                      | {"data": {"blogPostCollection": {"totalCount": 1}}}
+(13 rows)
+
+    select graphql.resolve($$
+    mutation {
+      insertIntoBlogPostCollection(objects: [{
+        title: "hello"
+        parentId: "one"
+      }]) {
+        affectedCount
+      }
+    }
+    $$);
+                                 resolve                                  
+--------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+(1 row)
+
+    select graphql.resolve($$
+    mutation {
+      updateBlogPostCollection(set: {
+        parentId: 1.5
+      }) {
+        affectedCount
+      }
+    }
+    $$);
+                                 resolve                                  
+--------------------------------------------------------------------------
+ {"data": null, "errors": [{"message": "Invalid input for BigInt type"}]}
+(1 row)
+
     select graphql.resolve($$
     mutation {
       deleteFromBlogPostCollection {

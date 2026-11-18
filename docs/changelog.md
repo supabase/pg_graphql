@@ -140,3 +140,5 @@
 - bugfix: quote primary key column names when building `nodeId`
 
 ## master
+
+- bugfix: validate `BigInt` input values before passing them to Postgres
