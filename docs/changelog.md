@@ -140,3 +140,5 @@
 - bugfix: quote primary key column names when building `nodeId`
 
 ## master
+
+- bugfix: omitted filter variables on function collections raised an `Absent` error
