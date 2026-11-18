@@ -811,14 +811,14 @@ where
             variables,
             variable_definitions,
         )?;
-        if !arg_value.is_absent() {
-            let func_call_sql_arg_name =
-                inflected_to_sql_args
-                    .get(&arg.name())
-                    .map(|(type_name, name)| FuncCallSqlArgName {
-                        type_name: type_name.clone(),
-                        name: name.clone(),
-                    });
+        // Connection args like filter are not passed to the function
+        if let Some((type_name, name)) = inflected_to_sql_args.get(&arg.name())
+            && !arg_value.is_absent()
+        {
+            let func_call_sql_arg_name = Some(FuncCallSqlArgName {
+                type_name: type_name.clone(),
+                name: name.clone(),
+            });
             args.push((func_call_sql_arg_name, gson::gson_to_json(&arg_value)?));
         };
     }
