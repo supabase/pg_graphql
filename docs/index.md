@@ -1,7 +1,7 @@
 # `pg_graphql`
 
 <p>
-<a href=""><img src="https://img.shields.io/badge/postgresql-14+-blue.svg" alt="PostgreSQL version" height="18"></a>
+<a href=""><img src="https://img.shields.io/badge/postgresql-15+-blue.svg" alt="PostgreSQL version" height="18"></a>
 <a href="https://github.com/supabase/pg_graphql/blob/master/LICENSE"><img src="https://img.shields.io/pypi/l/markdown-subtemplate.svg" alt="License" height="18"></a>
 <a href="https://github.com/supabase/pg_graphql/actions"><img src="https://github.com/supabase/pg_graphql/actions/workflows/test.yml/badge.svg" alt="tests" height="18"></a>
 
