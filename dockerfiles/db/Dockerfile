@@ -28,13 +28,13 @@ RUN \
   cargo --version
 
 # PGRX
-RUN cargo install cargo-pgrx --version 0.19.2 --locked
+RUN cargo install cargo-pgrx --version 0.20.1 --locked
 
 RUN cargo pgrx init --pg${PG_MAJOR} $(which pg_config)
 
 USER root
 
 COPY . .
-RUN cargo pgrx install --release --features pg${PG_MAJOR}
+RUN cargo pgrx install --release --no-default-features --features pg${PG_MAJOR}
 
 USER postgres
