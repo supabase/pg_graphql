@@ -1,0 +1,61 @@
+begin;
+    -- nodeId values are decoded from user supplied base64 JSON and bypass the
+    -- GraphQL input validation, so their shape must match the primary key column
+    -- type before being bound as a query parameter. A scalar bound for an array
+    -- primary key previously produced a text datum declared as text[], which
+    -- Postgres interpreted as an ArrayType and could crash the backend.
+    create table array_pk(
+        id text[] primary key,
+        val int
+    );
+
+    insert into public.array_pk(id, val) values (array['a','b'], 1);
+
+    -- A well formed array nodeId resolves the row
+    select graphql.resolve($$
+        { node(nodeId: "WyJwdWJsaWMiLCAiYXJyYXlfcGsiLCBbImEiLCAiYiJdXQ==") { __typename } }
+    $$);
+
+    -- A scalar is coerced to a single element list instead of being declared as text[]
+    select graphql.resolve($$
+        { node(nodeId: "WyJwdWJsaWMiLCAiYXJyYXlfcGsiLCAiYWJjIl0=") { __typename } }
+    $$);
+
+    -- The same value supplied through the collection nodeId filter
+    select graphql.resolve($$
+        {
+            arrayPkCollection(filter: {nodeId: {eq: "WyJwdWJsaWMiLCAiYXJyYXlfcGsiLCAiYWJjIl0="}}) {
+                edges {
+                    node {
+                        val
+                    }
+                }
+            }
+        }
+    $$);
+
+    -- An array value supplied in nodeId for a non-array primary key column is
+    -- rejected instead of passing an ArrayType datum declared as text to SPI
+    create table scalar_pk(
+        id text primary key,
+        val int
+    );
+
+    insert into public.scalar_pk(id, val) values ('a', 1);
+
+    select graphql.resolve($$
+        { node(nodeId: "WyJwdWJsaWMiLCAic2NhbGFyX3BrIiwgWyJhIiwgImIiXV0=") { __typename } }
+    $$);
+
+    select graphql.resolve($$
+        {
+            scalarPkCollection(filter: {nodeId: {eq: "WyJwdWJsaWMiLCAic2NhbGFyX3BrIiwgWyJhIiwgImIiXV0="}}) {
+                edges {
+                    node {
+                        val
+                    }
+                }
+            }
+        }
+    $$);
+rollback;
