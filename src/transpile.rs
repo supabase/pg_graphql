@@ -11,6 +11,7 @@ use pgrx::spi::SpiClient;
 use pgrx::{JsonB, direct_function_call};
 use rand::distr::Alphanumeric;
 use serde::ser::{Serialize, SerializeMap, Serializer};
+use std::borrow::Cow;
 use std::cmp;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -683,12 +684,32 @@ impl<'src> ParamContext<'src> {
     // Pushes a parameter into the context and returns a SQL clause to reference it
     //fn clause_for(&mut self, param: (PgOid, Option<pg_sys::Datum>)) -> String {
     fn clause_for(&mut self, value: &serde_json::Value, type_name: &str) -> GraphQLResult<String> {
-        let type_oid = match type_name.ends_with("[]") {
+        let is_array_type = type_name.ends_with("[]");
+
+        // The declared parameter type must match the datum built by
+        // `json_to_text_datum`. List inputs are coerced to single element lists in
+        // `validate_arg_from_type`, but values that bypass that validation (e.g.
+        // values decoded from `nodeId`) must be coerced here too. Otherwise a
+        // scalar would be declared as an array type and Postgres would interpret
+        // the text datum as an `ArrayType`, reading its bytes as array metadata.
+        let value: Cow<'_, serde_json::Value> = match (is_array_type, value) {
+            (_, serde_json::Value::Null) => Cow::Borrowed(value),
+            (true, serde_json::Value::Array(_)) => Cow::Borrowed(value),
+            (true, scalar) => Cow::Owned(serde_json::Value::Array(vec![scalar.clone()])),
+            (false, serde_json::Value::Array(_)) => {
+                return Err(GraphQLError::type_error(
+                    "Input value must not be an array for a non-array column",
+                ));
+            }
+            (false, _) => Cow::Borrowed(value),
+        };
+
+        let type_oid = match is_array_type {
             true => PgOid::BuiltIn(PgBuiltInOids::TEXTARRAYOID),
             false => PgOid::BuiltIn(PgBuiltInOids::TEXTOID),
         };
 
-        let val_datum = json_to_text_datum(value)?;
+        let val_datum = json_to_text_datum(value.as_ref())?;
         let datum_with_oid = unsafe { DatumWithOid::new(val_datum, type_oid.value()) };
         self.params.push(datum_with_oid);
         Ok(format!("(${}::{})", self.params.len(), type_name))
